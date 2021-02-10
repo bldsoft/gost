@@ -1,0 +1,2 @@
+# gost
+go service template
