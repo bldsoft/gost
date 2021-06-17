@@ -33,9 +33,9 @@ func NewServer(config Config, microservice IMicroservice) *Server {
 
 func (s *Server) init() {
 	s.router.Use(middleware.Recoverer)
-	s.router.Mount("/debug", middleware.Profiler())
 
 	s.microservice.BuildRoutes(s.router)
+	s.router.Mount("/debug", middleware.Profiler())
 
 	http.Handle("/", s.router)
 }
