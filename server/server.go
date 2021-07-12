@@ -20,19 +20,37 @@ type IMicroservice interface {
 }
 
 type Server struct {
-	srv          *http.Server
-	router       *chi.Mux
-	microservice IMicroservice
+	srv               *http.Server
+	router            *chi.Mux
+	microservice      IMicroservice
+	commonMiddlewares chi.Middlewares
 }
 
 func NewServer(config Config, microservice IMicroservice) *Server {
 	srv := Server{srv: &http.Server{Addr: config.ServiceAddress(), Handler: nil}, router: chi.NewRouter(), microservice: microservice}
-	srv.init()
 	return &srv
 }
 
+func (s *Server) DefaultMiddlewares() chi.Middlewares {
+	return chi.Middlewares{
+		middleware.RequestID,
+		middleware.RealIP,
+		middleware.Logger,
+		middleware.Recoverer,
+	}
+}
+
+func (s *Server) SetCommonMiddlewares(middlewares ...func(http.Handler) http.Handler) *Server {
+	s.commonMiddlewares = middlewares
+	return s
+}
+
 func (s *Server) init() {
-	s.router.Use(middleware.Recoverer)
+	if s.commonMiddlewares == nil {
+		s.router.Use(s.DefaultMiddlewares()...)
+	} else {
+		s.router.Use(s.commonMiddlewares...)
+	}
 
 	s.microservice.BuildRoutes(s.router)
 	s.router.Mount("/debug", middleware.Profiler())
@@ -41,6 +59,7 @@ func (s *Server) init() {
 }
 
 func (s *Server) Start() {
+	s.init()
 	s.microservice.Start()
 	go func() {
 		log.Infof("Server started. Listening on %s\n", s.srv.Addr)
