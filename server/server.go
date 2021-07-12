@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -14,20 +15,20 @@ import (
 )
 
 type IMicroservice interface {
-	BuildRoutes(*chi.Mux)
-	Start()
-	Stop(ctx context.Context)
+	BuildRoutes(chi.Router)
+	Start() error
+	Stop(ctx context.Context) error
 }
 
 type Server struct {
 	srv               *http.Server
 	router            *chi.Mux
-	microservice      IMicroservice
+	microservices     []IMicroservice
 	commonMiddlewares chi.Middlewares
 }
 
-func NewServer(config Config, microservice IMicroservice) *Server {
-	srv := Server{srv: &http.Server{Addr: config.ServiceAddress(), Handler: nil}, router: chi.NewRouter(), microservice: microservice}
+func NewServer(config Config, microservices ...IMicroservice) *Server {
+	srv := Server{srv: &http.Server{Addr: config.ServiceAddress(), Handler: nil}, router: chi.NewRouter(), microservices: microservices}
 	return &srv
 }
 
@@ -52,15 +53,26 @@ func (s *Server) init() {
 		s.router.Use(s.commonMiddlewares...)
 	}
 
-	s.microservice.BuildRoutes(s.router)
 	s.router.Mount("/debug", middleware.Profiler())
+
+	for _, m := range s.microservices {
+		s.router.Group(func(r chi.Router) {
+			m.BuildRoutes(r)
+		})
+	}
 
 	http.Handle("/", s.router)
 }
 
 func (s *Server) Start() {
 	s.init()
-	s.microservice.Start()
+
+	for _, m := range s.microservices {
+		if err := m.Start(); err != nil {
+			log.FatalWithFields(log.Fields{"microservice": m, "err": err}, "Failed to start microservice")
+		}
+	}
+
 	go func() {
 		log.Infof("Server started. Listening on %s\n", s.srv.Addr)
 		if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
@@ -76,7 +88,18 @@ func (s *Server) stop() {
 	if err := s.srv.Shutdown(ctxShutDown); err != nil {
 		log.Fatalf("Server shutdown failed:%+s", err)
 	}
-	s.microservice.Stop(ctxShutDown)
+
+	var wg sync.WaitGroup
+	wg.Add(len(s.microservices))
+	for _, m := range s.microservices {
+		go func(m IMicroservice) {
+			defer wg.Done()
+			if err := m.Stop(ctxShutDown); err != nil {
+				log.ErrorWithFields(log.Fields{"microservice": m, "err": err}, "Failed to stop microservice")
+			}
+		}(m)
+	}
+	wg.Wait()
 }
 
 func (s *Server) gracefulShutdown() {
