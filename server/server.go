@@ -14,6 +14,15 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+func defaultMiddlewares() chi.Middlewares {
+	return chi.Middlewares{
+		middleware.RequestID,
+		middleware.RealIP,
+		middleware.Logger,
+		middleware.Recoverer,
+	}
+}
+
 type IMicroservice interface {
 	BuildRoutes(chi.Router)
 	Start() error
@@ -28,30 +37,27 @@ type Server struct {
 }
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
-	srv := Server{srv: &http.Server{Addr: config.ServiceAddress(), Handler: nil}, router: chi.NewRouter(), microservices: microservices}
+	srv := Server{srv: &http.Server{
+		Addr:    config.ServiceAddress(),
+		Handler: nil},
+		router:            chi.NewRouter(),
+		microservices:     microservices,
+		commonMiddlewares: defaultMiddlewares()}
 	return &srv
 }
 
-func (s *Server) DefaultMiddlewares() chi.Middlewares {
-	return chi.Middlewares{
-		middleware.RequestID,
-		middleware.RealIP,
-		middleware.Logger,
-		middleware.Recoverer,
-	}
+func (s *Server) AppendMiddlewares(middlewares ...func(http.Handler) http.Handler) *Server {
+	s.commonMiddlewares = append(s.commonMiddlewares, middlewares...)
+	return s
 }
 
-func (s *Server) SetCommonMiddlewares(middlewares ...func(http.Handler) http.Handler) *Server {
+func (s *Server) SetMiddlewares(middlewares ...func(http.Handler) http.Handler) *Server {
 	s.commonMiddlewares = middlewares
 	return s
 }
 
 func (s *Server) init() {
-	if s.commonMiddlewares == nil {
-		s.router.Use(s.DefaultMiddlewares()...)
-	} else {
-		s.router.Use(s.commonMiddlewares...)
-	}
+	s.router.Use(s.commonMiddlewares...)
 
 	s.router.Mount("/debug", middleware.Profiler())
 
