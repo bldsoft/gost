@@ -1,6 +1,5 @@
 package controller
 
-// TODO: move to gost
 import (
 	"encoding/json"
 	"io/ioutil"
