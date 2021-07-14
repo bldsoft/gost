@@ -32,7 +32,7 @@ func TestReadingPlainConfig(t *testing.T) {
 	}
 
 	configCopy := config
-	assert.NoError(t, ReadFromEnv(&config))
+	assert.NoError(t, ReadFromEnv(&config, ""))
 	assert.True(t, reflect.DeepEqual(config, configCopy))
 
 	os.Setenv("BOOL_VALUE", strconv.FormatBool(expected.BoolValue))
@@ -40,7 +40,7 @@ func TestReadingPlainConfig(t *testing.T) {
 	os.Setenv("STRING_VALUE", expected.StringValue)
 	os.Setenv("SLICE_VALUE", strings.Join(expected.SliceValue, ","))
 
-	assert.NoError(t, ReadFromEnv(&config))
+	assert.NoError(t, ReadFromEnv(&config, ""))
 	assert.True(t, reflect.DeepEqual(config, expected))
 	os.Clearenv()
 }
@@ -78,7 +78,7 @@ func TestReadingConfigComposition(t *testing.T) {
 
 	setToEnv(expected, "")
 
-	assert.NoError(t, ReadFromEnv(config))
+	assert.NoError(t, ReadFromEnv(config, ""))
 	assert.True(t, reflect.DeepEqual(config, expected))
 	os.Clearenv()
 }
@@ -103,7 +103,7 @@ func TestReadingManyNestedLayers(t *testing.T) {
 	setToEnv(expected.NestedA, "A_")
 	setToEnv(expected.NestedB, "B_")
 
-	assert.NoError(t, ReadFromEnv(&config))
+	assert.NoError(t, ReadFromEnv(&config, ""))
 	assert.True(t, reflect.DeepEqual(config, expected))
 	os.Clearenv()
 }
@@ -115,7 +115,7 @@ func TestUntaggedField(t *testing.T) {
 		Untagged: "123",
 	}
 
-	assert.NoError(t, ReadFromEnv(&config))
+	assert.NoError(t, ReadFromEnv(&config, ""))
 	assert.Equal(t, config.Untagged, "123")
 }
 
@@ -123,6 +123,6 @@ func TestWrongTypes(t *testing.T) {
 	config := struct{}{}
 	var i int
 
-	assert.Error(t, ReadFromEnv(config))
-	assert.Error(t, ReadFromEnv(&i))
+	assert.Error(t, ReadFromEnv(config, ""))
+	assert.Error(t, ReadFromEnv(&i, ""))
 }
