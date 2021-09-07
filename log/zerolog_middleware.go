@@ -6,9 +6,46 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bldsoft/gost/utils"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	//"github.com/rs/zerolog"
 )
+
+var LoggerCtxKey = &utils.ContextKey{Name: "Logger"}
+
+// WithLogEntry sets the in-context ServiceLogger for a request.
+func WithLogger(r *http.Request, logger *ServiceLogger) *http.Request {
+	r = r.WithContext(context.WithValue(r.Context(), LoggerCtxKey, logger))
+	return r
+}
+
+//FromContext extracts Logger from context if exists or return global Logger
+func FromContext(ctx context.Context) *ServiceLogger {
+	if ctx != nil {
+		if logger, ok := ctx.Value(LoggerCtxKey).(*ServiceLogger); ok {
+			return logger
+		}
+	}
+	return &Logger
+}
+
+// logger is a middleware that injects a Logger into the context
+func logger(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		reqID := middleware.GetReqID(r.Context())
+
+		logFields := Fields{"req_id": reqID}
+
+		logger := Logger.WithFields(logFields)
+		next.ServeHTTP(w, WithLogger(r, &logger))
+	}
+	return http.HandlerFunc(fn)
+}
+
+func NewRequestLogger(f middleware.LogFormatter) func(next http.Handler) http.Handler {
+	return chi.Chain(logger, middleware.RequestLogger(f)).Handler
+}
 
 type StructuredLogger struct{}
 
@@ -16,18 +53,17 @@ func newLogger() *StructuredLogger {
 	return &StructuredLogger{}
 }
 
-func NewRequestLogger() func(next http.Handler) http.Handler {
-	return middleware.RequestLogger(newLogger())
+func DefaultRequestLogger() func(next http.Handler) http.Handler {
+	return NewRequestLogger(newLogger())
 }
 
 func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
-	reqID := middleware.GetReqID(r.Context())
-
-	logFields := Fields{"req_id": reqID}
 
 	entry := &ContextLoggerEntry{
-		Logger: Logger.WithFields(logFields),
+		Logger: FromContext(r.Context()),
 	}
+
+	logFields := Fields{}
 	scheme := "http"
 	if r.TLS != nil {
 		scheme = "https"
@@ -48,7 +84,7 @@ func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
 
 type ContextLoggerEntry struct {
 	//Logger *zerolog.Event
-	Logger ServiceLogger
+	Logger *ServiceLogger
 }
 
 func (l *ContextLoggerEntry) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
@@ -71,9 +107,10 @@ func (l *ContextLoggerEntry) Write(status, bytes int, header http.Header, elapse
 }
 
 func (l *ContextLoggerEntry) Panic(v interface{}, stack []byte) {
-	l.Logger = l.Logger.WithFields(Fields{
+	logger := l.Logger.WithFields(Fields{
 		"panic": fmt.Sprintf("%+v", v),
 	})
+	l.Logger = &logger
 	l.Logger.Error(string(stack))
 }
 
@@ -81,14 +118,4 @@ func (l *ContextLoggerEntry) Panic(v interface{}, stack []byte) {
 func GetRequestLogEntry(r *http.Request) *ContextLoggerEntry {
 	entry, _ := middleware.GetLogEntry(r).(*ContextLoggerEntry)
 	return entry
-}
-
-//FromContext extracts Logger from context if exists or return global Logger
-func FromContext(ctx context.Context) *ServiceLogger {
-	if ctx != nil {
-		if entry, ok := ctx.Value(middleware.LogEntryCtxKey).(*ContextLoggerEntry); ok {
-			return &entry.Logger
-		}
-	}
-	return &Logger
 }
