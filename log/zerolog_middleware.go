@@ -77,7 +77,7 @@ func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
 	/*if log.Trace().Enabled() {
 		logFields["body"] =
 	}*/
-	Logger.InfoWithFields(logFields, "REQUEST")
+	entry.Logger.InfoWithFields(logFields, "REQUEST")
 
 	return entry
 }
