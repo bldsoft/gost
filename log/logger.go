@@ -1,6 +1,7 @@
 package log
 
 import (
+	"github.com/bldsoft/gost/utils"
 	"github.com/rs/zerolog"
 )
 
@@ -239,4 +240,10 @@ func (l *ServiceLogger) LogWithFields(fields Fields, msg string) {
 // PanicfWithFields logs a message at level Panic on the default logger.
 func (l *ServiceLogger) LogfWithFields(fields Fields, format string, v ...interface{}) {
 	l.logger.Log().Fields(fields).Msgf(format, v...)
+}
+
+// WithFuncDuration runs f and returns logger with field with its execution time
+func (l *ServiceLogger) WithFuncDuration(f func()) ServiceLogger {
+	d := utils.TimeTrack(f)
+	return l.WithFields(Fields{"time_ms": d})
 }
