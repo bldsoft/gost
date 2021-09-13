@@ -7,6 +7,8 @@ import (
 
 type ServiceLogger struct {
 	logger zerolog.Logger
+
+	LogFuncDuration bool
 }
 
 //Fields struct
@@ -14,7 +16,7 @@ type Fields map[string]interface{}
 
 //WithFields creates a new logger with given fields
 func (l *ServiceLogger) WithFields(fields Fields) ServiceLogger {
-	return ServiceLogger{logger: l.logger.With().Fields(fields).Logger()}
+	return ServiceLogger{logger: l.logger.With().Fields(fields).Logger(), LogFuncDuration: l.LogFuncDuration}
 }
 
 func (l *ServiceLogger) WithPanic(fields Fields) ServiceLogger {
@@ -246,4 +248,13 @@ func (l *ServiceLogger) LogfWithFields(fields Fields, format string, v ...interf
 func (l *ServiceLogger) WithFuncDuration(f func()) ServiceLogger {
 	d := utils.TimeTrack(f)
 	return l.WithFields(Fields{"time_ms": d})
+}
+
+// WithOptFuncDuration is same as WithFuncDuration if ServiceLogger.LogFuncFuration is true, and returns a copy of the current logger otherwise
+func (l *ServiceLogger) WithOptFuncDuration(f func()) ServiceLogger {
+	if l.LogFuncDuration {
+		return l.WithFuncDuration(f)
+	}
+	f()
+	return *l
 }
