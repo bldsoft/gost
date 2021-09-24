@@ -15,17 +15,17 @@ type ServiceLogger struct {
 type Fields map[string]interface{}
 
 //WithFields creates a new logger with given fields
-func (l *ServiceLogger) WithFields(fields Fields) ServiceLogger {
-	return ServiceLogger{logger: l.logger.With().Fields(fields).Logger(), LogFuncDuration: l.LogFuncDuration}
+func (l *ServiceLogger) WithFields(fields Fields) *ServiceLogger {
+	return &ServiceLogger{logger: l.logger.With().Fields(fields).Logger(), LogFuncDuration: l.LogFuncDuration}
 }
 
-func (l *ServiceLogger) WithPanic(fields Fields) ServiceLogger {
-	return ServiceLogger{logger: l.logger.Level(zerolog.PanicLevel).With().Fields(fields).Logger()}
+func (l *ServiceLogger) WithPanic(fields Fields) *ServiceLogger {
+	return &ServiceLogger{logger: l.logger.Level(zerolog.PanicLevel).With().Fields(fields).Logger(), LogFuncDuration: l.LogFuncDuration}
 }
 
 //WithFields creates a new logger with given fields
-func (l *ServiceLogger) WithLevel(lvl zerolog.Level) ServiceLogger {
-	return ServiceLogger{logger: l.logger.Level(lvl)}
+func (l *ServiceLogger) WithLevel(lvl zerolog.Level) *ServiceLogger {
+	return &ServiceLogger{logger: l.logger.Level(lvl), LogFuncDuration: l.LogFuncDuration}
 }
 
 // Trace logs a message at level Trace on the default logger.
@@ -245,16 +245,16 @@ func (l *ServiceLogger) LogfWithFields(fields Fields, format string, v ...interf
 }
 
 // WithFuncDuration runs f and returns logger with field with its execution time
-func (l *ServiceLogger) WithFuncDuration(f func()) ServiceLogger {
+func (l *ServiceLogger) WithFuncDuration(f func()) *ServiceLogger {
 	d := utils.TimeTrack(f)
 	return l.WithFields(Fields{"time_ms": d})
 }
 
-// WithOptFuncDuration is same as WithFuncDuration if ServiceLogger.LogFuncFuration is true, and returns a copy of the current logger otherwise
-func (l *ServiceLogger) WithOptFuncDuration(f func()) ServiceLogger {
+// WithOptFuncDuration is same as WithFuncDuration if ServiceLogger.LogFuncFuration is true, and returns the current logger otherwise
+func (l *ServiceLogger) WithOptFuncDuration(f func()) *ServiceLogger {
 	if l.LogFuncDuration {
 		return l.WithFuncDuration(f)
 	}
 	f()
-	return *l
+	return l
 }

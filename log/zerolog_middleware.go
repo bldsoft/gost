@@ -38,7 +38,7 @@ func logger(next http.Handler) http.Handler {
 		logFields := Fields{"req_id": reqID}
 
 		logger := Logger.WithFields(logFields)
-		next.ServeHTTP(w, WithLogger(r, &logger))
+		next.ServeHTTP(w, WithLogger(r, logger))
 	}
 	return http.HandlerFunc(fn)
 }
@@ -107,10 +107,9 @@ func (l *ContextLoggerEntry) Write(status, bytes int, header http.Header, elapse
 }
 
 func (l *ContextLoggerEntry) Panic(v interface{}, stack []byte) {
-	logger := l.Logger.WithFields(Fields{
+	l.Logger = l.Logger.WithFields(Fields{
 		"panic": fmt.Sprintf("%+v", v),
 	})
-	l.Logger = &logger
 	l.Logger.Error(string(stack))
 }
 
