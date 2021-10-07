@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -25,8 +24,7 @@ func defaultMiddlewares() chi.Middlewares {
 
 type IMicroservice interface {
 	BuildRoutes(chi.Router)
-	Start() error
-	Stop(ctx context.Context) error
+	GetAsyncRunners() []AsyncRunner
 }
 
 type Server struct {
@@ -34,6 +32,7 @@ type Server struct {
 	router            *chi.Mux
 	microservices     []IMicroservice
 	commonMiddlewares chi.Middlewares
+	runnerManager     *AsyncRunnerManager
 }
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
@@ -42,7 +41,8 @@ func NewServer(config Config, microservices ...IMicroservice) *Server {
 		Handler: nil},
 		router:            chi.NewRouter(),
 		microservices:     microservices,
-		commonMiddlewares: defaultMiddlewares()}
+		commonMiddlewares: defaultMiddlewares(),
+		runnerManager:     NewRunnerManager()}
 	return &srv
 }
 
@@ -57,6 +57,10 @@ func (s *Server) SetMiddlewares(middlewares ...func(http.Handler) http.Handler) 
 }
 
 func (s *Server) init() {
+	for _, microservice := range s.microservices {
+		s.runnerManager.Append(microservice.GetAsyncRunners()...)
+	}
+
 	s.router.Use(s.commonMiddlewares...)
 
 	s.router.Mount("/debug", middleware.Profiler())
@@ -73,54 +77,39 @@ func (s *Server) init() {
 func (s *Server) Start() {
 	s.init()
 
-	for _, m := range s.microservices {
-		if err := m.Start(); err != nil {
-			log.FatalWithFields(log.Fields{"microservice": m, "err": err}, "Failed to start microservice")
-		}
-	}
-
 	go func() {
+		s.runnerManager.Start()
 		log.Infof("Server started. Listening on %s\n", s.srv.Addr)
 		if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatal(err.Error())
+			log.Error(err.Error())
 		}
 	}()
 	s.gracefulShutdown()
 }
 
-func (s *Server) stop() {
-	ctxShutDown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := s.srv.Shutdown(ctxShutDown); err != nil {
-		log.Fatalf("Server shutdown failed:%+s", err)
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(len(s.microservices))
-	for _, m := range s.microservices {
-		go func(m IMicroservice) {
-			defer wg.Done()
-			if err := m.Stop(ctxShutDown); err != nil {
-				log.ErrorWithFields(log.Fields{"microservice": m, "err": err}, "Failed to stop microservice")
-			}
-		}(m)
-	}
-	wg.Wait()
-}
-
 func (s *Server) gracefulShutdown() {
-	stopped := make(chan struct{})
-	go func() {
-		sigint := make(chan os.Signal, 1)
+	ctx, stop := signal.NotifyContext(context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+	defer stop()
 
-		signal.Notify(sigint, os.Interrupt)
-		signal.Notify(sigint, syscall.SIGTERM)
+	<-ctx.Done()
 
-		<-sigint
+	timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-		s.stop()
-		close(stopped)
-	}()
-	<-stopped
-	log.Info("Server gracefully stopped")
+	errors := make([]error, 0, len(s.runnerManager.runners)+1)
+	if err := s.srv.Shutdown(timeout); err != nil {
+		errors = append(errors, err)
+	}
+	for err := range s.runnerManager.Stop(timeout) {
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		log.ErrorfWithErrs(errors, "Failed to shut down server gracefully")
+	} else {
+		log.Info("Server gracefully stopped")
+	}
 }
