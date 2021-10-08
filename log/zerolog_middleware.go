@@ -112,9 +112,3 @@ func (l *ContextLoggerEntry) Panic(v interface{}, stack []byte) {
 	})
 	l.Logger.Error(string(stack))
 }
-
-//GetRequestLogEntry extracts log entry from request's context
-func GetRequestLogEntry(r *http.Request) *ContextLoggerEntry {
-	entry, _ := middleware.GetLogEntry(r).(*ContextLoggerEntry)
-	return entry
-}
