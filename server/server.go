@@ -41,9 +41,14 @@ func NewServer(config Config, microservices ...IMicroservice) *Server {
 		Handler: nil},
 		router:            chi.NewRouter(),
 		microservices:     microservices,
-		commonMiddlewares: defaultMiddlewares(),
+		commonMiddlewares: nil,
 		runnerManager:     NewRunnerManager()}
 	return &srv
+}
+
+func (s *Server) UseDefaultMiddlewares() *Server {
+	s.commonMiddlewares = defaultMiddlewares()
+	return s
 }
 
 func (s *Server) AppendMiddlewares(middlewares ...func(http.Handler) http.Handler) *Server {
