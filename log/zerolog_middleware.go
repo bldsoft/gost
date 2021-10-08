@@ -47,17 +47,17 @@ func NewRequestLogger(f middleware.LogFormatter) func(next http.Handler) http.Ha
 	return chi.Chain(logger, middleware.RequestLogger(f)).Handler
 }
 
-type StructuredLogger struct{}
+type DefaultFormatter struct{}
 
-func newLogger() *StructuredLogger {
-	return &StructuredLogger{}
+func NewDefaultFormatter() *DefaultFormatter {
+	return &DefaultFormatter{}
 }
 
 func DefaultRequestLogger() func(next http.Handler) http.Handler {
-	return NewRequestLogger(newLogger())
+	return NewRequestLogger(NewDefaultFormatter())
 }
 
-func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
+func (l *DefaultFormatter) NewLogEntry(r *http.Request) middleware.LogEntry {
 
 	entry := &ContextLoggerEntry{
 		Logger: FromContext(r.Context()),
