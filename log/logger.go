@@ -184,6 +184,11 @@ func (l *ServiceLogger) ErrorfWithFields(fields Fields, format string, v ...inte
 	l.logger.Error().Fields(fields).Msgf(format, v...)
 }
 
+// ErrorfWithErrs logs a message at level Error on the default logger.
+func (l *ServiceLogger) ErrorfWithErrs(errs []error, format string, v ...interface{}) {
+	l.logger.Error().Errs("errors", errs).Msgf(format, v...)
+}
+
 // Fatal logs a message at level Fatal on the default logger.
 func (l *ServiceLogger) Fatal(msg string) {
 	l.logger.Fatal().Msg(msg)

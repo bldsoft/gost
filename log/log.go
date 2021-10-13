@@ -242,6 +242,11 @@ func ErrorWithFields(fields Fields, msg string) {
 	Logger.ErrorWithFields(fields, msg)
 }
 
+// ErrorWithFields logs a message at level Error on the default logger.
+func ErrorfWithErrs(errs []error, format string, v ...interface{}) {
+	Logger.ErrorfWithErrs(errs, format, v...)
+}
+
 // ErrorfWithFields logs a message at level Error on the default logger.
 func ErrorfWithFields(fields Fields, format string, v ...interface{}) {
 	Logger.ErrorfWithFields(fields, format, v...)
