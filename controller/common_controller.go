@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -9,6 +10,11 @@ type version struct {
 } //@name Version
 
 var Version string
+var Commit string
+
+func ProgramVersion() string {
+	return fmt.Sprintf("%s-%s", Version, Commit)
+}
 
 type CommonController struct {
 	BaseController
@@ -27,7 +33,7 @@ func NewCommonController() *CommonController {
 // @Success 200 {object} controller.version
 // @Router /version [get]
 func (c *CommonController) GetVersionHandler(w http.ResponseWriter, r *http.Request) {
-	c.ResponseJson(w, r, version{Version})
+	c.ResponseJson(w, r, version{ProgramVersion()})
 }
 
 // @Summary ping request
