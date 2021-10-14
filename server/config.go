@@ -3,6 +3,7 @@ package server
 import "fmt"
 
 type Config struct {
+	Name string `mapstructure:"SERVICE_NAME"`
 	Host string `mapstructure:"SERVICE_HOST"`
 	Port int    `mapstructure:"SERVICE_PORT"`
 }
@@ -13,6 +14,7 @@ func (c *Config) ServiceAddress() string {
 
 // SetDefaults ...
 func (c *Config) SetDefaults() {
+	c.Name = "default_name"
 	c.Host = "0.0.0.0"
 	c.Port = 3000
 }
