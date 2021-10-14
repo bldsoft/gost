@@ -32,7 +32,7 @@ type Server struct {
 	router            *chi.Mux
 	microservices     []IMicroservice
 	commonMiddlewares chi.Middlewares
-	runnerManager     *AsyncRunnerManager
+	runnerManager     *AsyncJobManager
 }
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {

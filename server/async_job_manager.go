@@ -14,19 +14,19 @@ type AsyncRunner interface {
 	Stop(ctx context.Context) error
 }
 
-type AsyncRunnerManager struct {
+type AsyncJobManager struct {
 	runners []AsyncRunner
 }
 
-func NewRunnerManager(runners ...AsyncRunner) *AsyncRunnerManager {
-	return &AsyncRunnerManager{runners}
+func NewRunnerManager(runners ...AsyncRunner) *AsyncJobManager {
+	return &AsyncJobManager{runners}
 }
 
-func (m *AsyncRunnerManager) Append(runners ...AsyncRunner) {
+func (m *AsyncJobManager) Append(runners ...AsyncRunner) {
 	m.runners = append(m.runners, runners...)
 }
 
-func (m *AsyncRunnerManager) Start() {
+func (m *AsyncJobManager) Start() {
 	for _, runner := range m.runners {
 		go func(r AsyncRunner) {
 			log.DebugOrErrorf(r.Run(), "%s Run ended ", getType(r))
@@ -42,7 +42,7 @@ func getType(myvar interface{}) string {
 	}
 }
 
-func (m *AsyncRunnerManager) Stop(ctx context.Context) chan error {
+func (m *AsyncJobManager) Stop(ctx context.Context) chan error {
 	errC := make(chan error)
 	go func() {
 		defer close(errC)
