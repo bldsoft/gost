@@ -43,7 +43,7 @@ func NewServer(config Config, microservices ...IMicroservice) *Server {
 		router:            chi.NewRouter(),
 		microservices:     microservices,
 		commonMiddlewares: nil,
-		runnerManager:     NewRunnerManager()}
+		runnerManager:     NewAsyncJobManager()}
 	middleware.DefaultLogger = middleware.RequestLogger(log.NewDefaultFormatter())
 	return &srv
 }

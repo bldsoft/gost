@@ -13,7 +13,7 @@ type AsyncJobManager struct {
 	jobGroup AsyncJobGroup
 }
 
-func NewRunnerManager(runners ...AsyncRunner) *AsyncJobManager {
+func NewAsyncJobManager(runners ...AsyncRunner) *AsyncJobManager {
 	return &AsyncJobManager{AsyncJobGroup{runners}}
 }
 
