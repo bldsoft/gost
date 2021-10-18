@@ -69,7 +69,7 @@ func (m *AsyncJobGroup) runParallel(f func(r AsyncRunner) error) error {
 func (m *AsyncJobGroup) Run() error {
 	return m.runParallel(func(r AsyncRunner) error {
 		err := r.Run()
-		log.DebugOrErrorf(err, "%s Run ended ", getType(r))
+		log.DebugOrErrorf(err, "%s job ended ", getType(r))
 		return err
 	})
 }
