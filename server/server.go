@@ -11,6 +11,7 @@ import (
 	"github.com/bldsoft/gost/log"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/hashicorp/go-multierror"
 )
 
 func defaultMiddlewares() chi.Middlewares {
@@ -83,9 +84,9 @@ func (s *Server) init() {
 func (s *Server) Start() {
 	s.init()
 
+	go s.runnerManager.Start()
 	go func() {
-		s.runnerManager.Start()
-		log.Infof("Server started. Listening on %s\n", s.srv.Addr)
+		log.Infof("Server started. Listening on %s", s.srv.Addr)
 		if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
 			log.Error(err.Error())
 		}
@@ -105,16 +106,23 @@ func (s *Server) gracefulShutdown() {
 	timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	errors := make([]error, 0, len(s.runnerManager.runners)+1)
+	errors := make([]error, 0)
 	if err := s.srv.Shutdown(timeout); err != nil {
 		errors = append(errors, err)
 	}
-	for err := range s.runnerManager.Stop(timeout) {
-		errors = append(errors, err)
+	if err := s.runnerManager.Stop(timeout); err != nil {
+		if merr, ok := err.(*multierror.Error); ok {
+			errors = append(errors, merr.Errors...)
+		} else {
+			errors = append(errors, err)
+		}
 	}
 
 	if len(errors) > 0 {
-		log.ErrorfWithErrs(errors, "Failed to shut down server gracefully")
+		log.Errorf("Failed to shut down server gracefully")
+		for _, err := range errors {
+			log.Errorf("%v", err)
+		}
 	} else {
 		log.Info("Server gracefully stopped")
 	}

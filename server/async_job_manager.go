@@ -2,11 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
-	"reflect"
-	"sync"
-
-	"github.com/bldsoft/gost/log"
 )
 
 type AsyncRunner interface {
@@ -15,49 +10,21 @@ type AsyncRunner interface {
 }
 
 type AsyncJobManager struct {
-	runners []AsyncRunner
+	jobGroup AsyncJobGroup
 }
 
 func NewRunnerManager(runners ...AsyncRunner) *AsyncJobManager {
-	return &AsyncJobManager{runners}
+	return &AsyncJobManager{AsyncJobGroup{runners}}
 }
 
 func (m *AsyncJobManager) Append(runners ...AsyncRunner) {
-	m.runners = append(m.runners, runners...)
+	m.jobGroup.Append(runners...)
 }
 
 func (m *AsyncJobManager) Start() {
-	for _, runner := range m.runners {
-		go func(r AsyncRunner) {
-			log.DebugOrErrorf(r.Run(), "%s Run ended ", getType(r))
-		}(runner)
-	}
+	m.jobGroup.Run()
 }
 
-func getType(myvar interface{}) string {
-	if t := reflect.TypeOf(myvar); t.Kind() == reflect.Ptr {
-		return t.Elem().Name()
-	} else {
-		return t.Name()
-	}
-}
-
-func (m *AsyncJobManager) Stop(ctx context.Context) chan error {
-	errC := make(chan error)
-	go func() {
-		defer close(errC)
-		var wg sync.WaitGroup
-		wg.Add(len(m.runners))
-		for _, runner := range m.runners {
-			go func(r AsyncRunner) {
-				if err := r.Stop(ctx); err != nil {
-					errC <- fmt.Errorf("%s: %w", getType(r), err)
-				}
-				wg.Done()
-			}(runner)
-		}
-		wg.Wait()
-	}()
-
-	return errC
+func (m *AsyncJobManager) Stop(ctx context.Context) error {
+	return m.jobGroup.Stop(ctx)
 }
