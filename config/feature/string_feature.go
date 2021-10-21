@@ -16,13 +16,6 @@ type String struct {
 	onchangeHandlers []onStringChangeHandler
 }
 
-// NewFeature creates new Feature
-func NewString(id IdType, value string, validator func(string) error, handlers ...onStringChangeHandler) *String {
-	feature := &String{ID: id, value: value, validator: validator, onchangeHandlers: handlers}
-	Features.features[id] = feature
-	return feature
-}
-
 func (f *String) GetID() IdType {
 	return f.ID
 }

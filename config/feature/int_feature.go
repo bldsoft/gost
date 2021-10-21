@@ -20,13 +20,6 @@ type Int struct {
 	onchangeHandlers []onIntChangeHandler
 }
 
-// NewFeature creates new Feature
-func NewInt(id IdType, value int, validator intValidator, handlers ...onIntChangeHandler) *Int {
-	feature := &Int{ID: id, value: value, validator: validator, onchangeHandlers: handlers}
-	Features.features[id] = feature
-	return feature
-}
-
 func (f *Int) GetID() IdType {
 	return f.ID
 }

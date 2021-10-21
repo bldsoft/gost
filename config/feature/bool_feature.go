@@ -19,13 +19,6 @@ type Bool struct {
 	onchangeHandlers []onBoolChangeHandler
 }
 
-// NewFeature creates new Feature
-func NewBool(id IdType, value bool, validator boolValidator, handlers ...onBoolChangeHandler) *Bool {
-	feature := &Bool{ID: id, value: value, validator: validator, onchangeHandlers: handlers}
-	Features.features[id] = feature
-	return feature
-}
-
 func (f *Bool) GetID() IdType {
 	return f.ID
 }
@@ -36,7 +29,7 @@ func (f *Bool) onChange(newValue bool) {
 	}
 }
 
-// AddOnChangeHandler adds handler for changing feature
+// AddOnChangeHandler adds a handler for changing feature
 func (f *Bool) AddOnChangeHandler(handler onBoolChangeHandler) {
 	f.onchangeHandlers = append(f.onchangeHandlers, handler)
 }
