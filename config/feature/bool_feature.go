@@ -1,6 +1,7 @@
 package feature
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 )
@@ -83,4 +84,8 @@ func (f *Bool) validate(value bool) error {
 
 func (f *Bool) String() string {
 	return strconv.FormatBool(f.value)
+}
+
+func (f *Bool) MarshalJSON() ([]byte, error) {
+	return json.Marshal(f.value)
 }

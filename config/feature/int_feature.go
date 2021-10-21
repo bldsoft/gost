@@ -1,6 +1,7 @@
 package feature
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -91,4 +92,8 @@ func ValidateUint(v int) error {
 		return errors.New("Negative")
 	}
 	return nil
+}
+
+func (f *Int) MarshalJSON() ([]byte, error) {
+	return json.Marshal(f.value)
 }

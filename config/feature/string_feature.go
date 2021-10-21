@@ -1,6 +1,7 @@
 package feature
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -72,4 +73,8 @@ func (f *String) validate(value string) error {
 
 func (f *String) String() string {
 	return f.value
+}
+
+func (f *String) MarshalJSON() ([]byte, error) {
+	return json.Marshal(f.value)
 }
