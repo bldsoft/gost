@@ -1,29 +1,27 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 )
 
-type Version struct {
+type version struct {
 	Version string `json:"version"`
-}
+} //@name Version
 
-var version string
+var Version string
+var Commit string
+
+func ProgramVersion() string {
+	return fmt.Sprintf("%s-%s", Version, Commit)
+}
 
 type CommonController struct {
 	BaseController
-	Version Version
 }
 
 func NewCommonController() *CommonController {
-	v := Version{Version: version}
-	return &CommonController{Version: v}
-}
-
-func (c *CommonController) GetVersionHandler(version interface{}) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		c.ResponseJson(w, r, version)
-	}
+	return &CommonController{}
 }
 
 // GetDefaultVersionHandler reponses with a service version.
@@ -32,10 +30,10 @@ func (c *CommonController) GetVersionHandler(version interface{}) func(http.Resp
 // @Summary get service version
 // @Tags public
 // @Produce json
-// @Success 200 {object} controller.Version
+// @Success 200 {object} controller.version
 // @Router /version [get]
-func (c *CommonController) GetDefaultVersionHandler() func(http.ResponseWriter, *http.Request) {
-	return c.GetVersionHandler(c.Version)
+func (c *CommonController) GetVersionHandler(w http.ResponseWriter, r *http.Request) {
+	c.ResponseJson(w, r, version{ProgramVersion()})
 }
 
 // @Summary ping request
