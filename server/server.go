@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+var DefaultLogger func(next http.Handler) http.Handler
+
 func defaultMiddlewares() chi.Middlewares {
 	return chi.Middlewares{
 		middleware.RequestID,
@@ -44,7 +46,7 @@ func NewServer(config Config, microservices ...IMicroservice) *Server {
 		microservices:     microservices,
 		commonMiddlewares: nil,
 		runnerManager:     NewAsyncJobManager()}
-	middleware.DefaultLogger = middleware.RequestLogger(log.NewDefaultFormatter())
+	middleware.DefaultLogger = DefaultLogger
 	return &srv
 }
 
