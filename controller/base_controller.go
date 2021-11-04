@@ -11,8 +11,11 @@ import (
 type BaseController struct {
 }
 
-func (c BaseController) ResponseError(w http.ResponseWriter, error string, code int) {
-	http.Error(w, error, code)
+func (c BaseController) ResponseError(w http.ResponseWriter, err string, code int) {
+	if errWriter, ok := log.AsResponseWriterLogErr(w); ok {
+		errWriter.WriteRequestInfoErr(err)
+	}
+	http.Error(w, err, code)
 }
 
 func (c BaseController) ResponseOK(w http.ResponseWriter) {

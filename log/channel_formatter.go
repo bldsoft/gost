@@ -1,6 +1,7 @@
 package log
 
 import (
+	"bytes"
 	"net/http"
 	"time"
 
@@ -34,11 +35,12 @@ func (f *ChannelFormatter) NewLogEntry(r *http.Request) middleware.LogEntry {
 		requestInfo.Size = uint32(r.ContentLength)
 	}
 
-	return &ContextChanLoggerEntry{requestCh: f.requestC, requestInfo: requestInfo}
+	return &ContextChanLoggerEntry{requestCh: f.requestC, errBuf: LogRequestErrBufferFromContext(r.Context()), requestInfo: requestInfo}
 }
 
 type ContextChanLoggerEntry struct {
 	requestInfo *RequestInfo
+	errBuf      *bytes.Buffer
 	requestCh   chan<- *RequestInfo
 }
 
@@ -51,6 +53,10 @@ func (l *ContextChanLoggerEntry) Write(status, bytes int, header http.Header, el
 			l.requestInfo.Size = uint32(bytes)
 		}
 		l.requestInfo.HandleTime = uint32(duration)
+
+		if l.errBuf != nil {
+			l.requestInfo.Error = l.errBuf.String()
+		}
 
 		l.writeInfoToChannel()
 	}
