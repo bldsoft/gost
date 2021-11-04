@@ -12,8 +12,10 @@ type BaseController struct {
 }
 
 func (c BaseController) ResponseError(w http.ResponseWriter, err string, code int) {
-	if errWriter, ok := log.AsResponseWriterLogErr(w); ok {
-		errWriter.WriteRequestInfoErr(err)
+	if code >= 500 {
+		if errWriter, ok := log.AsResponseWriterLogErr(w); ok {
+			errWriter.WriteRequestInfoErr(err)
+		}
 	}
 	http.Error(w, err, code)
 }
