@@ -44,7 +44,7 @@ func logger(next http.Handler) http.Handler {
 }
 
 func NewRequestLogger(f middleware.LogFormatter) func(next http.Handler) http.Handler {
-	return chi.Chain(logger, middleware.RequestLogger(f)).Handler
+	return chi.Chain(logger, WithLogRequestErrBuffer, middleware.RequestLogger(f)).Handler
 }
 
 type DefaultFormatter struct{}
