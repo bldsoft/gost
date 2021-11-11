@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-var DefaultLogger func(next http.Handler) http.Handler = middleware.DefaultLogger
+var DefaultLogger func(next http.Handler) http.Handler = log.DefaultRequestLogger()
 
 func defaultMiddlewares() chi.Middlewares {
 	return chi.Middlewares{
