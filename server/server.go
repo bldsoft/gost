@@ -65,6 +65,11 @@ func (s *Server) SetMiddlewares(middlewares ...func(http.Handler) http.Handler) 
 	return s
 }
 
+func (s *Server) AddAsyncRunners(runners ...AsyncRunner) *Server {
+	s.runnerManager.Append(runners...)
+	return s
+}
+
 func (s *Server) init() {
 	for _, microservice := range s.microservices {
 		s.runnerManager.Append(microservice.GetAsyncRunners()...)
