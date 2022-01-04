@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chi/chi/v5 v5.0.3
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mattn/go-colorable v0.0.9
 	github.com/rs/zerolog v1.20.0
 	github.com/spf13/viper v1.7.1
