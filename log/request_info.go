@@ -11,6 +11,7 @@ const (
 	PUT
 	DELETE
 	OPTIONS
+	HEAD
 
 	ERROR
 )
@@ -45,6 +46,8 @@ func GetRequestMethodType(type_str string) RequestMethodType {
 		return DELETE
 	case "OPTIONS":
 		return OPTIONS
+	case "HEAD":
+		return HEAD
 	default:
 		return ERROR
 	}
