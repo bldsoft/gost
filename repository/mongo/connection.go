@@ -58,7 +58,7 @@ func (db *MongoDb) Connect() {
 	if err != nil {
 		log.FatalWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB connection failed")
 	}
-	db.Db = db.Client.Database(db.config.DBName)
+	db.Db = db.Client.Database(db.config.DbName)
 
 	// Check the connection
 	err = db.Client.Ping(ctx, nil)

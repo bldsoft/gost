@@ -6,13 +6,13 @@ import (
 
 type Config struct {
 	Server config.ConnectionString `mapstructure:"DATABASE_SERVER"`
-	DBName string                  `mapstructure:"DATABASE_DBNAME"`
+	DbName string                  `mapstructure:"DATABASE_DBNAME"`
 }
 
 // SetDefaults ...
 func (c *Config) SetDefaults() {
 	c.Server = "mongodb://localhost:27017"
-	c.DBName = "test"
+	c.DbName = "test"
 }
 
 // Validate ...
