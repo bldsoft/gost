@@ -1,4 +1,4 @@
-package repository
+package storage
 
 import "github.com/bldsoft/gost/log"
 

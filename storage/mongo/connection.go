@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/bldsoft/gost/log"
-	"github.com/bldsoft/gost/repository"
+	"github.com/bldsoft/gost/storage"
 	"github.com/golang-migrate/migrate/v4"
 	mm "github.com/golang-migrate/migrate/v4/database/mongodb"
 	"github.com/golang-migrate/migrate/v4/source"
@@ -136,7 +136,7 @@ func (db *MongoDb) runMigrations(dbname string) bool {
 	src, _ := source.Open("stub://")
 	src.(*stub.Stub).Migrations = db.migrations
 	m, err := migrate.NewWithInstance("", src, "", driver)
-	m.Log = repository.MigrateLogger{}
+	m.Log = storage.MigrateLogger{}
 
 	if err != nil {
 		log.ErrorWithFields(log.Fields{"error": err}, "Migrations: instance failed")
