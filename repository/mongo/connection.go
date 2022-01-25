@@ -12,6 +12,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	mm "github.com/golang-migrate/migrate/v4/database/mongodb"
 	"github.com/golang-migrate/migrate/v4/source"
+	"github.com/golang-migrate/migrate/v4/source/stub"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,21 +27,22 @@ type MongoDb struct {
 	onConnectHandlers []EventHandler
 	isReady           int32
 
-	doOnce       sync.Once
-	migrationSrc source.Driver
+	doOnce     sync.Once
+	migrations *source.Migrations
 }
 
 //NewMongoDbConnection creates new connection to mongo db
 func NewMongoDbConnection() *MongoDb {
-	return &MongoDb{}
+	return &MongoDb{migrations: source.NewMigrations()}
+}
+
+//AddMigration adds a migration. All migrations should be added before db.Connect
+func (db *MongoDb) AddMigration(version uint, migrationUp, migrationDown string) {
+	db.migrations.Append(&source.Migration{Version: version, Direction: source.Up, Identifier: migrationUp})
+	db.migrations.Append(&source.Migration{Version: version, Direction: source.Down, Identifier: migrationDown})
 }
 
 const timeout = 5 * time.Second
-
-//SetMigrationSrc should be called before Connect
-func (db *MongoDb) SetMigrationSrc(src source.Driver) {
-	db.migrationSrc = src
-}
 
 //InitDB initializes db connection
 func (db *MongoDb) Connect(server config.ConnectionString, database string) {
@@ -125,7 +127,9 @@ func (db *MongoDb) runMigrations(dbname string) bool {
 		return false
 	}
 
-	m, err := migrate.NewWithInstance("", db.migrationSrc, "", driver)
+	src, _ := source.Open("stub://")
+	src.(*stub.Stub).Migrations = db.migrations
+	m, err := migrate.NewWithInstance("", src, "", driver)
 	m.Log = repository.MigrateLogger{}
 
 	if err != nil {
