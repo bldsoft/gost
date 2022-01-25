@@ -32,8 +32,8 @@ type MongoDb struct {
 	migrations *source.Migrations
 }
 
-//NewMongoDbConnection creates new connection to mongo db
-func NewMongoDbConnection(config Config) *MongoDb {
+//NewMongoDb ...
+func NewMongoDb(config Config) *MongoDb {
 	return &MongoDb{config: config, migrations: source.NewMigrations()}
 }
 
@@ -45,7 +45,7 @@ func (db *MongoDb) AddMigration(version uint, migrationUp, migrationDown string)
 
 const timeout = 5 * time.Second
 
-//InitDB initializes db connection
+//Connect initializes db connection
 func (db *MongoDb) Connect() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
