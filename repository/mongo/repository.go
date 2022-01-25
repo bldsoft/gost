@@ -151,7 +151,7 @@ func (r *Repository) UpsertOne(ctx context.Context, filter interface{}, update i
 //Delete removes object by id
 func (r *Repository) Delete(ctx context.Context, e IEntityID, options ...*QueryOptions) error {
 	if options != nil {
-		if options[0].Archived == false {
+		if !options[0].Archived {
 			_, err := r.Collection().DeleteOne(ctx, bson.M{"_id": e.GetID()})
 			return err
 		}
@@ -173,8 +173,8 @@ func (r *Repository) fillTimeStamp(ctx context.Context, e IEntityID, fillCreateT
 			entityTimestamp.SetCreateFields(now, user.GetID())
 		} else {
 			projection := bson.D{
-				{BsonFieldNameCreateUserID, 1},
-				{BsonFieldNameCreateTime, 1},
+				{Key: BsonFieldNameCreateUserID, Value: 1},
+				{Key: BsonFieldNameCreateTime, Value: 1},
 			}
 
 			result := r.Collection().FindOne(ctx,
@@ -190,12 +190,12 @@ func (r *Repository) fillTimeStamp(ctx context.Context, e IEntityID, fillCreateT
 
 func (r *Repository) where(filter interface{}, options ...*QueryOptions) interface{} {
 	if options != nil {
-		switch filter.(type) {
+		switch filter := filter.(type) {
 		case bson.M:
 			var cond interface{}
 			var field string
 
-			if options[0].Archived == false {
+			if !options[0].Archived {
 				field = "$or"
 				cond = []interface{}{
 					bson.M{bsonFieldNameArchived: bson.M{"$exists": false}},
@@ -203,8 +203,8 @@ func (r *Repository) where(filter interface{}, options ...*QueryOptions) interfa
 				}
 			}
 
-			if _, ok := (filter.(bson.M))[field]; ok == false {
-				(filter.(bson.M))[field] = cond
+			if _, ok := filter[field]; !ok {
+				filter[field] = cond
 			}
 		default:
 		}
