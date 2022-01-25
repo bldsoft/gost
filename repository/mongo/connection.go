@@ -121,6 +121,11 @@ func (db *MongoDb) notifyConnect() {
 
 func (db *MongoDb) runMigrations(dbname string) bool {
 	log.Debug("Checking DB schema...")
+
+	if _, ok := db.migrations.First(); !ok {
+		return true
+	}
+
 	config := &mm.Config{DatabaseName: dbname}
 	driver, err := mm.WithInstance(db.Client, config)
 	if err != nil {
