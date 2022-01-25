@@ -6,7 +6,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
 	"github.com/golang-migrate/migrate/v4"
@@ -22,6 +21,8 @@ import (
 type EventHandler = func()
 
 type MongoDb struct {
+	config Config
+
 	Client            *mongo.Client
 	Db                *mongo.Database
 	onConnectHandlers []EventHandler
@@ -32,8 +33,8 @@ type MongoDb struct {
 }
 
 //NewMongoDbConnection creates new connection to mongo db
-func NewMongoDbConnection() *MongoDb {
-	return &MongoDb{migrations: source.NewMigrations()}
+func NewMongoDbConnection(config Config) *MongoDb {
+	return &MongoDb{config: config, migrations: source.NewMigrations()}
 }
 
 //AddMigration adds a migration. All migrations should be added before db.Connect
@@ -45,24 +46,24 @@ func (db *MongoDb) AddMigration(version uint, migrationUp, migrationDown string)
 const timeout = 5 * time.Second
 
 //InitDB initializes db connection
-func (db *MongoDb) Connect(server config.ConnectionString, database string) {
+func (db *MongoDb) Connect() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	// Set client options
 	monitor := &event.PoolMonitor{Event: db.poolEventMonitor}
-	clientOptions := options.Client().ApplyURI(server.String()).SetPoolMonitor(monitor).SetServerSelectionTimeout(5 * time.Second)
+	clientOptions := options.Client().ApplyURI(db.config.Server.String()).SetPoolMonitor(monitor).SetServerSelectionTimeout(5 * time.Second)
 	var err error
 	db.Client, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		log.FatalWithFields(log.Fields{"server": &server, "error": err}, "MongoDB connection failed")
+		log.FatalWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB connection failed")
 	}
-	db.Db = db.Client.Database(database)
+	db.Db = db.Client.Database(db.config.DBName)
 
 	// Check the connection
 	err = db.Client.Ping(ctx, nil)
 	if err != nil {
-		log.ErrorWithFields(log.Fields{"server": &server, "error": err}, "MongoDB ping failed")
+		log.ErrorWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB ping failed")
 	}
 }
 
