@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/bldsoft/gost/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,10 +15,6 @@ import (
 
 // UserEntryCtxKey is the context.Context key to store the user entry. It's used for setting UpdateUserID, CreateUserID fields
 var UserEntryCtxKey interface{} = "UserEntry"
-
-var (
-	ErrObjectNotFound = errors.New("Object not found")
-)
 
 type IEntityID interface {
 	SetIDFromString(string) error
@@ -50,7 +47,7 @@ func (r *Repository) Collection() *mongo.Collection {
 func (r *Repository) FindOne(ctx context.Context, filter interface{}, result interface{}, options ...*QueryOptions) error {
 	err := r.Collection().FindOne(ctx, r.where(filter, options...)).Decode(result)
 	if err != nil && err == mongo.ErrNoDocuments {
-		return ErrObjectNotFound
+		return utils.ErrObjectNotFound
 	}
 	return err
 }
@@ -86,7 +83,7 @@ func (r *Repository) Update(ctx context.Context, entity IEntityID, options ...*Q
 	r.fillTimeStamp(ctx, entity, false)
 	result, err := r.Collection().ReplaceOne(ctx, r.where(bson.M{"_id": entity.GetID()}, options...), entity)
 	if err == nil && result.MatchedCount == 0 {
-		return ErrObjectNotFound
+		return utils.ErrObjectNotFound
 	}
 	return err
 }
@@ -120,7 +117,7 @@ func (r *Repository) UpdateMany(ctx context.Context, entities interface{}) error
 func (r *Repository) UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*QueryOptions) error {
 	result, err := r.Collection().UpdateOne(ctx, r.where(filter, options...), update)
 	if err == nil && result.MatchedCount == 0 {
-		return ErrObjectNotFound
+		return utils.ErrObjectNotFound
 	}
 	return err
 }
@@ -131,7 +128,7 @@ func (r *Repository) UpdateAndGetByID(ctx context.Context, updateEntity IEntityI
 	res := r.Collection().FindOneAndUpdate(ctx, r.where(bson.M{"_id": updateEntity.GetID()}, queryOpt...), bson.M{"$set": updateEntity}, opt)
 	switch {
 	case res.Err() == mongo.ErrNoDocuments:
-		return ErrObjectNotFound
+		return utils.ErrObjectNotFound
 	case res.Err() != nil:
 		return res.Err()
 	default:
@@ -143,7 +140,7 @@ func (r *Repository) UpsertOne(ctx context.Context, filter interface{}, update i
 	opts := options.Update().SetUpsert(true)
 	result, err := r.Collection().UpdateOne(ctx, filter, update, opts)
 	if err == nil && result.MatchedCount+result.UpsertedCount == 0 {
-		return ErrObjectNotFound
+		return utils.ErrObjectNotFound
 	}
 	return err
 }
