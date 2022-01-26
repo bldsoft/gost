@@ -81,3 +81,9 @@ func (c *FeatureController) PatchFeatureHandler(w http.ResponseWriter, r *http.R
 		c.ResponseJson(w, r, f)
 	}
 }
+
+func (c *FeatureController) Mount(r chi.Router) {
+	r.Get("/", c.GetFeaturesHandler)
+	r.Get("/{id}", c.GetFeatureHandler)
+	r.Patch("/{id}", c.PatchFeatureHandler)
+}
