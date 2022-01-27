@@ -1,4 +1,4 @@
-package watcher
+package mongo
 
 import (
 	"context"

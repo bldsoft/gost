@@ -6,14 +6,13 @@ import (
 	"github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/entity"
 	"github.com/bldsoft/gost/log"
-	"github.com/bldsoft/gost/repository"
 )
 
 type FeatureService struct {
-	featureRep repository.IFeatureRepository
+	featureRep IFeatureRepository
 }
 
-func NewFeatureService(featureRep repository.IFeatureRepository) *FeatureService {
+func NewFeatureService(featureRep IFeatureRepository) *FeatureService {
 	return &FeatureService{featureRep: featureRep}
 }
 

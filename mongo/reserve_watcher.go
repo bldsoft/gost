@@ -1,4 +1,4 @@
-package watcher
+package mongo
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/log"
-	gost "github.com/bldsoft/gost/storage/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -82,7 +81,7 @@ func (w *reserveWatcher) watch(ctx context.Context, collection *mongo.Collection
 
 func (w *reserveWatcher) watchCollection(collection *mongo.Collection, handler WatchHandler) {
 	ctx := context.TODO()
-	cursor, err := collection.Find(ctx, bson.M{gost.BsonFieldNameUpdateTime: bson.M{"$gte": w.lastCheck}})
+	cursor, err := collection.Find(ctx, bson.M{BsonFieldNameUpdateTime: bson.M{"$gte": w.lastCheck}})
 	if err != nil {
 		log.Errorf("%s reserve watcher falied to open cursor %s", collection.Name(), err.Error())
 		return
@@ -105,11 +104,11 @@ func (w *reserveWatcher) watchCollection(collection *mongo.Collection, handler W
 func (w *reserveWatcher) getOpType(item bson.Raw) OperationType {
 	var createdTime, updatedTime time.Time
 	var ok bool
-	createdTime, ok = item.Lookup(gost.BsonFieldNameCreateTime).TimeOK()
+	createdTime, ok = item.Lookup(BsonFieldNameCreateTime).TimeOK()
 	if !ok {
 		return None
 	}
-	updatedTime, ok = item.Lookup(gost.BsonFieldNameUpdateTime).TimeOK()
+	updatedTime, ok = item.Lookup(BsonFieldNameUpdateTime).TimeOK()
 	if !ok {
 		return None
 	}

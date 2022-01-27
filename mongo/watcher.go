@@ -1,10 +1,9 @@
-package watcher
+package mongo
 
 import (
 	"context"
 	"sync/atomic"
 
-	gost "github.com/bldsoft/gost/storage/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -24,30 +23,30 @@ type IWatcher interface {
 	watch(ctx context.Context, collection *mongo.Collection, handler WatchHandler)
 }
 
-// MongoWatcher is used for watching collection.
-type MongoWatcher struct {
+// Watcher is used for watching collection.
+type Watcher struct {
 	collection *mongo.Collection
 	cancel     context.CancelFunc
 	handler    func(fullDocument bson.Raw, opType OperationType)
 	isActive   int32
 }
 
-// NewMongoWatcher creates new MongoPoolWatcher.
-func NewMongoWatcher(collection *mongo.Collection) *MongoWatcher {
-	return &MongoWatcher{collection: collection}
+// NewWatcher creates new MongoPoolWatcher.
+func NewWatcher(collection *mongo.Collection) *Watcher {
+	return &Watcher{collection: collection}
 }
 
 // SetHandler sets handler for watch method. opType is "update",
-func (w *MongoWatcher) SetHandler(handler func(fullDocument bson.Raw, opType OperationType)) {
+func (w *Watcher) SetHandler(handler func(fullDocument bson.Raw, opType OperationType)) {
 	w.handler = handler
 }
 
-func (w *MongoWatcher) canStart() bool {
+func (w *Watcher) canStart() bool {
 	return atomic.CompareAndSwapInt32(&w.isActive, 0, 1)
 }
 
 // Start starts watching collection.
-func (w *MongoWatcher) Start() {
+func (w *Watcher) Start() {
 	if w == nil {
 		return
 	}
@@ -59,13 +58,13 @@ func (w *MongoWatcher) Start() {
 	go w.watch()
 }
 
-func (w *MongoWatcher) getNewContext() context.Context {
+func (w *Watcher) getNewContext() context.Context {
 	ctx, cancel := context.WithCancel(context.Background())
 	w.cancel = cancel
 	return ctx
 }
 
-func (w *MongoWatcher) watch() {
+func (w *Watcher) watch() {
 	defer func() {
 		w.isActive = 0
 	}()
@@ -75,7 +74,7 @@ func (w *MongoWatcher) watch() {
 	changeStreamWatcher := newChangeStreamWatcher()
 
 	go changeStreamWatcher.watch(ctx, w.collection, func(fullDocument bson.Raw, opType OperationType) {
-		if updatedTime, ok := fullDocument.Lookup(gost.BsonFieldNameUpdateTime).TimeOK(); ok {
+		if updatedTime, ok := fullDocument.Lookup(BsonFieldNameUpdateTime).TimeOK(); ok {
 			reserveWatcher.SetLastCheckTime(updatedTime)
 		}
 		w.handler(fullDocument, opType)
@@ -85,7 +84,7 @@ func (w *MongoWatcher) watch() {
 }
 
 // Stop stops watching collection.
-func (w *MongoWatcher) Stop() {
+func (w *Watcher) Stop() {
 	if w == nil {
 		return
 	}

@@ -9,19 +9,17 @@ import (
 	gost_feature "github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/entity"
 	"github.com/bldsoft/gost/log"
-	"github.com/bldsoft/gost/storage/mongo"
-	"github.com/bldsoft/gost/storage/mongo/watcher"
 )
 
 //FeatureMongoRepository implements IFeatureRepository interface
 type FeatureMongoRepository struct {
-	rep         *mongo.Repository
+	rep         *Repository
 	serviceName string
 }
 
 // NewFeatureRepository creates feature repository.
-func NewFeatureRepository(db *mongo.MongoDb, serviceName string) *FeatureMongoRepository {
-	rep := &FeatureMongoRepository{rep: mongo.NewRepository(db, "feature"), serviceName: serviceName}
+func NewFeatureRepository(db *MongoDb, serviceName string) *FeatureMongoRepository {
+	rep := &FeatureMongoRepository{rep: NewRepository(db, "feature"), serviceName: serviceName}
 	db.AddOnConnectHandler(func() {
 		rep.Load()
 		log.Infof("Features loaded")
@@ -31,8 +29,8 @@ func NewFeatureRepository(db *mongo.MongoDb, serviceName string) *FeatureMongoRe
 }
 
 func (r *FeatureMongoRepository) InitWatcher() {
-	w := watcher.NewMongoWatcher(r.rep.Collection())
-	w.SetHandler(func(fullDocument bson.Raw, optype watcher.OperationType) {
+	w := NewWatcher(r.rep.Collection())
+	w.SetHandler(func(fullDocument bson.Raw, optype OperationType) {
 		f := &entity.Feature{}
 		err := bson.Unmarshal(fullDocument, f)
 		if err != nil {
