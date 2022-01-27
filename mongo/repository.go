@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/bldsoft/gost/repository"
 	"github.com/bldsoft/gost/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -44,7 +45,7 @@ func (r *Repository) Collection() *mongo.Collection {
 	return r.dbcollection
 }
 
-func (r *Repository) FindOne(ctx context.Context, filter interface{}, result interface{}, options ...*QueryOptions) error {
+func (r *Repository) FindOne(ctx context.Context, filter interface{}, result interface{}, options ...*repository.QueryOptions) error {
 	err := r.Collection().FindOne(ctx, r.where(filter, options...)).Decode(result)
 	if err != nil && err == mongo.ErrNoDocuments {
 		return utils.ErrObjectNotFound
@@ -52,7 +53,7 @@ func (r *Repository) FindOne(ctx context.Context, filter interface{}, result int
 	return err
 }
 
-func (r *Repository) FindByID(ctx context.Context, id string, result interface{}, options ...*QueryOptions) error {
+func (r *Repository) FindByID(ctx context.Context, id string, result interface{}, options ...*repository.QueryOptions) error {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -60,7 +61,7 @@ func (r *Repository) FindByID(ctx context.Context, id string, result interface{}
 	return r.FindOne(ctx, bson.M{"_id": objID}, result, options...)
 }
 
-func (r *Repository) Find(ctx context.Context, filter interface{}, results interface{}, options ...*QueryOptions) error {
+func (r *Repository) Find(ctx context.Context, filter interface{}, results interface{}, options ...*repository.QueryOptions) error {
 	cur, err := r.Collection().Find(ctx, r.where(filter, options...))
 	if err != nil {
 		return err
@@ -68,7 +69,7 @@ func (r *Repository) Find(ctx context.Context, filter interface{}, results inter
 	return cur.All(ctx, results)
 }
 
-func (r *Repository) GetAll(ctx context.Context, results interface{}, options ...*QueryOptions) {
+func (r *Repository) GetAll(ctx context.Context, results interface{}, options ...*repository.QueryOptions) {
 	r.Find(ctx, bson.M{}, results, options...)
 }
 
@@ -79,7 +80,7 @@ func (r *Repository) Insert(ctx context.Context, entity IEntityID) error {
 	return err
 }
 
-func (r *Repository) Update(ctx context.Context, entity IEntityID, options ...*QueryOptions) error {
+func (r *Repository) Update(ctx context.Context, entity IEntityID, options ...*repository.QueryOptions) error {
 	r.fillTimeStamp(ctx, entity, false)
 	result, err := r.Collection().ReplaceOne(ctx, r.where(bson.M{"_id": entity.GetID()}, options...), entity)
 	if err == nil && result.MatchedCount == 0 {
@@ -114,7 +115,7 @@ func (r *Repository) UpdateMany(ctx context.Context, entities interface{}) error
 	}
 }
 
-func (r *Repository) UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*QueryOptions) error {
+func (r *Repository) UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*repository.QueryOptions) error {
 	result, err := r.Collection().UpdateOne(ctx, r.where(filter, options...), update)
 	if err == nil && result.MatchedCount == 0 {
 		return utils.ErrObjectNotFound
@@ -122,7 +123,7 @@ func (r *Repository) UpdateOne(ctx context.Context, filter interface{}, update i
 	return err
 }
 
-func (r *Repository) UpdateAndGetByID(ctx context.Context, updateEntity IEntityID, result interface{}, queryOpt ...*QueryOptions) error {
+func (r *Repository) UpdateAndGetByID(ctx context.Context, updateEntity IEntityID, result interface{}, queryOpt ...*repository.QueryOptions) error {
 	opt := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	r.fillTimeStamp(ctx, updateEntity, false)
 	res := r.Collection().FindOneAndUpdate(ctx, r.where(bson.M{"_id": updateEntity.GetID()}, queryOpt...), bson.M{"$set": updateEntity}, opt)
@@ -146,7 +147,7 @@ func (r *Repository) UpsertOne(ctx context.Context, filter interface{}, update i
 }
 
 //Delete removes object by id
-func (r *Repository) Delete(ctx context.Context, e IEntityID, options ...*QueryOptions) error {
+func (r *Repository) Delete(ctx context.Context, e IEntityID, options ...*repository.QueryOptions) error {
 	if options != nil {
 		if !options[0].Archived {
 			_, err := r.Collection().DeleteOne(ctx, bson.M{"_id": e.GetID()})
@@ -185,7 +186,7 @@ func (r *Repository) fillTimeStamp(ctx context.Context, e IEntityID, fillCreateT
 	}
 }
 
-func (r *Repository) where(filter interface{}, options ...*QueryOptions) interface{} {
+func (r *Repository) where(filter interface{}, options ...*repository.QueryOptions) interface{} {
 	if options != nil {
 		switch filter := filter.(type) {
 		case bson.M:

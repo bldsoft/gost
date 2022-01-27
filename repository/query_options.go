@@ -1,4 +1,4 @@
-package mongo
+package repository
 
 type QueryOptions struct {
 	Archived bool
