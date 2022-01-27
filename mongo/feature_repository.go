@@ -9,6 +9,7 @@ import (
 	gost_feature "github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/entity"
 	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/service"
 )
 
 //FeatureMongoRepository implements IFeatureRepository interface
@@ -94,3 +95,6 @@ func (r *FeatureMongoRepository) GetAll(ctx context.Context) []*entity.Feature {
 func (r *FeatureMongoRepository) Update(ctx context.Context, feature *entity.Feature) error {
 	return r.rep.UpdateAndGetByID(ctx, feature, feature)
 }
+
+// Compile time checks to ensure your type satisfies an interface
+var _ service.IFeatureRepository = (*FeatureMongoRepository)(nil)
