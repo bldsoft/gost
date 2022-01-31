@@ -1,4 +1,4 @@
-package entity
+package feature
 
 import (
 	"github.com/bldsoft/gost/config/feature"

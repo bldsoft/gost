@@ -1,14 +1,14 @@
-package mongo
+package feature
 
 import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/bldsoft/gost/entity"
 	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/mongo"
 )
 
-func AddFeatureMigration(db *MongoDb, version uint, features ...*entity.Feature) {
+func AddFeatureMigration(db *mongo.MongoDb, version uint, features ...*Feature) {
 	size := len(features)
 	if size == 0 {
 		return
@@ -43,7 +43,7 @@ func AddFeatureMigration(db *MongoDb, version uint, features ...*entity.Feature)
 		"multi": true
 	}]
 	}
-]`, featureStr, IDs, BsonFieldNameCreateTime, BsonFieldNameUpdateTime)
+]`, featureStr, IDs, mongo.BsonFieldNameCreateTime, mongo.BsonFieldNameUpdateTime)
 
 	down := fmt.Sprintf(`[{
 	"delete": "feature",

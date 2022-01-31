@@ -1,10 +1,9 @@
-package service
+package feature
 
 import (
 	"context"
 
 	"github.com/bldsoft/gost/config/feature"
-	"github.com/bldsoft/gost/entity"
 	"github.com/bldsoft/gost/log"
 )
 
@@ -16,7 +15,7 @@ func NewFeatureService(featureRep IFeatureRepository) *FeatureService {
 	return &FeatureService{featureRep: featureRep}
 }
 
-func (srv *FeatureService) Update(ctx context.Context, feature *entity.Feature) error {
+func (srv *FeatureService) Update(ctx context.Context, feature *Feature) error {
 	err := srv.validate(feature)
 	if err != nil {
 		return err
@@ -25,15 +24,15 @@ func (srv *FeatureService) Update(ctx context.Context, feature *entity.Feature) 
 	return srv.featureRep.Update(ctx, feature)
 }
 
-func (srv *FeatureService) Get(ctx context.Context, id feature.IdType) *entity.Feature {
+func (srv *FeatureService) Get(ctx context.Context, id feature.IdType) *Feature {
 	return srv.featureRep.FindByID(ctx, id)
 }
 
-func (srv *FeatureService) GetAll(ctx context.Context) []*entity.Feature {
+func (srv *FeatureService) GetAll(ctx context.Context) []*Feature {
 	return srv.featureRep.GetAll(ctx)
 }
 
-func (srv *FeatureService) validate(f *entity.Feature) error {
+func (srv *FeatureService) validate(f *Feature) error {
 	feature := feature.Features.Get(f.ID)
 	if feature == nil {
 		log.DebugWithFields(log.Fields{"feature": f.ID}, "Validation of not supported feature")

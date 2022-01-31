@@ -1,4 +1,4 @@
-package mongo
+package feature
 
 import (
 	"context"
@@ -7,20 +7,19 @@ import (
 
 	"github.com/bldsoft/gost/config/feature"
 	gost_feature "github.com/bldsoft/gost/config/feature"
-	"github.com/bldsoft/gost/entity"
 	"github.com/bldsoft/gost/log"
-	"github.com/bldsoft/gost/service"
+	"github.com/bldsoft/gost/mongo"
 )
 
 //FeatureMongoRepository implements IFeatureRepository interface
 type FeatureMongoRepository struct {
-	rep         *Repository
+	rep         *mongo.Repository
 	serviceName string
 }
 
-// NewFeatureRepository creates feature repository.
-func NewFeatureRepository(db *MongoDb, serviceName string) *FeatureMongoRepository {
-	rep := &FeatureMongoRepository{rep: NewRepository(db, "feature"), serviceName: serviceName}
+// NewFeatureMongoRepository creates feature repository.
+func NewFeatureMongoRepository(db *mongo.MongoDb, serviceName string) *FeatureMongoRepository {
+	rep := &FeatureMongoRepository{rep: mongo.NewRepository(db, "feature"), serviceName: serviceName}
 	db.AddOnConnectHandler(func() {
 		rep.Load()
 		log.Infof("Features loaded")
@@ -30,9 +29,9 @@ func NewFeatureRepository(db *MongoDb, serviceName string) *FeatureMongoReposito
 }
 
 func (r *FeatureMongoRepository) InitWatcher() {
-	w := NewWatcher(r.rep.Collection())
-	w.SetHandler(func(fullDocument bson.Raw, optype OperationType) {
-		f := &entity.Feature{}
+	w := mongo.NewWatcher(r.rep.Collection())
+	w.SetHandler(func(fullDocument bson.Raw, optype mongo.OperationType) {
+		f := &Feature{}
 		err := bson.Unmarshal(fullDocument, f)
 		if err != nil {
 			log.Errorf("Failed to unmarshal Feature: %s", err.Error())
@@ -44,7 +43,7 @@ func (r *FeatureMongoRepository) InitWatcher() {
 }
 
 // SetFeature ...
-func (r *FeatureMongoRepository) SetFeature(feature *entity.Feature) {
+func (r *FeatureMongoRepository) SetFeature(feature *Feature) {
 	value := *feature.GlobalValue
 	if feature.SrvValues != nil {
 		for _, serviceValue := range *feature.SrvValues {
@@ -68,8 +67,8 @@ func (r *FeatureMongoRepository) Load() {
 	}
 }
 
-func (r *FeatureMongoRepository) FindByName(ctx context.Context, name string) *entity.Feature {
-	item := &entity.Feature{}
+func (r *FeatureMongoRepository) FindByName(ctx context.Context, name string) *Feature {
+	item := &Feature{}
 	err := r.rep.FindOne(ctx, bson.M{"name": name}, item)
 	if err == nil {
 		return item
@@ -77,8 +76,8 @@ func (r *FeatureMongoRepository) FindByName(ctx context.Context, name string) *e
 	return nil
 }
 
-func (r *FeatureMongoRepository) FindByID(ctx context.Context, id feature.IdType) *entity.Feature {
-	item := &entity.Feature{}
+func (r *FeatureMongoRepository) FindByID(ctx context.Context, id feature.IdType) *Feature {
+	item := &Feature{}
 	err := r.rep.FindOne(ctx, bson.M{"_id": id}, item)
 	if err != nil {
 		return nil
@@ -86,15 +85,15 @@ func (r *FeatureMongoRepository) FindByID(ctx context.Context, id feature.IdType
 	return item
 }
 
-func (r *FeatureMongoRepository) GetAll(ctx context.Context) []*entity.Feature {
-	var results []*entity.Feature
+func (r *FeatureMongoRepository) GetAll(ctx context.Context) []*Feature {
+	var results []*Feature
 	r.rep.GetAll(ctx, &results)
 	return results
 }
 
-func (r *FeatureMongoRepository) Update(ctx context.Context, feature *entity.Feature) error {
+func (r *FeatureMongoRepository) Update(ctx context.Context, feature *Feature) error {
 	return r.rep.UpdateAndGetByID(ctx, feature, feature)
 }
 
 // Compile time checks to ensure your type satisfies an interface
-var _ service.IFeatureRepository = (*FeatureMongoRepository)(nil)
+var _ IFeatureRepository = (*FeatureMongoRepository)(nil)
