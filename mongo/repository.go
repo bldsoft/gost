@@ -38,6 +38,10 @@ func NewRepository(db *MongoDb, collectionName string) *Repository {
 	return &Repository{db: db, collectionName: collectionName}
 }
 
+func (r *Repository) Name() string {
+	return r.collectionName
+}
+
 func (r *Repository) Collection() *mongo.Collection {
 	if r.dbcollection == nil && r.db.IsReady() {
 		r.dbcollection = r.db.Db.Collection(r.collectionName)
