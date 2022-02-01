@@ -1,6 +1,6 @@
 module github.com/bldsoft/gost
 
-go 1.14
+go 1.18
 
 require (
 	github.com/ghodss/yaml v1.0.0
