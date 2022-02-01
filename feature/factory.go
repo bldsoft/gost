@@ -8,10 +8,14 @@ import (
 	"github.com/bldsoft/gost/storage"
 )
 
-func CreateFeatureService(s storage.IStorage, serviceName string) IFeatureService {
+func CreateController(s storage.IStorage, serviceName string) *Controller {
+	return NewController(CreateService(s, serviceName))
+}
+
+func CreateService(s storage.IStorage, serviceName string) IFeatureService {
 	switch s := s.(type) {
 	case *mongo.MongoDb:
-		return NewFeatureService(NewFeatureMongoRepository(s, serviceName))
+		return NewService(NewMongoRepository(s, serviceName))
 	default:
 		log.Fatalf("%s doesn't support feature repository", reflect.TypeOf(s))
 		return nil

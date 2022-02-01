@@ -11,13 +11,13 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type FeatureController struct {
+type Controller struct {
 	controller.BaseController
 	featureService IFeatureService
 }
 
-func NewFeatureController(featureService IFeatureService) *FeatureController {
-	return &FeatureController{featureService: featureService}
+func NewController(featureService IFeatureService) *Controller {
+	return &Controller{featureService: featureService}
 }
 
 // GetFeatureHandler get all features
@@ -27,7 +27,7 @@ func NewFeatureController(featureService IFeatureService) *FeatureController {
 // @Produce text/yaml
 // @Success 200 {array} Feature "OK"
 // @Router /env/feature [get]
-func (c *FeatureController) GetFeaturesHandler(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetFeaturesHandler(w http.ResponseWriter, r *http.Request) {
 	features := c.featureService.GetAll(r.Context())
 	c.ResponseJson(w, r, features)
 }
@@ -41,7 +41,7 @@ func (c *FeatureController) GetFeaturesHandler(w http.ResponseWriter, r *http.Re
 // @Success 200 {object} Feature "OK"
 // @Failure 404 {string} string "Not found"
 // @Router /env/feature/{id} [get]
-func (c *FeatureController) GetFeatureHandler(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetFeatureHandler(w http.ResponseWriter, r *http.Request) {
 	id := feature.IdFromString(chi.URLParam(r, "id"))
 	feature := c.featureService.Get(r.Context(), id)
 	if feature == nil {
@@ -63,7 +63,7 @@ func (c *FeatureController) GetFeatureHandler(w http.ResponseWriter, r *http.Req
 // @Failure 400 {string} string "bad request"
 // @Failure 404 {string} string "Not found"
 // @Router /env/feature/{id} [patch]
-func (c *FeatureController) PatchFeatureHandler(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) PatchFeatureHandler(w http.ResponseWriter, r *http.Request) {
 	var f *Feature
 	if !c.GetObjectFromBody(w, r, &f) {
 		return
@@ -81,7 +81,7 @@ func (c *FeatureController) PatchFeatureHandler(w http.ResponseWriter, r *http.R
 	}
 }
 
-func (c *FeatureController) Mount(r chi.Router) {
+func (c *Controller) Mount(r chi.Router) {
 	r.Get("/", c.GetFeaturesHandler)
 	r.Get("/{id}", c.GetFeatureHandler)
 	r.Patch("/{id}", c.PatchFeatureHandler)
