@@ -14,7 +14,11 @@ type Controller struct {
 	changeLogService IChangeLogService
 }
 
-func NewController(changeLogService IChangeLogService) *Controller {
+func NewController(rep IChangeLogRepository) *Controller {
+	return NewControllerByService(NewService(rep))
+}
+
+func NewControllerByService(changeLogService IChangeLogService) *Controller {
 	return &Controller{changeLogService: changeLogService}
 }
 
