@@ -28,7 +28,13 @@ func NewController(featureService IFeatureService) *Controller {
 // @Success 200 {array} Feature "OK"
 // @Router /env/feature [get]
 func (c *Controller) GetFeaturesHandler(w http.ResponseWriter, r *http.Request) {
-	features := c.featureService.GetAll(r.Context())
+	ctx := r.Context()
+	features, err := c.featureService.GetAll(ctx)
+	if err != nil {
+		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "Failed to get features")
+		c.ResponseError(w, "", http.StatusInternalServerError)
+		return
+	}
 	c.ResponseJson(w, r, features)
 }
 
@@ -68,13 +74,14 @@ func (c *Controller) PatchFeatureHandler(w http.ResponseWriter, r *http.Request)
 	if !c.GetObjectFromBody(w, r, &f) {
 		return
 	}
+	ctx := r.Context()
 	f.ID = feature.IdFromString(chi.URLParam(r, "id"))
-	err := c.featureService.Update(r.Context(), f)
+	f, err := c.featureService.Update(ctx, f)
 	switch {
 	case errors.Is(err, utils.ErrObjectNotFound):
 		c.ResponseError(w, "Not found", http.StatusNotFound)
 	case err != nil:
-		log.Errorf("Failed to update feature: %s", err.Error())
+		log.FromContext(ctx).Errorf("Failed to update feature: %s", err.Error())
 		c.ResponseError(w, err.Error(), http.StatusBadRequest)
 	default:
 		c.ResponseJson(w, r, f)

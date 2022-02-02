@@ -5,24 +5,26 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/bldsoft/gost/config/feature"
-	gost_feature "github.com/bldsoft/gost/config/feature"
+	config "github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
 )
 
 //MongoRepository implements IFeatureRepository interface
 type MongoRepository struct {
-	rep         *mongo.Repository
+	rep         *mongo.Repository[*Feature]
 	serviceName string
 }
 
 // NewMongoRepository creates feature repository.
 func NewMongoRepository(db *mongo.MongoDb, serviceName string) *MongoRepository {
-	rep := &MongoRepository{rep: mongo.NewRepository(db, "feature"), serviceName: serviceName}
+	rep := &MongoRepository{rep: mongo.NewRepository[*Feature](db, "feature"), serviceName: serviceName}
 	db.AddOnConnectHandler(func() {
-		rep.Load()
-		log.Infof("Features loaded")
+		if err := rep.Load(); err != nil {
+			log.Error("Failed to load features")
+		} else {
+			log.Infof("Features loaded")
+		}
 		rep.InitWatcher()
 	})
 	return rep
@@ -54,17 +56,21 @@ func (r *MongoRepository) SetFeature(feature *Feature) {
 		}
 	}
 
-	if f := gost_feature.Features.Get(feature.ID); f != nil {
+	if f := config.Features.Get(feature.ID); f != nil {
 		f.SetFromString(value)
 	}
 }
 
 // Load loads features
-func (r *MongoRepository) Load() {
-	features := r.GetAll(context.Background())
+func (r *MongoRepository) Load() error {
+	features, err := r.GetAll(context.Background())
+	if err != nil {
+		return err
+	}
 	for _, feature := range features {
 		r.SetFeature(feature)
 	}
+	return nil
 }
 
 func (r *MongoRepository) FindByName(ctx context.Context, name string) *Feature {
@@ -76,7 +82,7 @@ func (r *MongoRepository) FindByName(ctx context.Context, name string) *Feature 
 	return nil
 }
 
-func (r *MongoRepository) FindByID(ctx context.Context, id feature.IdType) *Feature {
+func (r *MongoRepository) FindByID(ctx context.Context, id config.IdType) *Feature {
 	item := &Feature{}
 	err := r.rep.FindOne(ctx, bson.M{"_id": id}, item)
 	if err != nil {
@@ -85,14 +91,12 @@ func (r *MongoRepository) FindByID(ctx context.Context, id feature.IdType) *Feat
 	return item
 }
 
-func (r *MongoRepository) GetAll(ctx context.Context) []*Feature {
-	var results []*Feature
-	r.rep.GetAll(ctx, &results)
-	return results
+func (r *MongoRepository) GetAll(ctx context.Context) ([]*Feature, error) {
+	return r.rep.GetAll(ctx)
 }
 
-func (r *MongoRepository) Update(ctx context.Context, feature *Feature) error {
-	return r.rep.UpdateAndGetByID(ctx, feature, feature)
+func (r *MongoRepository) Update(ctx context.Context, feature *Feature) (*Feature, error) {
+	return r.rep.UpdateAndGetByID(ctx, feature)
 }
 
 // Compile time checks to ensure your type satisfies an interface

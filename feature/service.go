@@ -15,10 +15,10 @@ func NewService(featureRep IFeatureRepository) *Service {
 	return &Service{featureRep: featureRep}
 }
 
-func (srv *Service) Update(ctx context.Context, feature *Feature) error {
+func (srv *Service) Update(ctx context.Context, feature *Feature) (*Feature, error) {
 	err := srv.validate(feature)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	return srv.featureRep.Update(ctx, feature)
@@ -28,7 +28,7 @@ func (srv *Service) Get(ctx context.Context, id feature.IdType) *Feature {
 	return srv.featureRep.FindByID(ctx, id)
 }
 
-func (srv *Service) GetAll(ctx context.Context) []*Feature {
+func (srv *Service) GetAll(ctx context.Context) ([]*Feature, error) {
 	return srv.featureRep.GetAll(ctx)
 }
 
