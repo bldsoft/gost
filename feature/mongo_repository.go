@@ -12,13 +12,13 @@ import (
 
 //MongoRepository implements IFeatureRepository interface
 type MongoRepository struct {
-	rep         *mongo.Repository[*Feature]
+	rep         *mongo.Repository[Feature]
 	serviceName string
 }
 
 // NewMongoRepository creates feature repository.
 func NewMongoRepository(db *mongo.MongoDb, serviceName string) *MongoRepository {
-	rep := &MongoRepository{rep: mongo.NewRepository[*Feature](db, "feature"), serviceName: serviceName}
+	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, "feature"), serviceName: serviceName}
 	db.AddOnConnectHandler(func() {
 		if err := rep.Load(); err != nil {
 			log.Error("Failed to load features")
@@ -74,21 +74,19 @@ func (r *MongoRepository) Load() error {
 }
 
 func (r *MongoRepository) FindByName(ctx context.Context, name string) *Feature {
-	item := &Feature{}
-	err := r.rep.FindOne(ctx, bson.M{"name": name}, item)
-	if err == nil {
-		return item
-	}
-	return nil
-}
-
-func (r *MongoRepository) FindByID(ctx context.Context, id config.IdType) *Feature {
-	item := &Feature{}
-	err := r.rep.FindOne(ctx, bson.M{"_id": id}, item)
+	feature, err := r.rep.FindOne(ctx, bson.M{"name": name})
 	if err != nil {
 		return nil
 	}
-	return item
+	return feature
+}
+
+func (r *MongoRepository) FindByID(ctx context.Context, id config.IdType) *Feature {
+	feature, err := r.rep.FindOne(ctx, bson.M{"_id": id})
+	if err != nil {
+		return nil
+	}
+	return feature
 }
 
 func (r *MongoRepository) GetAll(ctx context.Context) ([]*Feature, error) {

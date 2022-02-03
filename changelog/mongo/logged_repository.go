@@ -10,21 +10,22 @@ import (
 	// "go.mongodb.org/mongo-driver/bson"
 )
 
-type LoggedEntity interface {
+type LoggedEntity[T any] interface {
+	*T
 	changelog.ILoggedEntity
 	mongo.IEntityID
 }
-type LoggedRepository[T LoggedEntity] struct {
-	*mongo.Repository[T]
+type LoggedRepository[T any, U LoggedEntity[T]] struct {
+	*mongo.Repository[T, U]
 	changeLogRep *ChangeLogRepository
 }
 
-func NewLoggedRepository[T LoggedEntity](db *mongo.MongoDb, collectionName string, changeLogRep *ChangeLogRepository) *LoggedRepository[T] {
-	rep := mongo.NewRepository[T](db, collectionName)
-	return &LoggedRepository[T]{rep, changeLogRep}
+func NewLoggedRepository[T any, U LoggedEntity[T]](db *mongo.MongoDb, collectionName string, changeLogRep *ChangeLogRepository) *LoggedRepository[T, U] {
+	rep := mongo.NewRepository[T, U](db, collectionName)
+	return &LoggedRepository[T, U]{rep, changeLogRep}
 }
 
-func (r *LoggedRepository[T]) Insert(ctx context.Context, entity T) (err error) {
+func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err error) {
 	rec, err := newRecord(ctx, r.Name(), changelog.Create, entity)
 	if err != nil {
 		return err
@@ -40,7 +41,7 @@ func (r *LoggedRepository[T]) Insert(ctx context.Context, entity T) (err error) 
 	return err
 }
 
-func (r *LoggedRepository[T]) Update(ctx context.Context, entity T) error {
+func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U) error {
 	rec, err := newRecord(ctx, r.Name(), changelog.Update, entity)
 	if err != nil {
 		return err
@@ -56,7 +57,7 @@ func (r *LoggedRepository[T]) Update(ctx context.Context, entity T) error {
 	return err
 }
 
-func (r *LoggedRepository[T]) Delete(ctx context.Context, entity T, options ...*repository.QueryOptions) error {
+func (r *LoggedRepository[T, U]) Delete(ctx context.Context, entity U, options ...*repository.QueryOptions) error {
 	rec, err := newRecord(ctx, r.Name(), changelog.Delete, entity)
 	if err != nil {
 		return err

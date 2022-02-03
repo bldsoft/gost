@@ -10,11 +10,11 @@ import (
 )
 
 type ChangeLogRepository struct {
-	rep *mongo.Repository[*record]
+	rep *mongo.Repository[record]
 }
 
 func NewChangeLogRepository(db *mongo.MongoDb) *ChangeLogRepository {
-	return &ChangeLogRepository{mongo.NewRepository[*record](db, "change_log")}
+	return &ChangeLogRepository{mongo.NewRepository[record](db, "change_log")}
 }
 
 func (r *ChangeLogRepository) Insert(ctx context.Context, record *record) error {
