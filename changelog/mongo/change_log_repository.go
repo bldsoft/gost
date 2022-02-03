@@ -9,21 +9,16 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type mongoRecord struct {
-	mongo.EntityID    `bson:",inline"`
-	*changelog.Record `bson:",inline"`
-}
-
 type ChangeLogRepository struct {
-	rep *mongo.Repository[*mongoRecord]
+	rep *mongo.Repository[*record]
 }
 
 func NewChangeLogRepository(db *mongo.MongoDb) *ChangeLogRepository {
-	return &ChangeLogRepository{mongo.NewRepository[*mongoRecord](db, "change_log")}
+	return &ChangeLogRepository{mongo.NewRepository[*record](db, "change_log")}
 }
 
-func (r *ChangeLogRepository) Insert(ctx context.Context, record *changelog.Record) error {
-	return r.rep.Insert(ctx, &mongoRecord{Record: record})
+func (r *ChangeLogRepository) Insert(ctx context.Context, record *record) error {
+	return r.rep.Insert(ctx, record)
 }
 
 func (r *ChangeLogRepository) GetRecords(ctx context.Context, filter *changelog.Filter) ([]*changelog.Record, error) {
