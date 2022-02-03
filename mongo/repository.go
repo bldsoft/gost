@@ -17,6 +17,8 @@ import (
 // UserEntryCtxKey is the context.Context key to store the user entry. It's used for setting UpdateUserID, CreateUserID fields
 var UserEntryCtxKey interface{} = "UserEntry"
 
+type SessionContext = mongo.SessionContext
+
 type IEntityID interface {
 	SetIDFromString(string) error
 	GetID() interface{}
@@ -47,6 +49,15 @@ func (r *Repository[T]) Collection() *mongo.Collection {
 		r.dbcollection = r.db.Db.Collection(r.collectionName)
 	}
 	return r.dbcollection
+}
+
+func (r *Repository[T]) WithTransaction(ctx context.Context, f func(ctx mongo.SessionContext) (interface{}, error)) (interface{}, error) {
+	session, err := r.db.Client.StartSession()
+	if err != nil {
+		return nil, err
+	}
+	defer session.EndSession(ctx)
+	return session.WithTransaction(ctx, f)
 }
 
 func (r *Repository[T]) FindOne(ctx context.Context, filter interface{}, result T, options ...*repository.QueryOptions) error {
