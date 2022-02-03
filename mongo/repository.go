@@ -245,16 +245,15 @@ func (r *Repository[T, U]) where(filter interface{}, options ...*repository.Quer
 	return filter
 }
 
-func (r *Repository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.Pipeline) (U, error) {
+func (r *Repository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.Pipeline, entity interface{}) error {
 	cursor, err := r.Collection().Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer cursor.Close(ctx)
 
 	if !cursor.Next(ctx) {
-		return nil, errors.New("Not found")
+		return utils.ErrObjectNotFound
 	}
-	var entity T
-	return &entity, cursor.Decode(&entity)
+	return cursor.Decode(entity)
 }
