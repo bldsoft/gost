@@ -148,8 +148,13 @@ func (r *Repository[T, U]) UpdateOne(ctx context.Context, filter interface{}, up
 	return err
 }
 
-func (r *Repository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntity IEntityID, queryOpt ...*repository.QueryOptions) (U, error) {
-	opt := options.FindOneAndUpdate().SetReturnDocument(options.After)
+func (r *Repository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, queryOpt ...*repository.QueryOptions) (U, error) {
+	opt := options.FindOneAndUpdate()
+	if returnNewDocument {
+		opt.SetReturnDocument(options.After)
+	} else {
+		opt.SetReturnDocument(options.Before)
+	}
 	r.fillTimeStamp(ctx, updateEntity, false)
 	res := r.Collection().FindOneAndUpdate(ctx, r.where(bson.M{"_id": updateEntity.GetID()}, queryOpt...), bson.M{"$set": updateEntity}, opt)
 	switch {

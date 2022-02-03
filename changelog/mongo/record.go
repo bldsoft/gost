@@ -13,9 +13,11 @@ type record struct {
 }
 
 func newRecord(ctx context.Context, collectionName string, op changelog.Operation, entity changelog.EntityID) (*record, error) {
-	rec, err := changelog.NewRecord(ctx, collectionName, op, entity)
+	baseRecord, err := changelog.NewRecord(ctx, collectionName, op, entity)
 	if err != nil {
 		return nil, err
 	}
-	return &record{Record: rec}, nil
+	rec := &record{Record: baseRecord}
+	rec.GenerateID()
+	return rec, nil
 }

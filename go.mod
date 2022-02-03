@@ -15,3 +15,5 @@ require (
 	go.mongodb.org/mongo-driver v1.8.2
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
+
+require github.com/evanphx/json-patch/v5 v5.6.0 // indirect

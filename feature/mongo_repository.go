@@ -94,7 +94,7 @@ func (r *MongoRepository) GetAll(ctx context.Context) ([]*Feature, error) {
 }
 
 func (r *MongoRepository) Update(ctx context.Context, feature *Feature) (*Feature, error) {
-	return r.rep.UpdateAndGetByID(ctx, feature)
+	return r.rep.UpdateAndGetByID(ctx, feature, true)
 }
 
 // Compile time checks to ensure your type satisfies an interface

@@ -49,18 +49,27 @@ func NewRecord(ctx context.Context, collectionName string, op Operation, entity 
 		return nil, UserNotFound
 	}
 
-	data, err := json.Marshal(entity)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Record{
+	rec := &Record{
 		UserID:    user.GetID(),
 		Timestamp: time.Now().Unix(),
 		Operation: op,
 		Entity:    collectionName,
-		EntityID:  entity.GetID(),
 		RequestID: middleware.GetReqID(ctx),
-		Data:      string(data),
-	}, nil
+	}
+
+	if entity != nil {
+		rec.SetData(entity)
+		rec.EntityID = entity.GetID()
+	}
+
+	return rec, nil
+}
+
+func (r *Record) SetData(entity interface{}) error {
+	data, err := json.Marshal(entity)
+	if err != nil {
+		return err
+	}
+	r.Data = string(data)
+	return nil
 }

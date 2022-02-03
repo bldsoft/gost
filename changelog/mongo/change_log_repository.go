@@ -34,7 +34,8 @@ func NewChangeLogRepository(db *mongo.MongoDb) *ChangeLogRepository {
 }
 
 func (r *ChangeLogRepository) Insert(ctx context.Context, record *record) error {
-	return r.rep.Insert(ctx, record)
+	_, err := r.rep.Collection().InsertOne(ctx, record)
+	return err
 }
 
 func (r *ChangeLogRepository) GetRecords(ctx context.Context, filter *changelog.Filter) ([]*changelog.Record, error) {
