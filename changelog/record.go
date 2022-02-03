@@ -14,9 +14,10 @@ import (
 var UserEntryCtxKey = &utils.ContextKey{"UserEntry"}
 var UserNotFound = errors.New("User isn't found in context")
 
-const BsonFieldNameEntityID = "entityID"
+const BsonFieldNameUserID = "userID"
 const BsonFieldNameTimestamp = "timestamp"
 const BsonFieldNameEntity = "entity"
+const BsonFieldNameEntityID = "entityID"
 
 type Operation int
 
