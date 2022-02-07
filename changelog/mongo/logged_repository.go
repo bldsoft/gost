@@ -51,11 +51,11 @@ func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err erro
 func (r *LoggedRepository[T, U]) getDiff(old U, new U) ([]byte, error) {
 	oldData, err := json.Marshal(old)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	newData, err := json.Marshal(new)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	patch, err := jsonpatch.CreateMergePatch(oldData, newData)
