@@ -12,8 +12,8 @@ type record struct {
 	*changelog.Record `bson:",inline"`
 }
 
-func newRecord(ctx context.Context, collectionName string, op changelog.Operation, entity changelog.EntityID) (*record, error) {
-	baseRecord, err := changelog.NewRecord(ctx, collectionName, op, entity)
+func newRecord(ctx context.Context, collectionName string, op changelog.Operation) (*record, error) {
+	baseRecord, err := changelog.NewRecord(ctx, collectionName, op, nil)
 	if err != nil {
 		return nil, err
 	}

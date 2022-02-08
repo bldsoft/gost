@@ -38,23 +38,22 @@ type Record struct {
 	Timestamp int64     `json:"timestamp" bson:"timestamp"`
 	Operation Operation `json:"operation" bson:"operation"`
 	Entity    string    `json:"entity" bson:"entity"`
-	EntityID  idType    `json:"entityID" bson:"entityID"`
+	EntityID  idType    `json:"entityID,omitempty" bson:"entityID,omitempty"`
 	RequestID string    `json:"requestID" bson:"requestID"`
 	Data      string    `json:"data" bson:"data"`
 }
 
 func NewRecord(ctx context.Context, collectionName string, op Operation, entity EntityID) (*Record, error) {
-	user, ok := ctx.Value(UserEntryCtxKey).(EntityID)
-	if !ok {
-		return nil, UserNotFound
-	}
-
 	rec := &Record{
-		UserID:    user.GetID(),
 		Timestamp: time.Now().Unix(),
 		Operation: op,
 		Entity:    collectionName,
 		RequestID: middleware.GetReqID(ctx),
+	}
+
+	user, ok := ctx.Value(UserEntryCtxKey).(EntityID)
+	if ok {
+		rec.UserID = user.GetID()
 	}
 
 	if entity != nil {

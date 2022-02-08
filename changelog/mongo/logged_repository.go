@@ -33,7 +33,7 @@ func NewLoggedRepository[T any, U LoggedEntity[T]](db *mongo.MongoDb, collection
 }
 
 func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err error) {
-	rec, err := newRecord(ctx, r.Name(), changelog.Create, entity)
+	rec, err := newRecord(ctx, r.Name(), changelog.Create)
 	if err != nil {
 		return err
 	}
@@ -43,6 +43,8 @@ func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err erro
 		if err := r.Repository.Insert(ctx, entity); err != nil {
 			return nil, err
 		}
+		rec.Record.EntityID = entity.GetID()
+		rec.SetData(entity)
 		return nil, r.changeLogRep.Insert(ctx, rec)
 	})
 	return err
@@ -66,7 +68,7 @@ func (r *LoggedRepository[T, U]) getDiff(old U, new U) ([]byte, error) {
 }
 
 func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U) error {
-	rec, err := newRecord(ctx, r.Name(), changelog.Update, nil)
+	rec, err := newRecord(ctx, r.Name(), changelog.Update)
 	if err != nil {
 		return err
 	}
@@ -92,7 +94,7 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U) error {
 }
 
 func (r *LoggedRepository[T, U]) Delete(ctx context.Context, entity U, options ...*repository.QueryOptions) error {
-	rec, err := newRecord(ctx, r.Name(), changelog.Delete, nil)
+	rec, err := newRecord(ctx, r.Name(), changelog.Delete)
 	if err != nil {
 		return err
 	}
@@ -102,6 +104,8 @@ func (r *LoggedRepository[T, U]) Delete(ctx context.Context, entity U, options .
 		if err := r.Repository.Delete(ctx, entity, options...); err != nil {
 			return nil, err
 		}
+
+		rec.Record.EntityID = entity.GetID()
 		if entity, err := r.Repository.FindOne(ctx, bson.M{"_id": entity.GetID()}); err == nil {
 			rec.Record.SetData(entity)
 		}
