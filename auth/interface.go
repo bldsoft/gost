@@ -32,8 +32,14 @@ type IUserRepository[U any] interface {
 	Delete(ctx context.Context, user U, options ...*repository.QueryOptions) error
 }
 
+type PasswordHasher interface {
+	HashAndSalt(password string) (string, error)
+	VerifyPassword(passwordHash, password string) error
+}
+
 // IAuthService ...
 type IAuthService[T any, U AuthenticatablePtr[T]] interface {
+	PasswordHasher
 	SignUp(ctx context.Context, user U) error
 	Login(ctx context.Context, username, password string) (U, error)
 }

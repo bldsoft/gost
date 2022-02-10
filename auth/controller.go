@@ -23,6 +23,10 @@ func NewAuthController[U AuthenticatablePtr[T], T any](sessionStore sessions.Sto
 	return &AuthController[T, U]{sessionStore: sessionStore, authService: NewAuthService[T, U](userRep), cookieName: cookieName}
 }
 
+func (c *AuthController[T, U]) Service() IAuthService[T, U] {
+	return c.authService
+}
+
 func (c *AuthController[T, U]) session(w http.ResponseWriter, r *http.Request) (*sessions.Session, bool) {
 	session, err := c.sessionStore.Get(r, c.cookieName)
 	if err != nil {

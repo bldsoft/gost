@@ -9,15 +9,9 @@ import (
 
 var ErrWrongPassword = fmt.Errorf("wrong password")
 
-// type PasswordHasher interface {
-// 	HashAndSalt(password []byte) ([]byte, error)
-// 	VerifyPassword(passwordHash, password []byte) error
-// }
-
 // AuthService ...
 type AuthService[T any, U AuthenticatablePtr[T]] struct {
 	userRep IUserRepository[U]
-	// passwordHasher PasswordHasher
 }
 
 // NewAuthService ...
@@ -26,7 +20,7 @@ func NewAuthService[T any, U AuthenticatablePtr[T]](rep IUserRepository[U]) *Aut
 }
 
 func (s *AuthService[T, U]) SignUp(ctx context.Context, user U) error {
-	hashedPass, err := s.hashAndSalt(user.Password())
+	hashedPass, err := s.HashAndSalt(user.Password())
 	if err != nil {
 		return fmt.Errorf("failed to hash password: %v", err)
 	}
@@ -40,17 +34,17 @@ func (s *AuthService[T, U]) Login(ctx context.Context, username, password string
 		return nil, err
 	}
 
-	if err := s.verifyPassword(user.Password(), password); err != nil {
+	if err := s.VerifyPassword(user.Password(), password); err != nil {
 		return nil, ErrWrongPassword
 	}
 	return user, nil
 }
 
-func (s *AuthService[T, U]) hashAndSalt(password string) (string, error) {
+func (s *AuthService[T, U]) HashAndSalt(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(hash), err
 }
 
-func (s *AuthService[T, U]) verifyPassword(passwordHash, password string) error {
+func (s *AuthService[T, U]) VerifyPassword(passwordHash, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
 }
