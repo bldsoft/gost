@@ -1,5 +1,9 @@
 package auth
 
+const BsonFieldNameUsername = "name"
+const BsonFieldNamePassword = "password"
+const BsonFieldNameRole = "role"
+
 type Creds struct {
 	Username     string `json:"name,omitempty" bson:"name,omitempty"`
 	UserPassword string `json:"password,omitempty" bson:"password,omitempty"`
