@@ -11,20 +11,20 @@ import (
 var ErrWrongPassword = fmt.Errorf("wrong password")
 
 // AuthService ...
-type AuthService[U AuthenticatablePtr[T], T any] struct {
-	userRep IUserRepository[U]
+type AuthService[PT AuthenticatablePtr[T], T any] struct {
+	userRep IUserRepository[PT]
 }
 
 // NewAuthService ...
-func NewAuthService[U AuthenticatablePtr[T], T any](rep IUserRepository[U]) *AuthService[U, T] {
-	return &AuthService[U, T]{userRep: rep}
+func NewAuthService[PT AuthenticatablePtr[T], T any](rep IUserRepository[PT]) *AuthService[PT, T] {
+	return &AuthService[PT, T]{userRep: rep}
 }
 
-func (s *AuthService[U, T]) UserFromContext(ctx context.Context, allowPanic bool) (U, bool) {
-	return FromContext[U](ctx, allowPanic)
+func (s *AuthService[PT, T]) UserFromContext(ctx context.Context, allowPanic bool) (PT, bool) {
+	return FromContext[PT](ctx, allowPanic)
 }
 
-func (s *AuthService[U, T]) prepareEntity(user U) error {
+func (s *AuthService[PT, T]) prepareEntity(user PT) error {
 	hashedPass, err := s.HashAndSalt(user.Password())
 	if err != nil {
 		return fmt.Errorf("failed to hash password: %v", err)
@@ -33,21 +33,21 @@ func (s *AuthService[U, T]) prepareEntity(user U) error {
 	return nil
 }
 
-func (s *AuthService[U, T]) CreateUser(ctx context.Context, user U) error {
+func (s *AuthService[PT, T]) CreateUser(ctx context.Context, user PT) error {
 	if err := s.prepareEntity(user); err != nil {
 		return err
 	}
 	return s.userRep.Insert(ctx, user)
 }
 
-func (s *AuthService[U, T]) UpdateUser(ctx context.Context, user U) error {
+func (s *AuthService[PT, T]) UpdateUser(ctx context.Context, user PT) error {
 	if err := s.prepareEntity(user); err != nil {
 		return err
 	}
 	return s.userRep.Update(ctx, user)
 }
 
-func (s *AuthService[U, T]) Login(ctx context.Context, username, password string) (U, error) {
+func (s *AuthService[PT, T]) Login(ctx context.Context, username, password string) (PT, error) {
 	user, err := s.userRep.FindByName(ctx, username, &repository.QueryOptions{Archived: false})
 	if err != nil {
 		return nil, err
@@ -59,11 +59,11 @@ func (s *AuthService[U, T]) Login(ctx context.Context, username, password string
 	return user, nil
 }
 
-func (s *AuthService[U, T]) HashAndSalt(password string) (string, error) {
+func (s *AuthService[PT, T]) HashAndSalt(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(hash), err
 }
 
-func (s *AuthService[U, T]) VerifyPassword(passwordHash, password string) error {
+func (s *AuthService[PT, T]) VerifyPassword(passwordHash, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
 }
