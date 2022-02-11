@@ -26,10 +26,9 @@ type Authorizable[T IRole] interface {
 }
 
 type IUserRepository[U any] interface {
-	Insert(ctx context.Context, user U) error
-	FindByName(ctx context.Context, name string) (U, error)
 	Update(ctx context.Context, user U) error
-	Delete(ctx context.Context, user U, options ...*repository.QueryOptions) error
+	Insert(ctx context.Context, user U) error
+	FindByName(ctx context.Context, name string, options ...*repository.QueryOptions) (U, error)
 }
 
 type PasswordHasher interface {
@@ -38,8 +37,9 @@ type PasswordHasher interface {
 }
 
 // IAuthService ...
-type IAuthService[T any, U AuthenticatablePtr[T]] interface {
+type IAuthService[U AuthenticatablePtr[T], T any] interface {
 	PasswordHasher
-	SignUp(ctx context.Context, user U) error
+	CreateUser(ctx context.Context, user U) error
+	UpdateUser(ctx context.Context, user U) error
 	Login(ctx context.Context, username, password string) (U, error)
 }
