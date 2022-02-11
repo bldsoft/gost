@@ -23,3 +23,11 @@ func (e *EntityID) SetIDFromString(id string) error {
 func (e *EntityID) GenerateID() {
 	e.ID = primitive.NewObjectID()
 }
+
+func (e *EntityID) StringID() string {
+	return e.ID.Hex()
+}
+
+func (e *EntityID) IsNilID() bool {
+	return e.ID == primitive.NilObjectID
+}
