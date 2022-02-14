@@ -48,7 +48,7 @@ func (s *AuthService[PT, T]) UpdateUser(ctx context.Context, user PT) error {
 }
 
 func (s *AuthService[PT, T]) Login(ctx context.Context, username, password string) (PT, error) {
-	user, err := s.userRep.FindByName(ctx, username, &repository.QueryOptions{Archived: false})
+	user, err := s.userRep.FindByLogin(ctx, username, &repository.QueryOptions{Archived: false})
 	if err != nil {
 		return nil, err
 	}

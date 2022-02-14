@@ -1,16 +1,16 @@
 package auth
 
-const BsonFieldNameUsername = "name"
+const BsonFieldNameEmail = "name"
 const BsonFieldNamePassword = "password"
 const BsonFieldNameRole = "role"
 
 type Creds struct {
-	Username     string `json:"name,omitempty" bson:"name,omitempty"`
+	UserLogin    string `json:"name,omitempty" bson:"name,omitempty"`
 	UserPassword string `json:"password,omitempty" bson:"password,omitempty"`
 }
 
-func (c *Creds) Name() string {
-	return c.Username
+func (c *Creds) Login() string {
+	return c.UserLogin
 }
 
 func (c *Creds) SetPassword(password string) {

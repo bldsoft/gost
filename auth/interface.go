@@ -7,7 +7,7 @@ import (
 )
 
 type Authenticatable interface {
-	Name() string
+	Login() string
 	Password() string
 	SetPassword(string)
 }
@@ -28,7 +28,7 @@ type Authorizable[T IRole] interface {
 type IUserRepository[PT any] interface {
 	Update(ctx context.Context, user PT) error
 	Insert(ctx context.Context, user PT) error
-	FindByName(ctx context.Context, name string, options ...*repository.QueryOptions) (PT, error)
+	FindByLogin(ctx context.Context, name string, options ...*repository.QueryOptions) (PT, error)
 }
 
 type PasswordHasher interface {
