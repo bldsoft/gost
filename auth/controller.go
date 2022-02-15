@@ -5,7 +5,6 @@ import (
 
 	"github.com/bldsoft/gost/controller"
 	"github.com/bldsoft/gost/log"
-	"github.com/bldsoft/gost/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/sessions"
 )
@@ -59,6 +58,7 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 
 			user, ok := session.Values[SessionUserKey].(T)
 			if !ok {
+				log.FromContext(r.Context()).Info("User session isn't found")
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
@@ -76,6 +76,7 @@ func (c *AuthController[PT, T]) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := c.authService.CreateUser(r.Context(), &user); err != nil {
+		log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err}, "Failed to create user")
 		c.ResponseError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -87,13 +88,12 @@ func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	username, password, ok := r.BasicAuth()
 	if !ok {
+		log.FromContext(ctx).Info("Failed to get username and password")
 		c.ResponseError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
 	user, err := c.authService.Login(ctx, username, password)
 	switch err {
-	case utils.ErrObjectNotFound:
-		c.ResponseError(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	case nil:
 		session, ok := c.session(w, r)
 		if !ok {
@@ -101,6 +101,7 @@ func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 		}
 		session.Values[SessionUserKey] = *user
 		if c.saveSession(w, r, session) {
+			log.FromContext(ctx).InfoWithFields(log.Fields{"login": user.Login()}, "User is logged in")
 			c.ResponseOK(w)
 		}
 	default:
@@ -116,9 +117,8 @@ func (c *AuthController[PT, T]) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session.Values[SessionUserKey] = nil
+	// Delete session (MaxAge <= 0)
 	session.Options.MaxAge = -1
-
 	if c.saveSession(w, r, session) {
 		c.ResponseOK(w)
 	}
