@@ -14,13 +14,14 @@ const SessionUserKey = "user"
 // AuthController ...
 type AuthController[PT AuthenticatablePtr[T], T any] struct {
 	controller.BaseController
-	sessionStore sessions.Store
 	authService  IAuthService[PT, T]
+	sessionStore sessions.Store
 	cookieName   string
 }
 
-func NewAuthController[PT AuthenticatablePtr[T], T any](sessionStore sessions.Store, service IAuthService[PT, T], cookieName string) *AuthController[PT, T] {
-	return &AuthController[PT, T]{sessionStore: sessionStore, authService: service, cookieName: cookieName}
+func NewAuthController[PT AuthenticatablePtr[T], T any](rep IAuthRepository[PT], hasher PasswordHasher, sessionStore sessions.Store, cookieName string) *AuthController[PT, T] {
+	service := NewAuthService[PT,T](rep, hasher)
+	return &AuthController[PT, T]{authService: service, sessionStore: sessionStore, cookieName: cookieName}
 }
 
 func (c *AuthController[PT, T]) Service() IAuthService[PT, T] {
@@ -47,7 +48,7 @@ func (c *AuthController[PT, T]) saveSession(w http.ResponseWriter, r *http.Reque
 	return true
 }
 
-// AuthenticateMiddleware authenticates user and put it into into request context.
+// AuthenticateMiddleware authenticates user and put it into request context.
 func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -68,21 +69,6 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 	}
 }
 
-// SignUp ...
-func (c *AuthController[PT, T]) SignUp(w http.ResponseWriter, r *http.Request) {
-	var user T
-	if !c.GetObjectFromBody(w, r, &user) {
-		return
-	}
-
-	if err := c.authService.CreateUser(r.Context(), &user); err != nil {
-		log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err}, "Failed to create user")
-		c.ResponseError(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	c.ResponseOK(w)
-}
 
 func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -125,7 +111,6 @@ func (c *AuthController[PT, T]) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *AuthController[PT, T]) Mount(r chi.Router) {
-	r.Post("/signup", c.SignUp)
 	r.Post("/login", c.Login)
 	r.Post("/logout", c.Logout)
 }
