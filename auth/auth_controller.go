@@ -12,14 +12,14 @@ import (
 const SessionUserKey = "user"
 
 // AuthController ...
-type AuthController[PT AuthenticatablePtr[T], T any] struct {
+type AuthController[PT AuthenticablePtr[T], T any] struct {
 	controller.BaseController
 	authService  IAuthService[PT, T]
 	sessionStore sessions.Store
 	cookieName   string
 }
 
-func NewAuthController[PT AuthenticatablePtr[T], T any](rep IAuthRepository[PT], hasher PasswordHasher, sessionStore sessions.Store, cookieName string) *AuthController[PT, T] {
+func NewAuthController[PT AuthenticablePtr[T], T any](rep IAuthRepository[PT], hasher PasswordHasher, sessionStore sessions.Store, cookieName string) *AuthController[PT, T] {
 	service := NewAuthService[PT, T](rep, hasher)
 	return &AuthController[PT, T]{authService: service, sessionStore: sessionStore, cookieName: cookieName}
 }
@@ -73,7 +73,7 @@ func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	username, password, ok := r.BasicAuth()
 	if !ok {
-		log.FromContext(ctx).Info("Failed to get username and password")
+		log.FromContext(ctx).Error("Failed to get username and password")
 		c.ResponseError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}

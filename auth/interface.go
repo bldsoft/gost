@@ -7,20 +7,20 @@ import (
 	"github.com/bldsoft/gost/repository"
 )
 
-type Authenticatable interface {
+type Authenticable interface {
 	Login() string
 	Password() string
 	SetPassword(string)
 }
 
-type AuthenticatablePtr[T any] interface {
+type AuthenticablePtr[T any] interface {
 	*T
-	Authenticatable
+	Authenticable
 }
 
 type IUserPtr[T any] interface {
 	mongo.IEntityID
-	AuthenticatablePtr[T]
+	AuthenticablePtr[T]
 }
 
 type IRole interface {
@@ -40,7 +40,7 @@ type IAuthRepository[PT any] interface {
 }
 
 // IAuthService ...
-type IAuthService[PT AuthenticatablePtr[T], T any] interface {
+type IAuthService[PT AuthenticablePtr[T], T any] interface {
 	Login(ctx context.Context, username, password string) (PT, error)
 }
 
@@ -52,7 +52,7 @@ type IUserRepository[PT any] interface {
 	Delete(ctx context.Context, id string, options ...*repository.QueryOptions) error
 }
 
-type IUserService[PT AuthenticatablePtr[T], T any] interface {
+type IUserService[PT AuthenticablePtr[T], T any] interface {
 	Create(ctx context.Context, user PT) error
 	GetAll(ctx context.Context) ([]PT, error)
 	GetByID(ctx context.Context, id string) (PT, error)

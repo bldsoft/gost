@@ -37,5 +37,5 @@ type User[R IRole] struct {
 	EntityRole[R] `bson:",inline" json:",inline"`
 }
 
-var _ Authenticatable = (*User[int])(nil)
+var _ Authenticable = (*User[int])(nil)
 var _ Authorizable[int] = (*User[int])(nil)

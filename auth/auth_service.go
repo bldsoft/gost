@@ -10,13 +10,13 @@ import (
 var ErrWrongPassword = fmt.Errorf("wrong password")
 
 // AuthService ...
-type AuthService[PT AuthenticatablePtr[T], T any] struct {
+type AuthService[PT AuthenticablePtr[T], T any] struct {
 	userRep        IAuthRepository[PT]
 	passwordHasher PasswordHasher
 }
 
 // NewAuthService ...
-func NewAuthService[PT AuthenticatablePtr[T], T any](rep IAuthRepository[PT], passwordHasher PasswordHasher) *AuthService[PT, T] {
+func NewAuthService[PT AuthenticablePtr[T], T any](rep IAuthRepository[PT], passwordHasher PasswordHasher) *AuthService[PT, T] {
 	return &AuthService[PT, T]{userRep: rep, passwordHasher: passwordHasher}
 }
 
