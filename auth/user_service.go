@@ -6,7 +6,7 @@ import (
 
 // UserService ...
 type UserService[PT IUserPtr[T], T any] struct {
-	userRep IUserRepository[PT]
+	userRep        IUserRepository[PT]
 	passwordHasher PasswordHasher
 }
 
@@ -36,7 +36,7 @@ func (s *UserService[PT, T]) GetByID(ctx context.Context, id string) (PT, error)
 	return s.userRep.FindByID(ctx, id)
 }
 
-func (s *UserService[PT, T]) Update(ctx context.Context, user PT) (error) {
+func (s *UserService[PT, T]) Update(ctx context.Context, user PT) error {
 	user.SetPassword("") // don't update password
 	return s.userRep.Update(ctx, user)
 }

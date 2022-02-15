@@ -16,14 +16,13 @@ func (c *EntityPassword) Password() string {
 }
 
 type Creds struct {
-	UserLogin    string `json:"name,omitempty" bson:"name,omitempty"`
+	UserLogin      string `json:"name,omitempty" bson:"name,omitempty"`
 	EntityPassword `bson:",inline" json:",inline"`
 }
 
 func (c *Creds) Login() string {
 	return c.UserLogin
 }
-
 
 type EntityRole[T IRole] struct {
 	UserRole T `json:"role,omitempty" bson:"role,omitempty"`

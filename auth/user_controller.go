@@ -1,13 +1,12 @@
-package auth 
+package auth
 
 import (
-
-	"net/http"
 	"errors"
+	"net/http"
 
-	"github.com/bldsoft/gost/utils"
-	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/controller"
+	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/utils"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -22,7 +21,7 @@ func NewUserController[PT IUserPtr[T], T any](service IUserService[PT, T]) *User
 	return &UserController[PT, T]{service: service}
 }
 
-func (c  *UserController[PT, T]) GetHandler(w http.ResponseWriter, r *http.Request) {
+func (c *UserController[PT, T]) GetHandler(w http.ResponseWriter, r *http.Request) {
 	users, err := c.service.GetAll(r.Context())
 	switch err {
 	case nil:
@@ -68,7 +67,7 @@ func (c *UserController[PT, T]) PostHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (c  *UserController[PT, T]) PutHandler(w http.ResponseWriter, r *http.Request) {
+func (c *UserController[PT, T]) PutHandler(w http.ResponseWriter, r *http.Request) {
 	var user T
 	if !c.GetObjectFromBody(w, r, &user) {
 		return

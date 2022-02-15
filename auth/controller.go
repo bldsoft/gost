@@ -20,7 +20,7 @@ type AuthController[PT AuthenticatablePtr[T], T any] struct {
 }
 
 func NewAuthController[PT AuthenticatablePtr[T], T any](rep IAuthRepository[PT], hasher PasswordHasher, sessionStore sessions.Store, cookieName string) *AuthController[PT, T] {
-	service := NewAuthService[PT,T](rep, hasher)
+	service := NewAuthService[PT, T](rep, hasher)
 	return &AuthController[PT, T]{authService: service, sessionStore: sessionStore, cookieName: cookieName}
 }
 
@@ -68,7 +68,6 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 
 	}
 }
-
 
 func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()

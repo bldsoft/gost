@@ -13,7 +13,6 @@ type Authenticatable interface {
 	SetPassword(string)
 }
 
-
 type AuthenticatablePtr[T any] interface {
 	*T
 	Authenticatable
@@ -46,17 +45,16 @@ type IAuthService[PT AuthenticatablePtr[T], T any] interface {
 }
 
 type IUserRepository[PT any] interface {
-	Insert(ctx context.Context, user PT) error 
-	GetAll(ctx context.Context,options ...*repository.QueryOptions) ([]PT, error) 
-	FindByID(ctx context.Context, id string,options ...*repository.QueryOptions) (PT, error)
+	Insert(ctx context.Context, user PT) error
+	GetAll(ctx context.Context, options ...*repository.QueryOptions) ([]PT, error)
+	FindByID(ctx context.Context, id string, options ...*repository.QueryOptions) (PT, error)
 	Update(ctx context.Context, user PT) error
 	Delete(ctx context.Context, id string, options ...*repository.QueryOptions) error
 }
 
-
 type IUserService[PT AuthenticatablePtr[T], T any] interface {
-	Create(ctx context.Context, user PT) error 
-	GetAll(ctx context.Context) ([]PT, error) 
+	Create(ctx context.Context, user PT) error
+	GetAll(ctx context.Context) ([]PT, error)
 	GetByID(ctx context.Context, id string) (PT, error)
 	Update(ctx context.Context, user PT) error
 	UpdatePassword(ctx context.Context, id, password string) error

@@ -11,7 +11,7 @@ var ErrWrongPassword = fmt.Errorf("wrong password")
 
 // AuthService ...
 type AuthService[PT AuthenticatablePtr[T], T any] struct {
-	userRep IAuthRepository[PT]
+	userRep        IAuthRepository[PT]
 	passwordHasher PasswordHasher
 }
 
@@ -31,5 +31,3 @@ func (s *AuthService[PT, T]) Login(ctx context.Context, username, password strin
 	}
 	return user, nil
 }
-
-
