@@ -59,7 +59,7 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 
 			user, ok := session.Values[SessionUserKey].(T)
 			if !ok {
-				log.FromContext(r.Context()).Info("User session isn't found")
+				log.FromContext(r.Context()).Error("User session isn't found")
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
@@ -91,7 +91,7 @@ func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 			c.ResponseOK(w)
 		}
 	default:
-		log.FromContext(ctx).Infof(err.Error())
+		log.FromContext(ctx).Error(err.Error())
 		c.ResponseError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 	}
 }
