@@ -34,11 +34,11 @@ type EntityID interface {
 }
 
 type Record struct {
-	UserID    idType    `json:"userID" bson:"userID"`
+	UserID    idType    `json:"userID,omitempty" bson:"userID,omitempty"`
 	Timestamp int64     `json:"timestamp" bson:"timestamp"`
 	Operation Operation `json:"operation" bson:"operation"`
 	Entity    string    `json:"entity" bson:"entity"`
-	EntityID  idType    `json:"entityID,omitempty" bson:"entityID,omitempty"`
+	EntityID  idType    `json:"entityID" bson:"entityID"`
 	RequestID string    `json:"requestID" bson:"requestID"`
 	Data      string    `json:"data" bson:"data"`
 }
