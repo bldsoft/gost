@@ -51,6 +51,6 @@ func (s *UserService[PT, T]) Update(ctx context.Context, user PT) error {
 	return s.userRep.Update(ctx, user)
 }
 
-func (s *UserService[PT, T]) Delete(ctx context.Context, user PT) error {
-	return s.userRep.Delete(ctx, user)
+func (s *UserService[PT, T]) Delete(ctx context.Context, id string) error {
+	return s.userRep.Delete(ctx, id)
 }

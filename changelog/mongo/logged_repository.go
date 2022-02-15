@@ -6,7 +6,6 @@ import (
 
 	"github.com/bldsoft/gost/changelog"
 	jsonpatch "github.com/evanphx/json-patch"
-	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
@@ -93,20 +92,23 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U) error {
 	return err
 }
 
-func (r *LoggedRepository[T, U]) Delete(ctx context.Context, entity U, options ...*repository.QueryOptions) error {
+func (r *LoggedRepository[T, U]) Delete(ctx context.Context, id string, options ...*repository.QueryOptions) error {
 	rec, err := newRecord(ctx, r.Name(), changelog.Delete)
 	if err != nil {
 		return err
 	}
 
 	_, err = r.Repository.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
-		entity.SetChangeID(rec.GetID())
-		if err := r.Repository.Delete(ctx, entity, options...); err != nil {
+		if err := r.Repository.Delete(ctx, id, options...); err != nil {
 			return nil, err
 		}
 
-		rec.Record.EntityID = entity.GetID()
-		if entity, err := r.Repository.FindOne(ctx, bson.M{"_id": entity.GetID()}); err == nil {
+		rec.Record.EntityID = id
+		if entity, err := r.Repository.FindByID(ctx, id); err == nil {
+			entity.SetChangeID(rec.GetID())
+			if err := r.Repository.Update(ctx, entity); err != nil {
+				return nil, err
+			}
 			rec.Record.SetData(entity)
 		}
 		return nil, r.changeLogRep.Insert(ctx, rec)

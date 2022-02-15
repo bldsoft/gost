@@ -181,15 +181,19 @@ func (r *Repository[T, U]) UpsertOne(ctx context.Context, filter interface{}, up
 }
 
 //Delete removes object by id
-func (r *Repository[T, U]) Delete(ctx context.Context, e U, options ...*repository.QueryOptions) error {
+func (r *Repository[T, U]) Delete(ctx context.Context, id string, options ...*repository.QueryOptions) error {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
 	if options != nil {
 		if !options[0].Archived {
-			_, err := r.Collection().DeleteOne(ctx, bson.M{"_id": e.GetID()})
+			_, err := r.Collection().DeleteOne(ctx, bson.M{"_id": objID})
 			return err
 		}
 	}
 
-	return r.UpdateOne(ctx, bson.M{"_id": e.GetID()}, bson.M{"$set": bson.M{bsonFieldNameArchived: true}})
+	return r.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": bson.M{bsonFieldNameArchived: true}})
 }
 
 func (r *Repository[T, U]) fillTimeStamp(ctx context.Context, e IEntityID, fillCreateTime bool) {

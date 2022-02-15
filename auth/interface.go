@@ -50,7 +50,7 @@ type IUserRepository[PT any] interface {
 	GetAll(ctx context.Context,options ...*repository.QueryOptions) ([]PT, error) 
 	FindByID(ctx context.Context, id string,options ...*repository.QueryOptions) (PT, error)
 	Update(ctx context.Context, user PT) error
-	Delete(ctx context.Context, user PT, options ...*repository.QueryOptions) error
+	Delete(ctx context.Context, id string, options ...*repository.QueryOptions) error
 }
 
 
@@ -59,5 +59,5 @@ type IUserService[PT AuthenticatablePtr[T], T any] interface {
 	GetAll(ctx context.Context) ([]PT, error) 
 	GetByID(ctx context.Context, id string) (PT, error)
 	Update(ctx context.Context, user PT) error
-	Delete(ctx context.Context, user PT) error
+	Delete(ctx context.Context, id string) error
 }

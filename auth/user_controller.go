@@ -87,10 +87,7 @@ func (c  *UserController[PT, T]) PutHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c *UserController[PT, T]) DeleteHandler(w http.ResponseWriter, r *http.Request) {
-	var user T
-	var userPtr PT = &user
-	userPtr.SetIDFromString(chi.URLParam(r, "id"))
-	err := c.service.Delete(r.Context(), userPtr)
+	err := c.service.Delete(r.Context(), chi.URLParam(r, "id"))
 	switch err {
 	case nil:
 		c.ResponseOK(w)
