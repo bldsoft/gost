@@ -86,6 +86,23 @@ func (c  *UserController[PT, T]) PutHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+func (c *UserController[PT, T]) PasswordPutHandler(w http.ResponseWriter, r *http.Request) {
+	var pass EntityPassword
+	if !c.GetObjectFromBody(w, r, &pass) {
+		return
+	}
+	err := c.service.UpdatePassword(r.Context(), chi.URLParam(r, "id"), pass.Password())
+	switch err {
+	case nil:
+		c.ResponseOK(w)
+	case ErrForbidden:
+		c.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+	default:
+		log.FromContext(r.Context()).Error(err.Error())
+		c.ResponseError(w, err.Error(), http.StatusBadRequest)
+	}
+}
+
 func (c *UserController[PT, T]) DeleteHandler(w http.ResponseWriter, r *http.Request) {
 	err := c.service.Delete(r.Context(), chi.URLParam(r, "id"))
 	switch err {
@@ -106,5 +123,6 @@ func (c *UserController[PT, T]) Mount(r chi.Router) {
 	r.Get("/{id}", c.GetByID)
 	r.Post("/", c.PostHandler)
 	r.Put("/{id}", c.PutHandler)
+	r.Put("/{id}/password", c.PasswordPutHandler)
 	r.Delete("/{id}", c.DeleteHandler)
 }

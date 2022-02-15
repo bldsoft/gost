@@ -59,5 +59,6 @@ type IUserService[PT AuthenticatablePtr[T], T any] interface {
 	GetAll(ctx context.Context) ([]PT, error) 
 	GetByID(ctx context.Context, id string) (PT, error)
 	Update(ctx context.Context, user PT) error
+	UpdatePassword(ctx context.Context, id, password string) error
 	Delete(ctx context.Context, id string) error
 }

@@ -2,11 +2,10 @@ package auth
 
 import (
 	"context"
-	"fmt"
 )
 
 // UserService ...
-type UserService[PT AuthenticatablePtr[T], T any] struct {
+type UserService[PT IUserPtr[T], T any] struct {
 	userRep IUserRepository[PT]
 	passwordHasher PasswordHasher
 }
@@ -20,19 +19,12 @@ func (s *UserService[PT, T]) UserFromContext(ctx context.Context, allowPanic boo
 	return FromContext[PT](ctx, allowPanic)
 }
 
-func (s *UserService[PT, T]) prepareEntity(user PT) error {
+func (s *UserService[PT, T]) Create(ctx context.Context, user PT) error {
 	hashedPass, err := s.passwordHasher.HashAndSalt(user.Password())
 	if err != nil {
-		return fmt.Errorf("failed to hash password: %v", err)
-	}
-	user.SetPassword(hashedPass)
-	return nil
-}
-
-func (s *UserService[PT, T]) Create(ctx context.Context, user PT) error {
-	if err := s.prepareEntity(user); err != nil {
 		return err
 	}
+	user.SetPassword(hashedPass)
 	return s.userRep.Insert(ctx, user)
 }
 
@@ -44,11 +36,20 @@ func (s *UserService[PT, T]) GetByID(ctx context.Context, id string) (PT, error)
 	return s.userRep.FindByID(ctx, id)
 }
 
-func (s *UserService[PT, T]) Update(ctx context.Context, user PT) error {
-	if err := s.prepareEntity(user); err != nil {
+func (s *UserService[PT, T]) Update(ctx context.Context, user PT) (error) {
+	user.SetPassword("") // don't update password
+	return s.userRep.Update(ctx, user)
+}
+
+func (s *UserService[PT, T]) UpdatePassword(ctx context.Context, id, password string) error {
+	hashedPass, err := s.passwordHasher.HashAndSalt(password)
+	if err != nil {
 		return err
 	}
-	return s.userRep.Update(ctx, user)
+	var user T
+	PT(&user).SetIDFromString(id)
+	PT(&user).SetPassword(hashedPass)
+	return s.userRep.Update(ctx, &user)
 }
 
 func (s *UserService[PT, T]) Delete(ctx context.Context, id string) error {
