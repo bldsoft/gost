@@ -48,6 +48,12 @@ func (c *AuthController[PT, T]) saveSession(w http.ResponseWriter, r *http.Reque
 	return true
 }
 
+func (c *AuthController[PT, T]) deleteSession(w http.ResponseWriter, r *http.Request, session *sessions.Session) bool {
+	// Delete session (MaxAge <= 0)
+	session.Options.MaxAge = -1
+	return c.saveSession(w, r, session)
+}
+
 // AuthenticateMiddleware authenticates user and put it into request context.
 func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -95,16 +101,36 @@ func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Refresh ...
+func (c *AuthController[PT, T]) Refresh(w http.ResponseWriter, r *http.Request) {
+	session, ok := c.session(w, r)
+	if !ok {
+		return
+	}
+
+	newSession, err := c.sessionStore.New(&http.Request{}, c.cookieName)
+	if err != nil {
+		log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err}, "Failed to create a new session")
+		c.ResponseError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	newSession.Values = session.Values
+	if !c.deleteSession(w, r, session) {
+		return
+	}
+	w.Header().Del("Set-Cookie")
+	if c.saveSession(w, r, newSession) {
+		c.ResponseOK(w)
+	}
+}
+
 // Logout ...
 func (c *AuthController[PT, T]) Logout(w http.ResponseWriter, r *http.Request) {
 	session, ok := c.session(w, r)
 	if !ok {
 		return
 	}
-
-	// Delete session (MaxAge <= 0)
-	session.Options.MaxAge = -1
-	if c.saveSession(w, r, session) {
+	if c.deleteSession(w, r, session) {
 		c.ResponseOK(w)
 	}
 }
@@ -112,4 +138,8 @@ func (c *AuthController[PT, T]) Logout(w http.ResponseWriter, r *http.Request) {
 func (c *AuthController[PT, T]) Mount(r chi.Router) {
 	r.Post("/login", c.Login)
 	r.Post("/logout", c.Logout)
+	r.Group(func(r chi.Router) {
+		r.Use(c.AuthenticateMiddleware())
+		r.Post("/refresh", c.Refresh)
+	})
 }
