@@ -62,12 +62,13 @@ func ReadFromEnv(config interface{}, prefix string) error {
 			continue
 		}
 
-		if tagValue != "" {
-			if prefix != "" {
-				tagToEnvKey = append(tagToEnvKey, tagValue, addPrefix(tagValue, prefix))
-			}
-			v.BindEnv(tagValue)
+		if tagValue == "" {
+			tagValue = strings.ToUpper(configType.Field(i).Name)
 		}
+		if prefix != "" {
+			tagToEnvKey = append(tagToEnvKey, tagValue, addPrefix(tagValue, prefix))
+		}
+		v.BindEnv(tagValue)
 	}
 
 	if len(tagToEnvKey) > 0 {
