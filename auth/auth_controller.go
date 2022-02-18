@@ -69,6 +69,9 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
+			if !c.saveSession(w, r, session) {
+				return
+			}
 			next.ServeHTTP(w, WithUserContext(r, &user))
 		})
 
@@ -107,19 +110,7 @@ func (c *AuthController[PT, T]) Refresh(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
-
-	newSession, err := c.sessionStore.New(&http.Request{}, c.cookieName)
-	if err != nil {
-		log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err}, "Failed to create a new session")
-		c.ResponseError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	newSession.Values = session.Values
-	if !c.deleteSession(w, r, session) {
-		return
-	}
-	w.Header().Del("Set-Cookie")
-	if c.saveSession(w, r, newSession) {
+	if c.saveSession(w, r, session) {
 		c.ResponseOK(w)
 	}
 }
