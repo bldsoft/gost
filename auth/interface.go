@@ -47,9 +47,9 @@ type IAuthService[PT AuthenticablePtr[T], T any] interface {
 type IUserRepository[PT any] interface {
 	Insert(ctx context.Context, user PT) error
 	GetAll(ctx context.Context, options ...*repository.QueryOptions) ([]PT, error)
-	FindByID(ctx context.Context, id string, options ...*repository.QueryOptions) (PT, error)
+	FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (PT, error)
 	Update(ctx context.Context, user PT) error
-	Delete(ctx context.Context, id string, options ...*repository.QueryOptions) error
+	Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error
 }
 
 type IUserService[PT AuthenticablePtr[T], T any] interface {

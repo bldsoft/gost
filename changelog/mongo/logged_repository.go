@@ -92,7 +92,7 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U) error {
 	return err
 }
 
-func (r *LoggedRepository[T, U]) Delete(ctx context.Context, id string, options ...*repository.QueryOptions) error {
+func (r *LoggedRepository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
 	rec, err := newRecord(ctx, r.Name(), changelog.Delete)
 	if err != nil {
 		return err

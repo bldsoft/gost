@@ -74,12 +74,18 @@ func (r *Repository[T, U]) FindOne(ctx context.Context, filter interface{}, opti
 	return &result, err
 }
 
-func (r *Repository[T, U]) FindByID(ctx context.Context, id string, options ...*repository.QueryOptions) (U, error) {
-	objID, err := primitive.ObjectIDFromHex(id)
+func (r *Repository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
+	var err error
+	switch v := id.(type) {
+	case string:
+		id, err = primitive.ObjectIDFromHex(v)
+	case IEntityID:
+		id = v.GetID()
+	}
 	if err != nil {
 		return nil, err
 	}
-	return r.FindOne(ctx, bson.M{"_id": objID}, options...)
+	return r.FindOne(ctx, bson.M{"_id": id}, options...)
 }
 
 func (r *Repository[T, U]) Find(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) ([]U, error) {
@@ -181,19 +187,26 @@ func (r *Repository[T, U]) UpsertOne(ctx context.Context, filter interface{}, up
 }
 
 //Delete removes object by id
-func (r *Repository[T, U]) Delete(ctx context.Context, id string, options ...*repository.QueryOptions) error {
-	objID, err := primitive.ObjectIDFromHex(id)
+func (r *Repository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
+	var err error
+	switch v := id.(type) {
+	case string:
+		id, err = primitive.ObjectIDFromHex(v)
+	case IEntityID:
+		id = v.GetID()
+	}
 	if err != nil {
 		return err
 	}
+
 	if options != nil {
 		if !options[0].Archived {
-			_, err := r.Collection().DeleteOne(ctx, bson.M{"_id": objID})
+			_, err := r.Collection().DeleteOne(ctx, bson.M{"_id": id})
 			return err
 		}
 	}
 
-	return r.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": bson.M{bsonFieldNameArchived: true}})
+	return r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{bsonFieldNameArchived: true}})
 }
 
 func (r *Repository[T, U]) fillTimeStamp(ctx context.Context, e IEntityID, fillCreateTime bool) {

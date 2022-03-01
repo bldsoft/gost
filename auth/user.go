@@ -11,6 +11,7 @@ type EntityPassword struct {
 func (c *EntityPassword) SetPassword(password string) {
 	c.UserPassword = password
 }
+
 func (c *EntityPassword) Password() string {
 	return c.UserPassword
 }
