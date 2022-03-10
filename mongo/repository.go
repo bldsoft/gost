@@ -209,11 +209,11 @@ func (r *Repository[T, U]) Delete(ctx context.Context, id interface{}, options .
 	switch v := id.(type) {
 	case string:
 		id, err = primitive.ObjectIDFromHex(v)
+		if err != nil {
+			id, err = v, nil
+		}
 	case IEntityID:
 		id = v.GetID()
-	}
-	if err != nil {
-		return err
 	}
 
 	if options != nil {
