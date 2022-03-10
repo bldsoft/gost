@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+
+	"github.com/bldsoft/gost/repository"
 )
 
 // UserService ...
@@ -52,6 +54,6 @@ func (s *UserService[PT, T]) UpdatePassword(ctx context.Context, id, password st
 	return s.userRep.Update(ctx, &user)
 }
 
-func (s *UserService[PT, T]) Delete(ctx context.Context, id string) error {
+func (s *UserService[PT, T]) Delete(ctx context.Context, id string, options ...*repository.QueryOptions) error {
 	return s.userRep.Delete(ctx, id)
 }

@@ -58,5 +58,5 @@ type IUserService[PT AuthenticablePtr[T], T any] interface {
 	GetByID(ctx context.Context, id string) (PT, error)
 	Update(ctx context.Context, user PT) error
 	UpdatePassword(ctx context.Context, id, password string) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id string, options ...*repository.QueryOptions) error
 }
