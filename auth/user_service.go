@@ -30,8 +30,8 @@ func (s *UserService[PT, T]) Create(ctx context.Context, user PT) error {
 	return s.userRep.Insert(ctx, user)
 }
 
-func (s *UserService[PT, T]) GetAll(ctx context.Context) ([]PT, error) {
-	return s.userRep.GetAll(ctx)
+func (s *UserService[PT, T]) GetAll(ctx context.Context, archived bool) ([]PT, error) {
+	return s.userRep.GetAll(ctx, &repository.QueryOptions{Archived: archived})
 }
 
 func (s *UserService[PT, T]) GetByID(ctx context.Context, id string) (PT, error) {
@@ -54,6 +54,6 @@ func (s *UserService[PT, T]) UpdatePassword(ctx context.Context, id, password st
 	return s.userRep.Update(ctx, &user)
 }
 
-func (s *UserService[PT, T]) Delete(ctx context.Context, id string, options ...*repository.QueryOptions) error {
-	return s.userRep.Delete(ctx, id)
+func (s *UserService[PT, T]) Delete(ctx context.Context, id string, archived bool) error {
+	return s.userRep.Delete(ctx, id, &repository.QueryOptions{Archived: archived})
 }

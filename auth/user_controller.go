@@ -22,7 +22,7 @@ func NewUserController[PT IUserPtr[T], T any](service IUserService[PT, T]) *User
 }
 
 func (c *UserController[PT, T]) GetHandler(w http.ResponseWriter, r *http.Request) {
-	users, err := c.service.GetAll(r.Context())
+	users, err := c.service.GetAll(r.Context(), c.GetArchived(r, false))
 	switch err {
 	case nil:
 		c.ResponseJson(w, r, users)
@@ -103,7 +103,7 @@ func (c *UserController[PT, T]) PasswordPutHandler(w http.ResponseWriter, r *htt
 }
 
 func (c *UserController[PT, T]) DeleteHandler(w http.ResponseWriter, r *http.Request) {
-	err := c.service.Delete(r.Context(), chi.URLParam(r, "id"))
+	err := c.service.Delete(r.Context(), chi.URLParam(r, "id"), c.GetArchived(r, true))
 	switch err {
 	case nil:
 		c.ResponseOK(w)

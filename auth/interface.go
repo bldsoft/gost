@@ -54,9 +54,9 @@ type IUserRepository[PT any] interface {
 
 type IUserService[PT AuthenticablePtr[T], T any] interface {
 	Create(ctx context.Context, user PT) error
-	GetAll(ctx context.Context) ([]PT, error)
+	GetAll(ctx context.Context, archived bool) ([]PT, error)
 	GetByID(ctx context.Context, id string) (PT, error)
 	Update(ctx context.Context, user PT) error
 	UpdatePassword(ctx context.Context, id, password string) error
-	Delete(ctx context.Context, id string, options ...*repository.QueryOptions) error
+	Delete(ctx context.Context, id string, archived bool) error
 }
