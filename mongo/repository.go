@@ -116,6 +116,9 @@ func (r *Repository[T, U]) Insert(ctx context.Context, entity U) error {
 }
 
 func (r *Repository[T, U]) InsertMany(ctx context.Context, entities []U) error {
+	if len(entities) == 0 {
+		return nil
+	}
 	docs := make([]interface{}, 0, len(entities))
 	for _, entity := range entities {
 		if entity.IsNilID() {
