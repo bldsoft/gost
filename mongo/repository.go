@@ -23,6 +23,8 @@ type IEntityID interface {
 	SetIDFromString(string) error
 	GetID() interface{}
 	GenerateID()
+	StringID() string
+	IsNilID() bool
 }
 
 type IEntityTimeStamp interface {
@@ -105,9 +107,24 @@ func (r *Repository[T, U]) GetAll(ctx context.Context, options ...*repository.Qu
 }
 
 func (r *Repository[T, U]) Insert(ctx context.Context, entity U) error {
-	entity.GenerateID()
+	if entity.IsNilID() {
+		entity.GenerateID()
+	}
 	r.fillTimeStamp(ctx, entity, true)
 	_, err := r.Collection().InsertOne(ctx, entity)
+	return err
+}
+
+func (r *Repository[T, U]) InsertMany(ctx context.Context, entities []U) error {
+	docs := make([]interface{}, 0, len(entities))
+	for _, entity := range entities {
+		if entity.IsNilID() {
+			entity.GenerateID()
+		}
+		r.fillTimeStamp(ctx, entity, true)
+		docs = append(docs, entity)
+	}
+	_, err := r.Collection().InsertMany(ctx, docs)
 	return err
 }
 
@@ -207,6 +224,18 @@ func (r *Repository[T, U]) Delete(ctx context.Context, id interface{}, options .
 	}
 
 	return r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{bsonFieldNameArchived: true}})
+}
+
+//Delete removes objects
+func (r *Repository[T, U]) DeleteMany(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) error {
+	if options != nil {
+		if !options[0].Archived {
+			_, err := r.Collection().DeleteMany(ctx, filter)
+			return err
+		}
+	}
+	_, err := r.dbcollection.UpdateMany(ctx, filter, bson.M{"$set": bson.M{bsonFieldNameArchived: true}})
+	return err
 }
 
 func (r *Repository[T, U]) fillTimeStamp(ctx context.Context, e IEntityID, fillCreateTime bool) {

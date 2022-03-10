@@ -1,6 +1,8 @@
 package feature
 
 import (
+	"strconv"
+
 	"github.com/bldsoft/gost/config/feature"
 )
 
@@ -34,4 +36,12 @@ func (f *Feature) GenerateID() {
 func (f *Feature) SetIDFromString(id string) error {
 	f.ID = feature.IdFromString(id)
 	return nil
+}
+
+func (f *Feature) IsNilID() bool {
+	return f.ID == 0
+}
+
+func (f *Feature) StringID() string {
+	return strconv.Itoa(f.ID)
 }
