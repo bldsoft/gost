@@ -4,23 +4,17 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	"github.com/bldsoft/gost/log"
 )
 
-const ArchivedField = "archived"
+const ArchivedQueryName = "archived"
 
 type BaseController struct {
 }
 
 func (c BaseController) ResponseError(w http.ResponseWriter, err string, code int) {
-	if code >= 500 {
-		if errWriter, ok := log.AsResponseWriterLogErr(w); ok {
-			errWriter.WriteRequestInfoErr(err)
-		}
-	}
-	http.Error(w, err, code)
+	ResponseError(w, err, code)
 }
 
 func (c BaseController) ResponseOK(w http.ResponseWriter) {
@@ -54,13 +48,4 @@ func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request
 		return false
 	}
 	return true
-}
-
-func (c BaseController) GetArchived(r *http.Request, defaultValue bool) bool {
-	if archived_str := r.URL.Query().Get(ArchivedField); archived_str != "" {
-		if archived, err := strconv.ParseBool(archived_str); err == nil {
-			return archived
-		}
-	}
-	return defaultValue
 }
