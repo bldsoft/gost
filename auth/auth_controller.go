@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/bldsoft/gost/controller"
@@ -10,6 +11,23 @@ import (
 )
 
 const SessionUserKey = "user"
+
+var UserEntryCtxKey interface{} = "UserEntry"
+
+// WithUserContext sets the User entry for a request.
+func WithUserContext[T any](r *http.Request, entry T) *http.Request {
+	r = r.WithContext(context.WithValue(r.Context(), UserEntryCtxKey, entry))
+	return r
+}
+
+// FromContext returns the User entry for a request.
+func FromContext[T any](ctx context.Context, allowPanic bool) (T, bool) {
+	entry, ok := ctx.Value(UserEntryCtxKey).(T)
+	if !ok && allowPanic {
+		log.FromContext(ctx).Panic("User not found")
+	}
+	return entry, ok
+}
 
 // AuthController ...
 type AuthController[PT AuthenticablePtr[T], T any] struct {
