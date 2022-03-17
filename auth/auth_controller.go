@@ -20,13 +20,9 @@ func WithUserContext[T any](r *http.Request, entry T) *http.Request {
 	return r
 }
 
-// FromContext returns the User entry for a request.
-func FromContext[T any](ctx context.Context, allowPanic bool) (T, bool) {
-	entry, ok := ctx.Value(UserEntryCtxKey).(T)
-	if !ok && allowPanic {
-		log.FromContext(ctx).Panic("User not found")
-	}
-	return entry, ok
+// UserFromContext returns the User entry for a request.
+func UserFromContext(ctx context.Context) interface{} {
+	return ctx.Value(UserEntryCtxKey)
 }
 
 // AuthController ...

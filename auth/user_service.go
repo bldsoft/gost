@@ -17,10 +17,6 @@ func NewUserService[PT IUserPtr[T], T any](rep IUserRepository[PT], passwordHash
 	return &UserService[PT, T]{userRep: rep, passwordHasher: passwordHasher}
 }
 
-func (s *UserService[PT, T]) UserFromContext(ctx context.Context, allowPanic bool) (PT, bool) {
-	return FromContext[PT](ctx, allowPanic)
-}
-
 func (s *UserService[PT, T]) Create(ctx context.Context, user PT) error {
 	hashedPass, err := s.passwordHasher.HashAndSalt(user.Password())
 	if err != nil {
