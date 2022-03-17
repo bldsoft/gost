@@ -76,15 +76,15 @@ func (c *AuthController[PT, T]) deleteSession(w http.ResponseWriter, r *http.Req
 func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			session, ok := c.session(w, r)
-			if !ok {
-				return
+			session, err := c.sessionStore.Get(r, c.cookieName)
+			if err != nil {
+				log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err}, "bad session")
+				http.SetCookie(w, &http.Cookie{Name: c.cookieName, MaxAge: -1, Path: "/"})
 			}
 
 			user, ok := session.Values[SessionUserKey].(T)
 			if !ok {
-				log.FromContext(r.Context()).Error("User session isn't found")
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				next.ServeHTTP(w, r)
 				return
 			}
 			if !c.saveSession(w, r, session) {
