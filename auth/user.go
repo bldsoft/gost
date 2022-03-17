@@ -25,18 +25,8 @@ func (c *Creds) Login() string {
 	return c.UserLogin
 }
 
-type EntityRole[T IRole] struct {
-	UserRole T `json:"role,omitempty" bson:"role,omitempty"`
+type User struct {
+	Creds `bson:",inline" json:",inline"`
 }
 
-func (e *EntityRole[T]) Role() T {
-	return e.UserRole
-}
-
-type User[R IRole] struct {
-	Creds         `bson:",inline" json:",inline"`
-	EntityRole[R] `bson:",inline" json:",inline"`
-}
-
-var _ Authenticable = (*User[int])(nil)
-var _ Authorizable[int] = (*User[int])(nil)
+var _ Authenticable = (*User)(nil)

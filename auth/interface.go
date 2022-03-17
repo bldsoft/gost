@@ -2,10 +2,13 @@ package auth
 
 import (
 	"context"
+	"errors"
 
 	"github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
 )
+
+var ErrUnauthorized = errors.New("Unauthorized")
 
 type Authenticable interface {
 	Login() string
@@ -27,9 +30,6 @@ type IRole interface {
 	comparable
 }
 
-type Authorizable[T IRole] interface {
-	Role() T
-}
 type PasswordHasher interface {
 	HashAndSalt(password string) (string, error)
 	VerifyPassword(passwordHash, password string) error
