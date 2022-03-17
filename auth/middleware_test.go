@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,38 +14,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type testRole = int
-
-const (
-	user testRole = iota
-	admin
-)
-
-type testUser struct {
-	role testRole
-}
-
-func (u *testUser) Role() testRole {
-	return u.role
-}
-
-func TestAuthMiddlewares(t *testing.T) {
-	adm := &User[testRole]{Creds{"admin", "password"}, EntityRole[testRole]{admin}}
-	reg := &User[testRole]{Creds{"user", "password"}, EntityRole[testRole]{user}}
-
+func TestAuthMiddleware(t *testing.T) {
+	reg := &User{Creds{"user", EntityPassword{"password"}}}
 	testCases := []struct {
 		name         string
-		user         *User[testRole]
-		allowedRoles []testRole
+		user         *User
 		expectedCode int
 	}{
-		{"Admin, all allowed", adm, []testRole{admin, user}, http.StatusOK},
-		{"User, all allowed", reg, []testRole{admin, user}, http.StatusOK},
-		{"Admin, only admins allowed", adm, []testRole{admin}, http.StatusOK},
-		{"User, only admins allowed", reg, []testRole{admin}, http.StatusForbidden},
-		{"Unauthorized, only admins allowed", nil, []testRole{admin}, http.StatusUnauthorized},
-		{"User,  authorization is off", reg, nil, http.StatusOK},
-		{"Unauthorized, authorization is off", nil, nil, http.StatusUnauthorized},
+		{"Authorized", reg, http.StatusOK},
+		{"Unauthorized", nil, http.StatusOK},
 	}
 
 	for _, testCase := range testCases {
@@ -54,24 +30,20 @@ func TestAuthMiddlewares(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 			store := mocks.NewMockStore(mockCtrl)
-			authController := NewAuthController[*User[testRole]](store, nil, "")
+			authController := NewAuthController[*User](nil, nil, store, "")
 
 			r := chi.NewRouter()
 			r.Use(authController.AuthenticateMiddleware())
-			if testCase.allowedRoles != nil {
-				r.Use(AuthorizationMiddleware(testCase.allowedRoles...))
-			}
 			r.Get("/ping", controller.GetPingHandler)
 
 			req, err := http.NewRequest("GET", "/ping", nil)
 			assert.NoError(t, err)
+			session := sessions.NewSession(store, "")
 			if testCase.user != nil {
-				session := sessions.NewSession(store, "")
 				session.Values[SessionUserKey] = *testCase.user
-				store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(session, nil).AnyTimes()
-			} else {
-				store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, errors.New("")).AnyTimes()
+				store.EXPECT().Save(gomock.Any(), gomock.Any(), gomock.Any())
 			}
+			store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(session, nil).AnyTimes()
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
 
