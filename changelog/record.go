@@ -3,16 +3,11 @@ package changelog
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
-	"github.com/bldsoft/gost/utils"
+	"github.com/bldsoft/gost/auth"
 	"github.com/go-chi/chi/v5/middleware"
 )
-
-// TODO: move to auth/user package
-var UserEntryCtxKey = &utils.ContextKey{"UserEntry"}
-var UserNotFound = errors.New("User isn't found in context")
 
 const BsonFieldNameUserID = "userID"
 const BsonFieldNameTimestamp = "timestamp"
@@ -64,7 +59,7 @@ func NewRecord(ctx context.Context, collectionName string, op Operation, entity 
 		RequestID: middleware.GetReqID(ctx),
 	}
 
-	user, ok := ctx.Value(UserEntryCtxKey).(EntityID)
+	user, ok := auth.UserFromContext(ctx).(EntityID)
 	if ok {
 		rec.UserID = user.GetID()
 	}
