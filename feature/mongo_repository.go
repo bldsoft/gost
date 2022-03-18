@@ -81,12 +81,12 @@ func (r *MongoRepository) FindByName(ctx context.Context, name string) *Feature 
 	return feature
 }
 
-func (r *MongoRepository) FindByID(ctx context.Context, id config.IdType) *Feature {
+func (r *MongoRepository) FindByID(ctx context.Context, id config.IdType) (*Feature, error) {
 	feature, err := r.rep.FindOne(ctx, bson.M{"_id": id})
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return feature
+	return feature, nil
 }
 
 func (r *MongoRepository) GetAll(ctx context.Context) ([]*Feature, error) {

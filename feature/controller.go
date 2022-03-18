@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/bldsoft/gost/auth"
 	"github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/controller"
 	"github.com/bldsoft/gost/log"
@@ -20,6 +21,20 @@ func NewController(featureService IFeatureService) *Controller {
 	return &Controller{featureService: featureService}
 }
 
+func (c *Controller) responseError(w http.ResponseWriter, r *http.Request, err error) {
+	switch {
+	case errors.Is(err, utils.ErrObjectNotFound):
+		c.ResponseError(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	case errors.Is(err, auth.ErrUnauthorized):
+		c.ResponseError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	case errors.Is(err, auth.ErrForbidden):
+		c.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+	default:
+		log.FromContext(r.Context()).Error(err.Error())
+		c.ResponseError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+}
+
 // GetFeatureHandler get all features
 // @Summary get all features
 // @Tags admin
@@ -31,8 +46,7 @@ func (c *Controller) GetFeaturesHandler(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 	features, err := c.featureService.GetAll(ctx)
 	if err != nil {
-		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "Failed to get features")
-		c.ResponseError(w, "", http.StatusInternalServerError)
+		c.responseError(w, r, err)
 		return
 	}
 	c.ResponseJson(w, r, features)
@@ -49,9 +63,10 @@ func (c *Controller) GetFeaturesHandler(w http.ResponseWriter, r *http.Request) 
 // @Router /env/feature/{id} [get]
 func (c *Controller) GetFeatureHandler(w http.ResponseWriter, r *http.Request) {
 	id := feature.IdFromString(chi.URLParam(r, "id"))
-	feature := c.featureService.Get(r.Context(), id)
-	if feature == nil {
-		c.ResponseError(w, "Not found", http.StatusNotFound)
+	ctx := r.Context()
+	feature, err := c.featureService.Get(ctx, id)
+	if err != nil {
+		c.responseError(w, r, err)
 		return
 	}
 	c.ResponseJson(w, r, feature)
@@ -77,15 +92,11 @@ func (c *Controller) PatchFeatureHandler(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 	f.ID = feature.IdFromString(chi.URLParam(r, "id"))
 	f, err := c.featureService.Update(ctx, f)
-	switch {
-	case errors.Is(err, utils.ErrObjectNotFound):
-		c.ResponseError(w, "Not found", http.StatusNotFound)
-	case err != nil:
-		log.FromContext(ctx).Errorf("Failed to update feature: %s", err.Error())
-		c.ResponseError(w, err.Error(), http.StatusBadRequest)
-	default:
-		c.ResponseJson(w, r, f)
+	if err != nil {
+		c.responseError(w, r, err)
+		return
 	}
+	c.ResponseJson(w, r, f)
 }
 
 func (c *Controller) Mount(r chi.Router) {

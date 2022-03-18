@@ -24,7 +24,7 @@ func (srv *Service) Update(ctx context.Context, feature *Feature) (*Feature, err
 	return srv.featureRep.Update(ctx, feature)
 }
 
-func (srv *Service) Get(ctx context.Context, id feature.IdType) *Feature {
+func (srv *Service) Get(ctx context.Context, id feature.IdType) (*Feature, error) {
 	return srv.featureRep.FindByID(ctx, id)
 }
 
