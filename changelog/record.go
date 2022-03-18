@@ -27,6 +27,19 @@ const (
 	Delete
 )
 
+func (op Operation) String() string {
+	switch op {
+	case Create:
+		return "CREATE"
+	case Update:
+		return "UPDATE"
+	case Delete:
+		return "DELETE"
+	default:
+		return "NONE"
+	}
+}
+
 type idType = interface{}
 
 type EntityID interface {
