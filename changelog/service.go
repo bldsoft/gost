@@ -10,6 +10,10 @@ func NewService(rep IChangeLogRepository) *Service {
 	return &Service{rep}
 }
 
+func (s *Service) GetByID(ctx context.Context, id idType) (*Record, error) {
+	return s.rep.GetByID(ctx, id)
+}
+
 func (s *Service) GetRecords(ctx context.Context, filter *Filter) ([]*Record, error) {
 	return s.rep.GetRecords(ctx, filter)
 }

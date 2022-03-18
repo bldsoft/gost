@@ -12,8 +12,10 @@ type Filter struct {
 
 type IChangeLogRepository interface {
 	GetRecords(ctx context.Context, filter *Filter) ([]*Record, error)
+	GetByID(ctx context.Context, id interface{}) (*Record, error)
 }
 
 type IChangeLogService interface {
 	GetRecords(ctx context.Context, filter *Filter) ([]*Record, error)
+	GetByID(ctx context.Context, id interface{}) (*Record, error)
 }

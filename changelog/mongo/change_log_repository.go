@@ -49,6 +49,14 @@ func (r *ChangeLogRepository) Insert(ctx context.Context, record *record) error 
 	return err
 }
 
+func (r *ChangeLogRepository) GetByID(ctx context.Context, id interface{}) (*changelog.Record, error) {
+	record, err := r.rep.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return record.Record, nil
+}
+
 func (r *ChangeLogRepository) GetRecords(ctx context.Context, filter *changelog.Filter) ([]*changelog.Record, error) {
 	queryFilter := bson.M{}
 
