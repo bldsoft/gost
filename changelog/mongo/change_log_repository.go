@@ -2,15 +2,26 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/bldsoft/gost/changelog"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
+	"github.com/bldsoft/gost/utils"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	driver "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+type idParse = func(stringID string) (ID interface{}, err error)
+
+var collectionToType = make(map[string]idParse)
+
+func registerIdParser(collection string, f idParse) {
+	collectionToType[collection] = f
+}
 
 type ChangeLogRepository struct {
 	rep *mongo.Repository[record]
@@ -40,9 +51,6 @@ func (r *ChangeLogRepository) Insert(ctx context.Context, record *record) error 
 
 func (r *ChangeLogRepository) GetRecords(ctx context.Context, filter *changelog.Filter) ([]*changelog.Record, error) {
 	queryFilter := bson.M{}
-	if len(filter.Collections) > 0 {
-		queryFilter[changelog.BsonFieldNameEntity] = bson.M{"$in": filter.Collections}
-	}
 
 	timestampFilter := bson.M{}
 	if filter.StartTime != 0 {
@@ -56,11 +64,21 @@ func (r *ChangeLogRepository) GetRecords(ctx context.Context, filter *changelog.
 	}
 
 	if len(filter.EntityID) > 0 {
-		var item mongo.EntityID
-		if err := item.SetIDFromString(filter.EntityID); err != nil {
-			return nil, err
+		if len(filter.Collections) != 1 {
+			return nil, errors.Errorf("collection cannot be selected unambiguously")
 		}
-		queryFilter[changelog.BsonFieldNameEntityID] = item.GetID()
+		stringToID, ok := collectionToType[filter.Collections[0]]
+		if !ok {
+			return nil, utils.ErrObjectNotFound
+		}
+		id, err := stringToID(filter.EntityID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse id: %w", err)
+		}
+		queryFilter[changelog.BsonFieldNameEntityID] = id
+		queryFilter[changelog.BsonFieldNameEntity] = filter.Collections[0]
+	} else if len(filter.Collections) > 0 {
+		queryFilter[changelog.BsonFieldNameEntity] = bson.M{"$in": filter.Collections}
 	}
 
 	opt := &options.FindOptions{}

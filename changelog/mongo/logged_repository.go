@@ -28,6 +28,11 @@ func NewLoggedRepository[T any, U LoggedEntity[T]](db *mongo.MongoDb, collection
 		// creating collection beforehand for transactions
 		db.Db.CreateCollection(context.Background(), collectionName)
 	})
+	registerIdParser(collectionName, func(stringID string) (interface{}, error) {
+		var v T
+		err := U(&v).SetIDFromString(stringID)
+		return U(&v).GetID(), err
+	})
 	return &LoggedRepository[T, U]{rep, changeLogRep}
 }
 
