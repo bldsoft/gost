@@ -1,11 +1,15 @@
 package changelog
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/bldsoft/gost/auth"
 	"github.com/bldsoft/gost/controller"
+	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/utils"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -42,11 +46,19 @@ func (c *Controller) getFilter(r *http.Request) *Filter {
 
 func (c *Controller) GetHandler(w http.ResponseWriter, r *http.Request) {
 	records, err := c.changeLogService.GetRecords(r.Context(), c.getFilter(r))
-	if err != nil {
-		c.ResponseError(w, err.Error(), http.StatusNotFound)
-		return
+	switch {
+	case err == nil:
+		c.ResponseJson(w, r, records)
+	case errors.Is(err, utils.ErrObjectNotFound):
+		c.ResponseError(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	case errors.Is(err, auth.ErrUnauthorized):
+		c.ResponseError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	case errors.Is(err, auth.ErrForbidden):
+		c.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+	default:
+		log.FromContext(r.Context()).Error(err.Error())
+		c.ResponseError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-	c.ResponseJson(w, r, records)
 }
 
 func (c *Controller) Mount(r chi.Router) {
