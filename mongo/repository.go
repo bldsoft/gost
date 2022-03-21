@@ -76,18 +76,29 @@ func (r *Repository[T, U]) FindOne(ctx context.Context, filter interface{}, opti
 	return &result, err
 }
 
-func (r *Repository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
-	var err error
+func (r *Repository[T, U]) convertID(id interface{}) interface{} {
 	switch v := id.(type) {
 	case string:
-		id, err = primitive.ObjectIDFromHex(v)
-		if err != nil {
-			id, err = v, nil
+		id, err := primitive.ObjectIDFromHex(v)
+		if err == nil {
+			return id
 		}
+		return id
 	case IEntityID:
-		id = v.GetID()
+		return v.GetID()
 	}
-	return r.FindOne(ctx, bson.M{"_id": id}, options...)
+	return id
+}
+
+func (r *Repository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
+	return r.FindOne(ctx, bson.M{"_id": r.convertID(id)}, options...)
+}
+
+func (r *Repository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, options ...*repository.QueryOptions) ([]U, error) {
+	for i, id := range ids {
+		ids[i] = r.convertID(id)
+	}
+	return r.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, options...)
 }
 
 func (r *Repository[T, U]) Find(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) ([]U, error) {
@@ -208,16 +219,7 @@ func (r *Repository[T, U]) UpsertOne(ctx context.Context, filter interface{}, up
 
 //Delete removes object by id
 func (r *Repository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
-	var err error
-	switch v := id.(type) {
-	case string:
-		id, err = primitive.ObjectIDFromHex(v)
-		if err != nil {
-			id, err = v, nil
-		}
-	case IEntityID:
-		id = v.GetID()
-	}
+	id = r.convertID(id)
 
 	if options != nil {
 		if !options[0].Archived {
