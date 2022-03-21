@@ -57,6 +57,17 @@ func (r *ChangeLogRepository) GetByID(ctx context.Context, id interface{}) (*cha
 	return record.Record, nil
 }
 
+func (r *ChangeLogRepository) GetByIDs(ctx context.Context, ids []interface{}) (res []*changelog.Record, err error) {
+	records, err := r.rep.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for _, record := range records {
+		res = append(res, record.Record)
+	}
+	return res, nil
+}
+
 func (r *ChangeLogRepository) GetRecords(ctx context.Context, filter *changelog.Filter) ([]*changelog.Record, error) {
 	queryFilter := bson.M{}
 
