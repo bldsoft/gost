@@ -8,6 +8,7 @@ import (
 	"github.com/bldsoft/gost/changelog"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
+	"github.com/bldsoft/gost/repository"
 	"github.com/bldsoft/gost/utils"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
@@ -49,16 +50,16 @@ func (r *ChangeLogRepository) Insert(ctx context.Context, record *record) error 
 	return err
 }
 
-func (r *ChangeLogRepository) GetByID(ctx context.Context, id interface{}) (*changelog.Record, error) {
-	record, err := r.rep.FindByID(ctx, id)
+func (r *ChangeLogRepository) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (*changelog.Record, error) {
+	record, err := r.rep.FindByID(ctx, id, options...)
 	if err != nil {
 		return nil, err
 	}
 	return record.Record, nil
 }
 
-func (r *ChangeLogRepository) GetByIDs(ctx context.Context, ids []interface{}) (res []*changelog.Record, err error) {
-	records, err := r.rep.FindByIDs(ctx, ids)
+func (r *ChangeLogRepository) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) (res []*changelog.Record, err error) {
+	records, err := r.rep.FindByIDs(ctx, ids, preserveOrder, options...)
 	if err != nil {
 		return nil, err
 	}
