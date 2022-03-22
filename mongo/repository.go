@@ -94,11 +94,30 @@ func (r *Repository[T, U]) FindByID(ctx context.Context, id interface{}, options
 	return r.FindOne(ctx, bson.M{"_id": r.convertID(id)}, options...)
 }
 
-func (r *Repository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, options ...*repository.QueryOptions) ([]U, error) {
+func (r *Repository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	for i, id := range ids {
 		ids[i] = r.convertID(id)
 	}
-	return r.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, options...)
+
+	entities, err := r.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	if preserveOrder {
+		entityById := make(map[interface{}]U)
+		for _, entity := range entities {
+			entityById[entity.GetID()] = entity
+		}
+
+		result := make([]U, len(ids))
+		for i, id := range ids {
+			result[i] = entityById[id]
+		}
+		return result, nil
+	}
+
+	return entities, nil
 }
 
 func (r *Repository[T, U]) Find(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) ([]U, error) {
