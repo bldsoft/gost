@@ -25,7 +25,7 @@ func registerIdParser(collection string, f idParse) {
 }
 
 type ChangeLogRepository struct {
-	rep *mongo.Repository[record]
+	rep *mongo.Repository[record, *record]
 }
 
 func NewChangeLogRepository(db *mongo.MongoDb) *ChangeLogRepository {
