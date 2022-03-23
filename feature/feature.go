@@ -13,7 +13,7 @@ type serviceValue struct {
 
 // Feature ...
 type Feature struct {
-	ID          feature.IdType  `bson:"_id,omitempty" json:"id"`
+	ID          feature.IdType  `bson:"_id,omitempty" json:"_id"`
 	Name        string          `bson:"name,omitempty" json:"name"`
 	Description *string         `bson:"description,omitempty" json:"description"`
 	GlobalValue *string         `bson:"globalValue,omitempty" json:"globalValue"`
