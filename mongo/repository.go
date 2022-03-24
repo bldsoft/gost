@@ -83,7 +83,7 @@ func (r *Repository[T, U]) convertID(id interface{}) interface{} {
 		if err == nil {
 			return id
 		}
-		return id
+		return v
 	case IEntityID:
 		return v.GetID()
 	}
