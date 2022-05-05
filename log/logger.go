@@ -12,7 +12,7 @@ type ServiceLogger struct {
 }
 
 //Fields struct
-type Fields map[string]interface{}
+type Fields = map[string]interface{}
 
 //WithFields creates a new logger with given fields
 func (l *ServiceLogger) WithFields(fields Fields) *ServiceLogger {

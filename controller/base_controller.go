@@ -8,16 +8,13 @@ import (
 	"github.com/bldsoft/gost/log"
 )
 
+const ArchivedQueryName = "archived"
+
 type BaseController struct {
 }
 
 func (c BaseController) ResponseError(w http.ResponseWriter, err string, code int) {
-	if code >= 500 {
-		if errWriter, ok := log.AsResponseWriterLogErr(w); ok {
-			errWriter.WriteRequestInfoErr(err)
-		}
-	}
-	http.Error(w, err, code)
+	ResponseError(w, err, code)
 }
 
 func (c BaseController) ResponseOK(w http.ResponseWriter) {
