@@ -13,6 +13,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/stub"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -148,4 +149,36 @@ func (db *MongoDb) runMigrations(dbname string) bool {
 		return false
 	}
 	return true
+}
+
+func (db *MongoDb) Stats(ctx context.Context) (interface{}, error) {
+	collections, err := db.Db.ListCollectionNames(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+
+	stats := make([]interface{}, 0, len(collections)+1)
+	res := db.Db.RunCommand(ctx, bson.M{"dbStats": 1})
+	if err := res.Err(); err != nil {
+		return nil, err
+	}
+
+	var dbStat interface{}
+	if err := res.Decode(&dbStat); err != nil {
+		return nil, err
+	}
+	stats = append(stats, dbStat)
+
+	for _, collection := range collections {
+		res := db.Db.RunCommand(ctx, bson.M{"collStats": collection})
+		if err := res.Err(); err != nil {
+			return nil, err
+		}
+		var colStat interface{}
+		if err := res.Decode(&colStat); err != nil {
+			return nil, err
+		}
+		stats = append(stats, colStat)
+	}
+	return stats, err
 }
