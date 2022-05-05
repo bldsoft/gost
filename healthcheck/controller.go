@@ -17,7 +17,11 @@ type Controller struct {
 	healthCheckService Service
 }
 
-func NewController(service Service) *Controller {
+func NewController(healthCheckers ...HealthChecker) *Controller {
+	return NewControllerFromService(NewHealthCheckService(healthCheckers...))
+}
+
+func NewControllerFromService(service Service) *Controller {
 	return &Controller{
 		healthCheckService: service,
 	}
