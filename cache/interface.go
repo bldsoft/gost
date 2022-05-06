@@ -1,7 +1,7 @@
 package cache
 
 //ILocalCacheRepository ...
-type LocalCacheRepository interface {
+type ILocalCacheRepository interface {
 	Get(key string) ([]byte, error)
 	Set(key string, value []byte) error
 	Delete(key string) error
@@ -9,8 +9,8 @@ type LocalCacheRepository interface {
 }
 
 //IDistrCacheRepository ...
-type DistrCacheRepository interface {
-	LocalCacheRepository
+type IDistrCacheRepository interface {
+	ILocalCacheRepository
 
 	//TODO: add it to ILocalCacheRepository
 	GetWithFlags(key string) (data []byte, flags uint32, err error)
