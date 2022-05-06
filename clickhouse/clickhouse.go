@@ -149,3 +149,28 @@ func (db *Clickhouse) getDsnQueryParam(name string) string {
 
 	return url.Query().Get(name)
 }
+
+func (db *Clickhouse) Stats(ctx context.Context) (map[string]interface{}, error) {
+	metrics := make(map[string]interface{})
+	for _, query := range []string{
+		"SELECT event, value FROM system.events",
+		"SELECT metric, value FROM system.asynchronous_metrics",
+		"SELECT metric, value FROM system.metrics",
+	} {
+		rows, err := db.Db.QueryContext(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+
+		for rows.Next() {
+			var metricName string
+			var metricValue float64
+			if err = rows.Scan(&metricName, &metricValue); err != nil {
+				return nil, err
+			}
+			metrics[metricName] = metricValue
+		}
+	}
+
+	return metrics, nil
+}
