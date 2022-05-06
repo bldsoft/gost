@@ -13,27 +13,27 @@ type Stats struct {
 	Hits   uint64 `json:"hits" mapstructure:"get_hits"`
 	Misses uint64 `json:"misses" mapstructure:"get_misses"`
 
-	StoreTooLarge uint64 `json:"storeTooLarge,omitempty" mapstructure:"store_too_large"`
-	StoreNoMemory uint64 `json:"storeNoMemory,omitempty" mapstructure:"store_no_memory"`
+	StoreTooLarge uint64 `json:"storeTooLarge" mapstructure:"store_too_large"`
+	StoreNoMemory uint64 `json:"storeNoMemory" mapstructure:"store_no_memory"`
 
 	Evictions        uint64 `json:"evictions" mapstructure:"evictions"`
-	ExpiredUnfetched uint64 `json:"expiredUnfetched,omitempty" mapstructure:"expired_unfetched"`
-	EvictedUnfetched uint64 `json:"evictedUnfetched,omitempty" mapstructure:"evicted_unfetched"`
-	EvictedActive    uint64 `json:"evictedActive,omitempty" mapstructure:"evicted_active"`
+	ExpiredUnfetched uint64 `json:"expiredUnfetched" mapstructure:"expired_unfetched"`
+	EvictedUnfetched uint64 `json:"evictedUnfetched" mapstructure:"evicted_unfetched"`
+	EvictedActive    uint64 `json:"evictedActive" mapstructure:"evicted_active"`
 
-	IncrHits   uint64 `json:"incrHits,omitempty" mapstructure:"incr_hits"`
-	IncrMisses uint64 `json:"incrMisses,omitempty" mapstructure:"incr_isses"`
+	IncrHits   uint64 `json:"incrHits" mapstructure:"incr_hits"`
+	IncrMisses uint64 `json:"incrMisses" mapstructure:"incr_isses"`
 
-	DecrHits   uint64 `json:"decrHits,omitempty" mapstructure:"decr_hits"`
-	DecrMisses uint64 `json:"decrMisses,omitempty" mapstructure:"decr_misses"`
+	DecrHits   uint64 `json:"decrHits" mapstructure:"decr_hits"`
+	DecrMisses uint64 `json:"decrMisses" mapstructure:"decr_misses"`
 
-	CasHits   uint64 `json:"casHits,omitempty" mapstructure:"cas_hits"`
-	CasMisses uint64 `json:"casMisses,omitempty" mapstructure:"cas_misses"`
-	CasBadVal uint64 `json:"casBadVal,omitempty" mapstructure:"cas_badval"`
+	CasHits   uint64 `json:"casHits" mapstructure:"cas_hits"`
+	CasMisses uint64 `json:"casMisses" mapstructure:"cas_misses"`
+	CasBadVal uint64 `json:"casBadVal" mapstructure:"cas_badval"`
 
-	TouchHits   uint64 `json:"touchHits,omitempty" mapstructure:"touch_hits"`
-	TouchMisses uint64 `json:"touchMisses,omitempty" mapstructure:"touch_misses"`
+	TouchHits   uint64 `json:"touchHits" mapstructure:"touch_hits"`
+	TouchMisses uint64 `json:"touchMisses" mapstructure:"touch_misses"`
 
-	DeleteHits   uint64 `json:"deleteHits,omitempty" mapstructure:"delete_hits"`
-	DeleteMisses uint64 `json:"deleteMisses,omitempty" mapstructure:"delete_misses"`
+	DeleteHits   uint64 `json:"deleteHits" mapstructure:"delete_hits"`
+	DeleteMisses uint64 `json:"deleteMisses" mapstructure:"delete_misses"`
 }
