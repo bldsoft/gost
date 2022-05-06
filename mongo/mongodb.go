@@ -163,7 +163,7 @@ func (db *MongoDb) Stats(ctx context.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	var dbStat interface{}
+	dbStat := make(map[string]interface{})
 	if err := res.Decode(&dbStat); err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func (db *MongoDb) Stats(ctx context.Context) (interface{}, error) {
 		if err := res.Err(); err != nil {
 			return nil, err
 		}
-		var colStat interface{}
+		colStat := make(map[string]interface{})
 		if err := res.Decode(&colStat); err != nil {
 			return nil, err
 		}
