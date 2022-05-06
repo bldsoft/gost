@@ -14,7 +14,7 @@ func CreateController(s storage.IStorage, serviceName string) *Controller {
 
 func CreateService(s storage.IStorage, serviceName string) IFeatureService {
 	switch s := s.(type) {
-	case *mongo.MongoDb:
+	case *mongo.Storage:
 		return NewService(NewMongoRepository(s, serviceName))
 	default:
 		log.Fatalf("%s doesn't support feature repository", reflect.TypeOf(s))

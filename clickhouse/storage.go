@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go"
-	gost "github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/storage"
 	"github.com/golang-migrate/migrate/v4"
@@ -20,8 +19,8 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/stub"
 )
 
-type Clickhouse struct {
-	dsn gost.ConnectionString
+type Storage struct {
+	cfg Config
 
 	Db      *sql.DB
 	isReady int32
@@ -30,22 +29,21 @@ type Clickhouse struct {
 	migrations *source.Migrations
 }
 
-func NewClickhouseConnection(dsn gost.ConnectionString) *Clickhouse {
-	db := Clickhouse{dsn: dsn, migrations: source.NewMigrations()}
-	return &db
+func NewStorage(config Config) *Storage {
+	return &Storage{cfg: config, migrations: source.NewMigrations()}
 }
 
 //AddMigration adds a migration. All migrations should be added before db.Connect
-func (db *Clickhouse) AddMigration(version uint, migrationUp, migrationDown string) {
+func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string) {
 	db.migrations.Append(&source.Migration{Version: version, Direction: source.Up, Identifier: migrationUp})
 	db.migrations.Append(&source.Migration{Version: version, Direction: source.Down, Identifier: migrationDown})
 }
 
-func (db *Clickhouse) Connect() {
-	connect, err := sql.Open("clickhouse", db.dsn.String())
+func (db *Storage) Connect() {
+	connect, err := sql.Open("clickhouse", db.cfg.Dsn.String())
 
 	if err != nil {
-		log.ErrorWithFields(log.Fields{"dsn": &db.dsn, "error": err}, "Failed to connect clickhouse db")
+		log.ErrorWithFields(log.Fields{"dsn": &db.cfg.Dsn, "error": err}, "Failed to connect clickhouse db")
 
 		return
 	}
@@ -63,7 +61,7 @@ func (db *Clickhouse) Connect() {
 
 			db.Db = connect
 
-			log.InfoWithFields(log.Fields{"dsn": &db.dsn}, "Clickhouse connected!")
+			log.InfoWithFields(log.Fields{"dsn": &db.cfg.Dsn}, "Clickhouse connected!")
 
 			//run migrations only once
 			db.doOnce.Do(func() {
@@ -85,7 +83,7 @@ func (db *Clickhouse) Connect() {
 	}
 }
 
-func (db *Clickhouse) Disconnect(ctx context.Context) error {
+func (db *Storage) Disconnect(ctx context.Context) error {
 	err := db.Db.Close()
 	if err != nil {
 		return errors.Wrap(err, "Clickhouse disconnect failed")
@@ -94,11 +92,11 @@ func (db *Clickhouse) Disconnect(ctx context.Context) error {
 	return nil
 }
 
-func (db *Clickhouse) IsReady() bool {
+func (db *Storage) IsReady() bool {
 	return atomic.LoadInt32(&db.isReady) == 1
 }
 
-func (db *Clickhouse) LogError(err error) {
+func (db *Storage) LogError(err error) {
 	if exception, ok := err.(*clickhouse.Exception); ok {
 		log.ErrorWithFields(log.Fields{
 			"exception.Code":       exception.Code,
@@ -109,7 +107,7 @@ func (db *Clickhouse) LogError(err error) {
 	}
 }
 
-func (db *Clickhouse) runMigrations(dbname string) bool {
+func (db *Storage) runMigrations(dbname string) bool {
 	log.Debug("Checking clickhouse DB schema...")
 	cfg := &mm.Config{DatabaseName: dbname}
 
@@ -141,8 +139,8 @@ func (db *Clickhouse) runMigrations(dbname string) bool {
 	return true
 }
 
-func (db *Clickhouse) getDsnQueryParam(name string) string {
-	url, err := url.Parse(db.dsn.String())
+func (db *Storage) getDsnQueryParam(name string) string {
+	url, err := url.Parse(db.cfg.Dsn.String())
 	if err != nil {
 		return ""
 	}
@@ -150,7 +148,7 @@ func (db *Clickhouse) getDsnQueryParam(name string) string {
 	return url.Query().Get(name)
 }
 
-func (db *Clickhouse) Stats(ctx context.Context) (map[string]interface{}, error) {
+func (db *Storage) Stats(ctx context.Context) (map[string]interface{}, error) {
 	metrics := make(map[string]interface{})
 	for _, query := range []string{
 		"SELECT event, value FROM system.events",

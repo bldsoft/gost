@@ -7,10 +7,10 @@ import (
 )
 
 type MongoCollector struct {
-	db *mongo.MongoDb
+	db *mongo.Storage
 }
 
-func NewMongoCollector(db *mongo.MongoDb) *MongoCollector {
+func NewMongoCollector(db *mongo.Storage) *MongoCollector {
 	return &MongoCollector{db: db}
 }
 

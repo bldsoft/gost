@@ -21,7 +21,7 @@ import (
 
 type EventHandler = func()
 
-type MongoDb struct {
+type Storage struct {
 	config Config
 
 	Client            *mongo.Client
@@ -33,13 +33,13 @@ type MongoDb struct {
 	migrations *source.Migrations
 }
 
-//NewMongoDb ...
-func NewMongoDb(config Config) *MongoDb {
-	return &MongoDb{config: config, migrations: source.NewMigrations()}
+//NewStorage ...
+func NewStorage(config Config) *Storage {
+	return &Storage{config: config, migrations: source.NewMigrations()}
 }
 
 //AddMigration adds a migration. All migrations should be added before db.Connect
-func (db *MongoDb) AddMigration(version uint, migrationUp, migrationDown string) {
+func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string) {
 	db.migrations.Append(&source.Migration{Version: version, Direction: source.Up, Identifier: migrationUp})
 	db.migrations.Append(&source.Migration{Version: version, Direction: source.Down, Identifier: migrationDown})
 }
@@ -47,7 +47,7 @@ func (db *MongoDb) AddMigration(version uint, migrationUp, migrationDown string)
 const timeout = 5 * time.Second
 
 //Connect initializes db connection
-func (db *MongoDb) Connect() {
+func (db *Storage) Connect() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -68,8 +68,8 @@ func (db *MongoDb) Connect() {
 	}
 }
 
-//DisconnectDB closes db connection
-func (db *MongoDb) Disconnect(ctx context.Context) error {
+//Disconnect closes db connection
+func (db *Storage) Disconnect(ctx context.Context) error {
 	err := db.Client.Disconnect(ctx)
 	if err != nil {
 		return errors.Wrap(err, "MongoDB disconnect failed")
@@ -78,7 +78,7 @@ func (db *MongoDb) Disconnect(ctx context.Context) error {
 	return nil
 }
 
-func (db *MongoDb) poolEventMonitor(ev *event.PoolEvent) {
+func (db *Storage) poolEventMonitor(ev *event.PoolEvent) {
 	switch ev.Type {
 	case event.ConnectionCreated:
 		//run migrations only once
@@ -106,21 +106,21 @@ func (db *MongoDb) poolEventMonitor(ev *event.PoolEvent) {
 	}
 }
 
-func (db *MongoDb) IsReady() bool {
+func (db *Storage) IsReady() bool {
 	return atomic.LoadInt32(&db.isReady) == 1
 }
 
-func (db *MongoDb) AddOnConnectHandler(handler EventHandler) {
+func (db *Storage) AddOnConnectHandler(handler EventHandler) {
 	db.onConnectHandlers = append(db.onConnectHandlers, handler)
 }
 
-func (db *MongoDb) notifyConnect() {
+func (db *Storage) notifyConnect() {
 	for _, handler := range db.onConnectHandlers {
 		handler()
 	}
 }
 
-func (db *MongoDb) runMigrations(dbname string) bool {
+func (db *Storage) runMigrations(dbname string) bool {
 	log.Debug("Checking DB schema...")
 
 	if _, ok := db.migrations.First(); !ok {
@@ -151,7 +151,7 @@ func (db *MongoDb) runMigrations(dbname string) bool {
 	return true
 }
 
-func (db *MongoDb) Stats(ctx context.Context) (interface{}, error) {
+func (db *Storage) Stats(ctx context.Context) (interface{}, error) {
 	collections, err := db.Db.ListCollectionNames(ctx, bson.M{})
 	if err != nil {
 		return nil, err

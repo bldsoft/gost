@@ -8,7 +8,7 @@ import (
 	"github.com/bldsoft/gost/mongo"
 )
 
-func AddFeatureMigration(db *mongo.MongoDb, version uint, features ...*Feature) {
+func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) {
 	size := len(features)
 	if size == 0 {
 		return

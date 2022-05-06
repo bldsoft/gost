@@ -7,10 +7,10 @@ import (
 )
 
 type ClickHouseCollector struct {
-	db *clickhouse.Clickhouse
+	db *clickhouse.Storage
 }
 
-func NewClickHouseCollector(db *clickhouse.Clickhouse) *ClickHouseCollector {
+func NewClickHouseCollector(db *clickhouse.Storage) *ClickHouseCollector {
 	return &ClickHouseCollector{db: db}
 }
 
