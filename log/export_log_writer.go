@@ -20,11 +20,11 @@ type LogRecord struct {
 	Timestamp int64
 	Level     zerolog.Level
 	ReqID     string
-	Msg       []byte
+	Msg       string
 }
 
 type LogExporter interface {
-	WriteLogRecord(r LogRecord) error
+	WriteLogRecord(r *LogRecord) error
 }
 
 type ExportLogWriter struct {
@@ -85,10 +85,11 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 		delete(event, zerolog.TimestampFieldName)
 	}
 
-	rec.Msg, err = json.Marshal(event)
+	data, err := json.Marshal(event)
 	if err != nil {
 		return nil, err
 	}
+	rec.Msg = string(data)
 	return &rec, nil
 }
 
@@ -98,7 +99,7 @@ func (w *ExportLogWriter) export(rec *LogRecord) error {
 		if t := w.exportersToggles[i]; t != nil && !t.Get() {
 			continue
 		}
-		if err := exporter.WriteLogRecord(*rec); err != nil {
+		if err := exporter.WriteLogRecord(rec); err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		}
 	}

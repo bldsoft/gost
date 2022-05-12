@@ -56,18 +56,18 @@ type ClickHouseLogExporter struct {
 
 	storage *Storage
 
-	recordC chan log.LogRecord
-	records []log.LogRecord
+	recordC chan *log.LogRecord
+	records []*log.LogRecord
 
 	stop    chan struct{}
 	stopped chan struct{}
 }
 
 func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExporter {
-	return &ClickHouseLogExporter{storage: storage, config: cfg, recordC: make(chan log.LogRecord, cfg.ChanBufSize), records: make([]log.LogRecord, 0, cfg.MaxBatchSize)}
+	return &ClickHouseLogExporter{storage: storage, config: cfg, recordC: make(chan *log.LogRecord, cfg.ChanBufSize), records: make([]*log.LogRecord, 0, cfg.MaxBatchSize)}
 }
 
-func (e *ClickHouseLogExporter) WriteLogRecord(rec log.LogRecord) error {
+func (e *ClickHouseLogExporter) WriteLogRecord(rec *log.LogRecord) error {
 	select {
 	case <-e.stop:
 		// do nothing
@@ -132,7 +132,7 @@ func (s *ClickHouseLogExporter) Stop(ctx context.Context) error {
 	}
 }
 
-func (e *ClickHouseLogExporter) insertMany(records []log.LogRecord) error {
+func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 	if !e.storage.IsReady() {
 		return ErrLogDbNotReady
 	}
