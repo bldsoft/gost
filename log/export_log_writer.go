@@ -21,6 +21,7 @@ type LogRecord struct {
 	Level     zerolog.Level
 	ReqID     string
 	Msg       string
+	Fields    []byte // json
 }
 
 type LogExporter interface {
@@ -71,6 +72,11 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 		delete(event, zerolog.LevelFieldName)
 	}
 
+	if msg, ok := event[zerolog.MessageFieldName].(string); ok {
+		rec.Msg = msg
+		delete(event, zerolog.MessageFieldName)
+	}
+
 	if reqID, ok := event[ReqIdFieldName].(string); ok {
 		rec.ReqID = reqID
 		delete(event, ReqIdFieldName)
@@ -85,11 +91,14 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 		delete(event, zerolog.TimestampFieldName)
 	}
 
-	data, err := json.Marshal(event)
+	if len(event) == 0 {
+		return &rec, nil
+	}
+
+	rec.Fields, err = json.Marshal(event)
 	if err != nil {
 		return nil, err
 	}
-	rec.Msg = string(data)
 	return &rec, nil
 }
 

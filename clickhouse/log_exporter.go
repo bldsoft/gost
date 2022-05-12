@@ -20,6 +20,7 @@ const (
 	InstanseColumnName  = "instanse"
 	TimestampColumnName = "timestamp"
 	ReqIDColumnName     = "req_id"
+	FieldsColumnName    = "fields"
 )
 
 type LogExporterConfig struct {
@@ -143,15 +144,15 @@ func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (%s,%s,%s,%s,%s) VALUES (?,?,?,?)", e.config.TableName,
-		InstanseColumnName, TimestampColumnName, LevelColumName, MsgColumnName, ReqIDColumnName))
+	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (%s,%s,%s,%s,%s,%s) VALUES (?,?,?,?,?,?)", e.config.TableName,
+		InstanseColumnName, TimestampColumnName, LevelColumName, ReqIDColumnName, MsgColumnName, FieldsColumnName))
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, record := range records {
-		if _, err := stmt.Exec(record.Instanse, record.Timestamp, record.Level, record.Msg, record.ReqID); err != nil {
+		if _, err := stmt.Exec(record.Instanse, record.Timestamp, record.Level, record.ReqID, record.Msg, record.Fields); err != nil {
 			return err
 		}
 	}
@@ -170,7 +171,8 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 			`+TimestampColumnName+` DateTime,
 			`+LevelColumName+` Enum8('DEBUG'=0, 'INFO'=1, 'WARN'=2, 'ERROR'=3, 'FATAL'=4, 'PANIC'=5, 'TRACE'=-1),
 			`+ReqIDColumnName+` String,
-			`+MsgColumnName+` String
+			`+MsgColumnName+` String,
+			`+FieldsColumnName+` String
 	) 
 	ENGINE = %s
 	PARTITION BY toYYYYMM(`+TimestampColumnName+`)
