@@ -1,6 +1,7 @@
 package log
 
 import (
+	"github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/utils"
 	"github.com/rs/zerolog"
 )
@@ -12,8 +13,8 @@ type ServiceLogger struct {
 	exportWriter *ExportLogWriter
 }
 
-func (l *ServiceLogger) AddExporter(exporter LogExporter) {
-	l.exportWriter.Append(exporter)
+func (l *ServiceLogger) AddExporter(exporter LogExporter, isOn *feature.Bool) {
+	l.exportWriter.Append(exporter, isOn)
 }
 
 //Fields struct
