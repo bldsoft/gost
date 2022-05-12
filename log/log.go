@@ -17,23 +17,25 @@ var Logger = ServiceLogger{logger: zerolog.New(os.Stderr)}
 
 //InitLogger initializes log
 func InitLogger(config *Config) {
-	initZerolog(config.File, config.Level)
+	exportWriter := NewExportLogWriter(config.Exporter)
+	initZerolog(config.File, config.Level, exportWriter)
 }
 
-func initZerolog(logFile, logLevel string) {
+func initZerolog(logFile, logLevel string, exportWriter *ExportLogWriter) {
 	zerolog.TimestampFieldName = "t"
 	zerolog.LevelFieldName = "l"
 	zerolog.MessageFieldName = "m"
 
 	var writers []io.Writer
 	writers = append(writers, zerolog.ConsoleWriter{Out: colorable.NewColorableStdout(), TimeFormat: "15:04:05"})
+	writers = append(writers, exportWriter)
 
 	if logFile != "" {
 		writers = append(writers, newFileRotation(logFile))
 	}
 
 	multiWriter := zerolog.MultiLevelWriter(writers...)
-	Logger = ServiceLogger{logger: zerolog.New(multiWriter).With().Timestamp().Logger()}
+	Logger = ServiceLogger{logger: zerolog.New(multiWriter).With().Timestamp().Logger(), exportWriter: exportWriter}
 
 	err := SetLogLevel(logLevel)
 	if err != nil {

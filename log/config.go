@@ -5,8 +5,9 @@ import (
 )
 
 type Config struct {
-	File  string `mapstructure:"LOG_FILE"`
-	Level string `mapstructure:"LOG_LEVEL"`
+	File     string `mapstructure:"LOG_FILE"`
+	Level    string `mapstructure:"LOG_LEVEL"`
+	Exporter LogExporterConfig
 }
 
 // SetDefaults ...

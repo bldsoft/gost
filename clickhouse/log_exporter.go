@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/bldsoft/gost/log"
-	"github.com/rs/zerolog"
 )
 
 var (
@@ -16,24 +15,17 @@ var (
 )
 
 const (
-	LevelColumName      = "Level"
-	MsgColumnName       = "Msg"
-	InstanseColumnName  = "Instanse"
-	TimestampColumnName = "Timestamp"
+	LevelColumName      = "level"
+	MsgColumnName       = "msg"
+	InstanseColumnName  = "instanse"
+	TimestampColumnName = "timestamp"
+	ReqIDColumnName     = "req_id"
 )
 
-type LogRecord struct {
-	Instanse  string
-	Timestamp int64
-	Level     zerolog.Level
-	Msg       string
-}
-
 type LogExporterConfig struct {
-	Instanse     string `mapstructure:"SERVICE_NAME"`
-	FlushTimeMs  int64  `mapstructure:"LOG_EXPORT_FLUSH_TIME_MS"`
-	MaxBatchSize int64  `mapstructure:"LOG_EXPORT_MAX_BATCH_SIZE"`
-	ChanBufSize  int64  `mapstructure:"LOG_EXPORT_CHAN_BUF_SIZE"`
+	FlushTimeMs  int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_FLUSH_TIME_MS"`
+	MaxBatchSize int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_MAX_BATCH_SIZE"`
+	ChanBufSize  int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_CHAN_BUF_SIZE"`
 
 	TableName        string `mapstructure:"LOG_EXPORT_CLICKHOUSE_TABLE"`
 	AllowReplication bool   `mapstructure:"CLICKHOUSE_REPLICATION_ENABLED"`
@@ -64,26 +56,25 @@ type ClickHouseLogExporter struct {
 
 	storage *Storage
 
-	recordC chan LogRecord
-	records []LogRecord
+	recordC chan log.LogRecord
+	records []log.LogRecord
 
 	stop    chan struct{}
 	stopped chan struct{}
 }
 
 func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExporter {
-	return &ClickHouseLogExporter{storage: storage, config: cfg, recordC: make(chan LogRecord, cfg.ChanBufSize), records: make([]LogRecord, 0, cfg.MaxBatchSize)}
+	return &ClickHouseLogExporter{storage: storage, config: cfg, recordC: make(chan log.LogRecord, cfg.ChanBufSize), records: make([]log.LogRecord, 0, cfg.MaxBatchSize)}
 }
 
-func (e *ClickHouseLogExporter) LoggerHook() zerolog.Hook {
-	return zerolog.HookFunc(func(_ *zerolog.Event, level zerolog.Level, message string) {
-		select {
-		case <-e.stop:
-			// do nothing
-		default:
-			e.recordC <- LogRecord{Instanse: e.config.Instanse, Timestamp: time.Now().UnixNano(), Level: level, Msg: message}
-		}
-	})
+func (e *ClickHouseLogExporter) WriteLogRecord(rec log.LogRecord) error {
+	select {
+	case <-e.stop:
+		// do nothing
+	default:
+		e.recordC <- rec
+	}
+	return nil
 }
 
 func (e *ClickHouseLogExporter) Run() error {
@@ -141,7 +132,7 @@ func (s *ClickHouseLogExporter) Stop(ctx context.Context) error {
 	}
 }
 
-func (e *ClickHouseLogExporter) insertMany(records []LogRecord) error {
+func (e *ClickHouseLogExporter) insertMany(records []log.LogRecord) error {
 	if !e.storage.IsReady() {
 		return ErrLogDbNotReady
 	}
@@ -152,15 +143,15 @@ func (e *ClickHouseLogExporter) insertMany(records []LogRecord) error {
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (%s,%s,%s,%s) VALUES (?,?,?,?)", e.config.TableName,
-		InstanseColumnName, TimestampColumnName, LevelColumName, MsgColumnName))
+	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (%s,%s,%s,%s,%s) VALUES (?,?,?,?)", e.config.TableName,
+		InstanseColumnName, TimestampColumnName, LevelColumName, MsgColumnName, ReqIDColumnName))
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, record := range records {
-		if _, err := stmt.Exec(record.Instanse, record.Timestamp, record.Level, record.Msg); err != nil {
+		if _, err := stmt.Exec(record.Instanse, record.Timestamp, record.Level, record.Msg, record.ReqID); err != nil {
 			return err
 		}
 	}
@@ -176,12 +167,13 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 
 	_, err := e.storage.Db.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 			`+InstanseColumnName+` LowCardinality(String),
-			`+TimestampColumnName+` DateTime64,
+			`+TimestampColumnName+` DateTime,
 			`+LevelColumName+` Enum8('DEBUG'=0, 'INFO'=1, 'WARN'=2, 'ERROR'=3, 'FATAL'=4, 'PANIC'=5, 'TRACE'=-1),
+			`+ReqIDColumnName+` String,
 			`+MsgColumnName+` String
 	) 
 	ENGINE = %s
 	PARTITION BY toYYYYMM(`+TimestampColumnName+`)
-	ORDER BY (`+strings.Join([]string{TimestampColumnName, InstanseColumnName, LevelColumName}, ",")+`)`, e.config.TableName, engine))
+	ORDER BY (`+strings.Join([]string{TimestampColumnName, InstanseColumnName, LevelColumName, ReqIDColumnName}, ",")+`)`, e.config.TableName, engine))
 	return err
 }

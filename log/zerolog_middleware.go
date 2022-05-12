@@ -14,6 +14,8 @@ import (
 
 var LoggerCtxKey = &utils.ContextKey{Name: "Logger"}
 
+const ReqIdFieldName = "req_id"
+
 // WithLogEntry sets the in-context ServiceLogger for a request.
 func WithLogger(r *http.Request, logger *ServiceLogger) *http.Request {
 	r = r.WithContext(context.WithValue(r.Context(), LoggerCtxKey, logger))
@@ -35,7 +37,7 @@ func logger(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		reqID := middleware.GetReqID(r.Context())
 
-		logFields := Fields{"req_id": reqID}
+		logFields := Fields{ReqIdFieldName: reqID}
 
 		logger := Logger.WithFields(logFields)
 		next.ServeHTTP(w, WithLogger(r, logger))

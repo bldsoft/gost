@@ -5,18 +5,15 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type LogExporter interface {
-	LoggerHook() zerolog.Hook
-}
-
 type ServiceLogger struct {
-	logger zerolog.Logger
-
+	logger          zerolog.Logger
 	LogFuncDuration bool
+
+	exportWriter *ExportLogWriter
 }
 
 func (l *ServiceLogger) AddExporter(exporter LogExporter) {
-	l.logger = l.logger.Hook(exporter.LoggerHook())
+	l.exportWriter.Append(exporter)
 }
 
 //Fields struct
