@@ -174,6 +174,6 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 	) 
 	ENGINE = %s
 	PARTITION BY toYYYYMM(`+TimestampColumnName+`)
-	ORDER BY (`+strings.Join([]string{TimestampColumnName, InstanseColumnName, LevelColumName, ReqIDColumnName}, ",")+`)`, e.config.TableName, engine))
+	ORDER BY (`+strings.Join([]string{TimestampColumnName, InstanseColumnName, ReqIDColumnName}, ",")+`)`, e.config.TableName, engine))
 	return err
 }
