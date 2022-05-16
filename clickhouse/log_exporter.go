@@ -28,7 +28,7 @@ type LogExporterConfig struct {
 	MaxBatchSize int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_MAX_BATCH_SIZE"`
 	ChanBufSize  int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_CHAN_BUF_SIZE"`
 
-	TableName        string `mapstructure:"LOG_EXPORT_CLICKHOUSE_TABLE"`
+	TableName        string `mapstructure:"CLICKHOUSE_LOG_EXPORT_TABLE"`
 	AllowReplication bool   `mapstructure:"CLICKHOUSE_REPLICATION_ENABLED"`
 }
 
