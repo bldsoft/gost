@@ -160,6 +160,14 @@ func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 	return tx.Commit()
 }
 
+func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
+	if !e.storage.IsReady() {
+		return ErrLogDbNotReady
+	}
+	_, err := e.storage.Db.Exec(fmt.Sprintf("ALTER TABLE %s MODIFY TTL %s + INTERVAL %d HOUR", e.config.TableName, TimestampColumnName, hours))
+	return err
+}
+
 func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 	engine := "MergeTree"
 	if e.config.AllowReplication {
@@ -176,6 +184,7 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 	) 
 	ENGINE = %s
 	PARTITION BY toYYYYMM(`+TimestampColumnName+`)
+	TTL `+TimestampColumnName+` + INTERVAL 1 MONTH 
 	ORDER BY (`+strings.Join([]string{TimestampColumnName, InstanseColumnName, ReqIDColumnName}, ",")+`)`, e.config.TableName, engine))
 	return err
 }
