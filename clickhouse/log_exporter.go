@@ -28,8 +28,7 @@ type LogExporterConfig struct {
 	MaxBatchSize int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_MAX_BATCH_SIZE"`
 	ChanBufSize  int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_CHAN_BUF_SIZE"`
 
-	TableName        string `mapstructure:"CLICKHOUSE_LOG_EXPORT_TABLE"`
-	AllowReplication bool   `mapstructure:"CLICKHOUSE_REPLICATION_ENABLED"`
+	TableName string `mapstructure:"CLICKHOUSE_LOG_EXPORT_TABLE"`
 }
 
 // SetDefaults ...
@@ -38,7 +37,6 @@ func (c *LogExporterConfig) SetDefaults() {
 	c.MaxBatchSize = 1000
 	c.ChanBufSize = 4096
 	c.TableName = "LOG_RECORDS"
-	c.AllowReplication = false
 }
 
 // Validate ...
@@ -170,7 +168,7 @@ func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
 
 func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 	engine := "MergeTree"
-	if e.config.AllowReplication {
+	if e.storage.IsReplicationEnabled() {
 		engine = "ReplicatedMergeTree"
 	}
 

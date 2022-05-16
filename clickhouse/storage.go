@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/ClickHouse/clickhouse-go"
 	"github.com/bldsoft/gost/log"
@@ -33,6 +32,11 @@ func NewStorage(config Config) *Storage {
 	return &Storage{cfg: config, migrations: source.NewMigrations()}
 }
 
+func (s *Storage) IsReplicationEnabled() bool {
+	_, err := s.Db.Exec("SELECT * FROM system.zookeeper WHERE path = '/' LIMIT 0")
+	return err == nil
+}
+
 //AddMigration adds a migration. All migrations should be added before db.Connect
 func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string) {
 	db.migrations.Append(&source.Migration{Version: version, Direction: source.Up, Identifier: migrationUp})
@@ -41,46 +45,34 @@ func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string)
 
 func (db *Storage) Connect() {
 	connect, err := sql.Open("clickhouse", db.cfg.Dsn.String())
-
 	if err != nil {
 		log.ErrorWithFields(log.Fields{"dsn": &db.cfg.Dsn, "error": err}, "Failed to connect clickhouse db")
-
 		return
 	}
 
 	if err := connect.Ping(); err != nil {
 		db.LogError(err)
-
-		return
-	} else {
-		dbname := db.getDsnQueryParam("database")
-
-		use_db := "USE " + dbname + ";"
-
-		if _, err = connect.Exec(use_db); err == nil {
-
-			db.Db = connect
-
-			log.InfoWithFields(log.Fields{"dsn": &db.cfg.Dsn}, "Clickhouse connected!")
-
-			//run migrations only once
-			db.doOnce.Do(func() {
-				go func() {
-					//run migrations
-					if db.runMigrations(dbname) {
-						atomic.StoreInt32(&db.isReady, 1)
-					}
-				}()
-			})
-
-			// TODO: remove it
-			time.Sleep(2 * time.Second)
-		} else {
-			db.LogError(err)
-		}
-
 		return
 	}
+
+	dbname := db.getDsnQueryParam("database")
+
+	use_db := "USE " + dbname + ";"
+	if _, err = connect.Exec(use_db); err != nil {
+		db.LogError(err)
+	}
+
+	db.Db = connect
+	log.InfoWithFields(log.Fields{"dsn": &db.cfg.Dsn}, "Clickhouse connected!")
+}
+
+func (db *Storage) RunMigrations() {
+	db.doOnce.Do(func() {
+		dbname := db.getDsnQueryParam("database")
+		if db.runMigrations(dbname) {
+			atomic.StoreInt32(&db.isReady, 1)
+		}
+	})
 }
 
 func (db *Storage) Disconnect(ctx context.Context) error {
