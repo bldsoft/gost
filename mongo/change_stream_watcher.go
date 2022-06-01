@@ -12,14 +12,34 @@ import (
 
 const changeStreamRecoverTime = 30 * time.Second
 
+const (
+	changeStreamInsertOp  = "insert"
+	changeStreamUpdateOp  = "update"
+	changeStreamReplaceOp = "replace"
+	changeStreamDeleteOp  = "delete"
+)
+
 type changeStreamWatcher struct {
 	operationTypes []string
 	resumeToken    bson.Raw
 	recoverTime    time.Duration
 }
 
-func newChangeStreamWatcher() *changeStreamWatcher {
-	operationTypes := []string{"update", "replace", "insert"}
+func newChangeStreamWatcher(operations ...OperationType) *changeStreamWatcher {
+	if len(operations) == 0 {
+		operations = []OperationType{Update, Insert, Delete}
+	}
+	var operationTypes []string
+	for _, op := range operations {
+		switch op {
+		case Insert:
+			operationTypes = append(operationTypes, changeStreamInsertOp)
+		case Update:
+			operationTypes = append(operationTypes, changeStreamUpdateOp, changeStreamReplaceOp)
+		case Delete:
+			operationTypes = append(operationTypes, changeStreamDeleteOp)
+		}
+	}
 	return &changeStreamWatcher{operationTypes: operationTypes, recoverTime: changeStreamRecoverTime}
 }
 
@@ -59,7 +79,13 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 			continue
 		}
 		operationType := changeStream.Current.Lookup("operationType").StringValue()
-		fullDocument := changeStream.Current.Lookup("fullDocument").Document()
+		var fullDocument bson.Raw
+		if operationType == changeStreamDeleteOp {
+			// for delete operation only _id is returned
+			fullDocument = changeStream.Current.Lookup("documentKey").Document()
+		} else {
+			fullDocument = changeStream.Current.Lookup("fullDocument").Document()
+		}
 
 		if opType := w.getOpType(fullDocument, operationType); opType != None {
 			handler(fullDocument, opType)
@@ -76,11 +102,12 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 
 func (w *changeStreamWatcher) getOpType(fulldocument bson.Raw, opType string) OperationType {
 	switch opType {
-	case "insert":
+	case changeStreamInsertOp:
 		return Insert
-	case "update", "replace":
-		// TODO: check delete flag
+	case changeStreamUpdateOp, changeStreamReplaceOp:
 		return Update
+	case changeStreamDeleteOp:
+		return Delete
 	default:
 		return None
 	}
