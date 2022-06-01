@@ -17,7 +17,7 @@ type MongoRepository struct {
 }
 
 // NewMongoRepository creates feature repository.
-func NewMongoRepository(db *mongo.MongoDb, serviceName string) *MongoRepository {
+func NewMongoRepository(db *mongo.Storage, serviceName string) *MongoRepository {
 	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, "feature"), serviceName: serviceName}
 	db.AddOnConnectHandler(func() {
 		if err := rep.Load(); err != nil {

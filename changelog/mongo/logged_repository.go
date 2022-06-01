@@ -22,7 +22,7 @@ type LoggedRepository[T any, U LoggedEntity[T]] struct {
 	changeLogRep *ChangeLogRepository
 }
 
-func NewLoggedRepository[T any, U LoggedEntity[T]](db *mongo.MongoDb, collectionName string, changeLogRep *ChangeLogRepository) *LoggedRepository[T, U] {
+func NewLoggedRepository[T any, U LoggedEntity[T]](db *mongo.Storage, collectionName string, changeLogRep *ChangeLogRepository) *LoggedRepository[T, U] {
 	rep := mongo.NewRepository[T, U](db, collectionName)
 	db.AddOnConnectHandler(func() {
 		// creating collection beforehand for transactions

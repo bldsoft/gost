@@ -28,7 +28,7 @@ type ChangeLogRepository struct {
 	rep *mongo.Repository[record, *record]
 }
 
-func NewChangeLogRepository(db *mongo.MongoDb) *ChangeLogRepository {
+func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
 	r := &ChangeLogRepository{mongo.NewRepository[record](db, "change_log")}
 	db.AddOnConnectHandler(func() {
 		indexes := []driver.IndexModel{

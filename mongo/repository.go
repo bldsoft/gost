@@ -39,11 +39,11 @@ type IEntityIDPtr[T any] interface {
 
 type Repository[T any, U IEntityIDPtr[T]] struct {
 	dbcollection   *mongo.Collection
-	db             *MongoDb
+	db             *Storage
 	collectionName string
 }
 
-func NewRepository[T any, U IEntityIDPtr[T]](db *MongoDb, collectionName string) *Repository[T, U] {
+func NewRepository[T any, U IEntityIDPtr[T]](db *Storage, collectionName string) *Repository[T, U] {
 	return &Repository[T, U]{db: db, collectionName: collectionName}
 }
 
