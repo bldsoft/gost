@@ -44,6 +44,8 @@ func Parse[T Parsed](s string) (result T, err error) {
 		ret, err = parseInt[int32](s)
 	case int64:
 		ret, err = parseInt[int64](s)
+	case time.Duration:
+		ret, err = parseInt[time.Duration](s)
 	case uint:
 		ret, err = parseUint[uint](s)
 	case uint8:
