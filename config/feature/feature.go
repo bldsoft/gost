@@ -3,21 +3,17 @@ package feature
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/bldsoft/gost/utils"
 )
 
 type Bool = Feature[bool]
 type Int = Feature[int]
 type String = Feature[string]
 
-type FeatureType interface {
-	utils.Parsed
-}
+type Feature[T comparable] struct {
+	ID    IdType
+	value T
 
-type Feature[T FeatureType] struct {
-	ID               IdType
-	value            T
+	parse            func(string) (T, error)
 	validator        func(T) error
 	onchangeHandlers []func(T)
 }
@@ -56,7 +52,7 @@ func (f *Feature[T]) validate(value T) error {
 }
 
 func (f *Feature[T]) Validate(value string) error {
-	val, err := utils.Parse[T](value)
+	val, err := f.parse(value)
 	if err != nil {
 		return err
 	}
@@ -76,7 +72,7 @@ func (f *Feature[T]) Set(value T) error {
 }
 
 func (f *Feature[T]) SetFromString(value string) error {
-	val, err := utils.Parse[T](value)
+	val, err := f.parse(value)
 	if err != nil {
 		return err
 	}
