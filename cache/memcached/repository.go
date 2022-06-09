@@ -16,9 +16,9 @@ type MemcacheRepository struct {
 	liveTimeSec int32
 }
 
-func NewMemcacheRepository(storage *Storage, liveTimeMin int) *MemcacheRepository {
+func NewMemcacheRepository(storage *Storage, liveTime time.Duration) *MemcacheRepository {
 	rep := &MemcacheRepository{cache: storage}
-	rep.SetLiveTimeMin(liveTimeMin)
+	rep.SetLiveTimeMin(liveTime)
 	return rep
 }
 
@@ -50,8 +50,8 @@ func (r *MemcacheRepository) GetMulti(keys []string) (map[string][]byte, error) 
 }
 
 // SetLiveTimeMin ...
-func (r *MemcacheRepository) SetLiveTimeMin(minutes int) {
-	r.liveTimeSec = 60 * int32(minutes)
+func (r *MemcacheRepository) SetLiveTimeMin(liveTime time.Duration) {
+	r.liveTimeSec = int32(liveTime.Seconds())
 }
 
 // Set writes the given item, unconditionally.
