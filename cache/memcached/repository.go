@@ -12,8 +12,8 @@ const (
 )
 
 type MemcacheRepository struct {
-	cache       *Storage
-	liveTimeSec int32
+	cache    *Storage
+	liveTime time.Duration
 }
 
 func NewMemcacheRepository(storage *Storage, liveTime time.Duration) *MemcacheRepository {
@@ -51,38 +51,38 @@ func (r *MemcacheRepository) GetMulti(keys []string) (map[string][]byte, error) 
 
 // SetLiveTimeMin ...
 func (r *MemcacheRepository) SetLiveTimeMin(liveTime time.Duration) {
-	r.liveTimeSec = int32(liveTime.Seconds())
+	r.liveTime = liveTime
 }
 
 // Set writes the given item, unconditionally.
 func (r *MemcacheRepository) Set(key string, value []byte) error {
-	return r.cache.Set(&memcache.Item{Key: key, Value: value, Expiration: r.liveTimeSec})
+	return r.SetFor(key, value, r.liveTime)
 }
 
 // SetFor writes the given item, unconditionally.
-func (r *MemcacheRepository) SetFor(key string, value []byte, expirationSec int32) error {
-	return r.cache.Set(&memcache.Item{Key: key, Value: value, Expiration: expirationSec})
+func (r *MemcacheRepository) SetFor(key string, value []byte, expiration time.Duration) error {
+	return r.cache.Set(&memcache.Item{Key: key, Value: value, Expiration: int32(expiration.Seconds())})
 }
 
 func (r *MemcacheRepository) SetWithFlags(key string, value []byte, flags uint32) error {
-	return r.cache.Set(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: r.liveTimeSec})
+	return r.cache.Set(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: int32(r.liveTime.Seconds())})
 }
 
 // Exist checks if the key exists
 func (r *MemcacheRepository) Exist(key string) bool {
-	return r.cache.Touch(key, r.liveTimeSec) == nil
+	return r.cache.Touch(key, int32(r.liveTime.Seconds())) == nil
 }
 
 // Add writes the given item, if no value already exists for its
 // key. ErrNotStored is returned if that condition is not met.
 func (r *MemcacheRepository) Add(key string, value []byte) error {
-	return r.AddFor(key, value, r.liveTimeSec)
+	return r.AddFor(key, value, r.liveTime)
 }
 
 // AddFor writes the given item, if no value already exists for its
 // key. ErrNotStored is returned if that condition is not met.
-func (r *MemcacheRepository) AddFor(key string, value []byte, expirationSec int32) error {
-	return r.cache.Add(&memcache.Item{Key: key, Value: value, Expiration: expirationSec})
+func (r *MemcacheRepository) AddFor(key string, value []byte, expiration time.Duration) error {
+	return r.cache.Add(&memcache.Item{Key: key, Value: value, Expiration: int32(expiration.Seconds())})
 }
 
 // Delete deletes the item with the provided key.

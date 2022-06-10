@@ -72,7 +72,7 @@ func (m *DistrMutex) Lock(ctx context.Context) {
 
 // TryLock tries to lock m. It returns true in case of success, false otherwise.
 func (m *DistrMutex) TryLock() bool {
-	err := m.cache.AddFor(m.lockKey, m.uniqueID, int32(m.unlockTime.Seconds()))
+	err := m.cache.AddFor(m.lockKey, m.uniqueID, m.unlockTime)
 	if err != nil {
 		log.DebugWithFields(log.Fields{"error": err}, "Failed to lock memcached mutex")
 		return false
@@ -98,7 +98,7 @@ func (m *DistrMutex) updateLock() {
 		lockOwner := m.getOwner()
 		switch lockOwner {
 		case me:
-			err := m.cache.SetFor(m.lockKey, m.uniqueID, int32(m.unlockTime.Seconds()))
+			err := m.cache.SetFor(m.lockKey, m.uniqueID, m.unlockTime)
 			if err != nil {
 				log.ErrorfWithFields(log.Fields{"error": err}, "failed to update memcached lock %s", m.lockKey)
 			}
