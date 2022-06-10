@@ -57,7 +57,7 @@ func (w *reserveWatcher) watch(ctx context.Context, collection *mongo.Collection
 		ReserveWatcherInterval.AddOnChangeHandler(func(interval time.Duration) {
 			if interval > 0 {
 				ticker.Reset(interval)
-				log.Debugf("Reserve watcher interval for \"%s\" is changed to %d min", collection.Name(), interval)
+				log.Debugf("Reserve watcher interval for \"%s\" is changed to %v", collection.Name(), interval)
 			} else {
 				ticker.Stop()
 				log.Debugf("Reserve watcher for \"%s\" is paused", collection.Name())
