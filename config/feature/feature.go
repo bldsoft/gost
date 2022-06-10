@@ -5,10 +5,6 @@ import (
 	"fmt"
 )
 
-type Bool = Feature[bool]
-type Int = Feature[int]
-type String = Feature[string]
-
 type Feature[T comparable] struct {
 	ID    IdType
 	value T

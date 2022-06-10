@@ -35,7 +35,7 @@ func ExampleNewFeature() {
 	intFeature.SetFromString("2")
 	intFeature.Set(3)
 
-	stringFeature := feature.NewFeature(0, "string1").
+	stringFeature := feature.NewFeature(1, "string1").
 		AddOnChangeHandler(func(v string) {
 			fmt.Println(v)
 		})
@@ -53,34 +53,20 @@ func ExampleNewFeature() {
 	// string3
 }
 
-func ExampleNewSeconds() {
-	mins := feature.NewSeconds(0, 1).
+func ExampleNewDuration() {
+	dur := feature.NewDuration(0, 1*time.Second).
 		AddOnChangeHandler(func(d time.Duration) {
 			fmt.Println(d)
 		})
 
-	fmt.Println(mins.Get())
-	mins.SetFromString("2")
-	mins.Set(3 * time.Second) // set time.Duration
+	fmt.Println(dur.Get())
+	dur.Set(1 * time.Minute)
+	dur.SetFromString("1h1m1s")
+	feature.Features.Get(0).SetFromString("5s") //  global map
 
 	// Output:
 	// 1s
-	// 2s
-	// 3s
-}
-
-func ExampleNewMinutes() {
-	mins := feature.NewMinutes(0, 1).
-		AddOnChangeHandler(func(d time.Duration) {
-			fmt.Println(d)
-		})
-
-	fmt.Println(mins.Get())
-	mins.SetFromString("2")
-	mins.Set(3 * time.Minute) // set time.Duration
-
-	// Output:
 	// 1m0s
-	// 2m0s
-	// 3m0s
+	// 1h1m1s
+	// 5s
 }
