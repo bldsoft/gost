@@ -3,9 +3,9 @@ package server
 import "fmt"
 
 type Config struct {
-	Name string `mapstructure:"SERVICE_NAME"`
-	Host string `mapstructure:"SERVICE_HOST"`
-	Port int    `mapstructure:"SERVICE_PORT"`
+	Name string `mapstructure:"SERVICE_NAME" description:"Unique service instanse name"`
+	Host string `mapstructure:"SERVICE_HOST" description:"IP address, or a host name that can be resolved to IP addresses"`
+	Port int    `mapstructure:"SERVICE_PORT" description:"Service port"`
 }
 
 func (c *Config) ServiceAddress() string {

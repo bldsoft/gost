@@ -12,7 +12,7 @@ import (
 )
 
 type LogExporterConfig struct {
-	Instanse string `mapstructure:"SERVICE_NAME"`
+	Instanse string `mapstructure:"SERVICE_NAME" description:"The name is used to identify the service in logs"`
 }
 
 type LogRecord struct {

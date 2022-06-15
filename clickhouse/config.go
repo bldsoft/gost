@@ -7,7 +7,7 @@ import (
 )
 
 type Config struct {
-	Dsn gost.ConnectionString `mapstructure:"DSN"`
+	Dsn gost.ConnectionString `mapstructure:"DSN" description:"Clickhouse DSN"`
 }
 
 // SetDefaults ...

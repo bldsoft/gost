@@ -5,8 +5,8 @@ import (
 )
 
 type Config struct {
-	Server config.ConnectionString `mapstructure:"DATABASE_SERVER"`
-	DbName string                  `mapstructure:"DATABASE_DBNAME"`
+	Server config.ConnectionString `mapstructure:"DATABASE_SERVER" description:"MongoDB connection string"`
+	DbName string                  `mapstructure:"DATABASE_DBNAME" description:"Service database name"`
 }
 
 // SetDefaults ...
