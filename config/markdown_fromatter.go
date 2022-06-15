@@ -22,8 +22,8 @@ func (w *MarkdownFormatter) WriteParam(envName, value string, descriptions []str
 	}
 
 	if w.needHeader {
-		write("|Environment variable|Value|Description|\n")
-		write("|--------------------|-----|-----------|\n")
+		write("|**Environment variable**|**Value**|**Description**|\n")
+		write("|------------------------|---------|---------------|\n")
 		w.needHeader = false
 	}
 
