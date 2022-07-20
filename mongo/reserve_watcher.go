@@ -13,7 +13,7 @@ import (
 
 // ReserveWatcherInterval is used for changing update interval when mongo change stream is off. Set it before start watching
 // If ReserveWatcherInterval is not set, update interval is 5 min by default.
-var ReserveWatcherInterval *feature.Int
+var ReserveWatcherInterval *feature.Duration
 
 const defaultDuration = time.Minute * 5
 
@@ -28,7 +28,7 @@ func newReserveWatcher() *reserveWatcher {
 
 func (w *reserveWatcher) getReserveWatcherInterval() time.Duration {
 	if ReserveWatcherInterval != nil {
-		return time.Minute * time.Duration(ReserveWatcherInterval.Get())
+		return ReserveWatcherInterval.Get()
 	}
 	return defaultDuration
 }
@@ -54,10 +54,10 @@ func (w *reserveWatcher) watch(ctx context.Context, collection *mongo.Collection
 	}
 
 	if ReserveWatcherInterval != nil {
-		ReserveWatcherInterval.AddOnChangeHandler(func(interval int) {
+		ReserveWatcherInterval.AddOnChangeHandler(func(interval time.Duration) {
 			if interval > 0 {
-				ticker.Reset(time.Minute * time.Duration(interval))
-				log.Debugf("Reserve watcher interval for \"%s\" is changed to %d min", collection.Name(), interval)
+				ticker.Reset(interval)
+				log.Debugf("Reserve watcher interval for \"%s\" is changed to %v", collection.Name(), interval)
 			} else {
 				ticker.Stop()
 				log.Debugf("Reserve watcher for \"%s\" is paused", collection.Name())

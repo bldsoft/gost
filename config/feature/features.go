@@ -1,6 +1,16 @@
 package feature
 
-import "strconv"
+import (
+	"strconv"
+	"time"
+
+	"github.com/bldsoft/gost/utils"
+)
+
+type Bool = Feature[bool]
+type Int = Feature[int]
+type String = Feature[string]
+type Duration = Feature[time.Duration]
 
 type IdType = int
 
@@ -23,7 +33,7 @@ type featureConfig struct {
 // Features contain all the features and provide access to them by ID
 var Features = featureConfig{make(map[IdType]IFeature)}
 
-// Get ...
+// Get returns Feature by id
 func (fc *featureConfig) Get(featureID IdType) IFeature {
 	feature, ok := fc.features[featureID]
 	if !ok {
@@ -32,23 +42,21 @@ func (fc *featureConfig) Get(featureID IdType) IFeature {
 	return feature
 }
 
-// NewString creates a new feature and put it to feature.Features
-func NewString(id IdType, value string, validator func(string) error, handlers ...onStringChangeHandler) *String {
-	feature := &String{ID: id, value: value, validator: validator, onchangeHandlers: handlers}
+// NewCustomFeature create a new feature from any comparable type.
+// For basic types you can use NewFeature function.
+func NewCustomFeature[T comparable](id IdType, value T, parse func(string) (T, error)) *Feature[T] {
+	feature := &Feature[T]{ID: id, value: value, parse: parse}
 	Features.features[id] = feature
 	return feature
 }
 
-// NewInt creates a new feature and put it to feature.Features
-func NewInt(id IdType, value int, validator intValidator, handlers ...onIntChangeHandler) *Int {
-	feature := &Int{ID: id, value: value, validator: validator, onchangeHandlers: handlers}
-	Features.features[id] = feature
-	return feature
+// NewFeature creates a new feature and put it to feature.Features
+func NewFeature[T utils.Parsed](id IdType, value T) *Feature[T] {
+	return NewCustomFeature(id, value, utils.Parse[T])
 }
 
-// NewBool creates a new feature and put it to feature.Features
-func NewBool(id IdType, value bool, validator boolValidator, handlers ...onBoolChangeHandler) *Bool {
-	feature := &Bool{ID: id, value: value, validator: validator, onchangeHandlers: handlers}
-	Features.features[id] = feature
-	return feature
+// NewDuration creates a new feature for time.Duration type.
+// time.ParseDuration is used for value parsing, so you can set value such as "300ms" or "2h45m".
+func NewDuration(id IdType, dur time.Duration) *Duration {
+	return NewCustomFeature(id, dur, time.ParseDuration)
 }

@@ -71,7 +71,7 @@ func (w *Watcher) watch() {
 	ctx := w.getNewContext()
 
 	reserveWatcher := newReserveWatcher()
-	changeStreamWatcher := newChangeStreamWatcher()
+	changeStreamWatcher := NewChangeStreamWatcher()
 
 	go changeStreamWatcher.watch(ctx, w.collection, func(fullDocument bson.Raw, opType OperationType) {
 		if updatedTime, ok := fullDocument.Lookup(BsonFieldNameUpdateTime).TimeOK(); ok {

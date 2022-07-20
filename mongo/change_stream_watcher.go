@@ -25,7 +25,7 @@ type changeStreamWatcher struct {
 	recoverTime    time.Duration
 }
 
-func newChangeStreamWatcher(operations ...OperationType) *changeStreamWatcher {
+func NewChangeStreamWatcher(operations ...OperationType) *changeStreamWatcher {
 	if len(operations) == 0 {
 		operations = []OperationType{Update, Insert, Delete}
 	}
@@ -41,6 +41,10 @@ func newChangeStreamWatcher(operations ...OperationType) *changeStreamWatcher {
 		}
 	}
 	return &changeStreamWatcher{operationTypes: operationTypes, recoverTime: changeStreamRecoverTime}
+}
+
+func (w *changeStreamWatcher) Watch(ctx context.Context, collection *mongo.Collection, handler WatchHandler) {
+	go w.watch(ctx, collection, handler)
 }
 
 // Watch creates change stream and watch collection. It invokes handler() for each updated.

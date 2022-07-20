@@ -63,15 +63,16 @@ func (db *Storage) Connect() {
 	}
 
 	db.Db = connect
+
+	atomic.StoreInt32(&db.isReady, 1)
+
 	log.InfoWithFields(log.Fields{"dsn": &db.cfg.Dsn}, "Clickhouse connected!")
 }
 
 func (db *Storage) RunMigrations() {
 	db.doOnce.Do(func() {
 		dbname := db.getDsnQueryParam("database")
-		if db.runMigrations(dbname) {
-			atomic.StoreInt32(&db.isReady, 1)
-		}
+		db.runMigrations(dbname)
 	})
 }
 
