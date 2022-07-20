@@ -18,16 +18,16 @@ var Logger = ServiceLogger{logger: zerolog.New(os.Stderr)}
 //InitLogger initializes log
 func InitLogger(config *Config) {
 	exportWriter := NewExportLogWriter(config.Exporter)
-	initZerolog(config.File, config.Level, exportWriter)
+	initZerolog(config.File, config.Level, config.Color, exportWriter)
 }
 
-func initZerolog(logFile, logLevel string, exportWriter *ExportLogWriter) {
+func initZerolog(logFile, logLevel string, color bool, exportWriter *ExportLogWriter) {
 	zerolog.TimestampFieldName = "t"
 	zerolog.LevelFieldName = "l"
 	zerolog.MessageFieldName = "m"
 
 	var writers []io.Writer
-	writers = append(writers, zerolog.ConsoleWriter{Out: colorable.NewColorableStdout(), TimeFormat: "15:04:05"})
+	writers = append(writers, zerolog.ConsoleWriter{Out: colorable.NewColorableStdout(), TimeFormat: "15:04:05", NoColor: !color})
 	writers = append(writers, exportWriter)
 
 	if logFile != "" {
