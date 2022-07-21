@@ -49,10 +49,12 @@ func NewRequestLogger(f middleware.LogFormatter) func(next http.Handler) http.Ha
 	return chi.Chain(logger, WithLogRequestErrBuffer, middleware.RequestLogger(f)).Handler
 }
 
-type DefaultFormatter struct{}
+type DefaultFormatter struct {
+	LogResponseHeaders bool
+}
 
 func NewDefaultFormatter() *DefaultFormatter {
-	return &DefaultFormatter{}
+	return &DefaultFormatter{LogResponseHeaders: true}
 }
 
 func DefaultRequestLogger() func(next http.Handler) http.Handler {
@@ -62,7 +64,8 @@ func DefaultRequestLogger() func(next http.Handler) http.Handler {
 func (l *DefaultFormatter) NewLogEntry(r *http.Request) middleware.LogEntry {
 
 	entry := &ContextLoggerEntry{
-		Logger: FromContext(r.Context()),
+		Logger:             FromContext(r.Context()),
+		LogResponseHeaders: l.LogResponseHeaders,
 	}
 
 	logFields := Fields{}
@@ -86,7 +89,8 @@ func (l *DefaultFormatter) NewLogEntry(r *http.Request) middleware.LogEntry {
 
 type ContextLoggerEntry struct {
 	//Logger *zerolog.Event
-	Logger *ServiceLogger
+	Logger             *ServiceLogger
+	LogResponseHeaders bool
 }
 
 func (l *ContextLoggerEntry) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
@@ -96,6 +100,10 @@ func (l *ContextLoggerEntry) Write(status, bytes int, header http.Header, elapse
 		"resp_status":  status,
 		"resp_bytes":   bytes,
 		"resp_time_ms": float64(duration) / 1000.0,
+	}
+
+	if l.LogResponseHeaders {
+		fields["resp_headers"] = header
 	}
 
 	switch {
