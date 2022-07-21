@@ -103,7 +103,7 @@ func (l *ContextLoggerEntry) Write(status, bytes int, header http.Header, elapse
 	}
 
 	if l.LogResponseHeaders {
-		fields["resp_headers"] = header
+		fields["hdr"] = header
 	}
 
 	switch {
