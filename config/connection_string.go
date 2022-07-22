@@ -45,12 +45,12 @@ func (c ConnectionString) String() string {
 	return string(c)
 }
 
-type HidenString string
+type HiddenString string
 
-func (c *HidenString) MarshalJSON() ([]byte, error) {
+func (c *HiddenString) MarshalJSON() ([]byte, error) {
 	return json.Marshal(passReplacement)
 }
 
-func (c HidenString) String() string {
+func (c HiddenString) String() string {
 	return string(c)
 }
