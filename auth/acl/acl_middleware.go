@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/bldsoft/gost/controller"
+	"github.com/bldsoft/gost/log"
 )
 
 type Config struct {
@@ -61,6 +62,8 @@ func (m Acl) getIP(r *http.Request) (net.IP, error) {
 
 func (m Acl) Middleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
 		ip, err := m.getIP(r)
 		if err != nil {
 			m.controller.ResponseError(w, err.Error(), http.StatusInternalServerError)
@@ -68,11 +71,13 @@ func (m Acl) Middleware(next http.Handler) http.Handler {
 		}
 
 		if m.Deny != nil && m.Deny.Contains(ip) {
+			log.FromContext(ctx).Debugf("ACL: %s denied", ip.String())
 			m.controller.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
 
 		if m.Allow != nil && !m.Allow.Empty() && !m.Allow.Contains(ip) {
+			log.FromContext(ctx).Debugf("ACL: %s isn't allowed", ip.String())
 			m.controller.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
