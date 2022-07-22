@@ -4,60 +4,31 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"strings"
 
 	"github.com/bldsoft/gost/controller"
 )
 
-type IpRange struct {
-	Ip   []net.IP
-	Cidr []*net.IPNet
+type Config struct {
+	Allow []string `mapstructure:"ACL_ALLOW" description:"If not empty it allows access only for the specified networks or addresses. Example: \"192.168.1.1,10.1.1.0/16\""`
+	allow *IpRange
+	Deny  []string `mapstructure:"ACL_DENY" description:"Denies access for the specified networks or addresses. Example: \"192.168.1.1,10.1.1.0/16\""`
+	deny  *IpRange
 }
 
-func IpRangeFromStrings(strs []string) (*IpRange, error) {
-	var ipRange IpRange
-	for _, s := range strs {
-		if strings.Contains(s, "/") {
-			_, network, err := net.ParseCIDR(s)
-			if err != nil {
-				return nil, err
-			}
-			ipRange.Cidr = append(ipRange.Cidr, network)
-		} else {
-			ip := net.ParseIP(s)
-			if ip == nil {
-				return nil, errors.New("unable to parse IP address")
-			}
-			ipRange.Ip = append(ipRange.Ip, ip)
-		}
+func (c *Config) SetDefaults() {}
+
+func (c *Config) Validate() (err error) {
+	c.allow, err = IpRangeFromStrings(c.Allow)
+	if err != nil {
+		return err
 	}
-	return &ipRange, nil
-}
 
-func (r IpRange) Empty() bool {
-	return len(r.Ip) == 0 && len(r.Cidr) == 0
-}
-
-func (r IpRange) isInIPs(client net.IP, ips []net.IP) bool {
-	for _, ip := range ips {
-		if client.Equal(ip) {
-			return true
-		}
+	c.deny, err = IpRangeFromStrings(c.Deny)
+	if err != nil {
+		return err
 	}
-	return false
-}
 
-func (r IpRange) isInSubnets(ip net.IP, subs []*net.IPNet) bool {
-	for _, subnet := range subs {
-		if subnet.Contains(ip) {
-			return true
-		}
-	}
-	return false
-}
-
-func (r IpRange) Contains(ip net.IP) bool {
-	return r.isInSubnets(ip, r.Cidr) || r.isInIPs(ip, r.Ip)
+	return nil
 }
 
 type Acl struct {
@@ -65,6 +36,10 @@ type Acl struct {
 
 	Allow *IpRange
 	Deny  *IpRange
+}
+
+func MiddlewareFromConfig(cfg Config) func(next http.Handler) http.Handler {
+	return Acl{Allow: cfg.allow, Deny: cfg.deny}.Middleware
 }
 
 func (m Acl) getIP(r *http.Request) (net.IP, error) {
