@@ -44,15 +44,7 @@ func MiddlewareFromConfig(cfg Config) func(next http.Handler) http.Handler {
 }
 
 func (m Acl) getIP(r *http.Request) (net.IP, error) {
-	var ip string
-	var err error
-
-	ip, _, err = net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := net.ParseIP(ip)
+	ret := net.ParseIP(r.RemoteAddr)
 	if ret == nil {
 		return nil, errors.New("acl: unable to parse address")
 	}
@@ -66,6 +58,7 @@ func (m Acl) Middleware(next http.Handler) http.Handler {
 
 		ip, err := m.getIP(r)
 		if err != nil {
+			log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "ACL: failed to get IP")
 			m.controller.ResponseError(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
