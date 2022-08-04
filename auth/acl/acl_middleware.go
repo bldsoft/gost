@@ -16,6 +16,10 @@ type Config struct {
 	deny  *IpRange
 }
 
+func (c *Config) Empty() bool {
+	return c.deny.Empty() && c.allow.Empty()
+}
+
 func (c *Config) SetDefaults() {}
 
 func (c *Config) Validate() (err error) {
@@ -52,7 +56,15 @@ func (m Acl) getIP(r *http.Request) (net.IP, error) {
 	return ret, nil
 }
 
+func (m Acl) enabled() bool {
+	return !m.Allow.Empty() || !m.Deny.Empty()
+}
+
 func (m Acl) Middleware(next http.Handler) http.Handler {
+	if !m.enabled() {
+		return next
+	}
+
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
