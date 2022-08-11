@@ -94,13 +94,13 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 
 func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	username, password, ok := r.BasicAuth()
-	if !ok {
-		log.FromContext(ctx).Error("Failed to get username and password")
-		c.ResponseError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+
+	var creds T
+	if !c.BaseController.GetObjectFromBody(w, r, &creds) {
 		return
 	}
-	user, err := c.authService.Login(ctx, username, password)
+
+	user, err := c.authService.Login(ctx, PT(&creds).Login(), PT(&creds).Password())
 	switch err {
 	case nil:
 		session, ok := c.session(w, r)
@@ -110,7 +110,7 @@ func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 		session.Values[SessionUserKey] = *user
 		if c.saveSession(w, r, session) {
 			log.FromContext(ctx).InfoWithFields(log.Fields{"login": user.Login()}, "User is logged in")
-			c.ResponseOK(w)
+			c.ResponseJson(w, r, user)
 		}
 	default:
 		log.FromContext(ctx).Error(err.Error())

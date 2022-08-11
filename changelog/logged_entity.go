@@ -5,7 +5,7 @@ type ILoggedEntity interface {
 }
 
 type LoggedEntity struct {
-	ChangeRecordID idType `json:"changeID" bson:"changeID"`
+	ChangeRecordID idType `json:"changeID,omitempty" bson:"changeID"`
 }
 
 func (entity *LoggedEntity) SetChangeID(id idType) {
