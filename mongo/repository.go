@@ -94,11 +94,22 @@ func (r *Repository[T, U]) FindByID(ctx context.Context, id interface{}, options
 	return r.FindOne(ctx, bson.M{"_id": r.convertID(id)}, options...)
 }
 
+func (r *Repository[T, U]) FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
+	objIDs := make([]interface{}, 0, len(ids))
+	for _, id := range ids {
+		objIDs = append(objIDs, r.convertID(id))
+	}
+	return r.findByIDs(ctx, objIDs, preserveOrder, options...)
+}
+
 func (r *Repository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	for i, id := range ids {
 		ids[i] = r.convertID(id)
 	}
+	return r.findByIDs(ctx, ids, preserveOrder, options...)
+}
 
+func (r *Repository[T, U]) findByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	entities, err := r.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, options...)
 	if err != nil {
 		return nil, err
@@ -236,7 +247,7 @@ func (r *Repository[T, U]) UpsertOne(ctx context.Context, filter interface{}, up
 	return err
 }
 
-//Delete removes object by id
+// Delete removes object by id
 func (r *Repository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
 	id = r.convertID(id)
 
@@ -250,7 +261,7 @@ func (r *Repository[T, U]) Delete(ctx context.Context, id interface{}, options .
 	return r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{bsonFieldNameArchived: true}})
 }
 
-//Delete removes objects
+// Delete removes objects
 func (r *Repository[T, U]) DeleteMany(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) error {
 	if options != nil {
 		if !options[0].Archived {
