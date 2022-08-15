@@ -1,13 +1,13 @@
 package changelog
 
 type ILoggedEntity interface {
-	SetChangeID(id interface{})
+	SetChangeID(id string)
 }
 
 type LoggedEntity struct {
-	ChangeRecordID idType `json:"changeID,omitempty" bson:"changeID"`
+	ChangeRecordID string `json:"changeID,omitempty" bson:"changeID"`
 }
 
-func (entity *LoggedEntity) SetChangeID(id idType) {
+func (entity *LoggedEntity) SetChangeID(id string) {
 	entity.ChangeRecordID = id
 }
