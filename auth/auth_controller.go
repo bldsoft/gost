@@ -76,6 +76,8 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 			if err != nil {
 				log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err}, "bad session")
 				http.SetCookie(w, &http.Cookie{Name: c.cookieName, MaxAge: -1, Path: "/"})
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				return
 			}
 
 			user, ok := session.Values[SessionUserKey].(T)
