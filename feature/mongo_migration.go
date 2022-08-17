@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
 )
@@ -56,4 +57,16 @@ func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) 
 }]`, IDs)
 
 	db.AddMigration(version, up, down)
+}
+
+func DeleteFeatureMigration(db *mongo.Storage, version uint, featureID feature.IdType) {
+	db.AddMigration(version, fmt.Sprintf(`[{
+		"delete": "feature",
+		"deletes": [{
+			"q": {
+				"_id": { "$in" : [%d] }
+			},
+			"limit": 0
+		}]
+	}]`, featureID), "[]")
 }
