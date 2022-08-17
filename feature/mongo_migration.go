@@ -59,14 +59,40 @@ func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) 
 	db.AddMigration(version, up, down)
 }
 
-func DeleteFeatureMigration(db *mongo.Storage, version uint, featureID feature.IdType) {
+func DeleteFeatureMigration(db *mongo.Storage, version uint, featureIDs ...feature.IdType) {
+	if len(featureIDs) == 0 {
+		return
+	}
+	IDs := fmt.Sprintf("%d", featureIDs[0])
+	for i := 1; i < len(featureIDs); i++ {
+		IDs += fmt.Sprintf(",%d", featureIDs[i])
+	}
+
 	db.AddMigration(version, fmt.Sprintf(`[{
-		"delete": "feature",
-		"deletes": [{
+		"update": "feature",
+		"updates": [{
 			"q": {
-				"_id": { "$in" : [%d] }
+				"_id": { "$in" : [%s] }
 			},
-			"limit": 0
+			"u": {
+				"$set": {
+					"%s": true
+				}
+			},
+			"multi": true
 		}]
-	}]`, featureID), "[]")
+	}]`, IDs, mongo.BsonFieldNameArchived), fmt.Sprintf(`[{
+		"update": "feature",
+		"updates": [{
+			"q": {
+				"_id": { "$in" : [%s] }
+			},
+			"u": {
+				"$unset": {
+					"%s": ""
+				}
+			},
+			"multi": true
+		}]
+	}]`, IDs, mongo.BsonFieldNameArchived))
 }
