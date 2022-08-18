@@ -12,11 +12,11 @@ func NewService(rep IChangeLogRepository) *Service {
 	return &Service{rep}
 }
 
-func (s *Service) FindByID(ctx context.Context, id idType) (*Record, error) {
+func (s *Service) FindByID(ctx context.Context, id string) (*Record, error) {
 	return s.rep.FindByID(ctx, id)
 }
 
-func (s *Service) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool) (res []*Record, err error) {
+func (s *Service) FindByIDs(ctx context.Context, ids []string, preserveOrder bool) (res []*Record, err error) {
 	return s.rep.FindByIDs(ctx, ids, preserveOrder)
 }
 

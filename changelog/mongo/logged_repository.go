@@ -43,7 +43,7 @@ func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err erro
 	}
 
 	_, err = r.Repository.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
-		entity.SetChangeID(rec.GetID())
+		entity.SetChangeID(rec.StringID())
 		if err := r.Repository.Insert(ctx, entity); err != nil {
 			return nil, err
 		}
@@ -78,14 +78,14 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U) error {
 	}
 
 	_, err = r.Repository.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
-		entity.SetChangeID(rec.GetID())
+		entity.SetChangeID(rec.StringID())
 		oldEntity, err := r.Repository.UpdateAndGetByID(ctx, entity, false)
 		if err != nil {
 			return nil, err
 		}
 
 		rec.Record.EntityID = entity.GetID()
-		oldEntity.SetChangeID(rec.GetID())
+		oldEntity.SetChangeID(rec.StringID())
 		data, err := r.getDiff(oldEntity, entity)
 		if err != nil {
 			return nil, err
@@ -110,7 +110,7 @@ func (r *LoggedRepository[T, U]) Delete(ctx context.Context, id interface{}, opt
 
 		rec.Record.EntityID = id
 		if entity, err := r.Repository.FindByID(ctx, id); err == nil {
-			entity.SetChangeID(rec.GetID())
+			entity.SetChangeID(rec.StringID())
 			if err := r.Repository.Update(ctx, entity); err != nil {
 				return nil, err
 			}
