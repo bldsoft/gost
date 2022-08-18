@@ -236,7 +236,7 @@ func (r *Repository[T, U]) UpsertOne(ctx context.Context, filter interface{}, up
 	return err
 }
 
-//Delete removes object by id
+// Delete removes object by id
 func (r *Repository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
 	id = r.convertID(id)
 
@@ -247,10 +247,10 @@ func (r *Repository[T, U]) Delete(ctx context.Context, id interface{}, options .
 		}
 	}
 
-	return r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{bsonFieldNameArchived: true}})
+	return r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{BsonFieldNameArchived: true}})
 }
 
-//Delete removes objects
+// Delete removes objects
 func (r *Repository[T, U]) DeleteMany(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) error {
 	if options != nil {
 		if !options[0].Archived {
@@ -258,7 +258,7 @@ func (r *Repository[T, U]) DeleteMany(ctx context.Context, filter interface{}, o
 			return err
 		}
 	}
-	_, err := r.dbcollection.UpdateMany(ctx, filter, bson.M{"$set": bson.M{bsonFieldNameArchived: true}})
+	_, err := r.dbcollection.UpdateMany(ctx, filter, bson.M{"$set": bson.M{BsonFieldNameArchived: true}})
 	return err
 }
 
@@ -300,8 +300,8 @@ func (r *Repository[T, U]) where(filter interface{}, options ...*repository.Quer
 			if !options[0].Archived {
 				field = "$or"
 				cond = []interface{}{
-					bson.M{bsonFieldNameArchived: bson.M{"$exists": false}},
-					bson.M{bsonFieldNameArchived: false},
+					bson.M{BsonFieldNameArchived: bson.M{"$exists": false}},
+					bson.M{BsonFieldNameArchived: false},
 				}
 			}
 

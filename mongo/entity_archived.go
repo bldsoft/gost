@@ -1,7 +1,7 @@
 package mongo
 
 const (
-	bsonFieldNameArchived = "archived"
+	BsonFieldNameArchived = "archived"
 )
 
 type EntityArchived struct {

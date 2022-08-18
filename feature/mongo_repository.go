@@ -8,9 +8,10 @@ import (
 	config "github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
+	"github.com/bldsoft/gost/repository"
 )
 
-//MongoRepository implements IFeatureRepository interface
+// MongoRepository implements IFeatureRepository interface
 type MongoRepository struct {
 	rep         *mongo.Repository[Feature, *Feature]
 	serviceName string
@@ -90,7 +91,7 @@ func (r *MongoRepository) FindByID(ctx context.Context, id config.IdType) (*Feat
 }
 
 func (r *MongoRepository) GetAll(ctx context.Context) ([]*Feature, error) {
-	return r.rep.GetAll(ctx)
+	return r.rep.GetAll(ctx, &repository.QueryOptions{Archived: false})
 }
 
 func (r *MongoRepository) Update(ctx context.Context, feature *Feature) (*Feature, error) {
