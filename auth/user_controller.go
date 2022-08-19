@@ -27,10 +27,10 @@ func (c *UserController[PT, T]) GetHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	users, err := c.service.GetAll(r.Context(), archived)
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 		c.ResponseJson(w, r, users)
-	case ErrForbidden:
+	case errors.Is(err, ErrForbidden):
 		c.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 	default:
 		log.FromContext(r.Context()).Error(err.Error())
@@ -41,12 +41,12 @@ func (c *UserController[PT, T]) GetHandler(w http.ResponseWriter, r *http.Reques
 func (c *UserController[PT, T]) GetByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	user, err := c.service.GetByID(r.Context(), id)
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 		c.ResponseJson(w, r, user)
-	case ErrForbidden:
+	case errors.Is(err, ErrForbidden):
 		c.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-	case utils.ErrObjectNotFound:
+	case errors.Is(err, utils.ErrObjectNotFound):
 		c.ResponseError(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	default:
 		log.FromContext(r.Context()).Error(err.Error())
@@ -60,10 +60,10 @@ func (c *UserController[PT, T]) PostHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	err := c.service.Create(r.Context(), &user)
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 		c.ResponseJson(w, r, &user)
-	case ErrForbidden:
+	case errors.Is(err, ErrForbidden):
 		c.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 	default:
 		log.FromContext(r.Context()).Error(err.Error())
@@ -78,10 +78,10 @@ func (c *UserController[PT, T]) PutHandler(w http.ResponseWriter, r *http.Reques
 	}
 	PT(&user).SetIDFromString(chi.URLParam(r, "id"))
 	err := c.service.Update(r.Context(), &user)
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 		c.ResponseJson(w, r, &user)
-	case ErrForbidden:
+	case errors.Is(err, ErrForbidden):
 		c.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 	default:
 		log.FromContext(r.Context()).Error(err.Error())
@@ -95,10 +95,10 @@ func (c *UserController[PT, T]) PasswordPutHandler(w http.ResponseWriter, r *htt
 		return
 	}
 	err := c.service.UpdatePassword(r.Context(), chi.URLParam(r, "id"), pass.Password())
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 		c.ResponseOK(w)
-	case ErrForbidden:
+	case errors.Is(err, ErrForbidden):
 		c.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 	default:
 		log.FromContext(r.Context()).Error(err.Error())
@@ -112,12 +112,12 @@ func (c *UserController[PT, T]) DeleteHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 	err := c.service.Delete(r.Context(), chi.URLParam(r, "id"), archived)
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 		c.ResponseOK(w)
-	case utils.ErrObjectNotFound:
+	case errors.Is(err, utils.ErrObjectNotFound):
 		c.ResponseError(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-	case ErrForbidden:
+	case errors.Is(err, ErrForbidden):
 		c.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 	default:
 		log.FromContext(r.Context()).Error(err.Error())
