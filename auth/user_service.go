@@ -35,7 +35,13 @@ func (s *UserService[PT, T]) GetByID(ctx context.Context, id string) (PT, error)
 }
 
 func (s *UserService[PT, T]) Update(ctx context.Context, user PT) error {
-	user.SetPassword("") // don't update password
+	if password := user.Password(); password != "" {
+		hashedPass, err := s.passwordHasher.HashAndSalt(password)
+		if err != nil {
+			return err
+		}
+		user.SetPassword(hashedPass)
+	}
 	return s.userRep.Update(ctx, user)
 }
 
