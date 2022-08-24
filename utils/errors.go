@@ -3,5 +3,5 @@ package utils
 import "errors"
 
 var (
-	ErrObjectNotFound = errors.New("Object not found")
+	ErrObjectNotFound = errors.New("object not found")
 )
