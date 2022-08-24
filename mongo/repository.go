@@ -67,9 +67,22 @@ func (r *Repository[T, U]) WithTransaction(ctx context.Context, f func(ctx mongo
 	return session.WithTransaction(ctx, f)
 }
 
-func (r *Repository[T, U]) FindOne(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) (U, error) {
+func (r *Repository[T, U]) projection(opt ...*repository.QueryOptions) interface{} {
+	if len(opt) != 0 && len(opt[0].Fields) > 0 {
+		var projection bson.D
+		for _, field := range opt[0].Fields {
+			projection = append(projection, bson.E{Key: field, Value: 1})
+		}
+		return projection
+	}
+
+	return nil
+}
+
+func (r *Repository[T, U]) FindOne(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (U, error) {
 	var result T
-	err := r.Collection().FindOne(ctx, r.where(filter, options...)).Decode(&result)
+	findOneOpt := options.FindOne().SetProjection(r.projection(opt...))
+	err := r.Collection().FindOne(ctx, r.where(filter, opt...), findOneOpt).Decode(&result)
 	if err != nil && err == mongo.ErrNoDocuments {
 		return nil, utils.ErrObjectNotFound
 	}
@@ -131,8 +144,9 @@ func (r *Repository[T, U]) findByIDs(ctx context.Context, ids []interface{}, pre
 	return entities, nil
 }
 
-func (r *Repository[T, U]) Find(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) ([]U, error) {
-	cur, err := r.Collection().Find(ctx, r.where(filter, options...))
+func (r *Repository[T, U]) Find(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) ([]U, error) {
+	findOpt := options.Find().SetProjection(r.projection(opt...))
+	cur, err := r.Collection().Find(ctx, r.where(filter, opt...), findOpt)
 	if err != nil {
 		return nil, err
 	}
