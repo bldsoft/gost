@@ -32,7 +32,7 @@ func (c BaseController) ResponseJson(w http.ResponseWriter, r *http.Request, v i
 	}
 }
 
-func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request, obj interface{}) bool {
+func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request, obj interface{}, needObjectLog ...bool) bool {
 	var bodyBytes []byte
 	if r.Body != nil {
 		bodyBytes, _ = ioutil.ReadAll(r.Body)
@@ -42,7 +42,9 @@ func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request
 
 	//err := json.NewDecoder(bytes.NewBuffer(bodyBytes)).Decode(obj)
 	err := json.Unmarshal(bodyBytes, obj)
-	log.FromContext(r.Context()).DebugOrErrorWithFields(err, log.Fields{"body": string(bodyBytes), "object": obj}, "Decode request json")
+	if len(needObjectLog) == 0 || needObjectLog[0] {
+		log.FromContext(r.Context()).DebugOrErrorWithFields(err, log.Fields{"body": string(bodyBytes), "object": obj}, "Decode request json")
+	}
 	if err != nil {
 		c.ResponseError(w, err.Error(), http.StatusBadRequest)
 		return false

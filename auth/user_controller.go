@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-var ErrForbidden = errors.New("Forbidden")
+var ErrForbidden = errors.New("forbidden")
 
 type UserController[PT IUserPtr[T], T any] struct {
 	controller.BaseController

@@ -8,7 +8,7 @@ import (
 	"github.com/bldsoft/gost/repository"
 )
 
-var ErrUnauthorized = errors.New("Unauthorized")
+var ErrUnauthorized = errors.New("unauthorized")
 
 type Authenticable interface {
 	Login() string

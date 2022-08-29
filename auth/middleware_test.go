@@ -30,7 +30,7 @@ func TestAuthMiddleware(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 			store := mocks.NewMockStore(mockCtrl)
-			authController := NewAuthController[*User](nil, nil, store, "")
+			authController := NewAuthController[*User](nil, store, "")
 
 			r := chi.NewRouter()
 			r.Use(authController.AuthenticateMiddleware())

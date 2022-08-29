@@ -13,11 +13,30 @@ import (
 const SessionUserKey = "user"
 
 var UserEntryCtxKey interface{} = "UserEntry"
+var SessionEntryCtxKey interface{} = "SessionEntry"
+
+func requestContextAdd(r *http.Request, key, value interface{}) *http.Request {
+	r = r.WithContext(context.WithValue(r.Context(), key, value))
+	return r
+}
 
 // WithUserContext sets the User entry for a request.
-func WithUserContext[T any](r *http.Request, entry T) *http.Request {
-	r = r.WithContext(context.WithValue(r.Context(), UserEntryCtxKey, entry))
-	return r
+func WithUserContext[T any](r *http.Request, user T) *http.Request {
+	return requestContextAdd(r, UserEntryCtxKey, user)
+}
+
+func WithSessionRequest(r *http.Request, s *sessions.Session) *http.Request {
+	return requestContextAdd(r, SessionEntryCtxKey, s)
+}
+
+func WithSessionContext(ctx context.Context, s *sessions.Session) context.Context {
+	return context.WithValue(ctx, SessionEntryCtxKey, s)
+}
+
+// UserFromContext returns User session
+func SessionFromContext(ctx context.Context) *sessions.Session {
+	s, _ := ctx.Value(SessionEntryCtxKey).(*sessions.Session)
+	return s
 }
 
 // UserFromContext returns the User entry for a request.
@@ -33,8 +52,7 @@ type AuthController[PT AuthenticablePtr[T], T any] struct {
 	cookieName   string
 }
 
-func NewAuthController[PT AuthenticablePtr[T], T any](rep IAuthRepository[PT], hasher PasswordHasher, sessionStore sessions.Store, cookieName string) *AuthController[PT, T] {
-	service := NewAuthService[PT, T](rep, hasher)
+func NewAuthController[PT AuthenticablePtr[T], T any](service IAuthService[PT, T], sessionStore sessions.Store, cookieName string) *AuthController[PT, T] {
 	return &AuthController[PT, T]{authService: service, sessionStore: sessionStore, cookieName: cookieName}
 }
 
@@ -88,27 +106,27 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 			if !c.saveSession(w, r, session) {
 				return
 			}
-			next.ServeHTTP(w, WithUserContext(r, &user))
+			next.ServeHTTP(w, WithUserContext(WithSessionRequest(r, session), &user))
 		})
 
 	}
 }
 
 func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	var creds T
-	if !c.BaseController.GetObjectFromBody(w, r, &creds) {
+	if !c.BaseController.GetObjectFromBody(w, r, &creds, false) {
 		return
 	}
+
+	session, ok := c.session(w, r)
+	if !ok {
+		return
+	}
+	ctx := WithSessionContext(r.Context(), session)
 
 	user, err := c.authService.Login(ctx, PT(&creds).Login(), PT(&creds).Password())
 	switch err {
 	case nil:
-		session, ok := c.session(w, r)
-		if !ok {
-			return
-		}
 		session.Values[SessionUserKey] = *user
 		if c.saveSession(w, r, session) {
 			log.FromContext(ctx).InfoWithFields(log.Fields{"login": user.Login()}, "User is logged in")
