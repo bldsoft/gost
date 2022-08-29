@@ -114,7 +114,7 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 
 func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 	var creds T
-	if !c.BaseController.GetObjectFromBody(w, r, &creds) {
+	if !c.BaseController.GetObjectFromBody(w, r, &creds, false) {
 		return
 	}
 
