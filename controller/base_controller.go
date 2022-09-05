@@ -21,11 +21,13 @@ func (c BaseController) ResponseOK(w http.ResponseWriter) {
 	w.Write([]byte("OK"))
 }
 
-func (c BaseController) ResponseJson(w http.ResponseWriter, r *http.Request, v interface{}) {
+func (c BaseController) ResponseJson(w http.ResponseWriter, r *http.Request, v interface{}, needObjectLog ...bool) {
 	w.Header().Set("Content-Type", "application/json")
 	//err := json.NewEncoder(w).Encode(v)
 	body, err := json.Marshal(v)
-	log.FromContext(r.Context()).DebugOrErrorWithFields(err, log.Fields{"body": string(body), "object": v}, "Encode response json")
+	if len(needObjectLog) == 0 || needObjectLog[0] {
+		log.FromContext(r.Context()).DebugOrErrorWithFields(err, log.Fields{"body": string(body), "object": v}, "Encode response json")
+	}
 	_, err = w.Write(body)
 	if err != nil {
 		panic(err)
