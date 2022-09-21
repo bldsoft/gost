@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/ClickHouse/clickhouse-go v1.4.7
+	github.com/allegro/bigcache v1.2.1
 	github.com/bradfitz/gomemcache v0.0.0-20220106215444-fb4bf637b56d
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/evanphx/json-patch v4.9.0+incompatible
