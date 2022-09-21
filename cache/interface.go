@@ -2,7 +2,7 @@ package cache
 
 import "time"
 
-//ILocalCacheRepository ...
+// ILocalCacheRepository ...
 type ILocalCacheRepository interface {
 	Get(key string) ([]byte, error)
 	Set(key string, value []byte) error
@@ -10,7 +10,7 @@ type ILocalCacheRepository interface {
 	Reset()
 }
 
-//IDistrCacheRepository ...
+// IDistrCacheRepository ...
 type IDistrCacheRepository interface {
 	ILocalCacheRepository
 
