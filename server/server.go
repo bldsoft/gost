@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+type Router = chi.Router
+
 var DefaultLogger func(next http.Handler) http.Handler = log.DefaultRequestLogger()
 
 func defaultMiddlewares() chi.Middlewares {
@@ -26,7 +28,7 @@ func defaultMiddlewares() chi.Middlewares {
 }
 
 type IMicroservice interface {
-	BuildRoutes(chi.Router)
+	BuildRoutes(Router)
 	GetAsyncRunners() []AsyncRunner
 }
 
