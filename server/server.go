@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/bldsoft/gost/log"
+	gost_middleware "github.com/bldsoft/gost/server/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/hashicorp/go-multierror"
@@ -19,7 +20,7 @@ var DefaultLogger func(next http.Handler) http.Handler = log.DefaultRequestLogge
 func defaultMiddlewares() chi.Middlewares {
 	return chi.Middlewares{
 		middleware.RequestID,
-		middleware.RealIP,
+		gost_middleware.RealIP,
 		middleware.Logger,
 		middleware.Recoverer,
 	}
