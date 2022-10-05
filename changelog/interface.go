@@ -10,6 +10,8 @@ type Filter struct {
 	EntityID           string
 	Collections        []string
 	StartTime, EndTime int64
+	UserID             string
+	Operations         []Operation
 }
 
 type IChangeLogRepository interface {

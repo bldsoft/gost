@@ -101,6 +101,14 @@ func (r *ChangeLogRepository) GetRecords(ctx context.Context, filter *changelog.
 		queryFilter[changelog.BsonFieldNameEntity] = bson.M{"$in": filter.Collections}
 	}
 
+	if len(filter.UserID) != 0 {
+		queryFilter[changelog.BsonFieldNameUserID] = filter.UserID
+	}
+
+	if len(filter.Operations) > 0 {
+		queryFilter[changelog.BsonFieldNameOperation] = bson.M{"$in": filter.Operations}
+	}
+
 	opt := &options.FindOptions{}
 	cursor, err := r.rep.Collection().Find(ctx, queryFilter, opt.SetSort(bson.M{changelog.BsonFieldNameTimestamp: 1}))
 	if err != nil {
