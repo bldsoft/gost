@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -36,7 +37,7 @@ func RealIP(h http.Handler) http.Handler {
 
 func injectRealIP(h http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		r = r.WithContext(WithRealIP(r.Context(), r.RemoteAddr))
+		r = r.WithContext(WithRealIP(r.Context(), strings.Split(r.RemoteAddr, ":")[0]))
 		h.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(fn)
