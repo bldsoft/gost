@@ -19,9 +19,17 @@ func init() {
 		ts, _ := strconv.ParseInt(s, 10, 64)
 		return reflect.ValueOf(time.Unix(ts, 0))
 	})
-
 	encoder.RegisterEncoder(time.Time{}, func(v reflect.Value) string {
-		return strconv.FormatInt(v.Int(), 10)
+		return strconv.FormatInt(v.Interface().(time.Time).Unix(), 10)
+	})
+
+	var d time.Duration
+	decoder.RegisterConverter(d, func(s string) reflect.Value {
+		dur, _ := time.ParseDuration(s)
+		return reflect.ValueOf(dur)
+	})
+	encoder.RegisterEncoder(d, func(v reflect.Value) string {
+		return time.Duration(v.Int()).String()
 	})
 }
 
