@@ -13,6 +13,7 @@ require (
 	github.com/go-chi/jwtauth v1.2.0
 	github.com/golang-migrate/migrate/v4 v4.15.1
 	github.com/golang/mock v1.6.0
+	github.com/gorilla/schema v1.2.0
 	github.com/gorilla/sessions v1.2.1
 	github.com/grobie/gomemcache v0.0.0-20201204163352-08d7c80fcac6
 	github.com/hashicorp/go-multierror v1.1.1
