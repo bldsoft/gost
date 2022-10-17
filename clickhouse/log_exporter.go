@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/bldsoft/gost/log"
 )
 
@@ -156,6 +157,81 @@ func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 	}
 
 	return tx.Commit()
+}
+
+func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
+	if filter == nil {
+		return
+	}
+	if !filter.From.IsZero() {
+		where = append(where, sq.GtOrEq{TimestampColumnName: filter.From.Unix()})
+	}
+	if !filter.To.IsZero() {
+		where = append(where, sq.LtOrEq{TimestampColumnName: filter.To.Unix()})
+	}
+	if len(filter.Levels) > 0 {
+		where = append(where, sq.Eq{LevelColumName: filter.Levels})
+	}
+	if filter.Search != nil {
+		where = append(where, sq.Or{
+			sq.NotEq{fmt.Sprintf(`position(%s, '%s')`, MsgColumnName, *filter.Search): 0},
+			sq.NotEq{fmt.Sprintf(`position(%s, '%s')`, FieldsColumnName, *filter.Search): 0},
+		})
+	}
+	if filter.RequestID != nil {
+		where = append(where, sq.Eq{ReqIDColumnName: filter.RequestID})
+	}
+	return where
+}
+
+func (e *ClickHouseLogExporter) sort(sort log.Sort) string {
+	var field string
+	switch sort.Field {
+	case log.SortFieldTimestamp:
+		field = TimestampColumnName
+	case log.SortFieldReqID:
+		field = ReqIDColumnName
+	case log.SortFieldLevel:
+		field = LevelColumName
+	default:
+		field = TimestampColumnName
+	}
+	return fmt.Sprintf("%s %s", field, sort.Order.String())
+}
+
+func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams) (*log.Logs, error) {
+	query := sq.Select().
+		Column(InstanseColumnName).
+		Column(TimestampColumnName).
+		Column(fmt.Sprintf("CAST(%s, 'Int8') %s", LevelColumName, LevelColumName)).
+		Column(ReqIDColumnName).
+		Column(MsgColumnName).
+		Column(FieldsColumnName).
+		Column("(count(*) OVER ())").
+		Where(e.filter(params.Filter)).
+		From(e.config.TableName).
+		OrderBy(e.sort(params.Sort)).
+		Offset(uint64(params.Offset)).
+		Limit(uint64(params.Limit))
+
+	rows, err := query.RunWith(e.storage.Db).Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs log.Logs
+	for rows.Next() {
+		var r log.LogRecord
+		var ts time.Time
+		if err := rows.Scan(&r.Instanse, &ts, &r.Level, &r.ReqID, &r.Msg, &r.Fields, &logs.TotalCount); err != nil {
+			return nil, err
+		}
+		r.Timestamp = ts.Unix()
+		logs.Records = append(logs.Records, r)
+	}
+
+	return &logs, nil
 }
 
 func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {

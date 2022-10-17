@@ -11,21 +11,28 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type LogExporterConfig struct {
-	Instanse string `mapstructure:"SERVICE_NAME" description:"The name is used to identify the service in logs"`
-}
+type Level = zerolog.Level
 
 type LogRecord struct {
-	Instanse  string
-	Timestamp int64
-	Level     zerolog.Level
-	ReqID     string
-	Msg       string
-	Fields    []byte // json
+	Instanse  string        `json:"instanse,omitempty"`
+	Timestamp int64         `json:"timestamp,omitempty"`
+	Level     zerolog.Level `json:"level,string,omitempty"`
+	ReqID     string        `json:"reqID,omitempty"`
+	Msg       string        `json:"msg,omitempty"`
+	Fields    []byte        `json:"fields,omitempty"` // json
 }
 
-type LogExporter interface {
-	WriteLogRecord(r *LogRecord) error
+// for level parsing
+func (r *LogRecord) UnmarshalJSON(data []byte) error {
+	type Record struct {
+		Instanse  string        `json:"instanse,omitempty"`
+		Timestamp int64         `json:"timestamp,omitempty"`
+		Level     zerolog.Level `json:"level,omitempty"`
+		ReqID     string        `json:"reqID,omitempty"`
+		Msg       string        `json:"msg,omitempty"`
+		Fields    []byte        `json:"fields,omitempty"` // json
+	}
+	return json.Unmarshal(data, (*Record)(r))
 }
 
 type ExportLogWriter struct {
