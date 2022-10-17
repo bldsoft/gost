@@ -8,68 +8,71 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-type ChannelFormatter struct {
-	requestC     chan<- *RequestInfo
+type ChannelFormatter[T any, P RequestInfoPtr[T]] struct {
+	requestC     chan<- P
 	instanceName string
 }
 
-func NewChannelFormatter(ch chan<- *RequestInfo, instanceName string) *ChannelFormatter {
-	return &ChannelFormatter{requestC: ch, instanceName: instanceName}
+func NewChannelFormatter[T any, P RequestInfoPtr[T]](ch chan<- P, instanceName string) *ChannelFormatter[T, P] {
+	return &ChannelFormatter[T, P]{requestC: ch, instanceName: instanceName}
 }
 
-func ChanRequestLogger(ch chan<- *RequestInfo, instanceName string) func(next http.Handler) http.Handler {
-	return NewRequestLogger(NewChannelFormatter(ch, instanceName))
+func ChanRequestLogger[T any, P RequestInfoPtr[T]](ch chan<- P, instanseName string) func(next http.Handler) http.Handler {
+	return NewRequestLogger(NewChannelFormatter(ch, instanseName))
 }
 
-func (f *ChannelFormatter) NewLogEntry(r *http.Request) middleware.LogEntry {
+func (f *ChannelFormatter[T, P]) NewLogEntry(r *http.Request) middleware.LogEntry {
+	var requestInfo T
+	requestInfoPtr := (P)(&requestInfo)
+	baseRequestInfo := requestInfoPtr.BaseRequestInfo()
 
 	reqID := middleware.GetReqID(r.Context())
-	requestInfo := NewRequestInfo()
-	requestInfo.Instance = f.instanceName
-	requestInfo.RequestMethod = GetRequestMethodType(r.Method)
-	requestInfo.Path = r.RequestURI
-	requestInfo.ClientIp = r.RemoteAddr
-	requestInfo.UserAgent = r.UserAgent()
-	requestInfo.RequestId = reqID
-	if requestInfo.RequestMethod == POST && r.ContentLength > 0 {
-		requestInfo.Size = uint32(r.ContentLength)
+	baseRequestInfo.RequestTime = time.Now().Unix()
+	baseRequestInfo.Instance = f.instanceName
+	baseRequestInfo.RequestMethod = GetRequestMethodType(r.Method)
+	baseRequestInfo.Path = r.RequestURI
+	baseRequestInfo.ClientIp = r.RemoteAddr
+	baseRequestInfo.UserAgent = r.UserAgent()
+	baseRequestInfo.RequestId = reqID
+	if baseRequestInfo.RequestMethod == POST && r.ContentLength > 0 {
+		baseRequestInfo.Size = uint32(r.ContentLength)
 	}
 
-	return &ContextChanLoggerEntry{requestCh: f.requestC, errBuf: LogRequestErrBufferFromContext(r.Context()), requestInfo: requestInfo}
+	return &ContextChanLoggerEntry[T, P]{requestCh: f.requestC, errBuf: LogRequestErrBufferFromContext(r.Context()), requestInfo: requestInfoPtr}
 }
 
-type ContextChanLoggerEntry struct {
-	requestInfo *RequestInfo
+type ContextChanLoggerEntry[T any, P RequestInfoPtr[T]] struct {
+	requestInfo P
 	errBuf      *bytes.Buffer
-	requestCh   chan<- *RequestInfo
+	requestCh   chan<- P
 }
 
-func (l *ContextChanLoggerEntry) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
+func (l *ContextChanLoggerEntry[T, P]) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
 	duration := elapsed.Milliseconds()
 
 	if l.requestInfo != nil {
-		l.requestInfo.ResponseCode = ResponseCodeType(status)
-		if l.requestInfo.RequestMethod != POST {
-			l.requestInfo.Size = uint32(bytes)
+		baseRequestInfo := l.requestInfo.BaseRequestInfo()
+		baseRequestInfo.ResponseCode = ResponseCodeType(status)
+		if baseRequestInfo.RequestMethod != POST {
+			baseRequestInfo.Size = uint32(bytes)
 		}
-		l.requestInfo.HandleTime = uint32(duration)
+		baseRequestInfo.HandleTime = uint32(duration)
 
 		if l.errBuf != nil {
-			l.requestInfo.Error = l.errBuf.String()
+			baseRequestInfo.Error = l.errBuf.String()
 		}
-
 		l.writeInfoToChannel()
 	}
 }
 
-func (l *ContextChanLoggerEntry) writeInfoToChannel() {
+func (l *ContextChanLoggerEntry[T, P]) writeInfoToChannel() {
 	if l.requestInfo != nil {
 		select {
 		case l.requestCh <- l.requestInfo:
 		default:
-			go Logger.ErrorWithFields(Fields{"requestId": l.requestInfo.RequestId}, "Failed to write request info: channel is full.")
+			go Logger.ErrorWithFields(Fields{"requestId": l.requestInfo}, "Failed to write request info: channel is full.")
 		}
 	}
 }
 
-func (l *ContextChanLoggerEntry) Panic(v interface{}, stack []byte) {}
+func (l *ContextChanLoggerEntry[T, P]) Panic(v interface{}, stack []byte) {}
