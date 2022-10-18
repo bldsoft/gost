@@ -199,17 +199,29 @@ func (e *ClickHouseLogExporter) sort(sort log.Sort) string {
 	return fmt.Sprintf("%s %s", field, sort.Order.String())
 }
 
+func (e *ClickHouseLogExporter) countLogs(ctx context.Context, params log.LogsParams) (int64, error) {
+	query := sq.Select("count(*)").
+		From(e.config.TableName).
+		Where(e.filter(params.Filter))
+
+	row := query.RunWith(e.storage.Db).QueryRowContext(ctx)
+	var count int64
+	if err := row.Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams) (*log.Logs, error) {
 	query := sq.Select().
 		Column(InstanseColumnName).
-		Column(TimestampColumnName).
+		Column(fmt.Sprintf("toUnixTimestamp(%s)", TimestampColumnName)).
 		Column(fmt.Sprintf("CAST(%s, 'Int8') %s", LevelColumName, LevelColumName)).
 		Column(ReqIDColumnName).
 		Column(MsgColumnName).
 		Column(FieldsColumnName).
-		Column("(count(*) OVER ())").
-		Where(e.filter(params.Filter)).
 		From(e.config.TableName).
+		Where(e.filter(params.Filter)).
 		OrderBy(e.sort(params.Sort)).
 		Offset(uint64(params.Offset)).
 		Limit(uint64(params.Limit))
@@ -223,15 +235,15 @@ func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams)
 	var logs log.Logs
 	for rows.Next() {
 		var r log.LogRecord
-		var ts time.Time
-		if err := rows.Scan(&r.Instanse, &ts, &r.Level, &r.ReqID, &r.Msg, &r.Fields, &logs.TotalCount); err != nil {
+		if err := rows.Scan(&r.Instanse, &r.Timestamp, &r.Level, &r.ReqID, &r.Msg, &r.Fields); err != nil {
 			return nil, err
 		}
-		r.Timestamp = ts.Unix()
 		logs.Records = append(logs.Records, r)
 	}
 
-	return &logs, nil
+	logs.TotalCount, err = e.countLogs(ctx, params)
+
+	return &logs, err
 }
 
 func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {

@@ -44,5 +44,5 @@ type Sort struct {
 
 type Logs struct {
 	Records    []LogRecord `json:"records"`
-	TotalCount int         `json:"totalCount"`
+	TotalCount int64       `json:"totalCount"`
 }
