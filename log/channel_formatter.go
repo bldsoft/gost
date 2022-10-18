@@ -10,22 +10,22 @@ import (
 
 type ChannelFormatter struct {
 	requestC     chan<- *RequestInfo
-	instanseName string
+	instanceName string
 }
 
-func NewChannelFormatter(ch chan<- *RequestInfo, instanseName string) *ChannelFormatter {
-	return &ChannelFormatter{requestC: ch, instanseName: instanseName}
+func NewChannelFormatter(ch chan<- *RequestInfo, instanceName string) *ChannelFormatter {
+	return &ChannelFormatter{requestC: ch, instanceName: instanceName}
 }
 
-func ChanRequestLogger(ch chan<- *RequestInfo, instanseName string) func(next http.Handler) http.Handler {
-	return NewRequestLogger(NewChannelFormatter(ch, instanseName))
+func ChanRequestLogger(ch chan<- *RequestInfo, instanceName string) func(next http.Handler) http.Handler {
+	return NewRequestLogger(NewChannelFormatter(ch, instanceName))
 }
 
 func (f *ChannelFormatter) NewLogEntry(r *http.Request) middleware.LogEntry {
 
 	reqID := middleware.GetReqID(r.Context())
 	requestInfo := NewRequestInfo()
-	requestInfo.Instance = f.instanseName
+	requestInfo.Instance = f.instanceName
 	requestInfo.RequestMethod = GetRequestMethodType(r.Method)
 	requestInfo.Path = r.RequestURI
 	requestInfo.ClientIp = r.RemoteAddr

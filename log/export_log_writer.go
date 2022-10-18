@@ -14,7 +14,7 @@ import (
 type Level = zerolog.Level
 
 type LogRecord struct {
-	Instanse  string        `json:"instanse,omitempty"`
+	Instance  string        `json:"instance,omitempty"`
 	Timestamp int64         `json:"timestamp,omitempty"`
 	Level     zerolog.Level `json:"level,string,omitempty"`
 	ReqID     string        `json:"reqID,omitempty"`
@@ -25,7 +25,7 @@ type LogRecord struct {
 // for level parsing
 func (r *LogRecord) UnmarshalJSON(data []byte) error {
 	type Record struct {
-		Instanse  string        `json:"instanse,omitempty"`
+		Instance  string        `json:"instance,omitempty"`
 		Timestamp int64         `json:"timestamp,omitempty"`
 		Level     zerolog.Level `json:"level,omitempty"`
 		ReqID     string        `json:"reqID,omitempty"`
@@ -70,7 +70,7 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 	}
 
 	rec := LogRecord{
-		Instanse: w.cfg.Instanse,
+		Instance: w.cfg.Instance,
 	}
 
 	if l, ok := event[zerolog.LevelFieldName].(string); ok {

@@ -151,7 +151,7 @@ func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 	defer stmt.Close()
 
 	for _, record := range records {
-		if _, err := stmt.Exec(record.Instanse, record.Timestamp, record.Level, record.ReqID, record.Msg, record.Fields); err != nil {
+		if _, err := stmt.Exec(record.Instance, record.Timestamp, record.Level, record.ReqID, record.Msg, record.Fields); err != nil {
 			return err
 		}
 	}
@@ -235,7 +235,7 @@ func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams)
 	var logs log.Logs
 	for rows.Next() {
 		var r log.LogRecord
-		if err := rows.Scan(&r.Instanse, &r.Timestamp, &r.Level, &r.ReqID, &r.Msg, &r.Fields); err != nil {
+		if err := rows.Scan(&r.Instance, &r.Timestamp, &r.Level, &r.ReqID, &r.Msg, &r.Fields); err != nil {
 			return nil, err
 		}
 		logs.Records = append(logs.Records, r)
