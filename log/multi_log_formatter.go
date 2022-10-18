@@ -7,6 +7,12 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+type LogEntry = middleware.LogEntry
+
+func GetLogEntry(r *http.Request) LogEntry {
+	return middleware.GetLogEntry(r)
+}
+
 type MultiLogFormatter struct {
 	formatters []middleware.LogFormatter
 }
@@ -42,4 +48,21 @@ func (e *MultiContextLogEntry) Panic(v interface{}, stack []byte) {
 	for _, entry := range e.contextLoggerEntries {
 		entry.Panic(v, stack)
 	}
+}
+
+func (e *MultiContextLogEntry) SetError(msg string) {
+	for _, logEntry := range e.contextLoggerEntries {
+		if ek, ok := logEntry.(ErrorKeeper); ok {
+			ek.SetError(msg)
+		}
+	}
+}
+
+func (e *MultiContextLogEntry) Error() string {
+	for _, logEntry := range e.contextLoggerEntries {
+		if ek, ok := logEntry.(ErrorKeeper); ok {
+			return ek.Error()
+		}
+	}
+	return ""
 }

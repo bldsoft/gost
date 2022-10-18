@@ -22,7 +22,7 @@ func WithLogger(r *http.Request, logger *ServiceLogger) *http.Request {
 	return r
 }
 
-//FromContext extracts Logger from context if exists or return global Logger
+// FromContext extracts Logger from context if exists or return global Logger
 func FromContext(ctx context.Context) *ServiceLogger {
 	if ctx != nil {
 		if logger, ok := ctx.Value(LoggerCtxKey).(*ServiceLogger); ok {
@@ -46,7 +46,7 @@ func logger(next http.Handler) http.Handler {
 }
 
 func NewRequestLogger(f middleware.LogFormatter) func(next http.Handler) http.Handler {
-	return chi.Chain(logger, WithLogRequestErrBuffer, middleware.RequestLogger(f)).Handler
+	return chi.Chain(logger, middleware.RequestLogger(f)).Handler
 }
 
 type DefaultFormatter struct {
