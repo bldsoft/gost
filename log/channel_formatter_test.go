@@ -18,8 +18,8 @@ type testController struct {
 
 func (c *testController) Handler(w http.ResponseWriter, r *http.Request) {
 	if c.ErrorSize > 0 {
-		ww, _ := AsResponseWriterLogErr(w)
-		ww.WriteRequestInfoErr(string(make([]byte, c.ErrorSize)))
+		ek := GetLogEntryFromRequest(r).(ErrorKeeper)
+		ek.SetError(string(make([]byte, c.ErrorSize)))
 	}
 
 	w.Write(make([]byte, int(c.Size)))
@@ -90,17 +90,18 @@ func TestChannelFormatterRequestError(t *testing.T) {
 
 	router.Use(func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			buf := LogRequestErrBufferFromContext(r.Context())
-			buf.WriteString("1")
+			ek := GetLogEntryFromRequest(r).(ErrorKeeper)
+			ek.SetError("1")
+
 			next.ServeHTTP(w, r)
-			buf.WriteString("3")
+			ek.SetError(ek.Error() + "3")
 		}
 		return http.HandlerFunc(fn)
 	})
 
 	router.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
-		ww, _ := AsResponseWriterLogErr(w)
-		ww.WriteRequestInfoErr("2")
+		ek := GetLogEntryFromRequest(r).(ErrorKeeper)
+		ek.SetError(ek.Error() + "2")
 	})
 
 	rw := httptest.NewRecorder()
@@ -108,4 +109,27 @@ func TestChannelFormatterRequestError(t *testing.T) {
 	router.ServeHTTP(rw, req)
 	requestInfo := <-requestC
 	assert.Equal(t, "123", requestInfo.Error)
+}
+
+func TestChannelFormatterCustomErr(t *testing.T) {
+	type CustomRequestInfo struct {
+		RequestInfo
+		CustomField string
+	}
+
+	router := chi.NewRouter()
+	requestC := make(chan *CustomRequestInfo, 1)
+	router.Use(ChanRequestLogger(requestC, ""))
+
+	router.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
+		requestInfo := r.Context().Value(RequestInfoCtxKey).(*CustomRequestInfo)
+		requestInfo.CustomField = "some value"
+	})
+
+	rw := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/", nil)
+	router.ServeHTTP(rw, req)
+	requestInfo := <-requestC
+
+	assert.Equal(t, requestInfo.CustomField, "some value")
 }
