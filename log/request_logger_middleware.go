@@ -41,6 +41,11 @@ func FromContext(ctx context.Context) *ServiceLogger {
 	return &Logger
 }
 
+type ErrorKeeper interface {
+	error
+	SetError(msg string)
+}
+
 // logger is a middleware that injects a Logger into the context
 func logger(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {

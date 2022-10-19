@@ -22,11 +22,6 @@ type IRequestInfo interface {
 	BaseRequestInfo() *RequestInfo
 }
 
-type ErrorKeeper interface {
-	error
-	SetError(msg string)
-}
-
 type RequestInfo struct {
 	RequestMethod RequestMethodType
 	Path          string
