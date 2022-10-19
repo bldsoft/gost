@@ -55,15 +55,17 @@ func logger(next http.Handler) http.Handler {
 }
 
 func NewRequestLogger(f LogFormatter) func(next http.Handler) http.Handler {
-	return chi.Chain(logger, RequestLogger(f)).Handler
+	return chi.Chain(logger, requestLogger(f)).Handler
 }
 
+// Changed LogFromatter interface from chi.
+// It returns request to make possible put values to the context.
 type LogFormatter interface {
-	// returns Request to put some values into context
 	NewLogEntry(r *http.Request) (middleware.LogEntry, *http.Request)
 }
 
-func RequestLogger(f LogFormatter) func(next http.Handler) http.Handler {
+// requestLogger is a copy of the chi middleware.RequestLogger with changed LogFormatter interface
+func requestLogger(f LogFormatter) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			entry, r := f.NewLogEntry(r)

@@ -11,6 +11,10 @@ import (
 
 var RequestInfoCtxKey = &utils.ContextKey{Name: "RequestInfo"}
 
+// ChannelFormatter send requests info to channel.
+// To customize request info put RequestInfo in your structure and use it as T.
+// Channel formatter puts request info to the context and you can set custom fields after.
+// The fields of RequestInfo are filled by ChannelFormatter.
 type ChannelFormatter[T any, P RequestInfoPtr[T]] struct {
 	requestC          chan<- P
 	instanceName      string
