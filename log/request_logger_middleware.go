@@ -14,6 +14,17 @@ var LoggerCtxKey = &utils.ContextKey{Name: "Logger"}
 
 const ReqIdFieldName = "req_id"
 
+type LogEntry = middleware.LogEntry
+
+func GetLogEntry(ctx context.Context) LogEntry {
+	entry, _ := ctx.Value(middleware.LogEntryCtxKey).(LogEntry)
+	return entry
+}
+
+func GetLogEntryFromRequest(r *http.Request) LogEntry {
+	return GetLogEntry(r.Context())
+}
+
 // WithLogEntry sets the in-context ServiceLogger for a request.
 func WithLogger(r *http.Request, logger *ServiceLogger) *http.Request {
 	r = r.WithContext(context.WithValue(r.Context(), LoggerCtxKey, logger))

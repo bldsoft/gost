@@ -1,23 +1,11 @@
 package log
 
 import (
-	"context"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
 )
-
-type LogEntry = middleware.LogEntry
-
-func GetLogEntryFromRequest(r *http.Request) LogEntry {
-	return GetLogEntry(r.Context())
-}
-
-func GetLogEntry(ctx context.Context) LogEntry {
-	entry, _ := ctx.Value(middleware.LogEntryCtxKey).(LogEntry)
-	return entry
-}
 
 type MultiLogFormatter struct {
 	formatters []LogFormatter
