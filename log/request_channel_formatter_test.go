@@ -18,8 +18,8 @@ type testController struct {
 
 func (c *testController) Handler(w http.ResponseWriter, r *http.Request) {
 	if c.ErrorSize > 0 {
-		ek := GetLogEntryFromRequest(r).(ErrorKeeper)
-		ek.SetError(string(make([]byte, c.ErrorSize)))
+		ww, _ := AsResponseWriterLogErr(w)
+		ww.WriteRequestInfoErr(string(make([]byte, c.ErrorSize)))
 	}
 
 	w.Write(make([]byte, int(c.Size)))
@@ -90,18 +90,17 @@ func TestChannelFormatterRequestError(t *testing.T) {
 
 	router.Use(func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			ek := GetLogEntryFromRequest(r).(ErrorKeeper)
-			ek.SetError("1")
-
+			buf := LogRequestErrBufferFromContext(r.Context())
+			buf.WriteString("1")
 			next.ServeHTTP(w, r)
-			ek.SetError(ek.Error() + "3")
+			buf.WriteString("3")
 		}
 		return http.HandlerFunc(fn)
 	})
 
 	router.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
-		ek := GetLogEntryFromRequest(r).(ErrorKeeper)
-		ek.SetError(ek.Error() + "2")
+		ww, _ := AsResponseWriterLogErr(w)
+		ww.WriteRequestInfoErr("2")
 	})
 
 	rw := httptest.NewRecorder()

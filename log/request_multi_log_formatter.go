@@ -45,20 +45,3 @@ func (e *MultiContextLogEntry) Panic(v interface{}, stack []byte) {
 		entry.Panic(v, stack)
 	}
 }
-
-func (e *MultiContextLogEntry) SetError(msg string) {
-	for _, logEntry := range e.contextLoggerEntries {
-		if ek, ok := logEntry.(ErrorKeeper); ok {
-			ek.SetError(msg)
-		}
-	}
-}
-
-func (e *MultiContextLogEntry) Error() string {
-	for _, logEntry := range e.contextLoggerEntries {
-		if ek, ok := logEntry.(ErrorKeeper); ok {
-			return ek.Error()
-		}
-	}
-	return ""
-}

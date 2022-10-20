@@ -1,6 +1,7 @@
 package log
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"time"
@@ -57,12 +58,12 @@ func (f *ChannelFormatter[T, P]) NewLogEntry(r *http.Request) (middleware.LogEnt
 
 	ctx := context.WithValue(r.Context(), f.requestInfoCtxKey, requestInfoPtr)
 	r = r.WithContext(ctx)
-
-	return &ContextChanLoggerEntry[T, P]{requestCh: f.requestC, requestInfo: requestInfoPtr}, r
+	return &ContextChanLoggerEntry[T, P]{requestCh: f.requestC, errBuf: LogRequestErrBufferFromContext(r.Context()), requestInfo: requestInfoPtr}, r
 }
 
 type ContextChanLoggerEntry[T any, P RequestInfoPtr[T]] struct {
 	requestInfo P
+	errBuf      *bytes.Buffer
 	requestCh   chan<- P
 }
 
@@ -76,6 +77,10 @@ func (l *ContextChanLoggerEntry[T, P]) Write(status, bytes int, header http.Head
 			baseRequestInfo.Size = uint32(bytes)
 		}
 		baseRequestInfo.HandleTime = uint32(duration)
+
+		if l.errBuf != nil {
+			baseRequestInfo.Error = l.errBuf.String()
+		}
 		l.writeInfoToChannel()
 	}
 }
@@ -91,11 +96,3 @@ func (l *ContextChanLoggerEntry[T, P]) writeInfoToChannel() {
 }
 
 func (l *ContextChanLoggerEntry[T, P]) Panic(v interface{}, stack []byte) {}
-
-func (e *ContextChanLoggerEntry[T, P]) SetError(msg string) {
-	e.requestInfo.BaseRequestInfo().Error = msg
-}
-
-func (e *ContextChanLoggerEntry[T, P]) Error() string {
-	return e.requestInfo.BaseRequestInfo().Error
-}

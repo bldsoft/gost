@@ -9,6 +9,11 @@ import (
 )
 
 func ResponseError(w http.ResponseWriter, err string, code int) {
+	if code >= 500 {
+		if errWriter, ok := log.AsResponseWriterLogErr(w); ok {
+			errWriter.WriteRequestInfoErr(err)
+		}
+	}
 	http.Error(w, err, code)
 }
 
