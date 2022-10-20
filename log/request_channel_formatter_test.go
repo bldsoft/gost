@@ -109,3 +109,26 @@ func TestChannelFormatterRequestError(t *testing.T) {
 	requestInfo := <-requestC
 	assert.Equal(t, "123", requestInfo.Error)
 }
+
+func TestChannelFormatterCustomErr(t *testing.T) {
+	type CustomRequestInfo struct {
+		RequestInfo
+		CustomField string
+	}
+
+	router := chi.NewRouter()
+	requestC := make(chan *CustomRequestInfo, 1)
+	router.Use(ChanRequestLogger(requestC, ""))
+
+	router.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
+		requestInfo := r.Context().Value(RequestInfoCtxKey).(*CustomRequestInfo)
+		requestInfo.CustomField = "some value"
+	})
+
+	rw := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/", nil)
+	router.ServeHTTP(rw, req)
+	requestInfo := <-requestC
+
+	assert.Equal(t, requestInfo.CustomField, "some value")
+}

@@ -1,7 +1,5 @@
 package log
 
-import "time"
-
 type RequestMethodType byte
 type ResponseCodeType uint16
 
@@ -15,6 +13,14 @@ const (
 
 	ERROR
 )
+
+type RequestInfoPtr[T any] interface {
+	IRequestInfo
+	*T
+}
+type IRequestInfo interface {
+	BaseRequestInfo() *RequestInfo
+}
 
 type RequestInfo struct {
 	RequestMethod RequestMethodType
@@ -30,8 +36,8 @@ type RequestInfo struct {
 	Error         string
 }
 
-func NewRequestInfo() *RequestInfo {
-	return &RequestInfo{RequestTime: time.Now().Unix()}
+func (r *RequestInfo) BaseRequestInfo() *RequestInfo {
+	return r
 }
 
 func GetRequestMethodType(type_str string) RequestMethodType {

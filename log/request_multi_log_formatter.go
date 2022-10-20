@@ -8,24 +8,26 @@ import (
 )
 
 type MultiLogFormatter struct {
-	formatters []middleware.LogFormatter
+	formatters []LogFormatter
 }
 
-func newMultiLogFormatter(formatters ...middleware.LogFormatter) *MultiLogFormatter {
+func newMultiLogFormatter(formatters ...LogFormatter) *MultiLogFormatter {
 	return &MultiLogFormatter{formatters}
 }
 
-func MultiLogger(formatters ...middleware.LogFormatter) func(next http.Handler) http.Handler {
+func MultiLogger(formatters ...LogFormatter) func(next http.Handler) http.Handler {
 	return NewRequestLogger(newMultiLogFormatter(formatters...))
 }
 
-func (f *MultiLogFormatter) NewLogEntry(r *http.Request) middleware.LogEntry {
+func (f *MultiLogFormatter) NewLogEntry(r *http.Request) (middleware.LogEntry, *http.Request) {
 	entries := make([]middleware.LogEntry, 0, len(f.formatters))
 	for _, formatter := range f.formatters {
-		entries = append(entries, formatter.NewLogEntry(r))
+		var entry LogEntry
+		entry, r = formatter.NewLogEntry(r)
+		entries = append(entries, entry)
 	}
 
-	return &MultiContextLogEntry{entries}
+	return &MultiContextLogEntry{entries}, r
 }
 
 type MultiContextLogEntry struct {
