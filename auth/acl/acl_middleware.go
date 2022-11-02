@@ -11,9 +11,9 @@ import (
 
 type Config struct {
 	Allow []string `mapstructure:"ACL_ALLOW" description:"If not empty it allows access only for the specified networks or addresses. Example: \"192.168.1.1,10.1.1.0/16\""`
-	allow *IpRange
+	allow IpRange
 	Deny  []string `mapstructure:"ACL_DENY" description:"Denies access for the specified networks or addresses. Example: \"192.168.1.1,10.1.1.0/16\""`
-	deny  *IpRange
+	deny  IpRange
 }
 
 func (c *Config) Empty() bool {
@@ -23,12 +23,12 @@ func (c *Config) Empty() bool {
 func (c *Config) SetDefaults() {}
 
 func (c *Config) Validate() (err error) {
-	c.allow, err = IpRangeFromStrings(c.Allow)
+	c.allow, err = IpRangeFromStrings(c.Allow...)
 	if err != nil {
 		return err
 	}
 
-	c.deny, err = IpRangeFromStrings(c.Deny)
+	c.deny, err = IpRangeFromStrings(c.Deny...)
 	if err != nil {
 		return err
 	}
@@ -39,8 +39,8 @@ func (c *Config) Validate() (err error) {
 type Acl struct {
 	controller controller.BaseController
 
-	Allow *IpRange
-	Deny  *IpRange
+	Allow IpRange
+	Deny  IpRange
 }
 
 func MiddlewareFromConfig(cfg Config) func(next http.Handler) http.Handler {
@@ -75,13 +75,13 @@ func (m Acl) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if m.Deny != nil && m.Deny.Contains(ip) {
+		if m.Deny.Contains(ip) {
 			log.FromContext(ctx).Debugf("ACL: %s denied", ip.String())
 			m.controller.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
 
-		if m.Allow != nil && !m.Allow.Empty() && !m.Allow.Contains(ip) {
+		if !m.Allow.Empty() && !m.Allow.Contains(ip) {
 			log.FromContext(ctx).Debugf("ACL: %s isn't allowed", ip.String())
 			m.controller.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return

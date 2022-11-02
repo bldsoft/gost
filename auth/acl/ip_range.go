@@ -1,34 +1,49 @@
 package acl
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"strings"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
+
+var invalidBsonValue = fmt.Errorf("invalid bson string value")
 
 type IpRange struct {
 	Ip   []net.IP
 	Cidr []*net.IPNet
 }
 
-func IpRangeFromStrings(strs []string) (*IpRange, error) {
-	var ipRange IpRange
+func MustIpRangeFromStrings(strs ...string) IpRange {
+	ipRange, err := IpRangeFromStrings(strs...)
+	if err != nil {
+		panic(err)
+	}
+	return ipRange
+}
+
+func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
 	for _, s := range strs {
 		if strings.Contains(s, "/") {
 			_, network, err := net.ParseCIDR(s)
 			if err != nil {
-				return nil, err
+				return res, err
 			}
-			ipRange.Cidr = append(ipRange.Cidr, network)
+			res.Cidr = append(res.Cidr, network)
 		} else {
 			ip := net.ParseIP(s)
 			if ip == nil {
-				return nil, errors.New("unable to parse IP address")
+				return res, errors.New("unable to parse IP address")
 			}
-			ipRange.Ip = append(ipRange.Ip, ip)
+			res.Ip = append(res.Ip, ip)
 		}
 	}
-	return &ipRange, nil
+	return res, nil
 }
 
 func (r IpRange) Empty() bool {
@@ -44,6 +59,21 @@ func (r IpRange) isInIPs(client net.IP, ips []net.IP) bool {
 	return false
 }
 
+func (r *IpRange) Strings() []string {
+	res := make([]string, 0, len(r.Ip)+len(r.Cidr))
+	for _, ip := range r.Ip {
+		res = append(res, ip.String())
+	}
+	for _, cidr := range r.Cidr {
+		res = append(res, cidr.String())
+	}
+	return res
+}
+
+func (r *IpRange) String() string {
+	return strings.Join(r.Strings(), ",")
+}
+
 func (r IpRange) isInSubnets(ip net.IP, subs []*net.IPNet) bool {
 	for _, subnet := range subs {
 		if subnet.Contains(ip) {
@@ -55,4 +85,57 @@ func (r IpRange) isInSubnets(ip net.IP, subs []*net.IPNet) bool {
 
 func (r IpRange) Contains(ip net.IP) bool {
 	return r.isInSubnets(ip, r.Cidr) || r.isInIPs(ip, r.Ip)
+}
+
+func (r IpRange) MarshalJSON() ([]byte, error) {
+	return json.Marshal(r.Strings())
+}
+
+func (r *IpRange) UnmarshalJSON(data []byte) error {
+	var strs []string
+
+	if err := json.Unmarshal(data, &strs); err != nil {
+		return err
+	}
+	ipRange, err := IpRangeFromStrings(strs...)
+	if err != nil {
+		return err
+	}
+	*r = ipRange
+	return nil
+}
+
+func (r IpRange) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	return bson.MarshalValue(r.Strings())
+}
+
+func (r *IpRange) UnmarshalBSONValue(t bsontype.Type, value []byte) error {
+	if value == nil {
+		return nil
+	}
+	if t != bsontype.Array {
+		return fmt.Errorf("invalid bson value type '%s'", t.String())
+	}
+
+	arr, _, ok := bsoncore.ReadArray(value)
+	if !ok {
+		return invalidBsonValue
+	}
+
+	values, err := arr.Values()
+	if err != nil {
+		return invalidBsonValue
+	}
+
+	var strs []string
+	for _, value := range values {
+		strs = append(strs, value.StringValue())
+	}
+
+	ipRange, err := IpRangeFromStrings(strs...)
+	if err != nil {
+		return err
+	}
+	*r = ipRange
+	return nil
 }
