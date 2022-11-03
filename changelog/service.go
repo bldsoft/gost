@@ -20,6 +20,6 @@ func (s *Service) FindByIDs(ctx context.Context, ids []string, preserveOrder boo
 	return s.rep.FindByIDs(ctx, ids, preserveOrder)
 }
 
-func (s *Service) GetRecords(ctx context.Context, filter *Filter) ([]*Record, error) {
-	return s.rep.GetRecords(ctx, filter)
+func (s *Service) GetRecords(ctx context.Context, params *RecordsParams) (*Records, error) {
+	return s.rep.GetRecords(ctx, params)
 }

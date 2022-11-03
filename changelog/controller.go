@@ -3,8 +3,6 @@ package changelog
 import (
 	"errors"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/bldsoft/gost/auth"
 	"github.com/bldsoft/gost/controller"
@@ -26,26 +24,8 @@ func NewControllerByService(changeLogService IChangeLogService) *Controller {
 	return &Controller{changeLogService: changeLogService}
 }
 
-func (c *Controller) getFilter(r *http.Request) *Filter {
-	query := r.URL.Query()
-	var filter Filter
-	if time, err := strconv.ParseInt(query.Get("startTime"), 10, 64); err == nil && time > 0 {
-		filter.StartTime = time
-	}
-	if time, err := strconv.ParseInt(query.Get("endTime"), 10, 64); err == nil && time > filter.StartTime {
-		filter.EndTime = time
-	}
-	if entityID := query.Get("entityID"); entityID != "" {
-		filter.EntityID = entityID
-	}
-	if collections := query.Get("entities"); collections != "" {
-		filter.Collections = strings.Split(collections, ",")
-	}
-	return &filter
-}
-
 func (c *Controller) GetHandler(w http.ResponseWriter, r *http.Request) {
-	records, err := c.changeLogService.GetRecords(r.Context(), c.getFilter(r))
+	records, err := c.changeLogService.GetRecords(r.Context(), utils.FromRequest[RecordsParams](r))
 	switch {
 	case err == nil:
 		c.ResponseJson(w, r, records)

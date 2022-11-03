@@ -14,6 +14,7 @@ const BsonFieldNameTimestamp = "timestamp"
 const BsonFieldNameEntity = "entity"
 const BsonFieldNameEntityID = "entityID"
 const BsonFieldNameOperation = "operation"
+const BsonFieldNameData = "data"
 
 type Operation int
 
