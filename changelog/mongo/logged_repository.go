@@ -15,7 +15,7 @@ import (
 type LoggedEntity[T any] interface {
 	*T
 	changelog.ILoggedEntity
-	mongo.IEntityID
+	repository.IEntityID
 }
 type LoggedRepository[T any, U LoggedEntity[T]] struct {
 	*mongo.Repository[T, U]
@@ -27,11 +27,6 @@ func NewLoggedRepository[T any, U LoggedEntity[T]](db *mongo.Storage, collection
 	db.AddOnConnectHandler(func() {
 		// creating collection beforehand for transactions
 		db.Db.CreateCollection(context.Background(), collectionName)
-	})
-	registerIdParser(collectionName, func(stringID string) (interface{}, error) {
-		var v T
-		err := U(&v).SetIDFromString(stringID)
-		return U(&v).GetID(), err
 	})
 	return &LoggedRepository[T, U]{rep, changeLogRep}
 }
@@ -47,7 +42,7 @@ func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err erro
 		if err := r.Repository.Insert(ctx, entity); err != nil {
 			return nil, err
 		}
-		rec.Record.EntityID = entity.GetID()
+		rec.Record.EntityID = entity.StringID()
 		rec.SetData(entity)
 		return nil, r.changeLogRep.Insert(ctx, rec)
 	})
@@ -84,7 +79,7 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U) error {
 			return nil, err
 		}
 
-		rec.Record.EntityID = entity.GetID()
+		rec.Record.EntityID = entity.StringID()
 		oldEntity.SetChangeID(rec.StringID())
 		data, err := r.getDiff(oldEntity, entity)
 		if err != nil {
@@ -108,7 +103,7 @@ func (r *LoggedRepository[T, U]) Delete(ctx context.Context, id interface{}, opt
 			return nil, err
 		}
 
-		rec.Record.EntityID = id
+		rec.Record.EntityID = repository.ToStringID[T, U](id)
 		if entity, err := r.Repository.FindByID(ctx, id); err == nil {
 			entity.SetChangeID(rec.StringID())
 			if err := r.Repository.Update(ctx, entity); err != nil {

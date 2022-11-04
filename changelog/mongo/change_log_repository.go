@@ -2,27 +2,17 @@ package mongo
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/bldsoft/gost/changelog"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
-	"github.com/bldsoft/gost/utils"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	driver "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-type idParse = func(stringID string) (ID interface{}, err error)
-
-var collectionToType = make(map[string]idParse)
-
-func registerIdParser(collection string, f idParse) {
-	collectionToType[collection] = f
-}
 
 type ChangeLogRepository struct {
 	rep *mongo.Repository[record, *record]
@@ -99,14 +89,6 @@ func (r *ChangeLogRepository) GetRecords(ctx context.Context, params *changelog.
 	return &res, nil
 }
 
-func (r *ChangeLogRepository) stringToID(collection string, entityID string) (interface{}, error) {
-	stringToID, ok := collectionToType[collection]
-	if !ok {
-		return nil, utils.ErrObjectNotFound
-	}
-	return stringToID(entityID)
-}
-
 func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, error) {
 	queryFilter := make(bson.M)
 	if filter == nil {
@@ -116,11 +98,7 @@ func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, e
 		if len(filter.Entities) != 1 {
 			return nil, errors.Errorf("unambiguous collection")
 		}
-		id, err := r.stringToID(filter.Entities[0], filter.EntityID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse id: %w", err)
-		}
-		queryFilter[changelog.BsonFieldNameEntityID] = id
+		queryFilter[changelog.BsonFieldNameEntityID] = filter.EntityID
 		queryFilter[changelog.BsonFieldNameEntity] = filter.Entities[0]
 	} else if len(filter.Entities) > 0 {
 		queryFilter[changelog.BsonFieldNameEntity] = bson.M{"$in": filter.Entities}

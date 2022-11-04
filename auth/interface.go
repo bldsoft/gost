@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
 )
 
@@ -22,7 +21,7 @@ type AuthenticablePtr[T any] interface {
 }
 
 type IUserPtr[T any] interface {
-	mongo.IEntityID
+	repository.IEntityID
 	AuthenticablePtr[T]
 }
 

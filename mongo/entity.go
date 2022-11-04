@@ -8,7 +8,7 @@ type EntityID struct {
 	ID primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 }
 
-func (e *EntityID) GetID() interface{} {
+func (e *EntityID) RawID() interface{} {
 	return e.ID
 }
 
@@ -28,6 +28,6 @@ func (e *EntityID) StringID() string {
 	return e.ID.Hex()
 }
 
-func (e *EntityID) IsNilID() bool {
+func (e *EntityID) IsZeroID() bool {
 	return e.ID == primitive.NilObjectID
 }
