@@ -133,7 +133,7 @@ func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, e
 		queryFilter[changelog.BsonFieldNameOperation] = bson.M{"$in": filter.Operations}
 	}
 
-	if filter.Search != nil {
+	if filter.Search != nil && len(*filter.Search) > 0 {
 		queryFilter["$text"] = bson.D{{Key: "$search", Value: *filter.Search}}
 	}
 
