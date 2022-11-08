@@ -141,7 +141,7 @@ func (r *ChangeLogRepository) recordsSort(sort changelog.Sort) bson.D {
 		fieldName = changelog.BsonFieldNameEntity
 	}
 	order := 1
-	if sort.Order == changelog.SortOrderDESC {
+	if sort.Order == repository.SortOrderDESC {
 		order = -1
 	}
 	return bson.D{{Key: fieldName, Value: order}}

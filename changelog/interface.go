@@ -11,13 +11,20 @@ const (
 	BsonFieldTotalCount = "totalCount"
 )
 
-//go:generate go run github.com/abice/go-enum@latest -f=$GOFILE
+//go:generate go run github.com/dmarkham/enumer@latest -gqlgen -type SortField --output sort_field_enum.go --trimprefix "SortField"
 
-// ENUM(Timestamp, User, Operation, Entity)
 type SortField int
 
-// ENUM(ASC, DESC)
-type SortOrder int
+const (
+	// SortFieldTimestamp is a SortField of type Timestamp.
+	SortFieldTimestamp SortField = iota
+	// SortFieldUser is a SortField of type User.
+	SortFieldUser
+	// SortFieldOperation is a SortField of type Operation.
+	SortFieldOperation
+	// SortFieldEntity is a SortField of type Entity.
+	SortFieldEntity
+)
 
 type Filter struct {
 	EntityID   string      `json:"entityID,omitempty" schema:"entityID,omitempty"`
@@ -30,8 +37,8 @@ type Filter struct {
 }
 
 type Sort struct {
-	Field SortField `json:"field,omitempty" schema:"field,omitempty"`
-	Order SortOrder `json:"order,omitempty" schema:"order,omitempty"`
+	Field SortField            `json:"field,omitempty" schema:"field,omitempty"`
+	Order repository.SortOrder `json:"order,omitempty" schema:"order,omitempty"`
 }
 
 type RecordsParams struct {
