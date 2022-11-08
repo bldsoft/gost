@@ -1,9 +1,5 @@
 package repository
 
-import "errors"
-
-var ErrInvalidRawID = errors.New("failed to set raw ID")
-
 type IEntityID interface {
 	RawID() interface{}
 	StringID() string
