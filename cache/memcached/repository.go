@@ -59,9 +59,17 @@ func (r *MemcacheRepository) Set(key string, value []byte) error {
 	return r.SetFor(key, value, r.liveTime)
 }
 
+func (r *MemcacheRepository) truncExpiration(d time.Duration) int32 {
+	const maxDuration = 30 * 24 * time.Hour
+	if d > maxDuration {
+		return int32(maxDuration.Seconds())
+	}
+	return int32(maxDuration.Seconds())
+}
+
 // SetFor writes the given item, unconditionally.
 func (r *MemcacheRepository) SetFor(key string, value []byte, expiration time.Duration) error {
-	return r.cache.Set(&memcache.Item{Key: key, Value: value, Expiration: int32(expiration.Seconds())})
+	return r.cache.Set(&memcache.Item{Key: key, Value: value, Expiration: r.truncExpiration(expiration)})
 }
 
 func (r *MemcacheRepository) SetWithFlags(key string, value []byte, flags uint32) error {
@@ -82,7 +90,7 @@ func (r *MemcacheRepository) Add(key string, value []byte) error {
 // AddFor writes the given item, if no value already exists for its
 // key. ErrNotStored is returned if that condition is not met.
 func (r *MemcacheRepository) AddFor(key string, value []byte, expiration time.Duration) error {
-	return r.cache.Add(&memcache.Item{Key: key, Value: value, Expiration: int32(expiration.Seconds())})
+	return r.cache.Add(&memcache.Item{Key: key, Value: value, Expiration: r.truncExpiration(expiration)})
 }
 
 // Delete deletes the item with the provided key.
