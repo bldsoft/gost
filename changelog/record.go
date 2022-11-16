@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bldsoft/gost/auth"
+	"github.com/bldsoft/gost/repository"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
@@ -14,6 +15,7 @@ const BsonFieldNameTimestamp = "timestamp"
 const BsonFieldNameEntity = "entity"
 const BsonFieldNameEntityID = "entityID"
 const BsonFieldNameOperation = "operation"
+const BsonFieldNameData = "data"
 
 type Operation int
 
@@ -36,23 +38,17 @@ func (op Operation) String() string {
 	}
 }
 
-type idType = interface{}
-
-type EntityID interface {
-	GetID() interface{}
-}
-
 type Record struct {
-	UserID    idType    `json:"userID,omitempty" bson:"userID,omitempty"`
+	UserID    string    `json:"userID,omitempty" bson:"userID,omitempty"`
 	Timestamp int64     `json:"timestamp" bson:"timestamp"`
 	Operation Operation `json:"operation" bson:"operation"`
 	Entity    string    `json:"entity" bson:"entity"`
-	EntityID  idType    `json:"entityID" bson:"entityID"`
+	EntityID  string    `json:"entityID" bson:"entityID"`
 	RequestID string    `json:"requestID" bson:"requestID"`
 	Data      string    `json:"data" bson:"data"`
 }
 
-func NewRecord(ctx context.Context, collectionName string, op Operation, entity EntityID) (*Record, error) {
+func NewRecord(ctx context.Context, collectionName string, op Operation, entity repository.IEntityID) (*Record, error) {
 	rec := &Record{
 		Timestamp: time.Now().Unix(),
 		Operation: op,
@@ -60,14 +56,14 @@ func NewRecord(ctx context.Context, collectionName string, op Operation, entity 
 		RequestID: middleware.GetReqID(ctx),
 	}
 
-	user, ok := auth.UserFromContext(ctx).(EntityID)
+	user, ok := auth.UserFromContext(ctx).(repository.IEntityID)
 	if ok {
-		rec.UserID = user.GetID()
+		rec.UserID = user.StringID()
 	}
 
 	if entity != nil {
 		rec.SetData(entity)
-		rec.EntityID = entity.GetID()
+		rec.EntityID = entity.StringID()
 	}
 
 	return rec, nil

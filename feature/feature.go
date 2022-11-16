@@ -25,7 +25,7 @@ func NewFeature(feature feature.IFeature, name string, description string) *Feat
 	return &Feature{ID: feature.GetID(), Name: name, Description: &description, GlobalValue: &value}
 }
 
-func (f *Feature) GetID() interface{} {
+func (f *Feature) RawID() interface{} {
 	return f.ID
 }
 
@@ -38,7 +38,7 @@ func (f *Feature) SetIDFromString(id string) error {
 	return nil
 }
 
-func (f *Feature) IsNilID() bool {
+func (f *Feature) IsZeroID() bool {
 	return f.ID == 0
 }
 

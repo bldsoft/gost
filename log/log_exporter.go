@@ -3,15 +3,19 @@ package log
 import (
 	"context"
 	"time"
+
+	"github.com/bldsoft/gost/repository"
 )
 
-//go:generate go run github.com/abice/go-enum@latest -f=$GOFILE
+//go:generate go run github.com/dmarkham/enumer@latest -gqlgen -type SortField --output sort_field_enum.go --trimprefix "SortField"
 
-// ENUM(Timestamp, Level, ReqID)
 type SortField int
 
-// ENUM(ASC, DESC)
-type SortOrder int
+const (
+	SortFieldTimestamp SortField = iota
+	SortFieldLevel
+	SortFieldReqID
+)
 
 type LogExporterConfig struct {
 	Instance string `mapstructure:"SERVICE_NAME" description:"The name is used to identify the service in logs"`
@@ -38,8 +42,8 @@ type Filter struct {
 }
 
 type Sort struct {
-	Field SortField `json:"field,omitempty" schema:"field,omitempty"`
-	Order SortOrder `json:"order,omitempty" schema:"order,omitempty"`
+	Field SortField            `json:"field,omitempty" schema:"field,omitempty"`
+	Order repository.SortOrder `json:"order,omitempty" schema:"order,omitempty"`
 }
 
 type Logs struct {
