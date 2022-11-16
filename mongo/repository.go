@@ -271,7 +271,7 @@ func (r *Repository[T, U]) fillTimeStamp(ctx context.Context, e repository.IEnti
 			}
 
 			result := r.Collection().FindOne(ctx,
-				bson.M{"_id": user.RawID()},
+				bson.M{"_id": e.RawID()},
 				options.FindOne().SetProjection(projection))
 
 			var entity EntityTimeStamp
