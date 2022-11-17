@@ -38,10 +38,7 @@ func (r *Repository[T, U]) Name() string {
 }
 
 func (r *Repository[T, U]) Collection() *mongo.Collection {
-	if r.dbcollection == nil && r.db.IsReady() {
-		r.dbcollection = r.db.Db.Collection(r.collectionName)
-	}
-	return r.dbcollection
+	return r.db.Db.Collection(r.collectionName)
 }
 
 func (r *Repository[T, U]) WithTransaction(ctx context.Context, f func(ctx mongo.SessionContext) (interface{}, error)) (interface{}, error) {
