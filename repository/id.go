@@ -58,3 +58,11 @@ func ToRawIDs[T any, U IEntityIDPtr[T]](ids []interface{}) []interface{} {
 	}
 	return rawIDs
 }
+
+func ToStringIDs[T any, U IEntityIDPtr[T]](ids []interface{}) []string {
+	stringIDs := make([]string, 0, len(ids))
+	for _, id := range ids {
+		stringIDs = append(stringIDs, ToStringID[T, U](id))
+	}
+	return stringIDs
+}
