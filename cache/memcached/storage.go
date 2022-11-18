@@ -3,6 +3,7 @@ package memcached
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bradfitz/gomemcache/memcache"
@@ -17,6 +18,9 @@ type Storage struct {
 
 func NewStorage(cfg Config) *Storage {
 	client := memcache.New(cfg.Servers...)
+	if cfg.TimeoutMs != 0 {
+		client.Timeout = time.Duration(cfg.TimeoutMs) * time.Millisecond
+	}
 	if err := client.Ping(); err != nil {
 		log.Fatalf("Memcached connection failed: %v", err)
 	}
