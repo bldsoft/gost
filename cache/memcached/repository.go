@@ -14,6 +14,7 @@ const (
 type MemcacheRepository struct {
 	cache    *Storage
 	liveTime time.Duration
+	keyPrefix string
 }
 
 func NewMemcacheRepository(storage *Storage, liveTime time.Duration) *MemcacheRepository {
@@ -25,6 +26,7 @@ func NewMemcacheRepository(storage *Storage, liveTime time.Duration) *MemcacheRe
 // Get gets the item valut for the given key. ErrCacheMiss is returned for a
 // memcache cache miss. The key must be at most 250 bytes in length.
 func (r *MemcacheRepository) Get(key string) ([]byte, error) {
+	key = r.prepareKey(key)
 	item, err := r.cache.Get(key)
 	if err != nil || item == nil {
 		return nil, err
@@ -33,6 +35,7 @@ func (r *MemcacheRepository) Get(key string) ([]byte, error) {
 }
 
 func (r *MemcacheRepository) GetWithFlags(key string) (data []byte, flags uint32, err error) {
+	key = r.prepareKey(key)
 	item, err := r.cache.Get(key)
 	if err != nil || item == nil {
 		return nil, 0, err
@@ -41,6 +44,7 @@ func (r *MemcacheRepository) GetWithFlags(key string) (data []byte, flags uint32
 }
 
 func (r *MemcacheRepository) GetMulti(keys []string) (map[string][]byte, error) {
+	keys = r.prepareKeys(keys)
 	items, err := r.cache.GetMulti(keys)
 	m := make(map[string][]byte, len(items))
 	for key, item := range items {
@@ -69,15 +73,18 @@ func (r *MemcacheRepository) truncExpiration(d time.Duration) int32 {
 
 // SetFor writes the given item, unconditionally.
 func (r *MemcacheRepository) SetFor(key string, value []byte, expiration time.Duration) error {
+	key = r.prepareKey(key)
 	return r.cache.Set(&memcache.Item{Key: key, Value: value, Expiration: r.truncExpiration(expiration)})
 }
 
 func (r *MemcacheRepository) SetWithFlags(key string, value []byte, flags uint32) error {
+	key = r.prepareKey(key)
 	return r.cache.Set(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: int32(r.liveTime.Seconds())})
 }
 
 // Exist checks if the key exists
 func (r *MemcacheRepository) Exist(key string) bool {
+	key = r.prepareKey(key)
 	return r.cache.Touch(key, int32(r.liveTime.Seconds())) == nil
 }
 
@@ -90,11 +97,13 @@ func (r *MemcacheRepository) Add(key string, value []byte) error {
 // AddFor writes the given item, if no value already exists for its
 // key. ErrNotStored is returned if that condition is not met.
 func (r *MemcacheRepository) AddFor(key string, value []byte, expiration time.Duration) error {
+	key = r.prepareKey(key)
 	return r.cache.Add(&memcache.Item{Key: key, Value: value, Expiration: r.truncExpiration(expiration)})
 }
 
 // Delete deletes the item with the provided key.
 func (r *MemcacheRepository) Delete(key string) error {
+	key = r.prepareKey(key)
 	return r.cache.Delete(key)
 }
 
@@ -105,6 +114,7 @@ func (r *MemcacheRepository) Reset() {
 
 func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error {
 	var err error
+	key = r.prepareKey(key)
 
 	for i := 0; i < casRetryLimit; i++ {
 		item, err := r.cache.Get(key)
@@ -131,4 +141,27 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value []byt
 	}
 
 	return err
+}
+
+func (r *MemcacheRepository) SetKeyPrefix(prefix string) {
+	r.keyPrefix = prefix
+}
+
+func (r *MemcacheRepository) prepareKey(key string) string {
+	if len(r.keyPrefix) == 0 {
+		return key
+	}
+	return r.keyPrefix + key
+}
+
+func (r *MemcacheRepository) prepareKeys(keys []string) []string {
+	if len(r.keyPrefix) == 0 {
+		return keys
+	}
+
+	newKeys := make([]string, len(keys))
+	for i, k := range keys {
+		newKeys[i] = r.prepareKey(k)
+	}
+	return newKeys
 }
