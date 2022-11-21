@@ -14,6 +14,7 @@ import (
 type Storage struct {
 	*memcache.Client
 	statClient *stat_client.Client
+	keyPrefix string
 }
 
 func NewStorage(cfg Config) *Storage {
@@ -31,6 +32,7 @@ func NewStorage(cfg Config) *Storage {
 	return &Storage{
 		Client:     client,
 		statClient: statClient,
+		keyPrefix: cfg.KeyPrefix,
 	}
 }
 
@@ -49,4 +51,23 @@ func (s *Storage) Stats(ctx context.Context) ([]*Stats, error) {
 		res = append(res, &stat)
 	}
 	return res, nil
+}
+
+func (s *Storage) PrepareKey(key string) string {
+	if len(s.keyPrefix) == 0 {
+		return key
+	}
+	return s.keyPrefix + key
+}
+
+func (s *Storage) PrepareKeys(keys []string) []string {
+	if len(s.keyPrefix) == 0 {
+		return keys
+	}
+
+	newKeys := make([]string, len(keys))
+	for i, k := range keys {
+		newKeys[i] = s.PrepareKey(k)
+	}
+	return newKeys
 }
