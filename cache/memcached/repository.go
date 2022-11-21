@@ -64,7 +64,7 @@ func (r *MemcacheRepository) truncExpiration(d time.Duration) int32 {
 	if d > maxDuration {
 		return int32(maxDuration.Seconds())
 	}
-	return int32(maxDuration.Seconds())
+	return int32(d.Seconds())
 }
 
 // SetFor writes the given item, unconditionally.
