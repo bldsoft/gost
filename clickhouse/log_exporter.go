@@ -98,7 +98,7 @@ func (e *ClickHouseLogExporter) Run() error {
 			log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to export log records")
 			return false
 		}
-		log.Logger.TraceWithFields(log.Fields{"record count": len(e.records)}, "log exported")
+		// log.Logger.TraceWithFields(log.Fields{"record count": len(e.records)}, "log exported")
 		e.records = e.records[:0]
 		return true
 	}
