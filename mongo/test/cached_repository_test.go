@@ -50,7 +50,10 @@ func testEntityRepository() *mongo.Repository[testEntity, *testEntity] {
 
 func cachedTestEntityRepository() *mongo.CachedRepository[testEntity, *testEntity] {
 	cache := bigcache.NewRepository("{}")
-	return mongo.NewCachedRepository[testEntity](db, testCollection, cache, "prefix")
+	return mongo.NewCachedRepository[testEntity](db, testCollection, cache, mongo.CachedRepositoryOptions{
+		CacheKeyPrefix: "prefix",
+		WarmUp:         true,
+	})
 }
 
 func setup() {

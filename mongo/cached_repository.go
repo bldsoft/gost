@@ -19,20 +19,27 @@ type update[T any, U repository.IEntityIDPtr[T]] struct {
 	opType OperationType
 }
 
+type CachedRepositoryOptions struct {
+	CacheKeyPrefix string
+	WarmUp         bool
+}
+
 // CachedRepository is a wrapper for Repository, that keeps the entire collection in cache, updating it with Watcher.
 // Only FindByID, FindByStringIDs, FindByIDs return cached results
 type CachedRepository[T any, U repository.IEntityIDPtr[T]] struct {
 	*Repository[T, U]
-	cache       cache.ILocalCacheRepository
-	watcher     *Watcher
-	cachePrefix string
+	cache   cache.ILocalCacheRepository
+	watcher *Watcher
+	options CachedRepositoryOptions
 }
 
-func NewCachedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, cache cache.ILocalCacheRepository, cachePrefix string) *CachedRepository[T, U] {
+func NewCachedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, cache cache.ILocalCacheRepository, opt ...CachedRepositoryOptions) *CachedRepository[T, U] {
 	rep := &CachedRepository[T, U]{
-		Repository:  NewRepository[T, U](db, collectionName),
-		cache:       cache,
-		cachePrefix: cachePrefix,
+		Repository: NewRepository[T, U](db, collectionName),
+		cache:      cache,
+	}
+	if len(opt) > 0 {
+		rep.options = opt[0]
 	}
 	rep.init()
 	return rep
@@ -54,10 +61,12 @@ func (r *CachedRepository[T, U]) init() {
 	})
 	r.watcher.Start()
 
-	if err := r.warmUpCache(context.Background()); err != nil {
-		log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.collectionName}, "Failed to warm up cache")
-	} else {
-		log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.collectionName}, "Cache is warmed up")
+	if r.options.WarmUp {
+		if err := r.warmUpCache(context.Background()); err != nil {
+			log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.collectionName}, "Failed to warm up cache")
+		} else {
+			log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.collectionName}, "Cache is warmed up")
+		}
 	}
 
 	go func() {
@@ -66,11 +75,11 @@ func (r *CachedRepository[T, U]) init() {
 			case Insert:
 				fallthrough
 			case Update:
-				if err := r.cacheSet(upd.e); err != nil {
+				if err := r.CacheSet(upd.e); err != nil {
 					log.Logger.ErrorWithFields(log.Fields{"err": err, "entity": upd.e}, "failed to update cache value")
 				}
 			case Delete:
-				if err := r.cacheDelete(upd.e); err != nil {
+				if err := r.CacheDelete(upd.e); err != nil {
 					log.Logger.ErrorWithFields(log.Fields{"err": err, "cache key": r.cacheKey(upd.e.StringID())}, "failed to delete cache value")
 				}
 			}
@@ -97,22 +106,27 @@ func (r *CachedRepository[T, U]) cacheUnmarshal(data []byte) (U, error) {
 }
 
 func (r *CachedRepository[T, U]) cacheKey(id string) string {
-	return fmt.Sprintf("%s:%s", r.cachePrefix, id)
+	return fmt.Sprintf("%s:%s", r.options.CacheKeyPrefix, id)
 }
 
-func (r *CachedRepository[T, U]) cacheSet(e U) error {
-	data, err := r.cacheMarshal(e)
-	if err != nil {
-		return err
+func (r *CachedRepository[T, U]) CacheSet(entities ...U) error {
+	for _, e := range entities {
+		data, err := r.cacheMarshal(e)
+		if err != nil {
+			return err
+		}
+		if err := r.cache.Set(r.cacheKey(e.StringID()), data); err != nil {
+			return err
+		}
 	}
-	return r.cache.Set(r.cacheKey(e.StringID()), data)
+	return nil
 }
 
-func (r *CachedRepository[T, U]) cacheDelete(e U) error {
+func (r *CachedRepository[T, U]) CacheDelete(e U) error {
 	return r.cache.Delete(r.cacheKey(e.StringID()))
 }
 
-func (r *CachedRepository[T, U]) cacheGet(id string) (U, error) {
+func (r *CachedRepository[T, U]) CacheGet(id string) (U, error) {
 	data, err := r.cache.Get(r.cacheKey(id))
 	if err != nil {
 		return nil, err
@@ -125,17 +139,12 @@ func (r *CachedRepository[T, U]) warmUpCache(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	for _, e := range entities {
-		if err = r.cacheSet(e); err != nil {
-			return err
-		}
-	}
-	return nil
+	return r.CacheSet(entities...)
 }
 
 func (r *CachedRepository[T, U]) cacheFindByID(ctx context.Context, id string, options ...*repository.QueryOptions) U {
 	strID := repository.ToStringID[T, U](id)
-	e, err := r.cacheGet(strID)
+	e, err := r.CacheGet(strID)
 	if err != nil {
 		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.collectionName, "id": strID}, "failed to get entity from cache")
 	}
@@ -158,19 +167,49 @@ func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, o
 	if e := r.cacheFindByID(ctx, repository.ToStringID[T, U](id), options...); e != nil {
 		return e, nil
 	}
-	return r.Repository.FindByID(ctx, id, options...)
+
+	res, err := r.Repository.FindByID(ctx, id, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.CacheSet(res); err != nil {
+		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "CachedRepository: failed to cache entity")
+	}
+
+	return res, nil
 }
 
 func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, ids, options...); cachedRes != nil {
 		return cachedRes, nil
 	}
-	return r.Repository.FindByStringIDs(ctx, ids, preserveOrder, options...)
+
+	res, err := r.Repository.FindByStringIDs(ctx, ids, preserveOrder, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.CacheSet(res...); err != nil {
+		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "CachedRepository: failed to cache entity")
+	}
+
+	return res, nil
 }
 
 func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, repository.ToStringIDs[T, U](ids), options...); cachedRes != nil {
 		return cachedRes, nil
 	}
-	return r.Repository.FindByIDs(ctx, ids, preserveOrder, options...)
+
+	res, err := r.Repository.FindByIDs(ctx, ids, preserveOrder, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.CacheSet(res...); err != nil {
+		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "CachedRepository: failed to cache entity")
+	}
+
+	return res, nil
 }
