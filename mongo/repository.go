@@ -38,7 +38,10 @@ func (r *Repository[T, U]) Name() string {
 }
 
 func (r *Repository[T, U]) Collection() *mongo.Collection {
-	return r.db.Db.Collection(r.collectionName)
+	if r.dbcollection == nil && r.db.IsReady() { // TODO: remove IsReady
+		return r.db.Db.Collection(r.collectionName)
+	}
+	return r.dbcollection
 }
 
 func (r *Repository[T, U]) WithTransaction(ctx context.Context, f func(ctx mongo.SessionContext) (interface{}, error)) (interface{}, error) {

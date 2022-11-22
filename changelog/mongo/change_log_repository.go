@@ -20,19 +20,19 @@ type ChangeLogRepository struct {
 
 func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
 	r := &ChangeLogRepository{mongo.NewRepository[record](db, "change_log")}
-	db.AddOnConnectHandler(func() {
-		indexes := []driver.IndexModel{
-			{Keys: bson.D{bson.E{Key: changelog.BsonFieldNameUserID, Value: 1}}},
-			{Keys: bson.D{bson.E{Key: changelog.BsonFieldNameEntityID, Value: 1}}},
-			{Keys: bson.D{bson.E{Key: changelog.BsonFieldNameData, Value: "text"}}},
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_, err := r.rep.Collection().Indexes().CreateMany(ctx, indexes)
-		if err != nil {
-			log.ErrorWithFields(log.Fields{"err": err}, "Failed to create indexes for change_log")
-		}
-	})
+
+	indexes := []driver.IndexModel{
+		{Keys: bson.D{bson.E{Key: changelog.BsonFieldNameUserID, Value: 1}}},
+		{Keys: bson.D{bson.E{Key: changelog.BsonFieldNameEntityID, Value: 1}}},
+		{Keys: bson.D{bson.E{Key: changelog.BsonFieldNameData, Value: "text"}}},
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := r.rep.Collection().Indexes().CreateMany(ctx, indexes)
+	if err != nil {
+		log.ErrorWithFields(log.Fields{"err": err}, "Failed to create indexes for change_log")
+	}
+
 	return r
 }
 

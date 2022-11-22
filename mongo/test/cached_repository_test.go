@@ -62,12 +62,6 @@ func setup() {
 	config.ReadConfig(&cfg, "")
 	db = mongo.NewStorage(cfg)
 	db.Connect()
-	// wait connection
-	waitC := make(chan struct{})
-	db.AddOnConnectHandler(func() {
-		close(waitC)
-	})
-	<-waitC
 }
 
 func tearDown() {
