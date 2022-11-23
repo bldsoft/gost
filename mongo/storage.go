@@ -3,7 +3,6 @@ package mongo
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/bldsoft/gost/log"
@@ -24,21 +23,20 @@ type EventHandler = func()
 type Storage struct {
 	config Config
 
-	Client            *mongo.Client
-	Db                *mongo.Database
-	onConnectHandlers []EventHandler
-	isReady           int32
+	Client *mongo.Client
+	Db     *mongo.Database
 
-	doOnce     sync.Once
-	migrations *source.Migrations
+	doOnce          sync.Once
+	migrations      *source.Migrations
+	migrationReadyC chan struct{}
 }
 
-//NewStorage ...
+// NewStorage ...
 func NewStorage(config Config) *Storage {
-	return &Storage{config: config, migrations: source.NewMigrations()}
+	return &Storage{config: config, migrations: source.NewMigrations(), migrationReadyC: make(chan struct{})}
 }
 
-//AddMigration adds a migration. All migrations should be added before db.Connect
+// AddMigration adds a migration. All migrations should be added before db.Connect
 func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string) {
 	db.migrations.Append(&source.Migration{Version: version, Direction: source.Up, Identifier: migrationUp})
 	db.migrations.Append(&source.Migration{Version: version, Direction: source.Down, Identifier: migrationDown})
@@ -46,7 +44,7 @@ func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string)
 
 const timeout = 5 * time.Second
 
-//Connect initializes db connection
+// Connect initializes db connection
 func (db *Storage) Connect() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -66,9 +64,11 @@ func (db *Storage) Connect() {
 	if err != nil {
 		log.ErrorWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB ping failed")
 	}
+
+	<-db.migrationReadyC
 }
 
-//Disconnect closes db connection
+// Disconnect closes db connection
 func (db *Storage) Disconnect(ctx context.Context) error {
 	err := db.Client.Disconnect(ctx)
 	if err != nil {
@@ -80,19 +80,16 @@ func (db *Storage) Disconnect(ctx context.Context) error {
 
 func (db *Storage) poolEventMonitor(ev *event.PoolEvent) {
 	switch ev.Type {
-	case event.ConnectionCreated:
+	case event.ConnectionReady:
 		//run migrations only once
 		db.doOnce.Do(func() {
 			go func() {
 				log.InfoWithFields(
 					log.Fields{"server": ev.Address, "connectionID": ev.ConnectionID},
 					"MongoDB connected!")
-				//let connection to be finished
-				time.Sleep(1 * time.Second)
 				//then run migrations
 				db.runMigrations(db.Db.Name())
-				atomic.StoreInt32(&db.isReady, 1)
-				db.notifyConnect()
+				close(db.migrationReadyC)
 			}()
 		})
 	case event.ConnectionClosed:
@@ -107,19 +104,8 @@ func (db *Storage) poolEventMonitor(ev *event.PoolEvent) {
 }
 
 func (db *Storage) IsReady() bool {
-	return atomic.LoadInt32(&db.isReady) == 1
+	return true
 }
-
-func (db *Storage) AddOnConnectHandler(handler EventHandler) {
-	db.onConnectHandlers = append(db.onConnectHandlers, handler)
-}
-
-func (db *Storage) notifyConnect() {
-	for _, handler := range db.onConnectHandlers {
-		handler()
-	}
-}
-
 func (db *Storage) runMigrations(dbname string) bool {
 	log.Debug("Checking DB schema...")
 
