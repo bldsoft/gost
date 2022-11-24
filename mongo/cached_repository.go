@@ -10,6 +10,7 @@ import (
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const updateChanBufferSize = 12500
@@ -34,6 +35,7 @@ type CachedRepository[T any, U repository.IEntityIDPtr[T]] struct {
 }
 
 func NewCachedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, cache cache.ILocalCacheRepository, opt ...CachedRepositoryOptions) *CachedRepository[T, U] {
+	gob.Register(primitive.NilObjectID)
 	rep := &CachedRepository[T, U]{
 		Repository: NewRepository[T, U](db, collectionName),
 		cache:      cache,
@@ -165,6 +167,7 @@ func (r *CachedRepository[T, U]) cacheFindByIDs(ctx context.Context, ids []strin
 
 func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
 	if e := r.cacheFindByID(ctx, repository.ToStringID[T, U](id), options...); e != nil {
+		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.collectionName}, "cache hit")
 		return e, nil
 	}
 
@@ -182,6 +185,7 @@ func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, o
 
 func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, ids, options...); cachedRes != nil {
+		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.collectionName}, "cache hit")
 		return cachedRes, nil
 	}
 
@@ -199,6 +203,7 @@ func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []stri
 
 func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, repository.ToStringIDs[T, U](ids), options...); cachedRes != nil {
+		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.collectionName}, "cache hit")
 		return cachedRes, nil
 	}
 
