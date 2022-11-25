@@ -88,6 +88,9 @@ func (r IpRange) Contains(ip net.IP) bool {
 }
 
 func (r IpRange) MarshalJSON() ([]byte, error) {
+	if r.Empty() { // TODO: remove
+		return json.Marshal(nil)
+	} //
 	return json.Marshal(r.Strings())
 }
 
