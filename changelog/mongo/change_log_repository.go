@@ -41,7 +41,7 @@ func (r *ChangeLogRepository) Insert(ctx context.Context, record *record) error 
 	return err
 }
 
-func (r *ChangeLogRepository) FindByID(ctx context.Context, id string, options ...*repository.QueryOptions) (*changelog.Record, error) {
+func (r *ChangeLogRepository) FindByID(ctx context.Context, id string, options ...*repository.QueryOptions[changelog.Record]) (*changelog.Record, error) {
 	record, err := r.rep.FindByID(ctx, id, options...)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (r *ChangeLogRepository) FindByID(ctx context.Context, id string, options .
 	return record.Record, nil
 }
 
-func (r *ChangeLogRepository) FindByIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions) (res []*changelog.Record, err error) {
+func (r *ChangeLogRepository) FindByIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions[changelog.Record]) (res []*changelog.Record, err error) {
 	records, err := r.rep.FindByStringIDs(ctx, ids, preserveOrder, options...)
 	if err != nil {
 		return nil, err

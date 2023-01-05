@@ -117,7 +117,7 @@ func NewCachedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, colle
 	}
 }
 
-func (r *CachedRepository[T, U]) cacheFindByID(ctx context.Context, id string, options ...*repository.QueryOptions) U {
+func (r *CachedRepository[T, U]) cacheFindByID(ctx context.Context, id string, options ...*repository.QueryOptions[T]) U {
 	strID := repository.ToStringID[T, U](id)
 	e, err := r.cache.CacheGet(strID)
 	if err != nil {
@@ -126,7 +126,7 @@ func (r *CachedRepository[T, U]) cacheFindByID(ctx context.Context, id string, o
 	return e
 }
 
-func (r *CachedRepository[T, U]) cacheFindByIDs(ctx context.Context, ids []string, options ...*repository.QueryOptions) []U {
+func (r *CachedRepository[T, U]) cacheFindByIDs(ctx context.Context, ids []string, options ...*repository.QueryOptions[T]) []U {
 	cachedRes := make([]U, 0, len(ids))
 	for _, id := range ids {
 		if e := r.cacheFindByID(ctx, id, options...); e != nil {
@@ -138,7 +138,7 @@ func (r *CachedRepository[T, U]) cacheFindByIDs(ctx context.Context, ids []strin
 	return cachedRes
 }
 
-func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
+func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions[T]) (U, error) {
 	if e := r.cacheFindByID(ctx, repository.ToStringID[T, U](id), options...); e != nil {
 		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.collectionName}, "cache hit")
 		return e, nil
@@ -156,7 +156,7 @@ func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, o
 	return res, nil
 }
 
-func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
+func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions[T]) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, ids, options...); cachedRes != nil {
 		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.collectionName}, "cache hit")
 		return cachedRes, nil
@@ -174,7 +174,7 @@ func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []stri
 	return res, nil
 }
 
-func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
+func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions[T]) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, repository.ToStringIDs[T, U](ids), options...); cachedRes != nil {
 		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.collectionName}, "cache hit")
 		return cachedRes, nil

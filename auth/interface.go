@@ -35,7 +35,7 @@ type PasswordHasher interface {
 }
 
 type IAuthRepository[PT any] interface {
-	FindByLogin(ctx context.Context, login string, options ...*repository.QueryOptions) (PT, error)
+	FindByLogin(ctx context.Context, login string, options ...*repository.QueryOptions[PT]) (PT, error)
 }
 
 // IAuthService ...
@@ -45,10 +45,10 @@ type IAuthService[PT AuthenticablePtr[T], T any] interface {
 
 type IUserRepository[PT any] interface {
 	Insert(ctx context.Context, user PT) error
-	GetAll(ctx context.Context, options ...*repository.QueryOptions) ([]PT, error)
-	FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (PT, error)
+	GetAll(ctx context.Context, options ...*repository.QueryOptions[PT]) ([]PT, error)
+	FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions[PT]) (PT, error)
 	Update(ctx context.Context, user PT) error
-	Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error
+	Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions[PT]) error
 }
 
 type IUserService[PT AuthenticablePtr[T], T any] interface {

@@ -48,6 +48,8 @@ type Record struct {
 	Data      string    `json:"data" bson:"data"`
 }
 
+type RecordFilter struct{}
+
 func NewRecord(ctx context.Context, collectionName string, op Operation, entity repository.IEntityID) (*Record, error) {
 	rec := &Record{
 		Timestamp: time.Now().Unix(),
