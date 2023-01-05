@@ -18,9 +18,6 @@ func TestParseQueryOptions(t *testing.T) {
 		StructField `bson:"child"`
 	}
 	testString := "test string"
-	nested := &StructField{
-		NestedField: &testString,
-	}
 
 	type args struct {
 		q *repository.QueryOptions[TestFilter]
@@ -44,7 +41,9 @@ func TestParseQueryOptions(t *testing.T) {
 			args: func() args {
 				f := TestFilter{
 					StringField: &testString,
-					StructField: *nested,
+					StructField: StructField{
+						&testString,
+					},
 				}
 				return args{
 					q: &repository.QueryOptions[TestFilter]{

@@ -3,7 +3,6 @@ package mongo
 import (
 	"reflect"
 	"strings"
-	"unsafe"
 
 	"github.com/bldsoft/gost/repository"
 	"go.mongodb.org/mongo-driver/bson"
@@ -40,9 +39,7 @@ func recursiveParse(filter bson.M, t interface{}, parents []string) {
 		case reflect.Pointer:
 			tag := field.Tag.Get("bson")
 			tag = strings.Join(parents, "") + tag
-			filter[tag] = unsafe.Pointer(v.Pointer())
-			el := v.Elem()
-			filter[tag] = el
+			filter[tag] = v.Elem()
 		default:
 			continue
 		}
