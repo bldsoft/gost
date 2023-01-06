@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/repository"
 	"github.com/bldsoft/gost/utils"
 )
 
@@ -66,4 +67,19 @@ func ParseQueryOptionSlice[T utils.Parsed](r *http.Request, w http.ResponseWrite
 	}
 	*outValue = value
 	return true
+}
+
+func QueryOptionFromRequest[F any](r *http.Request, archived bool) (*repository.QueryOptions, error) {
+	opt := &repository.QueryOptions{}
+
+	opt.Filter = utils.FromRequest[F](r)
+	opt.Archived = archived
+
+	fields, err := GetQueryOptionSlice[string](r, "fields")
+	if err != nil {
+		return nil, err
+	}
+	opt.Fields = fields
+
+	return opt, nil
 }
