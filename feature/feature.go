@@ -45,5 +45,3 @@ func (f *Feature) IsZeroID() bool {
 func (f *Feature) StringID() string {
 	return strconv.Itoa(f.ID)
 }
-
-type FeatureFilter struct{}
