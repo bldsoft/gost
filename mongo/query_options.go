@@ -39,7 +39,7 @@ func recursiveParse(filter bson.M, t interface{}, parents []string) {
 		case reflect.Pointer:
 			tag := field.Tag.Get("bson")
 			tag = strings.Join(parents, "") + tag
-			filter[tag] = v.Elem()
+			filter[tag] = v.Elem().Interface()
 		default:
 			continue
 		}

@@ -17,7 +17,10 @@ func TestParseQueryOptions(t *testing.T) {
 		BoolField   *bool   `bson:"bool"`
 		StructField `bson:"child"`
 	}
+
 	testString := "test string"
+	testInt := 1
+	TestBool := true
 
 	type args struct {
 		q *repository.QueryOptions[TestFilter]
@@ -37,10 +40,12 @@ func TestParseQueryOptions(t *testing.T) {
 			want: bson.M{},
 		},
 		{
-			name: "single field",
+			name: "with fields",
 			args: func() args {
 				f := TestFilter{
 					StringField: &testString,
+					IntField:    &testInt,
+					BoolField:   &TestBool,
 					StructField: StructField{
 						&testString,
 					},
@@ -53,6 +58,8 @@ func TestParseQueryOptions(t *testing.T) {
 			},
 			want: bson.M{
 				"string":       testString,
+				"int":          testInt,
+				"bool":         TestBool,
 				"child.nested": testString,
 			},
 		},
