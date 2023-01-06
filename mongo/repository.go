@@ -300,11 +300,7 @@ func (r *Repository[T, U]) where(filter interface{}, options ...*repository.Quer
 				filter[field] = cond
 			}
 
-			f := ParseQueryOptions(options[0])
-			for k, v := range f {
-				filter[k] = v
-			}
-
+			recursiveParse(filter, options[0], "")
 		default:
 		}
 	}
