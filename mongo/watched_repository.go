@@ -26,16 +26,16 @@ type WatchedRepositoryOptions struct {
 }
 
 // WatchedRepository is a helper wrapper for Repository, that allows you to monitor changes via Watcher
-type WatchedRepository[T any, U repository.IEntityIDPtr[T], FT any] struct {
-	*Repository[T, U, FT]
+type WatchedRepository[T any, U repository.IEntityIDPtr[T]] struct {
+	*Repository[T, U]
 	Watcher    *Watcher
 	handler    ChangeHandler[T, U]
 	needWarmUp bool
 }
 
-func NewWatchedRepository[T any, U repository.IEntityIDPtr[T], FT any](db *Storage, collectionName string, handler ChangeHandler[T, U], warmUp bool) *WatchedRepository[T, U, FT] {
-	rep := &WatchedRepository[T, U, FT]{
-		Repository: NewRepository[T, U, FT](db, collectionName),
+func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, handler ChangeHandler[T, U], warmUp bool) *WatchedRepository[T, U] {
+	rep := &WatchedRepository[T, U]{
+		Repository: NewRepository[T, U](db, collectionName),
 		handler:    handler,
 		needWarmUp: warmUp,
 	}
@@ -43,7 +43,7 @@ func NewWatchedRepository[T any, U repository.IEntityIDPtr[T], FT any](db *Stora
 	return rep
 }
 
-func (r *WatchedRepository[T, U, FT]) init() {
+func (r *WatchedRepository[T, U]) init() {
 	updateC := make(chan *UpdateEvent[T, U], updateChanBufferSize)
 
 	r.Watcher = NewWatcher(r.Repository.Collection())
@@ -74,7 +74,7 @@ func (r *WatchedRepository[T, U, FT]) init() {
 	}()
 }
 
-func (r *WatchedRepository[T, U, FT]) warmUp(ctx context.Context) error {
+func (r *WatchedRepository[T, U]) warmUp(ctx context.Context) error {
 	entities, err := r.Repository.GetAll(context.Background())
 	if err != nil {
 		return err

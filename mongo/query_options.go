@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func ParseQueryOptions[T any](q *repository.QueryOptions[T]) bson.M {
+func ParseQueryOptions(q *repository.QueryOptions) bson.M {
 	if q == nil {
 		return bson.M{}
 	}

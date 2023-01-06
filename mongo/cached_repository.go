@@ -99,25 +99,25 @@ type CachedRepositoryOptions struct {
 
 // CachedRepository is a wrapper for Repository, that keeps the entire collection in cache, updating it with Watcher.
 // Only FindByID, FindByStringIDs, FindByIDs return cached results
-type CachedRepository[T any, U repository.IEntityIDPtr[T], FT any] struct {
-	*WatchedRepository[T, U, FT]
+type CachedRepository[T any, U repository.IEntityIDPtr[T]] struct {
+	*WatchedRepository[T, U]
 	cache *cacheChangeHandler[T, U]
 }
 
-func NewCachedRepository[T any, U repository.IEntityIDPtr[T], FT any](db *Storage, collectionName string, cache cache.ILocalCacheRepository, opt ...CachedRepositoryOptions) *CachedRepository[T, U, FT] {
+func NewCachedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, cache cache.ILocalCacheRepository, opt ...CachedRepositoryOptions) *CachedRepository[T, U] {
 	gob.Register(primitive.NilObjectID)
 	var options CachedRepositoryOptions
 	if len(opt) > 0 {
 		options = opt[0]
 	}
 	changeHandler := newCacheChangeHandler[T, U](cache, options.CacheKeyPrefix)
-	return &CachedRepository[T, U, FT]{
-		WatchedRepository: NewWatchedRepository[T, U, FT](db, collectionName, changeHandler, options.WarmUp),
+	return &CachedRepository[T, U]{
+		WatchedRepository: NewWatchedRepository[T, U](db, collectionName, changeHandler, options.WarmUp),
 		cache:             changeHandler,
 	}
 }
 
-func (r *CachedRepository[T, U, FT]) cacheFindByID(ctx context.Context, id string, options ...*repository.QueryOptions[FT]) U {
+func (r *CachedRepository[T, U]) cacheFindByID(ctx context.Context, id string, options ...*repository.QueryOptions) U {
 	strID := repository.ToStringID[T, U](id)
 	e, err := r.cache.CacheGet(strID)
 	if err != nil {
@@ -126,7 +126,7 @@ func (r *CachedRepository[T, U, FT]) cacheFindByID(ctx context.Context, id strin
 	return e
 }
 
-func (r *CachedRepository[T, U, FT]) cacheFindByIDs(ctx context.Context, ids []string, options ...*repository.QueryOptions[FT]) []U {
+func (r *CachedRepository[T, U]) cacheFindByIDs(ctx context.Context, ids []string, options ...*repository.QueryOptions) []U {
 	cachedRes := make([]U, 0, len(ids))
 	for _, id := range ids {
 		if e := r.cacheFindByID(ctx, id, options...); e != nil {
@@ -138,7 +138,7 @@ func (r *CachedRepository[T, U, FT]) cacheFindByIDs(ctx context.Context, ids []s
 	return cachedRes
 }
 
-func (r *CachedRepository[T, U, FT]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions[FT]) (U, error) {
+func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
 	if e := r.cacheFindByID(ctx, repository.ToStringID[T, U](id), options...); e != nil {
 		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.collectionName}, "cache hit")
 		return e, nil
@@ -156,7 +156,7 @@ func (r *CachedRepository[T, U, FT]) FindByID(ctx context.Context, id interface{
 	return res, nil
 }
 
-func (r *CachedRepository[T, U, FT]) FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions[FT]) ([]U, error) {
+func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, ids, options...); cachedRes != nil {
 		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.collectionName}, "cache hit")
 		return cachedRes, nil
@@ -174,7 +174,7 @@ func (r *CachedRepository[T, U, FT]) FindByStringIDs(ctx context.Context, ids []
 	return res, nil
 }
 
-func (r *CachedRepository[T, U, FT]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions[FT]) ([]U, error) {
+func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, repository.ToStringIDs[T, U](ids), options...); cachedRes != nil {
 		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.collectionName}, "cache hit")
 		return cachedRes, nil

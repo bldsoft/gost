@@ -27,7 +27,7 @@ func (s *UserService[PT, T]) Create(ctx context.Context, user PT) error {
 }
 
 func (s *UserService[PT, T]) GetAll(ctx context.Context, archived bool) ([]PT, error) {
-	return s.userRep.GetAll(ctx, &repository.QueryOptions[PT]{Archived: archived})
+	return s.userRep.GetAll(ctx, &repository.QueryOptions{Archived: archived})
 }
 
 func (s *UserService[PT, T]) GetByID(ctx context.Context, id string) (PT, error) {
@@ -57,5 +57,5 @@ func (s *UserService[PT, T]) UpdatePassword(ctx context.Context, id, password st
 }
 
 func (s *UserService[PT, T]) Delete(ctx context.Context, id string, archived bool) error {
-	return s.userRep.Delete(ctx, id, &repository.QueryOptions[PT]{Archived: archived})
+	return s.userRep.Delete(ctx, id, &repository.QueryOptions{Archived: archived})
 }

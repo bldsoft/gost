@@ -23,7 +23,7 @@ func TestParseQueryOptions(t *testing.T) {
 	TestBool := true
 
 	type args struct {
-		q *repository.QueryOptions[TestFilter]
+		q *repository.QueryOptions
 	}
 	tests := []struct {
 		name string
@@ -51,7 +51,7 @@ func TestParseQueryOptions(t *testing.T) {
 					},
 				}
 				return args{
-					q: &repository.QueryOptions[TestFilter]{
+					q: &repository.QueryOptions{
 						Filter: f,
 					},
 				}

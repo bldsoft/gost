@@ -21,7 +21,7 @@ func NewAuthService[PT AuthenticablePtr[T], T any](rep IAuthRepository[PT], pass
 }
 
 func (s *AuthService[PT, T]) Login(ctx context.Context, username, password string) (PT, error) {
-	user, err := s.userRep.FindByLogin(ctx, username, &repository.QueryOptions[PT]{Archived: false})
+	user, err := s.userRep.FindByLogin(ctx, username, &repository.QueryOptions{Archived: false})
 	if err != nil {
 		return nil, err
 	}
