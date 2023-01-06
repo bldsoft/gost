@@ -13,13 +13,13 @@ import (
 
 // MongoRepository implements IFeatureRepository interface
 type MongoRepository struct {
-	rep         *mongo.Repository[Feature, *Feature]
+	rep         *mongo.Repository[Feature, *Feature, FeatureFilter]
 	serviceName string
 }
 
 // NewMongoRepository creates feature repository.
 func NewMongoRepository(db *mongo.Storage, serviceName string) *MongoRepository {
-	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, "feature"), serviceName: serviceName}
+	rep := &MongoRepository{rep: mongo.NewRepository[Feature, *Feature, FeatureFilter](db, "feature"), serviceName: serviceName}
 	if err := rep.Load(); err != nil {
 		log.Error("Failed to load features")
 	} else {
@@ -89,7 +89,7 @@ func (r *MongoRepository) FindByID(ctx context.Context, id config.IdType) (*Feat
 }
 
 func (r *MongoRepository) GetAll(ctx context.Context) ([]*Feature, error) {
-	return r.rep.GetAll(ctx, &repository.QueryOptions[Feature]{Archived: false})
+	return r.rep.GetAll(ctx, &repository.QueryOptions[FeatureFilter]{Archived: false})
 }
 
 func (r *MongoRepository) Update(ctx context.Context, feature *Feature) (*Feature, error) {

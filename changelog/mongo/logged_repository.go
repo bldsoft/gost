@@ -17,19 +17,19 @@ type LoggedEntity[T any] interface {
 	changelog.ILoggedEntity
 	repository.IEntityID
 }
-type LoggedRepository[T any, U LoggedEntity[T]] struct {
-	*mongo.Repository[T, U]
+type LoggedRepository[T any, U LoggedEntity[T], FT any] struct {
+	*mongo.Repository[T, U, FT]
 	changeLogRep *ChangeLogRepository
 }
 
-func NewLoggedRepository[T any, U LoggedEntity[T]](db *mongo.Storage, collectionName string, changeLogRep *ChangeLogRepository) *LoggedRepository[T, U] {
-	rep := mongo.NewRepository[T, U](db, collectionName)
+func NewLoggedRepository[T any, U LoggedEntity[T], FT any](db *mongo.Storage, collectionName string, changeLogRep *ChangeLogRepository) *LoggedRepository[T, U, FT] {
+	rep := mongo.NewRepository[T, U, FT](db, collectionName)
 	db.Db.CreateCollection(context.Background(), collectionName)
 
-	return &LoggedRepository[T, U]{rep, changeLogRep}
+	return &LoggedRepository[T, U, FT]{rep, changeLogRep}
 }
 
-func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err error) {
+func (r *LoggedRepository[T, U, FT]) Insert(ctx context.Context, entity U) (err error) {
 	rec, err := newRecord(ctx, r.Name(), changelog.Create)
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err erro
 	return err
 }
 
-func (r *LoggedRepository[T, U]) getDiff(old U, new U) ([]byte, error) {
+func (r *LoggedRepository[T, U, FT]) getDiff(old U, new U) ([]byte, error) {
 	oldData, err := json.Marshal(old)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (r *LoggedRepository[T, U]) getDiff(old U, new U) ([]byte, error) {
 	return patch, nil
 }
 
-func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U) error {
+func (r *LoggedRepository[T, U, FT]) Update(ctx context.Context, entity U) error {
 	rec, err := newRecord(ctx, r.Name(), changelog.Update)
 	if err != nil {
 		return err
@@ -90,7 +90,7 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U) error {
 	return err
 }
 
-func (r *LoggedRepository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions[T]) error {
+func (r *LoggedRepository[T, U, FT]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions[FT]) error {
 	rec, err := newRecord(ctx, r.Name(), changelog.Delete)
 	if err != nil {
 		return err

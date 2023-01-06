@@ -55,8 +55,8 @@ type Records struct {
 
 type IChangeLogRepository interface {
 	GetRecords(ctx context.Context, params *RecordsParams) (*Records, error)
-	FindByID(ctx context.Context, id string, options ...*repository.QueryOptions[Record]) (*Record, error)
-	FindByIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions[Record]) (res []*Record, err error)
+	FindByID(ctx context.Context, id string, options ...*repository.QueryOptions[RecordFilter]) (*Record, error)
+	FindByIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions[RecordFilter]) (res []*Record, err error)
 }
 
 type IChangeLogService interface {
