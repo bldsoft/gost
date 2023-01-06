@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"reflect"
-	"strings"
 
 	"github.com/bldsoft/gost/repository"
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,11 +14,11 @@ func ParseQueryOptions[T any](q *repository.QueryOptions[T]) bson.M {
 
 	filter := bson.M{}
 	f := q.Filter
-	recursiveParse(filter, f, []string{})
+	recursiveParse(filter, f, "")
 	return filter
 }
 
-func recursiveParse(filter bson.M, t interface{}, parents []string) {
+func recursiveParse(filter bson.M, t interface{}, prefix string) {
 	fv := reflect.Indirect(reflect.ValueOf(t))
 	ft := fv.Type()
 
@@ -31,14 +30,13 @@ func recursiveParse(filter bson.M, t interface{}, parents []string) {
 			continue
 		}
 
+		tag := field.Tag.Get("bson")
+
 		switch field.Type.Kind() {
 		case reflect.Struct:
-			var _parents []string
-			copy(parents, _parents)
-			recursiveParse(filter, v.Interface(), append(_parents, field.Tag.Get("bson")+"."))
+			recursiveParse(filter, v.Interface(), prefix+field.Tag.Get("bson")+".")
 		case reflect.Pointer:
-			tag := field.Tag.Get("bson")
-			tag = strings.Join(parents, "") + tag
+			tag = prefix + tag
 			filter[tag] = v.Elem().Interface()
 		default:
 			continue
