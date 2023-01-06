@@ -7,12 +7,16 @@ import (
 )
 
 func TestFromQuery(t *testing.T) {
+	type Nested struct {
+		NestedSField string `schema:"nstring"`
+	}
 	type TestStruct struct {
 		SField  string  `schema:"string"`
 		IField  int     `schema:"int"`
 		BField  bool    `schema:"bool"`
 		PSField *string `schema:"pstring"`
 		PIField *int    `schema:"pint"`
+		Nested  `schema:""`
 	}
 
 	pstring := "string"
@@ -50,11 +54,12 @@ func TestFromQuery(t *testing.T) {
 			name: "with fields&pointers",
 			args: args{
 				query: url.Values{
-					"string":  []string{"string"},
-					"int":     []string{"10"},
-					"bool":    []string{"true"},
-					"pstring": []string{"string"},
-					"pint":    []string{"10"},
+					"string":         []string{"string"},
+					"int":            []string{"10"},
+					"bool":           []string{"true"},
+					"pstring":        []string{"string"},
+					"pint":           []string{"10"},
+					"Nested.nstring": []string{"nested"},
 				},
 			},
 			want: &TestStruct{
@@ -63,6 +68,9 @@ func TestFromQuery(t *testing.T) {
 				BField:  true,
 				PSField: &pstring,
 				PIField: &pint,
+				Nested: Nested{
+					NestedSField: "nested",
+				},
 			},
 		},
 	}
