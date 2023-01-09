@@ -214,7 +214,7 @@ func (e *ClickHouseLogExporter) countLogs(ctx context.Context, params log.LogsPa
 func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams) (*log.Logs, error) {
 	query := sq.Select().
 		Column(InstanseColumnName).
-		Column(fmt.Sprintf("toUnixTimestamp(%s)", TimestampColumnName)).
+		Column(fmt.Sprintf("toUnixTimestamp64Milli(%s)", TimestampColumnName)).
 		Column(fmt.Sprintf("CAST(%s, 'Int8') %s", LevelColumName, LevelColumName)).
 		Column(ReqIDColumnName).
 		Column(MsgColumnName).
