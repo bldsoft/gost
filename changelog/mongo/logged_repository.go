@@ -18,7 +18,7 @@ type LoggedEntity[T any] interface {
 	repository.IEntityID
 }
 type LoggedRepository[T any, U LoggedEntity[T]] struct {
-	*mongo.Repository[T, U]
+	mongo.Repository[T, U]
 	changeLogRep *ChangeLogRepository
 }
 

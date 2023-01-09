@@ -15,7 +15,7 @@ import (
 )
 
 type ChangeLogRepository struct {
-	rep *mongo.Repository[record, *record]
+	rep mongo.Repository[record, *record]
 }
 
 func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {

@@ -23,28 +23,28 @@ type IEntityTimeStamp interface {
 	SetCreateFields(createTime time.Time, createUserID interface{})
 }
 
-type Repository[T any, U repository.IEntityIDPtr[T]] struct {
+type BaseRepository[T any, U repository.IEntityIDPtr[T]] struct {
 	dbcollection   *mongo.Collection
 	db             *Storage
 	collectionName string
 }
 
-func NewRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string) *Repository[T, U] {
-	return &Repository[T, U]{db: db, collectionName: collectionName}
+func NewRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string) Repository[T, U] {
+	return &BaseRepository[T, U]{db: db, collectionName: collectionName}
 }
 
-func (r *Repository[T, U]) Name() string {
+func (r *BaseRepository[T, U]) Name() string {
 	return r.collectionName
 }
 
-func (r *Repository[T, U]) Collection() *mongo.Collection {
+func (r *BaseRepository[T, U]) Collection() *mongo.Collection {
 	if r.dbcollection == nil && r.db.IsReady() { // TODO: remove IsReady
 		return r.db.Db.Collection(r.collectionName)
 	}
 	return r.dbcollection
 }
 
-func (r *Repository[T, U]) WithTransaction(ctx context.Context, f func(ctx mongo.SessionContext) (interface{}, error)) (interface{}, error) {
+func (r *BaseRepository[T, U]) WithTransaction(ctx context.Context, f func(ctx mongo.SessionContext) (interface{}, error)) (interface{}, error) {
 	session, err := r.db.Client.StartSession()
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (r *Repository[T, U]) WithTransaction(ctx context.Context, f func(ctx mongo
 	return session.WithTransaction(ctx, f)
 }
 
-func (r *Repository[T, U]) projection(opt ...*repository.QueryOptions) interface{} {
+func (r *BaseRepository[T, U]) projection(opt ...*repository.QueryOptions) interface{} {
 	if len(opt) != 0 && len(opt[0].Fields) > 0 {
 		var projection bson.D
 		for _, field := range opt[0].Fields {
@@ -65,7 +65,7 @@ func (r *Repository[T, U]) projection(opt ...*repository.QueryOptions) interface
 	return nil
 }
 
-func (r *Repository[T, U]) FindOne(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (U, error) {
+func (r *BaseRepository[T, U]) FindOne(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (U, error) {
 	var result T
 	findOneOpt := options.FindOne().SetProjection(r.projection(opt...))
 	err := r.Collection().FindOne(ctx, r.where(filter, opt...), findOneOpt).Decode(&result)
@@ -75,19 +75,19 @@ func (r *Repository[T, U]) FindOne(ctx context.Context, filter interface{}, opt 
 	return &result, err
 }
 
-func (r *Repository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
+func (r *BaseRepository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
 	return r.FindOne(ctx, bson.M{"_id": repository.ToRawID[T, U](id)}, options...)
 }
 
-func (r *Repository[T, U]) FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
+func (r *BaseRepository[T, U]) FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	return r.findByRawIDs(ctx, repository.StringsToRawIDs[T, U](ids), preserveOrder, options...)
 }
 
-func (r *Repository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
+func (r *BaseRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	return r.findByRawIDs(ctx, repository.ToRawIDs[T, U](ids), preserveOrder, options...)
 }
 
-func (r *Repository[T, U]) findByRawIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
+func (r *BaseRepository[T, U]) findByRawIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	entities, err := r.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, options...)
 	if err != nil {
 		return nil, err
@@ -109,7 +109,7 @@ func (r *Repository[T, U]) findByRawIDs(ctx context.Context, ids []interface{}, 
 	return entities, nil
 }
 
-func (r *Repository[T, U]) Find(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) ([]U, error) {
+func (r *BaseRepository[T, U]) Find(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) ([]U, error) {
 	findOpt := options.Find().SetProjection(r.projection(opt...))
 	cur, err := r.Collection().Find(ctx, r.where(filter, opt...), findOpt)
 	if err != nil {
@@ -122,24 +122,24 @@ func (r *Repository[T, U]) Find(ctx context.Context, filter interface{}, opt ...
 	return results, nil
 }
 
-func (r *Repository[T, U]) GetAll(ctx context.Context, options ...*repository.QueryOptions) ([]U, error) {
+func (r *BaseRepository[T, U]) GetAll(ctx context.Context, options ...*repository.QueryOptions) ([]U, error) {
 	return r.Find(ctx, bson.M{}, options...)
 }
 
-func (r *Repository[T, U]) prepareInsertEntity(ctx context.Context, entity U) {
+func (r *BaseRepository[T, U]) prepareInsertEntity(ctx context.Context, entity U) {
 	if entity.IsZeroID() {
 		entity.GenerateID()
 	}
 	r.fillTimeStamp(ctx, entity, true)
 }
 
-func (r *Repository[T, U]) Insert(ctx context.Context, entity U) error {
+func (r *BaseRepository[T, U]) Insert(ctx context.Context, entity U) error {
 	r.prepareInsertEntity(ctx, entity)
 	_, err := r.Collection().InsertOne(ctx, entity)
 	return err
 }
 
-func (r *Repository[T, U]) InsertMany(ctx context.Context, entities []U) error {
+func (r *BaseRepository[T, U]) InsertMany(ctx context.Context, entities []U) error {
 	if len(entities) == 0 {
 		return nil
 	}
@@ -152,7 +152,7 @@ func (r *Repository[T, U]) InsertMany(ctx context.Context, entities []U) error {
 	return err
 }
 
-func (r *Repository[T, U]) Update(ctx context.Context, entity U, options ...*repository.QueryOptions) error {
+func (r *BaseRepository[T, U]) Update(ctx context.Context, entity U, options ...*repository.QueryOptions) error {
 	r.fillTimeStamp(ctx, entity, false)
 	result, err := r.Collection().ReplaceOne(ctx, r.where(bson.M{"_id": entity.RawID()}, options...), entity)
 	if err == nil && result.MatchedCount == 0 {
@@ -161,7 +161,7 @@ func (r *Repository[T, U]) Update(ctx context.Context, entity U, options ...*rep
 	return err
 }
 
-func (r *Repository[T, U]) UpdateMany(ctx context.Context, entities []U) error {
+func (r *BaseRepository[T, U]) UpdateMany(ctx context.Context, entities []U) error {
 	switch reflect.TypeOf(entities).Kind() {
 	case reflect.Slice:
 		s := reflect.ValueOf(entities)
@@ -187,7 +187,7 @@ func (r *Repository[T, U]) UpdateMany(ctx context.Context, entities []U) error {
 	}
 }
 
-func (r *Repository[T, U]) UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*repository.QueryOptions) error {
+func (r *BaseRepository[T, U]) UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*repository.QueryOptions) error {
 	result, err := r.Collection().UpdateOne(ctx, r.where(filter, options...), update)
 	if err == nil && result.MatchedCount == 0 {
 		return utils.ErrObjectNotFound
@@ -195,7 +195,7 @@ func (r *Repository[T, U]) UpdateOne(ctx context.Context, filter interface{}, up
 	return err
 }
 
-func (r *Repository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, queryOpt ...*repository.QueryOptions) (U, error) {
+func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, queryOpt ...*repository.QueryOptions) (U, error) {
 	opt := options.FindOneAndUpdate()
 	if returnNewDocument {
 		opt.SetReturnDocument(options.After)
@@ -218,7 +218,7 @@ func (r *Repository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntity U,
 	}
 }
 
-func (r *Repository[T, U]) UpsertOne(ctx context.Context, filter interface{}, update U) error {
+func (r *BaseRepository[T, U]) UpsertOne(ctx context.Context, filter interface{}, update U) error {
 	opts := options.Update().SetUpsert(true)
 	result, err := r.Collection().UpdateOne(ctx, filter, update, opts)
 	if err == nil && result.MatchedCount+result.UpsertedCount == 0 {
@@ -228,7 +228,7 @@ func (r *Repository[T, U]) UpsertOne(ctx context.Context, filter interface{}, up
 }
 
 // Delete removes object by id
-func (r *Repository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
+func (r *BaseRepository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
 	id = repository.ToRawID[T, U](id)
 
 	if options != nil {
@@ -242,7 +242,7 @@ func (r *Repository[T, U]) Delete(ctx context.Context, id interface{}, options .
 }
 
 // Delete removes objects
-func (r *Repository[T, U]) DeleteMany(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) error {
+func (r *BaseRepository[T, U]) DeleteMany(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) error {
 	if options != nil {
 		if !options[0].Archived {
 			_, err := r.Collection().DeleteMany(ctx, filter)
@@ -253,7 +253,7 @@ func (r *Repository[T, U]) DeleteMany(ctx context.Context, filter interface{}, o
 	return err
 }
 
-func (r *Repository[T, U]) fillTimeStamp(ctx context.Context, e repository.IEntityID, fillCreateTime bool) {
+func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.IEntityID, fillCreateTime bool) {
 	if entityTimestamp, ok := e.(IEntityTimeStamp); ok {
 		user, ok := ctx.Value(UserEntryCtxKey).(repository.IEntityID)
 		if !ok {
@@ -281,7 +281,7 @@ func (r *Repository[T, U]) fillTimeStamp(ctx context.Context, e repository.IEnti
 	}
 }
 
-func (r *Repository[T, U]) where(filter interface{}, options ...*repository.QueryOptions) interface{} {
+func (r *BaseRepository[T, U]) where(filter interface{}, options ...*repository.QueryOptions) interface{} {
 	if options != nil {
 		switch filter := filter.(type) {
 		case bson.M:
@@ -308,7 +308,7 @@ func (r *Repository[T, U]) where(filter interface{}, options ...*repository.Quer
 	return filter
 }
 
-func (r *Repository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.Pipeline, entity interface{}) error {
+func (r *BaseRepository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.Pipeline, entity interface{}) error {
 	cursor, err := r.Collection().Aggregate(ctx, pipeline)
 	if err != nil {
 		return err
