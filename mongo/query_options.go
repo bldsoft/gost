@@ -19,6 +19,10 @@ func ParseQueryOptions(q *repository.QueryOptions) bson.M {
 }
 
 func recursiveParse(filter bson.M, t interface{}, prefix string) {
+	if t == nil {
+		return
+	}
+
 	fv := reflect.Indirect(reflect.ValueOf(t))
 	ft := fv.Type()
 
