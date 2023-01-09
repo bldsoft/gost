@@ -163,10 +163,10 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 		return
 	}
 	if !filter.From.IsZero() {
-		where = append(where, sq.GtOrEq{TimestampColumnName: filter.From.Unix()})
+		where = append(where, sq.GtOrEq{TimestampColumnName: filter.From})
 	}
 	if !filter.To.IsZero() {
-		where = append(where, sq.LtOrEq{TimestampColumnName: filter.To.Unix()})
+		where = append(where, sq.LtOrEq{TimestampColumnName: filter.To})
 	}
 	if len(filter.Levels) > 0 {
 		where = append(where, sq.Eq{LevelColumName: filter.Levels})
