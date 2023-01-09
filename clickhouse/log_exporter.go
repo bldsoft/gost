@@ -142,7 +142,6 @@ func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 		return err
 	}
 	defer tx.Rollback()
-
 	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (%s,%s,%s,%s,%s,%s) VALUES (?,?,?,?,?,?)", e.config.TableName,
 		InstanseColumnName, TimestampColumnName, LevelColumName, ReqIDColumnName, MsgColumnName, FieldsColumnName))
 	if err != nil {
@@ -150,8 +149,8 @@ func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 	}
 	defer stmt.Close()
 
-	for _, record := range records {
-		if _, err := stmt.Exec(record.Instance, record.Timestamp, record.Level, record.ReqID, record.Msg, record.Fields); err != nil {
+	for _, r := range records {
+		if _, err := stmt.Exec(r.Instance, time.UnixMilli(r.Timestamp).UnixNano(), r.Level, r.ReqID, r.Msg, r.Fields); err != nil {
 			return err
 		}
 	}
@@ -262,7 +261,7 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 
 	_, err := e.storage.Db.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 			`+InstanseColumnName+` LowCardinality(String),
-			`+TimestampColumnName+` DateTime,
+			`+TimestampColumnName+` DateTime64(3),
 			`+LevelColumName+` Enum8('DEBUG'=0, 'INFO'=1, 'WARN'=2, 'ERROR'=3, 'FATAL'=4, 'PANIC'=5, 'TRACE'=-1),
 			`+ReqIDColumnName+` String,
 			`+MsgColumnName+` String,
@@ -270,7 +269,11 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 	) 
 	ENGINE = %s
 	PARTITION BY toYYYYMM(`+TimestampColumnName+`)
-	TTL `+TimestampColumnName+` + INTERVAL 1 MONTH 
-	ORDER BY (`+strings.Join([]string{TimestampColumnName, InstanseColumnName, ReqIDColumnName}, ",")+`)`, e.config.TableName, engine))
+	TTL `+`toDateTime(`+TimestampColumnName+`) + INTERVAL 1 MONTH 
+	ORDER BY (`+strings.Join([]string{
+		"CAST(" + LevelColumName + ",'Int8')",
+		InstanseColumnName,
+		"toDateTime(" + TimestampColumnName + ")",
+	}, ",")+`)`, e.config.TableName, engine))
 	return err
 }

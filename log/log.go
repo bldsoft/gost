@@ -12,16 +12,17 @@ import (
 	//"github.com/snowzach/rotatefilehook"
 )
 
-//Logger is global log instance
+// Logger is global log instance
 var Logger = ServiceLogger{logger: zerolog.New(os.Stderr)}
 
-//InitLogger initializes log
+// InitLogger initializes log
 func InitLogger(config *Config) {
 	exportWriter := NewExportLogWriter(config.Exporter)
 	initZerolog(config.File, config.Level, config.Color, exportWriter)
 }
 
 func initZerolog(logFile, logLevel string, color bool, exportWriter *ExportLogWriter) {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
 	zerolog.TimestampFieldName = "t"
 	zerolog.LevelFieldName = "l"
 	zerolog.MessageFieldName = "m"
@@ -43,7 +44,7 @@ func initZerolog(logFile, logLevel string, color bool, exportWriter *ExportLogWr
 	}
 }
 
-//SetLogLevel sets global log level
+// SetLogLevel sets global log level
 func SetLogLevel(sLevel string) error {
 	level, err := zerolog.ParseLevel(sLevel)
 	if err == nil {
