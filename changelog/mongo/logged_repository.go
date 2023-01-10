@@ -29,6 +29,10 @@ func NewLoggedRepository[T any, U LoggedEntity[T]](db *mongo.Storage, collection
 	return &LoggedRepository[T, U]{rep, changeLogRep}
 }
 
+func WrapRepository[T any, U LoggedEntity[T]](repo mongo.Repository[T, U], changeLogRepo *ChangeLogRepository) *LoggedRepository[T, U] {
+	return &LoggedRepository[T, U]{repo, changeLogRepo}
+}
+
 func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err error) {
 	rec, err := newRecord(ctx, r.Name(), changelog.Create)
 	if err != nil {
