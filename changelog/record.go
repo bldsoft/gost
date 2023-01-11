@@ -65,7 +65,7 @@ func NewRecord(ctx context.Context, collectionName string, op Operation, entity 
 		rec.UserID = user.StringID()
 	}
 
-	if details, ok := ctx.Value(CtxDetails).(map[string]interface{}); ok {
+	if details, ok := ctx.Value(CtxDetails).(map[string]interface{}); ok && details != nil {
 		rec.Details = details
 	}
 
