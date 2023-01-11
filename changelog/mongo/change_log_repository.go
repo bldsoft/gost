@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/bldsoft/gost/changelog"
@@ -105,7 +106,10 @@ func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, e
 	}
 
 	if len(filter.UserIDs) > 0 {
-		queryFilter[changelog.BsonFieldNameUserID] = bson.M{"$in": filter.UserIDs}
+		queryFilter["$or"] = []bson.M{
+			{changelog.BsonFieldNameUserID: bson.M{"$in": filter.UserIDs}},
+			{fmt.Sprintf("%s.%s", changelog.BsonFieldDetails, changelog.BsonFieldNameExternalUserID): bson.M{"$in": filter.UserIDs}},
+		}
 	}
 	if len(filter.Operations) > 0 {
 		queryFilter[changelog.BsonFieldNameOperation] = bson.M{"$in": filter.Operations}
