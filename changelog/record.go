@@ -3,7 +3,6 @@ package changelog
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/bldsoft/gost/auth"
@@ -66,11 +65,9 @@ func NewRecord(ctx context.Context, collectionName string, op Operation, entity 
 		rec.UserID = user.StringID()
 	}
 
-	details, ok := ctx.Value(CtxDetails).(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("invalid details type %T: ", details)
+	if details, ok := ctx.Value(CtxDetails).(map[string]interface{}); ok {
+		rec.Details = details
 	}
-	rec.Details = details
 
 	if entity != nil {
 		rec.SetData(entity)
@@ -91,20 +88,12 @@ func (r *Record) SetData(entity interface{}) error {
 
 func AddContextDetail(ctx context.Context, entry string, value interface{}) context.Context {
 	detail, ok := ctx.Value(CtxDetails).(map[string]interface{})
-	if !ok {
-		panic(fmt.Sprintf("invalid type: %T\n", detail))
-	}
-
-	if detail == nil {
+	if !ok || detail == nil {
 		detail = map[string]interface{}{}
 		ctx = context.WithValue(ctx, CtxDetails, detail)
 	}
 
 	detail[entry] = value
-
-	// TODO
-	// Uncomment if doens't work, remove otherwise
-	//ctx = context.WithValue(ctx, CtxDetails, detail)
 
 	return ctx
 }
