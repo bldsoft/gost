@@ -3,6 +3,7 @@ package changelog
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/bldsoft/gost/auth"
@@ -16,6 +17,9 @@ const BsonFieldNameEntity = "entity"
 const BsonFieldNameEntityID = "entityID"
 const BsonFieldNameOperation = "operation"
 const BsonFieldNameData = "data"
+const BsonFieldDetails = "details"
+
+var CtxDetails struct{}
 
 type Operation int
 
@@ -39,13 +43,14 @@ func (op Operation) String() string {
 }
 
 type Record struct {
-	UserID    string    `json:"userID,omitempty" bson:"userID,omitempty"`
-	Timestamp int64     `json:"timestamp" bson:"timestamp"`
-	Operation Operation `json:"operation" bson:"operation"`
-	Entity    string    `json:"entity" bson:"entity"`
-	EntityID  string    `json:"entityID" bson:"entityID"`
-	RequestID string    `json:"requestID" bson:"requestID"`
-	Data      string    `json:"data" bson:"data"`
+	UserID    string                 `json:"userID,omitempty" bson:"userID,omitempty"`
+	Timestamp int64                  `json:"timestamp" bson:"timestamp"`
+	Operation Operation              `json:"operation" bson:"operation"`
+	Entity    string                 `json:"entity" bson:"entity"`
+	EntityID  string                 `json:"entityID" bson:"entityID"`
+	RequestID string                 `json:"requestID" bson:"requestID"`
+	Data      string                 `json:"data" bson:"data"`
+	Details   map[string]interface{} `json:"detail,omitempty" bson:"details,omitempty"`
 }
 
 func NewRecord(ctx context.Context, collectionName string, op Operation, entity repository.IEntityID) (*Record, error) {
@@ -60,6 +65,12 @@ func NewRecord(ctx context.Context, collectionName string, op Operation, entity 
 	if ok {
 		rec.UserID = user.StringID()
 	}
+
+	details, ok := ctx.Value(CtxDetails).(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid details type %T: ", details)
+	}
+	rec.Details = details
 
 	if entity != nil {
 		rec.SetData(entity)
@@ -76,4 +87,24 @@ func (r *Record) SetData(entity interface{}) error {
 	}
 	r.Data = string(data)
 	return nil
+}
+
+func AddContextDetail(ctx context.Context, entry string, value interface{}) context.Context {
+	detail, ok := ctx.Value(CtxDetails).(map[string]interface{})
+	if !ok {
+		panic(fmt.Sprintf("invalid type: %T\n", detail))
+	}
+
+	if detail == nil {
+		detail = map[string]interface{}{}
+		ctx = context.WithValue(ctx, CtxDetails, detail)
+	}
+
+	detail[entry] = value
+
+	// TODO
+	// Uncomment if doens't work, remove otherwise
+	//ctx = context.WithValue(ctx, CtxDetails, detail)
+
+	return ctx
 }
