@@ -106,11 +106,9 @@ func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, e
 	}
 
 	if len(filter.UserIDs) > 0 {
-		queryFilter["$or"] = []bson.M{
-			{changelog.BsonFieldNameUserID: bson.M{"$in": filter.UserIDs}},
-			{fmt.Sprintf("%s.%s", changelog.BsonFieldDetails, changelog.BsonFieldNameExternalUserID): bson.M{"$in": filter.UserIDs}},
-		}
+		queryFilter[changelog.BsonFieldNameUserID] = bson.M{"$in": filter.UserIDs}
 	}
+
 	if len(filter.Operations) > 0 {
 		queryFilter[changelog.BsonFieldNameOperation] = bson.M{"$in": filter.Operations}
 	}
@@ -128,6 +126,13 @@ func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, e
 	}
 	if len(timestampFilter) > 0 {
 		queryFilter[changelog.BsonFieldNameTimestamp] = timestampFilter
+	}
+
+	if l := len(filter.Details); l > 0 && l%2 == 0 {
+		for i := 0; i < l; i += 2 {
+			k := fmt.Sprintf("%s.%s", changelog.BsonFieldDetails, filter.Details[i])
+			queryFilter[k] = filter.Details[i+1]
+		}
 	}
 	return queryFilter, nil
 }

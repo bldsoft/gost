@@ -34,6 +34,7 @@ type Filter struct {
 	Search     *string     `json:"search,omitempty" schema:"search,omitempty"`
 	From       *int        `json:"from,omitempty" schema:"from,omitempty"`
 	To         *int        `json:"to,omitempty" schema:"to,omitempty"`
+	Details    []string    `json:"details,omitempty" schema:"details,omitempty"`
 }
 
 type Sort struct {

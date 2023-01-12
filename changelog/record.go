@@ -18,7 +18,6 @@ const BsonFieldNameOperation = "operation"
 const BsonFieldNameData = "data"
 
 const BsonFieldDetails = "details"
-const BsonFieldNameExternalUserID = "externalUserID"
 
 var CtxDetails struct{}
 
