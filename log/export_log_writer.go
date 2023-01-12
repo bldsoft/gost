@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/bldsoft/gost/config/feature"
 	"github.com/hashicorp/go-multierror"
@@ -89,12 +88,12 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 		delete(event, ReqIdFieldName)
 	}
 
-	if ts, ok := event[zerolog.TimestampFieldName].(string); ok {
-		tt, err := time.Parse(zerolog.TimeFieldFormat, ts)
+	if ts, ok := event[zerolog.TimestampFieldName].(json.Number); ok {
+		tt, err := ts.Int64()
 		if err != nil {
 			return nil, err
 		}
-		rec.Timestamp = tt.Unix()
+		rec.Timestamp = tt
 		delete(event, zerolog.TimestampFieldName)
 	}
 
