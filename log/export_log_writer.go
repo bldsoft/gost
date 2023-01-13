@@ -45,7 +45,7 @@ type ExportLogWriter struct {
 }
 
 func NewExportLogWriter(cfg LogExporterConfig) *ExportLogWriter {
-	return &ExportLogWriter{cfg: cfg, instanceFieldValue: fmt.Sprintf("%s (%s)", cfg.Instance, version.LongVersion())}
+	return &ExportLogWriter{cfg: cfg, instanceFieldValue: fmt.Sprintf("%s / %s", cfg.Instance, version.LongVersion())}
 }
 
 func (w *ExportLogWriter) Append(exporter LogExporter, isOn *feature.Bool) {
