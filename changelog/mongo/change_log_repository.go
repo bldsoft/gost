@@ -129,11 +129,14 @@ func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, e
 	}
 
 	if l := len(filter.Details); l > 0 && l%2 == 0 {
+		or := bson.D{}
 		for i := 0; i < l; i += 2 {
 			k := fmt.Sprintf("%s.%s", changelog.BsonFieldDetails, filter.Details[i])
-			queryFilter[k] = filter.Details[i+1]
+			or = append(or, bson.E{Key: k, Value: filter.Details[i+1]})
 		}
+		queryFilter["$or"] = or
 	}
+
 	return queryFilter, nil
 }
 
