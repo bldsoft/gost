@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/bldsoft/gost/changelog"
@@ -128,13 +127,8 @@ func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, e
 		queryFilter[changelog.BsonFieldNameTimestamp] = timestampFilter
 	}
 
-	if l := len(filter.Details); l > 0 && l%2 == 0 {
-		or := bson.D{}
-		for i := 0; i < l; i += 2 {
-			k := fmt.Sprintf("%s.%s", changelog.BsonFieldDetails, filter.Details[i])
-			or = append(or, bson.E{Key: k, Value: filter.Details[i+1]})
-		}
-		queryFilter["$or"] = or
+	if filter.Details != nil {
+		filter.Details.Filter(queryFilter)
 	}
 
 	return queryFilter, nil

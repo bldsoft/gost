@@ -34,7 +34,7 @@ type Filter struct {
 	Search     *string     `json:"search,omitempty" schema:"search,omitempty"`
 	From       *int        `json:"from,omitempty" schema:"from,omitempty"`
 	To         *int        `json:"to,omitempty" schema:"to,omitempty"`
-	Details    []string    `json:"details,omitempty" schema:"details,omitempty"`
+	Details    IFilter
 }
 
 type Sort struct {
@@ -64,4 +64,8 @@ type IChangeLogService interface {
 	GetRecords(ctx context.Context, params *RecordsParams) (*Records, error)
 	FindByID(ctx context.Context, id string) (*Record, error)
 	FindByIDs(ctx context.Context, ids []string, preserveOrder bool) (res []*Record, err error)
+}
+
+type IFilter interface {
+	Filter(f interface{})
 }

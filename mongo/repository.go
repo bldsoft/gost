@@ -300,7 +300,7 @@ func (r *BaseRepository[T, U]) where(filter interface{}, options ...*repository.
 				filter[field] = cond
 			}
 
-			recursiveParse(filter, options[0].Filter, "")
+			RecursiveParse(filter, options[0].Filter, "")
 		default:
 		}
 	}
