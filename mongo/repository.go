@@ -65,6 +65,30 @@ func (r *BaseRepository[T, U]) projection(opt ...*repository.QueryOptions) inter
 	return nil
 }
 
+func (r *BaseRepository[T, U]) sort(opt ...*repository.QueryOptions) interface{} {
+	if len(opt) != 0 && opt[0].Sort != nil {
+		return opt[0].Sort
+	}
+
+	return bson.D{}
+}
+
+func (r *BaseRepository[T, U]) offset(opt ...*repository.QueryOptions) int64 {
+	if len(opt) != 0 {
+		return opt[0].Skip
+	}
+
+	return 0
+}
+
+func (r *BaseRepository[T, U]) limit(opt ...*repository.QueryOptions) *int64 {
+	if len(opt) != 0 {
+		return &opt[0].Limit
+	}
+
+	return nil
+}
+
 func (r *BaseRepository[T, U]) FindOne(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (U, error) {
 	var result T
 	findOneOpt := options.FindOne().SetProjection(r.projection(opt...))
@@ -110,7 +134,14 @@ func (r *BaseRepository[T, U]) findByRawIDs(ctx context.Context, ids []interface
 }
 
 func (r *BaseRepository[T, U]) Find(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) ([]U, error) {
-	findOpt := options.Find().SetProjection(r.projection(opt...))
+	findOpt := options.Find().SetProjection(r.projection(opt...)).
+		SetSort(r.sort(opt...)).
+		SetSkip(r.offset(opt...))
+	if limit := r.limit(opt...); limit != nil {
+		findOpt.SetLimit(*limit)
+
+	}
+
 	cur, err := r.Collection().Find(ctx, r.where(filter, opt...), findOpt)
 	if err != nil {
 		return nil, err
@@ -296,7 +327,9 @@ func (r *BaseRepository[T, U]) where(filter interface{}, options ...*repository.
 				}
 			}
 
-			if _, ok := filter[field]; !ok {
+			if f, ok := options[0].Filter.(IFilter); ok {
+				f.Filter(filter)
+			} else if _, ok := filter[field]; !ok {
 				filter[field] = cond
 			}
 

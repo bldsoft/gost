@@ -31,3 +31,7 @@ type Repository[T any, U repository.IEntityIDPtr[T]] interface {
 
 	AggregateOne(ctx context.Context, pipeline mongo.Pipeline, entity interface{}) error
 }
+
+type IFilter interface {
+	Filter(f interface{})
+}

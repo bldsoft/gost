@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	driver "go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type ChangeLogRepository struct {
@@ -60,26 +59,30 @@ func (r *ChangeLogRepository) FindByIDs(ctx context.Context, ids []string, prese
 	return res, nil
 }
 
-func (r *ChangeLogRepository) GetRecords(ctx context.Context, params *changelog.RecordsParams) (*changelog.Records, error) {
+func (r *ChangeLogRepository) GetRecords(ctx context.Context, params *changelog.RecordsParams, options ...*repository.QueryOptions) (*changelog.Records, error) {
 	filter, err := r.recordsFilter(params.Filter)
 	if err != nil {
 		return nil, err
 	}
 
-	opt := options.Find().
-		SetSort(r.recordsSort(params.Sort)).
-		SetSkip(params.Offset).
-		SetLimit(params.Limit)
-
 	var res changelog.Records
 
-	cursor, err := r.rep.Collection().Find(ctx, filter, opt)
+	if len(options) == 0 {
+		options = append(options, &repository.QueryOptions{})
+	}
+	options[0].Sort = r.recordsSort(params.Sort)
+	options[0].Skip = params.Offset
+	options[0].Limit = params.Limit
+
+	records, err := r.rep.Find(ctx, filter, options...)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
-	if err := cursor.All(ctx, &res.Records); err != nil {
-		return nil, err
+	if len(records) != 0 {
+		res.Records = make([]changelog.Record, len(records))
+		for i, r := range records {
+			res.Records[i] = *r.Record
+		}
 	}
 
 	res.TotalCount, err = r.rep.Collection().CountDocuments(ctx, filter)
@@ -125,10 +128,6 @@ func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, e
 	}
 	if len(timestampFilter) > 0 {
 		queryFilter[changelog.BsonFieldNameTimestamp] = timestampFilter
-	}
-
-	if filter.Details != nil {
-		filter.Details.Filter(queryFilter)
 	}
 
 	return queryFilter, nil

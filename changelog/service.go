@@ -2,6 +2,8 @@ package changelog
 
 import (
 	"context"
+
+	"github.com/bldsoft/gost/repository"
 )
 
 type Service struct {
@@ -20,6 +22,6 @@ func (s *Service) FindByIDs(ctx context.Context, ids []string, preserveOrder boo
 	return s.rep.FindByIDs(ctx, ids, preserveOrder)
 }
 
-func (s *Service) GetRecords(ctx context.Context, params *RecordsParams) (*Records, error) {
-	return s.rep.GetRecords(ctx, params)
+func (s *Service) GetRecords(ctx context.Context, params *RecordsParams, options ...*repository.QueryOptions) (*Records, error) {
+	return s.rep.GetRecords(ctx, params, options...)
 }
