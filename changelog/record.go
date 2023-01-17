@@ -88,6 +88,9 @@ func (r *Record) SetData(entity interface{}) error {
 }
 
 func AddContextDetail(ctx context.Context, entry string, value interface{}) context.Context {
+	if value == nil {
+		return ctx
+	}
 	detail, ok := ctx.Value(CtxDetails).(map[string]interface{})
 	if !ok || detail == nil {
 		detail = map[string]interface{}{}
