@@ -50,7 +50,7 @@ type Record struct {
 	EntityID  string                 `json:"entityID" bson:"entityID"`
 	RequestID string                 `json:"requestID" bson:"requestID"`
 	Data      string                 `json:"data" bson:"data"`
-	Details   map[string]interface{} `json:"detail,omitempty" bson:"details,omitempty"`
+	Details   map[string]interface{} `json:"details,omitempty" bson:"details,omitempty"`
 }
 
 func NewRecord(ctx context.Context, collectionName string, op Operation, entity repository.IEntityID) (*Record, error) {
