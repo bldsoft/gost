@@ -69,6 +69,9 @@ func (h cacheChangeHandler[T, U]) cacheKey(id string) string {
 
 func (h cacheChangeHandler[T, U]) CacheSet(entities ...U) error {
 	for _, e := range entities {
+		if e == nil {
+			continue
+		}
 		data, err := h.cacheMarshal(e)
 		if err != nil {
 			return err
