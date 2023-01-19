@@ -39,7 +39,7 @@ func (h *cacheChangeHandler[T, U]) OnChange(upd *UpdateEvent[T, U]) {
 			log.Logger.ErrorWithFields(log.Fields{"err": err, "entity": upd.Entity}, "failed to update cache value")
 		}
 	case Delete:
-		if err := h.CacheDelete(upd.Entity); err != nil {
+		if err := h.CacheDelete(upd.Entity.StringID()); err != nil {
 			log.Logger.DebugWithFields(log.Fields{"err": err, "cache key": h.cacheKey(upd.Entity.StringID())}, "failed to delete cache value")
 		}
 	}
@@ -83,8 +83,8 @@ func (h cacheChangeHandler[T, U]) CacheSet(entities ...U) error {
 	return nil
 }
 
-func (h cacheChangeHandler[T, U]) CacheDelete(e U) error {
-	return h.cache.Delete(h.cacheKey(e.StringID()))
+func (h cacheChangeHandler[T, U]) CacheDelete(id string) error {
+	return h.cache.Delete(h.cacheKey(id))
 }
 
 func (h cacheChangeHandler[T, U]) CacheGet(id string) (U, error) {
@@ -196,8 +196,7 @@ func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{
 }
 
 func (r *CachedRepository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
-	repository.ToStringID[T, U](id)
-	if err := r.cache.cache.Delete(r.cache.cacheKey(id.(string))); err != nil {
+	if err := r.cache.CacheDelete(id.(string)); err != nil {
 		log.Logger.DebugWithFields(log.Fields{"err": err, "cache key": id}, "failed to delete cache value")
 	}
 
