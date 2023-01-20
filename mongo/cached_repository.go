@@ -196,7 +196,8 @@ func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{
 }
 
 func (r *CachedRepository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
-	if err := r.cache.CacheDelete(id.(string)); err != nil {
+	strID := repository.ToStringID[T, U](id)
+	if err := r.cache.CacheDelete(strID); err != nil {
 		log.Logger.DebugWithFields(log.Fields{"err": err, "cache key": id}, "failed to delete cache value")
 	}
 
