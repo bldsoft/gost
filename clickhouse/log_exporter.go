@@ -180,6 +180,10 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 	if filter.RequestID != nil {
 		where = append(where, sq.Eq{ReqIDColumnName: filter.RequestID})
 	}
+
+	if len(filter.Instances) > 0 {
+		where = append(where, sq.Eq{InstanseColumnName: filter.Instances})
+	}
 	return where
 }
 
@@ -243,6 +247,27 @@ func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams)
 	logs.TotalCount, err = e.countLogs(ctx, params)
 
 	return &logs, err
+}
+
+func (e *ClickHouseLogExporter) Instances(ctx context.Context, filter log.Filter) ([]string, error) {
+	query := sq.Select("distinct " + InstanseColumnName).
+		From(e.config.TableName).
+		Where(e.filter(&filter))
+	rows, err := query.RunWith(e.storage.Db).Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var instances []string
+	for rows.Next() {
+		var instance string
+		if err := rows.Scan(&instance); err != nil {
+			return nil, err
+		}
+		instances = append(instances, instance)
+	}
+	return instances, nil
 }
 
 func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {

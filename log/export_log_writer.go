@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/bldsoft/gost/config/feature"
+	"github.com/bldsoft/gost/version"
 	"github.com/hashicorp/go-multierror"
 	"github.com/rs/zerolog"
 )
@@ -39,10 +40,12 @@ type ExportLogWriter struct {
 
 	exporters        []LogExporter
 	exportersToggles []*feature.Bool
+
+	instanceFieldValue string
 }
 
 func NewExportLogWriter(cfg LogExporterConfig) *ExportLogWriter {
-	return &ExportLogWriter{cfg: cfg}
+	return &ExportLogWriter{cfg: cfg, instanceFieldValue: fmt.Sprintf("%s / %s", cfg.Instance, version.LongVersion())}
 }
 
 func (w *ExportLogWriter) Append(exporter LogExporter, isOn *feature.Bool) {
@@ -69,7 +72,7 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 	}
 
 	rec := LogRecord{
-		Instance: w.cfg.Instance,
+		Instance: w.instanceFieldValue,
 	}
 
 	if l, ok := event[zerolog.LevelFieldName].(string); ok {
