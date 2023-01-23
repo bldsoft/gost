@@ -24,6 +24,7 @@ type LogExporterConfig struct {
 type LogExporter interface {
 	WriteLogRecord(r *LogRecord) error
 	Logs(ctx context.Context, params LogsParams) (*Logs, error)
+	Instances(ctx context.Context, filter Filter) ([]string, error)
 }
 
 type LogsParams struct {
@@ -34,6 +35,7 @@ type LogsParams struct {
 }
 
 type Filter struct {
+	Instances []string  `json:"instances,omitempty" schema:"instances,omitempty"`
 	Search    *string   `json:"search,omitempty" schema:"search,omitempty"`
 	From      time.Time `json:"from" schema:"from,omitempty"`
 	To        time.Time `json:"to" schema:"to,omitempty"`

@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/bldsoft/gost/config/feature"
+	"github.com/bldsoft/gost/version"
 	"github.com/hashicorp/go-multierror"
 	"github.com/rs/zerolog"
 )
@@ -40,10 +40,12 @@ type ExportLogWriter struct {
 
 	exporters        []LogExporter
 	exportersToggles []*feature.Bool
+
+	instanceFieldValue string
 }
 
 func NewExportLogWriter(cfg LogExporterConfig) *ExportLogWriter {
-	return &ExportLogWriter{cfg: cfg}
+	return &ExportLogWriter{cfg: cfg, instanceFieldValue: fmt.Sprintf("%s / %s", cfg.Instance, version.LongVersion())}
 }
 
 func (w *ExportLogWriter) Append(exporter LogExporter, isOn *feature.Bool) {
@@ -70,7 +72,7 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 	}
 
 	rec := LogRecord{
-		Instance: w.cfg.Instance,
+		Instance: w.instanceFieldValue,
 	}
 
 	if l, ok := event[zerolog.LevelFieldName].(string); ok {
@@ -89,12 +91,12 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 		delete(event, ReqIdFieldName)
 	}
 
-	if ts, ok := event[zerolog.TimestampFieldName].(string); ok {
-		tt, err := time.Parse(zerolog.TimeFieldFormat, ts)
+	if ts, ok := event[zerolog.TimestampFieldName].(json.Number); ok {
+		tt, err := ts.Int64()
 		if err != nil {
 			return nil, err
 		}
-		rec.Timestamp = tt.Unix()
+		rec.Timestamp = tt
 		delete(event, zerolog.TimestampFieldName)
 	}
 
