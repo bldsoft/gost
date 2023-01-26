@@ -13,7 +13,7 @@ import (
 
 // MongoRepository implements IFeatureRepository interface
 type MongoRepository struct {
-	rep         *mongo.Repository[Feature, *Feature]
+	rep         mongo.Repository[Feature, *Feature]
 	serviceName string
 }
 

@@ -18,7 +18,7 @@ type LoggedEntity[T any] interface {
 	repository.IEntityID
 }
 type LoggedRepository[T any, U LoggedEntity[T]] struct {
-	*mongo.Repository[T, U]
+	mongo.Repository[T, U]
 	changeLogRep *ChangeLogRepository
 }
 
@@ -27,6 +27,10 @@ func NewLoggedRepository[T any, U LoggedEntity[T]](db *mongo.Storage, collection
 	db.Db.CreateCollection(context.Background(), collectionName)
 
 	return &LoggedRepository[T, U]{rep, changeLogRep}
+}
+
+func WrapRepository[T any, U LoggedEntity[T]](repo mongo.Repository[T, U], changeLogRepo *ChangeLogRepository) *LoggedRepository[T, U] {
+	return &LoggedRepository[T, U]{repo, changeLogRepo}
 }
 
 func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err error) {

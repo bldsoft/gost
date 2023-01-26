@@ -15,7 +15,7 @@ import (
 )
 
 type ChangeLogRepository struct {
-	rep *mongo.Repository[record, *record]
+	rep mongo.Repository[record, *record]
 }
 
 func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
@@ -107,6 +107,7 @@ func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, e
 	if len(filter.UserIDs) > 0 {
 		queryFilter[changelog.BsonFieldNameUserID] = bson.M{"$in": filter.UserIDs}
 	}
+
 	if len(filter.Operations) > 0 {
 		queryFilter[changelog.BsonFieldNameOperation] = bson.M{"$in": filter.Operations}
 	}
@@ -125,6 +126,11 @@ func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, e
 	if len(timestampFilter) > 0 {
 		queryFilter[changelog.BsonFieldNameTimestamp] = timestampFilter
 	}
+
+	if filter.Details != nil {
+		filter.Details.Filter(queryFilter)
+	}
+
 	return queryFilter, nil
 }
 

@@ -27,7 +27,7 @@ type WatchedRepositoryOptions struct {
 
 // WatchedRepository is a helper wrapper for Repository, that allows you to monitor changes via Watcher
 type WatchedRepository[T any, U repository.IEntityIDPtr[T]] struct {
-	*Repository[T, U]
+	Repository[T, U]
 	Watcher    *Watcher
 	handler    ChangeHandler[T, U]
 	needWarmUp bool
@@ -61,9 +61,9 @@ func (r *WatchedRepository[T, U]) init() {
 
 	if r.needWarmUp {
 		if err := r.warmUp(context.Background()); err != nil {
-			log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.collectionName}, "Failed to warm up")
+			log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.Name()}, "Failed to warm up")
 		} else {
-			log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.collectionName}, "Warmed up")
+			log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.Name()}, "Warmed up")
 		}
 	}
 

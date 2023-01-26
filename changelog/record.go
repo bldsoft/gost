@@ -17,6 +17,10 @@ const BsonFieldNameEntityID = "entityID"
 const BsonFieldNameOperation = "operation"
 const BsonFieldNameData = "data"
 
+const BsonFieldDetails = "details"
+
+var CtxDetails struct{}
+
 type Operation int
 
 const (
@@ -39,13 +43,14 @@ func (op Operation) String() string {
 }
 
 type Record struct {
-	UserID    string    `json:"userID,omitempty" bson:"userID,omitempty"`
-	Timestamp int64     `json:"timestamp" bson:"timestamp"`
-	Operation Operation `json:"operation" bson:"operation"`
-	Entity    string    `json:"entity" bson:"entity"`
-	EntityID  string    `json:"entityID" bson:"entityID"`
-	RequestID string    `json:"requestID" bson:"requestID"`
-	Data      string    `json:"data" bson:"data"`
+	UserID    string                 `json:"userID,omitempty" bson:"userID,omitempty"`
+	Timestamp int64                  `json:"timestamp" bson:"timestamp"`
+	Operation Operation              `json:"operation" bson:"operation"`
+	Entity    string                 `json:"entity" bson:"entity"`
+	EntityID  string                 `json:"entityID" bson:"entityID"`
+	RequestID string                 `json:"requestID" bson:"requestID"`
+	Data      string                 `json:"data" bson:"data"`
+	Details   map[string]interface{} `json:"details,omitempty" bson:"details,omitempty"`
 }
 
 func NewRecord(ctx context.Context, collectionName string, op Operation, entity repository.IEntityID) (*Record, error) {
@@ -59,6 +64,10 @@ func NewRecord(ctx context.Context, collectionName string, op Operation, entity 
 	user, ok := auth.UserFromContext(ctx).(repository.IEntityID)
 	if ok {
 		rec.UserID = user.StringID()
+	}
+
+	if details, ok := ctx.Value(CtxDetails).(map[string]interface{}); ok && details != nil {
+		rec.Details = details
 	}
 
 	if entity != nil {
@@ -76,4 +85,19 @@ func (r *Record) SetData(entity interface{}) error {
 	}
 	r.Data = string(data)
 	return nil
+}
+
+func AddContextDetail(ctx context.Context, entry string, value interface{}) context.Context {
+	if value == nil {
+		return ctx
+	}
+	detail, ok := ctx.Value(CtxDetails).(map[string]interface{})
+	if !ok || detail == nil {
+		detail = map[string]interface{}{}
+		ctx = context.WithValue(ctx, CtxDetails, detail)
+	}
+
+	detail[entry] = value
+
+	return ctx
 }

@@ -39,8 +39,8 @@ func (h *cacheChangeHandler[T, U]) OnChange(upd *UpdateEvent[T, U]) {
 			log.Logger.ErrorWithFields(log.Fields{"err": err, "entity": upd.Entity}, "failed to update cache value")
 		}
 	case Delete:
-		if err := h.CacheDelete(upd.Entity); err != nil {
-			log.Logger.ErrorWithFields(log.Fields{"err": err, "cache key": h.cacheKey(upd.Entity.StringID())}, "failed to delete cache value")
+		if err := h.CacheDelete(upd.Entity.StringID()); err != nil {
+			log.Logger.DebugWithFields(log.Fields{"err": err, "cache key": h.cacheKey(upd.Entity.StringID())}, "failed to delete cache value")
 		}
 	}
 }
@@ -69,6 +69,9 @@ func (h cacheChangeHandler[T, U]) cacheKey(id string) string {
 
 func (h cacheChangeHandler[T, U]) CacheSet(entities ...U) error {
 	for _, e := range entities {
+		if e == nil {
+			continue
+		}
 		data, err := h.cacheMarshal(e)
 		if err != nil {
 			return err
@@ -80,8 +83,8 @@ func (h cacheChangeHandler[T, U]) CacheSet(entities ...U) error {
 	return nil
 }
 
-func (h cacheChangeHandler[T, U]) CacheDelete(e U) error {
-	return h.cache.Delete(h.cacheKey(e.StringID()))
+func (h cacheChangeHandler[T, U]) CacheDelete(id string) error {
+	return h.cache.Delete(h.cacheKey(id))
 }
 
 func (h cacheChangeHandler[T, U]) CacheGet(id string) (U, error) {
@@ -121,7 +124,7 @@ func (r *CachedRepository[T, U]) cacheFindByID(ctx context.Context, id string, o
 	strID := repository.ToStringID[T, U](id)
 	e, err := r.cache.CacheGet(strID)
 	if err != nil {
-		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.collectionName, "id": strID}, "failed to get entity from cache")
+		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.Name(), "id": strID}, "failed to get entity from cache")
 	}
 	return e
 }
@@ -140,7 +143,7 @@ func (r *CachedRepository[T, U]) cacheFindByIDs(ctx context.Context, ids []strin
 
 func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
 	if e := r.cacheFindByID(ctx, repository.ToStringID[T, U](id), options...); e != nil {
-		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.collectionName}, "cache hit")
+		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.Name()}, "cache hit")
 		return e, nil
 	}
 
@@ -158,7 +161,7 @@ func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, o
 
 func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, ids, options...); cachedRes != nil {
-		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.collectionName}, "cache hit")
+		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.Name()}, "cache hit")
 		return cachedRes, nil
 	}
 
@@ -176,7 +179,7 @@ func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []stri
 
 func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, repository.ToStringIDs[T, U](ids), options...); cachedRes != nil {
-		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.collectionName}, "cache hit")
+		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Repository.Name()}, "cache hit")
 		return cachedRes, nil
 	}
 
@@ -190,4 +193,13 @@ func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{
 	}
 
 	return res, nil
+}
+
+func (r *CachedRepository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
+	strID := repository.ToStringID[T, U](id)
+	if err := r.cache.CacheDelete(strID); err != nil {
+		log.Logger.DebugWithFields(log.Fields{"err": err, "cache key": id}, "failed to delete cache value")
+	}
+
+	return r.Repository.Delete(ctx, id, options...)
 }
