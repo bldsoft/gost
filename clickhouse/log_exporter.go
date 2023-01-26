@@ -178,7 +178,7 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 		})
 	}
 	if filter.RequestID != nil {
-		where = append(where, sq.Eq{ReqIDColumnName: filter.RequestID})
+		where = append(where, sq.Like{ReqIDColumnName: fmt.Sprintf("%%%s%%", *filter.RequestID)})
 	}
 
 	if len(filter.Instances) > 0 {
@@ -268,6 +268,32 @@ func (e *ClickHouseLogExporter) Instances(ctx context.Context, filter log.Filter
 		instances = append(instances, instance)
 	}
 	return instances, nil
+}
+
+func (e *ClickHouseLogExporter) RequestIDs(ctx context.Context, filter log.Filter, limit *int) ([]string, error) {
+	query := sq.Select("distinct " + ReqIDColumnName).
+		From(e.config.TableName).
+		Where(e.filter(&filter)).
+		Where(sq.NotEq{ReqIDColumnName: ""})
+
+	if limit != nil {
+		query = query.Limit(uint64(*limit))
+	}
+	rows, err := query.RunWith(e.storage.Db).Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var requestIDs []string
+	for rows.Next() {
+		var requestID string
+		if err := rows.Scan(&requestID); err != nil {
+			return nil, err
+		}
+		requestIDs = append(requestIDs, requestID)
+	}
+	return requestIDs, nil
 }
 
 func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
