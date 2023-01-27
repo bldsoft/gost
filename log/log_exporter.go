@@ -25,7 +25,7 @@ type LogExporter interface {
 	WriteLogRecord(r *LogRecord) error
 	Logs(ctx context.Context, params LogsParams) (*Logs, error)
 	Instances(ctx context.Context, filter Filter) ([]string, error)
-	RequestIDs(ctx context.Context, filter Filter, limit *int) ([]string, error)
+	RequestIDs(ctx context.Context, filter Filter, limit *int) ([]string, int64, error)
 }
 
 type LogsParams struct {

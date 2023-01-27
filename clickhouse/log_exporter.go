@@ -9,6 +9,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/bldsoft/gost/log"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -270,30 +271,50 @@ func (e *ClickHouseLogExporter) Instances(ctx context.Context, filter log.Filter
 	return instances, nil
 }
 
-func (e *ClickHouseLogExporter) RequestIDs(ctx context.Context, filter log.Filter, limit *int) ([]string, error) {
-	query := sq.Select("distinct " + ReqIDColumnName).
-		From(e.config.TableName).
-		Where(e.filter(&filter)).
-		Where(sq.NotEq{ReqIDColumnName: ""})
-
-	if limit != nil {
-		query = query.Limit(uint64(*limit))
-	}
-	rows, err := query.RunWith(e.storage.Db).Query()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
+func (e *ClickHouseLogExporter) RequestIDs(ctx context.Context, filter log.Filter, limit *int) ([]string, int64, error) {
+	g := new(errgroup.Group)
 	var requestIDs []string
-	for rows.Next() {
-		var requestID string
-		if err := rows.Scan(&requestID); err != nil {
-			return nil, err
+	var count int64
+	g.Go(func() error {
+		query := sq.Select("distinct " + ReqIDColumnName).
+			From(e.config.TableName).
+			Where(e.filter(&filter)).
+			Where(sq.NotEq{ReqIDColumnName: ""})
+
+		if limit != nil {
+			query = query.Limit(uint64(*limit))
 		}
-		requestIDs = append(requestIDs, requestID)
+		rows, err := query.RunWith(e.storage.Db).Query()
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var requestID string
+			if err := rows.Scan(&requestID); err != nil {
+				return err
+			}
+			requestIDs = append(requestIDs, requestID)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		query := sq.Select("count(distinct " + ReqIDColumnName + ")").
+			From(e.config.TableName).
+			Where(e.filter(&filter)).
+			Where(sq.NotEq{ReqIDColumnName: ""})
+
+		row := query.RunWith(e.storage.Db).QueryRowContext(ctx)
+		if err := row.Scan(&count); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err := g.Wait(); err != nil {
+		return nil, 0, err
 	}
-	return requestIDs, nil
+	return requestIDs, count, nil
 }
 
 func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
