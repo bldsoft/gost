@@ -25,6 +25,7 @@ type IRequestInfo interface {
 type RequestInfo struct {
 	RequestMethod RequestMethodType
 	Path          string
+	Query         string
 	ClientIp      string
 	UserAgent     string
 	ResponseCode  ResponseCodeType
