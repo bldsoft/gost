@@ -10,6 +10,7 @@ const (
 	DELETE
 	OPTIONS
 	HEAD
+	PATCH
 
 	ERROR
 )
@@ -55,6 +56,8 @@ func GetRequestMethodType(type_str string) RequestMethodType {
 		return OPTIONS
 	case "HEAD":
 		return HEAD
+	case "PATCH":
+		return PATCH
 	default:
 		return ERROR
 	}
