@@ -300,7 +300,7 @@ func (e *ClickHouseLogExporter) RequestIDs(ctx context.Context, filter log.Filte
 		return nil
 	})
 	g.Go(func() error {
-		query := sq.Select("count(distinct " + ReqIDColumnName + ")").
+		query := sq.Select("uniq(" + ReqIDColumnName + ")").
 			From(e.config.TableName).
 			Where(e.filter(&filter)).
 			Where(sq.NotEq{ReqIDColumnName: ""})
