@@ -178,8 +178,14 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 			sq.NotEq{fmt.Sprintf(`position(%s, '%s')`, FieldsColumnName, *filter.Search): 0},
 		})
 	}
-	if filter.RequestID != nil {
-		where = append(where, sq.Like{ReqIDColumnName: fmt.Sprintf("%%%s%%", *filter.RequestID)})
+
+	switch len(filter.RequestIDs) {
+	case 0:
+	case 1:
+		where = append(where, sq.Like{ReqIDColumnName: fmt.Sprintf("%%%s%%", filter.RequestIDs[0])})
+	default:
+		match := fmt.Sprintf("match(%s, (?))", ReqIDColumnName)
+		where = append(where, sq.Expr(match, strings.Join(filter.RequestIDs, "|")))
 	}
 
 	if len(filter.Instances) > 0 {

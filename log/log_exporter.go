@@ -36,12 +36,12 @@ type LogsParams struct {
 }
 
 type Filter struct {
-	Instances []string  `json:"instances,omitempty" schema:"instances,omitempty"`
-	Search    *string   `json:"search,omitempty" schema:"search,omitempty"`
-	From      time.Time `json:"from" schema:"from,omitempty"`
-	To        time.Time `json:"to" schema:"to,omitempty"`
-	RequestID *string   `json:"requestID,omitempty" schema:"reqID,omitempty"`
-	Levels    []Level   `json:"levels,omitempty" schema:"levels,omitempty"`
+	Instances  []string  `json:"instances,omitempty" schema:"instances,omitempty"`
+	Search     *string   `json:"search,omitempty" schema:"search,omitempty"`
+	From       time.Time `json:"from" schema:"from,omitempty"`
+	To         time.Time `json:"to" schema:"to,omitempty"`
+	RequestIDs []string  `json:"requestIDs,omitempty" schema:"reqID,omitempty"`
+	Levels     []Level   `json:"levels,omitempty" schema:"levels,omitempty"`
 }
 
 type Sort struct {
