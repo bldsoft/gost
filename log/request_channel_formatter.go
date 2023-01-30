@@ -48,7 +48,8 @@ func (f *ChannelFormatter[T, P]) NewLogEntry(r *http.Request) (middleware.LogEnt
 	baseRequestInfo.RequestTime = time.Now().Unix()
 	baseRequestInfo.Instance = f.instanceName
 	baseRequestInfo.RequestMethod = GetRequestMethodType(r.Method)
-	baseRequestInfo.Path = r.RequestURI
+	baseRequestInfo.Path = r.URL.Path
+	baseRequestInfo.Query = r.URL.RawQuery
 	baseRequestInfo.ClientIp = r.RemoteAddr
 	baseRequestInfo.UserAgent = r.UserAgent()
 	baseRequestInfo.RequestId = reqID

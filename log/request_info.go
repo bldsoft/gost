@@ -10,6 +10,7 @@ const (
 	DELETE
 	OPTIONS
 	HEAD
+	PATCH
 
 	ERROR
 )
@@ -25,6 +26,7 @@ type IRequestInfo interface {
 type RequestInfo struct {
 	RequestMethod RequestMethodType
 	Path          string
+	Query         string
 	ClientIp      string
 	UserAgent     string
 	ResponseCode  ResponseCodeType
@@ -54,6 +56,8 @@ func GetRequestMethodType(type_str string) RequestMethodType {
 		return OPTIONS
 	case "HEAD":
 		return HEAD
+	case "PATCH":
+		return PATCH
 	default:
 		return ERROR
 	}
