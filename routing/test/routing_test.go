@@ -24,13 +24,27 @@ func TestRouting(t *testing.T) {
 		{
 			name: "handle without conditions",
 			args: args{
-				r:    httptest.NewRequest(http.MethodGet, "http://example.com", nil),
-				rule: routing.NewRule(routing.NoCondition, routing.HandleAction),
-				handler: func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusOK)
-				}},
+				r:       httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule:    routing.NewRule(routing.NoCondition, routing.HandleAction),
+				handler: OkHandler,
+			},
 			want: &http.Response{
 				StatusCode: http.StatusOK,
+			},
+		},
+		{
+			name: "redirect with host condition",
+			args: args{
+				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule: routing.NewRule(
+					routing.NewFieldCondition[string](routing.Host, routing.MatchesAnyOf("example.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google.com"}),
+				handler: OkHandler,
+			},
+			want: &http.Response{
+				StatusCode: http.StatusMovedPermanently,
+				Header: http.Header{
+					"Location": []string{"http://google.com"},
+				},
 			},
 		},
 	}
@@ -44,6 +58,11 @@ func TestRouting(t *testing.T) {
 	}
 }
 
+func OkHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
+
 func ResponseEqual(t *testing.T, want, got *http.Response) {
 	assert.Equal(t, want.StatusCode, got.StatusCode)
 
@@ -55,8 +74,8 @@ func ResponseEqual(t *testing.T, want, got *http.Response) {
 		}
 	}
 
-	if len(want.Header) > 0 {
-		assert.Equal(t, want.Header, got.Header)
+	for name, value := range want.Header {
+		assert.Equal(t, value, got.Header[name])
 	}
 }
 
