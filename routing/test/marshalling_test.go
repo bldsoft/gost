@@ -22,7 +22,7 @@ func TestRuleMarshal(t *testing.T) {
 		},
 	}
 
-	for testNameSuffix, _ := range map[string]struct {
+	for testNameSuffix, format := range map[string]struct {
 		marshal   func(v any) ([]byte, error)
 		unmarshal func(data []byte, v any) error
 	}{
@@ -31,12 +31,12 @@ func TestRuleMarshal(t *testing.T) {
 	} {
 		for _, tt := range tests {
 			t.Run(fmt.Sprintf("%s_%s", tt.name, testNameSuffix), func(t *testing.T) {
-				data, err := json.Marshal(tt.rule)
+				data, err := format.marshal(tt.rule)
 				assert.NoError(t, err)
 
 				t.Log("marsahlled: ", string(data))
 				var rule routing.Rule
-				err = json.Unmarshal(data, &rule)
+				err = format.unmarshal(data, &rule)
 				assert.NoError(t, err)
 				assert.Equal(t, tt.rule, &rule)
 			})
@@ -58,7 +58,7 @@ func TestRuleListMarshal(t *testing.T) {
 		},
 	}
 
-	for testNameSuffix, _ := range map[string]struct {
+	for testNameSuffix, format := range map[string]struct {
 		marshal   func(v any) ([]byte, error)
 		unmarshal func(data []byte, v any) error
 	}{
@@ -67,12 +67,12 @@ func TestRuleListMarshal(t *testing.T) {
 	} {
 		for _, tt := range tests {
 			t.Run(fmt.Sprintf("%s_%s", tt.name, testNameSuffix), func(t *testing.T) {
-				data, err := json.Marshal(tt.rule)
+				data, err := format.marshal(tt.rule)
 				assert.NoError(t, err)
 
 				t.Log("marsahlled: ", string(data))
 				var rules routing.RuleList
-				err = json.Unmarshal(data, &rules)
+				err = format.unmarshal(data, &rules)
 				assert.NoError(t, err)
 				assert.Equal(t, tt.rule, rules)
 			})

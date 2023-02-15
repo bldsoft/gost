@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/bldsoft/gost/log"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type RuleList struct {
@@ -48,6 +49,26 @@ func (rl *RuleList) UnmarshalJSON(b []byte) error {
 	rl.Rules = nil
 	for _, ruleData := range temp.Rules {
 		rule, err := ruleMarshaller.UnmarshalJSON(ruleData)
+		if err != nil {
+			return err
+		}
+		rl.Rules = append(rl.Rules, rule)
+	}
+	return nil
+}
+
+func (rl *RuleList) UnmarshalBSON(b []byte) error {
+	type outRuleList struct {
+		Rules []bson.Raw `json:"rules"`
+	}
+	temp := &outRuleList{}
+	if err := bson.Unmarshal(b, &temp); err != nil {
+		return err
+	}
+
+	rl.Rules = nil
+	for _, ruleData := range temp.Rules {
+		rule, err := ruleMarshaller.UnmarshalBSON(ruleData)
 		if err != nil {
 			return err
 		}

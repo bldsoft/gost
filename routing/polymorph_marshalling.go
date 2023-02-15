@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-const FieldNameConditionType = "type"
+const FieldNameType = "type"
 
 type polymorphHeader struct {
 	Type string `json:"type,omitempty" bson:"type,omitempty"`
@@ -89,16 +89,24 @@ func (pm *PolymorphMarshaller[T]) MarshalJSON(v T) ([]byte, error) {
 
 func (pm *PolymorphMarshaller[T]) MarshalBSON(v T) ([]byte, error) {
 	valueType := reflect.TypeOf(v)
-	name, ok := pm.concreteTypeToName.Load(valueType)
+	namei, ok := pm.concreteTypeToName.Load(valueType)
 	if !ok {
 		return nil, fmt.Errorf("routing: name not registered for interface: %q", valueType)
 	}
+	name := namei.(string)
 
-	return marshalBsonAndJoin(struct {
-		Name string `bson:"type"`
-	}{
-		Name: name.(string),
-	}, v)
+	if name != "" {
+		//TODO: find more elegant way to do this
+		m, err := toBsonMap(v)
+		if err != nil {
+			return nil, fmt.Errorf("polymorph marshaller: %w", err)
+		}
+
+		m[FieldNameType] = name
+		return bson.Marshal(m)
+	}
+
+	return bson.Marshal(v)
 }
 
 func (pm *PolymorphMarshaller[T]) UnmarshalJSON(data []byte) (unmarshalled T, err error) {
@@ -129,7 +137,7 @@ func (pm *PolymorphMarshaller[T]) UnmarshalBSON(data []byte) (unmarshalled T, er
 		return
 	}
 
-	name := raw.Lookup(FieldNameConditionType).StringValue()
+	name, _ := raw.Lookup(FieldNameType).StringValueOK()
 
 	ptr, res, err := pm.allocValue(name)
 	if err != nil {
@@ -137,7 +145,7 @@ func (pm *PolymorphMarshaller[T]) UnmarshalBSON(data []byte) (unmarshalled T, er
 	}
 	ptri := ptr.Interface()
 
-	if err = bson.Unmarshal(data, &ptri); err != nil {
+	if err = bson.Unmarshal(data, ptri); err != nil {
 		return
 	}
 
@@ -176,11 +184,14 @@ func marshalJsonAndJoin(objects ...interface{}) ([]byte, error) {
 	return bytes.Join(marshalled, []byte{','}), nil
 }
 
-func marshalBsonAndJoin(lhs, rhs interface{}) ([]byte, error) {
-	return bson.Marshal(struct {
-		Lhs interface{} `bson:",inline"`
-		Rhs interface{} `bson:",inline"`
-	}{
-		Lhs: lhs, Rhs: rhs,
-	})
+func toBsonMap(e interface{}) (m bson.M, err error) {
+	data, err := bson.Marshal(e)
+	if err != nil {
+		return nil, err
+	}
+	err = bson.Unmarshal(data, &m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
