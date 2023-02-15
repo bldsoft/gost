@@ -14,7 +14,7 @@ import (
 func TestRuleMarshal(t *testing.T) {
 	tests := []struct {
 		name string
-		rule *routing.Rule
+		rule routing.IRule
 	}{
 		{
 			name: "rule",
@@ -34,11 +34,47 @@ func TestRuleMarshal(t *testing.T) {
 				data, err := json.Marshal(tt.rule)
 				assert.NoError(t, err)
 
-				t.Log(string(data))
+				t.Log("marsahlled: ", string(data))
 				var rule routing.Rule
 				err = json.Unmarshal(data, &rule)
 				assert.NoError(t, err)
 				assert.Equal(t, tt.rule, &rule)
+			})
+		}
+	}
+}
+
+func TestRuleListMarshal(t *testing.T) {
+	tests := []struct {
+		name string
+		rule routing.IRule
+	}{
+		{
+			name: "rules",
+			rule: routing.JoinRules(
+				routing.NewRule(routing.NewFieldCondition(routing.Host, routing.MatchesAnyOf("example.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google.com"}),
+				routing.NewRule(routing.NewFieldCondition(routing.Host, routing.MatchesAnyOf("example2.com")), routing.ActionRedirect{Code: http.StatusNotFound, Host: "google2.com"}),
+			),
+		},
+	}
+
+	for testNameSuffix, _ := range map[string]struct {
+		marshal   func(v any) ([]byte, error)
+		unmarshal func(data []byte, v any) error
+	}{
+		"json": {json.Marshal, json.Unmarshal},
+		"bson": {bson.Marshal, bson.Unmarshal},
+	} {
+		for _, tt := range tests {
+			t.Run(fmt.Sprintf("%s_%s", tt.name, testNameSuffix), func(t *testing.T) {
+				data, err := json.Marshal(tt.rule)
+				assert.NoError(t, err)
+
+				t.Log("marsahlled: ", string(data))
+				var rules routing.RuleList
+				err = json.Unmarshal(data, &rules)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.rule, rules)
 			})
 		}
 	}

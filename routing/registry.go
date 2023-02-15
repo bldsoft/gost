@@ -1,13 +1,23 @@
 package routing
 
 func init() {
+	RegisterRule[*Rule]("")
+
+	RegisterAction[ActionRedirect]("redirect")
+
 	RegisterCondition[*FieldCondition]("generic")
 
 	RegisterValueExtractor[HostExtractor]("host")
 
 	RegisterValueMatcher[MatcherAnyOf]("anyOf")
 
-	RegisterAction[ActionRedirect]("redirect")
+}
+
+var ruleMarshaller = &PolymorphMarshaller[IRule]{}
+
+func RegisterRule[T IRule](name string) {
+	var value T
+	ruleMarshaller.Register(name, value)
 }
 
 var actionMarshaller = &PolymorphMarshaller[Action]{}

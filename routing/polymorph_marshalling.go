@@ -14,7 +14,7 @@ import (
 const FieldNameConditionType = "type"
 
 type polymorphHeader struct {
-	Type string `json:"type"`
+	Type string `json:"type,omitempty" bson:"type,omitempty"`
 }
 
 // Helper for marshalling polymorphic objects
@@ -24,9 +24,9 @@ type PolymorphMarshaller[T any] struct {
 }
 
 func (pm *PolymorphMarshaller[T]) Register(name string, value T) {
-	if name == "" {
-		panic("routing: attempt to register empty name")
-	}
+	// if name == "" {
+	// 	panic("routing: attempt to register empty name")
+	// }
 
 	valueType := reflect.TypeOf(value)
 	if t, dup := pm.nameToConcreteType.LoadOrStore(name, valueType); dup {

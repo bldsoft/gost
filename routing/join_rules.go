@@ -1,28 +1,29 @@
 package routing
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/bldsoft/gost/log"
 )
 
-type ruleList struct {
-	rules []IRule
+type RuleList struct {
+	Rules []IRule `json:"rules,omitempty" bson:"rules,omtempty"`
 }
 
-func JoinRules(rules ...IRule) IRule {
-	return &ruleList{
-		rules: rules,
+func JoinRules(rules ...IRule) RuleList {
+	return RuleList{
+		Rules: rules,
 	}
 }
 
-func (rl ruleList) Match(r *http.Request) (matched bool, err error) {
+func (rl RuleList) Match(r *http.Request) (matched bool, err error) {
 	return true, nil
 }
 
-func (rl ruleList) Apply(next http.Handler) http.Handler {
+func (rl RuleList) Apply(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for _, rule := range rl.rules {
+		for _, rule := range rl.Rules {
 			matched, err := rule.Match(r)
 			switch {
 			case matched:
@@ -33,4 +34,24 @@ func (rl ruleList) Apply(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (rl *RuleList) UnmarshalJSON(b []byte) error {
+	type outRuleList struct {
+		Rules []json.RawMessage `json:"rules"`
+	}
+	temp := &outRuleList{}
+	if err := json.Unmarshal(b, &temp); err != nil {
+		return err
+	}
+
+	rl.Rules = nil
+	for _, ruleData := range temp.Rules {
+		rule, err := ruleMarshaller.UnmarshalJSON(ruleData)
+		if err != nil {
+			return err
+		}
+		rl.Rules = append(rl.Rules, rule)
+	}
+	return nil
 }
