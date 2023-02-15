@@ -7,17 +7,17 @@ import (
 )
 
 type ruleList struct {
-	rules []Rule
+	rules []IRule
 }
 
-func JoinRules(rules ...Rule) Rule {
+func JoinRules(rules ...IRule) IRule {
 	return &ruleList{
 		rules: rules,
 	}
 }
 
 func (rl ruleList) Match(r *http.Request) (matched bool, err error) {
-	return NoCondition(r)
+	return true, nil
 }
 
 func (rl ruleList) Apply(next http.Handler) http.Handler {

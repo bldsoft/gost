@@ -1,15 +1,17 @@
 package routing
 
-import "github.com/bldsoft/gost/utils"
+import (
+	"github.com/bldsoft/gost/utils"
+)
 
-type MatcherAnyOf[T comparable] struct {
-	Args []T
+type MatcherAnyOf struct {
+	Args []interface{} `json:"args" bson:"args"`
 }
 
-func MatchesAnyOf[T comparable](args ...T) MatcherAnyOf[T] {
-	return MatcherAnyOf[T]{Args: args}
+func MatchesAnyOf(args ...interface{}) MatcherAnyOf {
+	return MatcherAnyOf{Args: args}
 }
 
-func (m MatcherAnyOf[T]) MatchValue(val T) (bool, error) {
+func (m MatcherAnyOf) MatchValue(val interface{}) (bool, error) {
 	return utils.IsIn(val, m.Args...), nil
 }

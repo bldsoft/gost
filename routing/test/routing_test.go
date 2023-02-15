@@ -13,7 +13,7 @@ import (
 func TestRouting(t *testing.T) {
 	type args struct {
 		r       *http.Request
-		rule    routing.Rule
+		rule    *routing.Rule
 		handler http.HandlerFunc
 	}
 	tests := []struct {
@@ -25,7 +25,7 @@ func TestRouting(t *testing.T) {
 			name: "handle without conditions",
 			args: args{
 				r:       httptest.NewRequest(http.MethodGet, "http://example.com", nil),
-				rule:    routing.NewRule(routing.NoCondition, routing.HandleAction),
+				rule:    routing.NewRule(routing.NoCond, routing.HandleAct),
 				handler: OkHandler,
 			},
 			want: &http.Response{
@@ -37,7 +37,7 @@ func TestRouting(t *testing.T) {
 			args: args{
 				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
 				rule: routing.NewRule(
-					routing.NewFieldCondition[string](routing.Host, routing.MatchesAnyOf("example.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google.com"}),
+					routing.NewFieldCondition(routing.Host, routing.MatchesAnyOf("example.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google.com"}),
 				handler: OkHandler,
 			},
 			want: &http.Response{

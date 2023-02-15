@@ -4,10 +4,8 @@ import (
 	"net/http"
 )
 
-type hostExtractor struct{}
+type HostExtractor struct{}
 
-func (e hostExtractor) ExtractValue(r *http.Request) string {
-	return r.Host
-}
+func (e HostExtractor) ExtractValue(r *http.Request) interface{} { return r.Host }
 
-var Host = &hostExtractor{}
+var Host = HostExtractor{}

@@ -6,12 +6,12 @@ import (
 )
 
 type ActionRedirect struct {
-	Code        int
-	Scheme      string
-	Host        string
-	ReplacePath string
-	PathPrefix  string
-	ClearQuery  bool
+	Code        int    `json:"code" bson:"code"`
+	Scheme      string `json:"scheme,omitempty" bson:"scheme,omitempty"`
+	Host        string `json:"host,omitempty" bson:"host,omitempty"`
+	ReplacePath string `json:"replacePath,omitempty" bson:"replacePath,omitempty"`
+	PathPrefix  string `json:"pathPrefix,omitempty" bson:"pathPrefix,omitempty"`
+	ClearQuery  bool   `json:"clearQuery,omitempty" bson:"clearQuery,omitempty"`
 }
 
 func setIfNotZero[T comparable](dst *T, val T) {
