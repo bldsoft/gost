@@ -249,7 +249,7 @@ func (r *BaseRepository[T, U]) DeleteMany(ctx context.Context, filter interface{
 			return err
 		}
 	}
-	_, err := r.dbcollection.UpdateMany(ctx, filter, bson.M{"$set": bson.M{BsonFieldNameArchived: true}})
+	_, err := r.Collection().UpdateMany(ctx, filter, bson.M{"$set": bson.M{BsonFieldNameArchived: true}})
 	return err
 }
 
