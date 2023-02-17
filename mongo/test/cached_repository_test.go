@@ -44,7 +44,7 @@ func generateEntities(n int) []*testEntity {
 	return entities
 }
 
-func testEntityRepository() *mongo.Repository[testEntity, *testEntity] {
+func testEntityRepository() mongo.Repository[testEntity, *testEntity] {
 	return mongo.NewRepository[testEntity](db, testCollection)
 }
 

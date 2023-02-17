@@ -11,8 +11,11 @@ import (
 const updateChanBufferSize = 12500
 
 type ChangeHandler[T any, U repository.IEntityIDPtr[T]] interface {
-	OnWarmUp(entities []U)
 	OnChange(upd *UpdateEvent[T, U])
+}
+
+type WarmUper[T any, U repository.IEntityIDPtr[T]] interface {
+	WarmUp(ctx context.Context, rep Repository[T, U]) error
 }
 
 type UpdateEvent[T any, U repository.IEntityIDPtr[T]] struct {
@@ -28,16 +31,14 @@ type WatchedRepositoryOptions struct {
 // WatchedRepository is a helper wrapper for Repository, that allows you to monitor changes via Watcher
 type WatchedRepository[T any, U repository.IEntityIDPtr[T]] struct {
 	Repository[T, U]
-	Watcher    *Watcher
-	handler    ChangeHandler[T, U]
-	needWarmUp bool
+	Watcher *Watcher
+	handler ChangeHandler[T, U]
 }
 
-func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, handler ChangeHandler[T, U], warmUp bool) *WatchedRepository[T, U] {
+func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, handler ChangeHandler[T, U]) *WatchedRepository[T, U] {
 	rep := &WatchedRepository[T, U]{
 		Repository: NewRepository[T, U](db, collectionName),
 		handler:    handler,
-		needWarmUp: warmUp,
 	}
 	rep.init()
 	return rep
@@ -59,8 +60,8 @@ func (r *WatchedRepository[T, U]) init() {
 	})
 	r.Watcher.Start()
 
-	if r.needWarmUp {
-		if err := r.warmUp(context.Background()); err != nil {
+	if wu, ok := r.handler.(WarmUper[T, U]); ok {
+		if err := wu.WarmUp(context.Background(), r.Repository); err != nil {
 			log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.Name()}, "Failed to warm up")
 		} else {
 			log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.Name()}, "Warmed up")
@@ -72,13 +73,4 @@ func (r *WatchedRepository[T, U]) init() {
 			r.handler.OnChange(upd)
 		}
 	}()
-}
-
-func (r *WatchedRepository[T, U]) warmUp(ctx context.Context) error {
-	entities, err := r.Repository.GetAll(context.Background())
-	if err != nil {
-		return err
-	}
-	r.handler.OnWarmUp(entities)
-	return nil
 }
