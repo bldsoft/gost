@@ -17,10 +17,10 @@ type Action interface {
 	Apply(http.Handler) http.Handler
 }
 
-type ValueMatcher interface {
-	MatchValue(val interface{}) (bool, error)
+type ValueMatcher[T any] interface {
+	MatchValue(val T) (bool, error)
 }
 
-type ValueExtractor interface {
-	ExtractValue(r *http.Request) interface{}
+type ValueExtractor[T any] interface {
+	ExtractValue(r *http.Request) T
 }

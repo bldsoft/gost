@@ -37,3 +37,6 @@ func (ar ActionRedirect) Apply(h http.Handler) http.Handler {
 		http.Redirect(w, r, url.String(), ar.Code)
 	})
 }
+
+// for graphql
+func (ActionRedirect) IsAction() {}

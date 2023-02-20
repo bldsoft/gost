@@ -6,6 +6,6 @@ import (
 
 type HostExtractor struct{}
 
-func (e HostExtractor) ExtractValue(r *http.Request) interface{} { return r.Host }
+func (e HostExtractor) ExtractValue(r *http.Request) string { return r.Host }
 
 var Host = HostExtractor{}
