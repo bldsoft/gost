@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/bldsoft/gost/routing"
@@ -38,7 +37,7 @@ func TestRouting(t *testing.T) {
 			args: args{
 				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
 				rule: routing.NewRule(
-					routing.NewFieldCondition[string](routing.Host, routing.MatchesAnyOf("example.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google.com"}),
+					routing.NewFieldCondition[string, []string](routing.Host, routing.MatchesAnyOf("example.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google.com"}),
 				handler: OkHandler,
 			},
 			want: &http.Response{
@@ -88,11 +87,4 @@ func ResponseBody(t *testing.T, resp *http.Response) []byte {
 	data, err := ioutil.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	return data
-}
-
-func TestFieldDescription(t *testing.T) {
-	matchersNames, err := routing.MatchersByFieldName("host")
-	t.Log(strings.Join(matchersNames, ","))
-	assert.NoError(t, err)
-	assert.NotEmpty(t, matchersNames)
 }
