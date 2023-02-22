@@ -1,6 +1,6 @@
 package routing
 
-type marshallingField[T any] struct {
+type marshallingField[T comparable] struct {
 	Value               T
 	polymorphMarshaller *PolymorphMarshaller[T]
 }

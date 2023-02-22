@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"sync"
 
 	"github.com/bldsoft/gost/log"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,9 +17,8 @@ type polymorphHeader struct {
 }
 
 // Helper for marshalling polymorphic objects
-type PolymorphMarshaller[T any] struct {
-	nameToConcreteType sync.Map // map[string]reflect.Type
-	concreteTypeToName sync.Map // map[reflect.Type]string
+type PolymorphMarshaller[T comparable] struct {
+	typeBijection[T, string]
 }
 
 func (pm *PolymorphMarshaller[T]) Register(name string, value T) {
@@ -28,51 +26,24 @@ func (pm *PolymorphMarshaller[T]) Register(name string, value T) {
 	// 	panic("routing: attempt to register empty name")
 	// }
 
-	valueType := reflect.TypeOf(value)
-	if t, dup := pm.nameToConcreteType.LoadOrStore(name, valueType); dup {
-		panic(fmt.Sprintf("routing: registering duplicate condtition types for %q: %s != %s", name, t, valueType))
+	if err := pm.Add(value, name); err != nil {
+		panic(fmt.Sprintf("polymoprh marshaller: register %s", err))
 	}
 
-	if n, dup := pm.concreteTypeToName.LoadOrStore(valueType, name); dup && n != name {
-		panic(fmt.Sprintf("routing: registering duplicate names for %s: %q != %q", valueType, n, name))
-	}
-
-	log.Logger.TraceWithFields(log.Fields{"name": name, "type": valueType}, "register condition")
+	log.Logger.TraceWithFields(log.Fields{"name": name, "type": reflect.TypeOf(value).String()}, "polymoprh marshaller: register polymorph object")
 }
 
 func (pm *PolymorphMarshaller[T]) AllocValue(name string) (val T, err error) {
-	_, v, err := pm.allocValue(name)
-	if err != nil {
-		return
-	}
+	return pm.typeBijection.AllocValue(name)
 
-	return v.Interface().(T), nil
-}
-
-// returns pointer and value of the regestered type (struct or pointer)
-func (pm *PolymorphMarshaller[T]) allocValue(name string) (ptr, val reflect.Value, err error) {
-	typi, ok := pm.nameToConcreteType.Load(string(name))
-	if !ok {
-		err = fmt.Errorf("routing: name not registered: %q", name)
-		return
-	}
-	typ := typi.(reflect.Type)
-
-	v := reflect.New(typ).Elem()
-	if v.Type().Kind() == reflect.Ptr {
-		v.Set(reflect.New(v.Type().Elem()))
-		return v, v, nil
-	}
-	return v.Addr(), v, nil
 }
 
 func (pm *PolymorphMarshaller[T]) NameByValue(v T) (string, error) {
-	valueType := reflect.TypeOf(v)
-	name, ok := pm.concreteTypeToName.Load(valueType)
+	name, ok := pm.GetObj(v)
 	if !ok {
-		return "", fmt.Errorf("routing: name not registered for interface: %T", v)
+		return "", fmt.Errorf("polymoprh marshaller: name not registered for interface: %T", v)
 	}
-	return name.(string), nil
+	return name, nil
 }
 
 func (pm *PolymorphMarshaller[T]) MarshalJSON(v T) ([]byte, error) {
@@ -88,12 +59,10 @@ func (pm *PolymorphMarshaller[T]) MarshalJSON(v T) ([]byte, error) {
 }
 
 func (pm *PolymorphMarshaller[T]) MarshalBSON(v T) ([]byte, error) {
-	valueType := reflect.TypeOf(v)
-	namei, ok := pm.concreteTypeToName.Load(valueType)
-	if !ok {
-		return nil, fmt.Errorf("routing: name not registered for interface: %q", valueType)
+	name, err := pm.NameByValue(v)
+	if err != nil {
+		return nil, err
 	}
-	name := namei.(string)
 
 	if name != "" {
 		//TODO: find more elegant way to do this
