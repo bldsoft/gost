@@ -9,7 +9,7 @@ import (
 )
 
 type RuleList struct {
-	Condition
+	Rule  *Rule   `json:",omitempty" bson:",omitempty"`
 	Rules []IRule `json:"rules,omitempty" bson:"rules,omtempty"`
 }
 
@@ -20,14 +20,17 @@ func JoinRules(rules ...IRule) RuleList {
 }
 
 func (rl RuleList) Match(r *http.Request) (matched bool, err error) {
-	if rl.Condition == nil {
+	if rl.Rule == nil && rl.Rule.Condition == nil {
 		return true, nil
 	}
-	return rl.Condition.Match(r)
+	return rl.Rule.Condition.Match(r)
 }
 
 func (rl RuleList) Apply(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if rl.Rule != nil && rl.Rule.Action != nil {
+			next = rl.Rule.Apply(next)
+		}
 		for _, rule := range rl.Rules {
 			if rule == nil {
 				continue
