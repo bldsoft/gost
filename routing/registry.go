@@ -12,6 +12,7 @@ func init() {
 	RegisterAction[ActionRedirect]("redirect")
 
 	// field type | matcher argument params
+	RegisterCondition[MultiCondition]("multi")
 	RegisterCondition[*FieldCondition[string, []string]]()
 	RegisterCondition[*FieldCondition[int, []int]]()
 
