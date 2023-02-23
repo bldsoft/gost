@@ -9,6 +9,7 @@ import (
 func init() {
 	RegisterRule[*Rule]("")
 
+	RegisterAction[MultiAction]("multi")
 	RegisterAction[ActionRedirect]("redirect")
 
 	// field type | matcher argument params
