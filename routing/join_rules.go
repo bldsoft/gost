@@ -9,8 +9,8 @@ import (
 )
 
 type RuleList struct {
-	Rule  *Rule   `json:",omitempty" bson:",omitempty"`
-	Rules []IRule `json:"rules,omitempty" bson:"rules,omtempty"`
+	Rule  IRule
+	Rules []IRule
 }
 
 func JoinRules(rules ...IRule) RuleList {
@@ -20,15 +20,15 @@ func JoinRules(rules ...IRule) RuleList {
 }
 
 func (rl RuleList) Match(r *http.Request) (matched bool, err error) {
-	if rl.Rule == nil && rl.Rule.Condition == nil {
+	if rl.Rule == nil {
 		return true, nil
 	}
-	return rl.Rule.Condition.Match(r)
+	return rl.Rule.Match(r)
 }
 
 func (rl RuleList) Apply(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if rl.Rule != nil && rl.Rule.Action != nil {
+		if rl.Rule != nil {
 			next = rl.Rule.Apply(next)
 		}
 		for _, rule := range rl.Rules {
@@ -47,16 +47,50 @@ func (rl RuleList) Apply(next http.Handler) http.Handler {
 	})
 }
 
+func (rl RuleList) MarshalBSON() ([]byte, error) {
+	name, err := ruleMarshaller.NameByValue(rl)
+	if err != nil {
+		return nil, err
+	}
+	type tempRuleList struct {
+		Rule  *marshallingField[IRule]  `json:"rule,omitempty"`
+		Rules []marshallingField[IRule] `json:"rules"`
+	}
+	return addTypeAndMashalBson(tempRuleList{
+		Rule:  newMarshallingField(ruleMarshaller, rl.Rule),
+		Rules: makeMarshallingFields(ruleMarshaller, rl.Rules...),
+	}, name)
+}
+
+func (rl RuleList) MarshalJSON() ([]byte, error) {
+	name, err := ruleMarshaller.NameByValue(rl)
+	if err != nil {
+		return nil, err
+	}
+	type tempRuleList RuleList // avoid recursion
+	return json.Marshal(struct {
+		Name  string                    `json:"type"`
+		Rule  *marshallingField[IRule]  `json:"rule,omitempty"`
+		Rules []marshallingField[IRule] `json:"rules"`
+	}{
+		Name:  name,
+		Rule:  newMarshallingField(ruleMarshaller, rl.Rule),
+		Rules: makeMarshallingFields(ruleMarshaller, rl.Rules...),
+	})
+}
+
 func (rl *RuleList) UnmarshalJSON(b []byte) error {
 	type outRuleList struct {
-		Rules []json.RawMessage `json:"rules"`
+		Rule  marshallingField[IRule] `json:"rule"`
+		Rules []json.RawMessage       `json:"rules"`
 	}
-	temp := &outRuleList{}
+	temp := &outRuleList{Rule: marshallingField[IRule]{polymorphMarshaller: ruleMarshaller}}
 	if err := json.Unmarshal(b, &temp); err != nil {
 		return err
 	}
 
 	rl.Rules = nil
+	rl.Rule = temp.Rule.Value
 	for _, ruleData := range temp.Rules {
 		rule, err := ruleMarshaller.UnmarshalJSON(ruleData)
 		if err != nil {
@@ -67,9 +101,10 @@ func (rl *RuleList) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (rl *RuleList) UnmarshalBSON(b []byte) error {
+func (rl *RuleList) UnmarshalBSON(b []byte) (err error) {
 	type outRuleList struct {
-		Rules []bson.Raw `json:"rules"`
+		Rule  bson.Raw   `bson:"rule"`
+		Rules []bson.Raw `bson:"rules"`
 	}
 	temp := &outRuleList{}
 	if err := bson.Unmarshal(b, &temp); err != nil {
@@ -77,6 +112,11 @@ func (rl *RuleList) UnmarshalBSON(b []byte) error {
 	}
 
 	rl.Rules = nil
+	if len(temp.Rule) > 0 {
+		if rl.Rule, err = ruleMarshaller.UnmarshalBSON(temp.Rule); err != nil {
+			return err
+		}
+	}
 	for _, ruleData := range temp.Rules {
 		rule, err := ruleMarshaller.UnmarshalBSON(ruleData)
 		if err != nil {

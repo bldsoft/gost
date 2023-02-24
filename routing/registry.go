@@ -8,6 +8,7 @@ import (
 
 func init() {
 	RegisterRule[*Rule]("")
+	RegisterRule[RuleList]("multi")
 
 	RegisterAction[MultiAction]("multi")
 	RegisterAction[ActionRedirect]("redirect")

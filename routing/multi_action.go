@@ -1,7 +1,10 @@
 package routing
 
 import (
+	"encoding/json"
 	"net/http"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type MultiAction struct {
@@ -21,4 +24,69 @@ func (a MultiAction) Apply(h http.Handler) http.Handler {
 		}
 		h.ServeHTTP(w, r)
 	})
+}
+
+func (a MultiAction) MarshalBSON() ([]byte, error) {
+	name, err := actionMarshaller.NameByValue(a)
+	if err != nil {
+		return nil, err
+	}
+	type tempAct struct {
+		Actions []marshallingField[Action] `bson:"actions"`
+	}
+	return addTypeAndMashalBson(tempAct{makeMarshallingFields(actionMarshaller, a.Actions...)}, name)
+}
+
+func (a MultiAction) MarshalJSON() ([]byte, error) {
+	name, err := actionMarshaller.NameByValue(a)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(struct {
+		Name    string                     `json:"type"`
+		Actions []marshallingField[Action] `json:"actions"`
+	}{
+		Name:    name,
+		Actions: makeMarshallingFields(actionMarshaller, a.Actions...),
+	})
+}
+
+func (a *MultiAction) UnmarshalJSON(b []byte) error {
+	type outMultiAction struct {
+		Actions []json.RawMessage `json:"actions"`
+	}
+	temp := &outMultiAction{}
+	if err := json.Unmarshal(b, &temp); err != nil {
+		return err
+	}
+
+	a.Actions = nil
+	for _, actData := range temp.Actions {
+		act, err := actionMarshaller.UnmarshalJSON(actData)
+		if err != nil {
+			return err
+		}
+		a.Actions = append(a.Actions, act)
+	}
+	return nil
+}
+
+func (a *MultiAction) UnmarshalBSON(b []byte) error {
+	type outMultiAction struct {
+		Actions []bson.Raw `bson:"actions"`
+	}
+	temp := &outMultiAction{}
+	if err := bson.Unmarshal(b, &temp); err != nil {
+		return err
+	}
+
+	a.Actions = nil
+	for _, actData := range temp.Actions {
+		act, err := actionMarshaller.UnmarshalBSON(actData)
+		if err != nil {
+			return err
+		}
+		a.Actions = append(a.Actions, act)
+	}
+	return nil
 }

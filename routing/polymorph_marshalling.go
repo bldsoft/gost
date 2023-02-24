@@ -64,18 +64,7 @@ func (pm *PolymorphMarshaller[T]) MarshalBSON(v T) ([]byte, error) {
 		return nil, err
 	}
 
-	if name != "" {
-		//TODO: find more elegant way to do this
-		m, err := toBsonMap(v)
-		if err != nil {
-			return nil, fmt.Errorf("polymorph marshaller: %w", err)
-		}
-
-		m[FieldNameType] = name
-		return bson.Marshal(m)
-	}
-
-	return bson.Marshal(v)
+	return addTypeAndMashalBson(v, name)
 }
 
 func (pm *PolymorphMarshaller[T]) UnmarshalJSON(data []byte) (unmarshalled T, err error) {
@@ -163,4 +152,19 @@ func toBsonMap(e interface{}) (m bson.M, err error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+func addTypeAndMashalBson[T any](v T, typeName string) ([]byte, error) {
+	if typeName != "" {
+		//TODO: find more elegant way to do this
+		m, err := toBsonMap(v)
+		if err != nil {
+			return nil, fmt.Errorf("polymorph marshaller: %w", err)
+		}
+
+		m[FieldNameType] = typeName
+		return bson.Marshal(m)
+	}
+
+	return bson.Marshal(v)
 }

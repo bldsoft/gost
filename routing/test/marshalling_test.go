@@ -50,10 +50,30 @@ func TestRuleListMarshal(t *testing.T) {
 		rule routing.IRule
 	}{
 		{
-			name: "rules",
+			name: "rules list without main rule",
 			rule: routing.JoinRules(
 				routing.NewRule(routing.NewFieldCondition[string, []string](routing.Host, routing.MatchesAnyOf("example.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google.com"}),
 				routing.NewRule(routing.NewFieldCondition[string, []string](routing.Host, routing.MatchesAnyOf("example2.com")), routing.ActionRedirect{Code: http.StatusNotFound, Host: "google2.com"}),
+			),
+		},
+		{
+			name: "rules list with rule",
+			rule: routing.RuleList{
+				Rule: routing.NewRule(routing.NewFieldCondition[string, []string](routing.Host, routing.MatchesAnyOf("example.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google.com"}),
+				Rules: []routing.IRule{
+					routing.NewRule(routing.NewFieldCondition[string, []string](routing.Host, routing.MatchesAnyOf("example2.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google2.com"}),
+					routing.NewRule(routing.NewFieldCondition[string, []string](routing.Host, routing.MatchesAnyOf("example3.com")), routing.ActionRedirect{Code: http.StatusNotFound, Host: "google3.com"}),
+				},
+			},
+		},
+		{
+			name: "rules tree",
+			rule: routing.JoinRules(
+				routing.NewRule(routing.NewFieldCondition[string, []string](routing.Host, routing.MatchesAnyOf("example.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google.com"}),
+				routing.JoinRules(
+					routing.NewRule(routing.NewFieldCondition[string, []string](routing.Host, routing.MatchesAnyOf("example2.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google2.com"}),
+					routing.NewRule(routing.NewFieldCondition[string, []string](routing.Host, routing.MatchesAnyOf("example3.com")), routing.ActionRedirect{Code: http.StatusNotFound, Host: "google3.com"}),
+				),
 			),
 		},
 	}
