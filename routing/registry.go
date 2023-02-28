@@ -2,6 +2,9 @@ package routing
 
 import (
 	"fmt"
+	"net"
+	"net/http"
+	"net/url"
 	"reflect"
 	"sync"
 )
@@ -20,6 +23,12 @@ func init() {
 
 	// exctractor | field type
 	RegisterValueExtractor[HostExtractor, string]("host")
+	RegisterValueExtractor[IpExtractor, net.IP]("clientIP")
+	RegisterValueExtractor[PathExtractor, string]("path")
+	RegisterValueExtractor[FileNameExtractor, string]("filename")
+	RegisterValueExtractor[FileExtExtractor, string]("ext")
+	RegisterValueExtractor[QueryExtractor, url.Values]("query")
+	RegisterValueExtractor[HeaderExtractor, http.Header]("header")
 
 	// matcher | field type | matcher argument params type
 	RegisterValueMatcher[*MatcherAnyOf[string], string, []string]("anyOf", "Matches any of")
