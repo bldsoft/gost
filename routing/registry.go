@@ -3,10 +3,11 @@ package routing
 import (
 	"fmt"
 	"net"
-	"net/http"
-	"net/url"
 	"reflect"
+	"sort"
 	"sync"
+
+	"github.com/bldsoft/gost/auth/acl"
 )
 
 func init() {
@@ -23,16 +24,29 @@ func init() {
 
 	// exctractor | field type
 	RegisterValueExtractor[HostExtractor, string]("host")
-	RegisterValueExtractor[IpExtractor, net.IP]("clientIP")
+	RegisterValueExtractor[IpExtractor, net.IP]("client IP")
 	RegisterValueExtractor[PathExtractor, string]("path")
 	RegisterValueExtractor[FileNameExtractor, string]("filename")
 	RegisterValueExtractor[FileExtExtractor, string]("ext")
-	RegisterValueExtractor[QueryExtractor, url.Values]("query")
-	RegisterValueExtractor[HeaderExtractor, http.Header]("header")
+	// RegisterValueExtractor[QueryExtractor, url.Values]("query")
+	// RegisterValueExtractor[HeaderExtractor, http.Header]("header")
 
 	// matcher | field type | matcher argument params type
-	RegisterValueMatcher[*MatcherAnyOf[string], string, []string]("anyOf", "Matches any of")
+	RegisterValueMatcher[*MatcherClientIPAnyOf, net.IP, acl.IpRange]("anyOf", "Matches any of")
+	RegisterValueMatcher[*MatcherClientIPNotAnyOf, net.IP, acl.IpRange]("notAnyOf", "Does not matches any of")
 
+	RegisterValueMatcher[*MatcherAnyOf[string], string, []string]("anyOf", "Matches any of")
+	RegisterValueMatcher[*MatcherNotAnyOf[string], string, []string]("notAnyOf", "Does not match any of")
+
+	// RegisterValueMatcher[*MatcherQueryOrHeaderAnyOf[url.Values], url.Values, []string]("anyOf", "Matches any of")
+	// RegisterValueMatcher[*MatcherQueryOrHeaderNotAnyOf[url.Values], url.Values, []string]("notAnyOf", "Does not match any of")
+	// RegisterValueMatcher[*MatcherQueryOrHeaderExists[url.Values], url.Values, string]("exists", "Exists")
+	// RegisterValueMatcher[*MatcherQueryOrHeaderNotExists[url.Values], url.Values, string]("notExists", "Does not exists")
+
+	// RegisterValueMatcher[*MatcherQueryOrHeaderAnyOf[http.Header], http.Header, []string]("anyOf", "Matches any of")
+	// RegisterValueMatcher[*MatcherQueryOrHeaderNotAnyOf[http.Header], http.Header, []string]("notAnyOf", "Does not match any of")
+	// RegisterValueMatcher[*MatcherQueryOrHeaderExists[http.Header], http.Header, string]("exists", "Exists")
+	// RegisterValueMatcher[*MatcherQueryOrHeaderNotExists[http.Header], http.Header, string]("notExists", "Does not exists")
 }
 
 var ruleMarshaller = &PolymorphMarshaller[IRule]{}
@@ -61,13 +75,13 @@ func RegisterCondition[T Condition](name ...string) {
 
 // =======================================================
 
-var fieldNameToType typeBijection[interface{}, string]                     // reflect.Type 		<-> string
+var fieldNameToType objToTypeMap[string, interface{}]                      // reflect.Type 		 -> string
 var fieldTypeToExtractorMarshaller typeBijection[interface{}, interface{}] // reflect.Type 		<-> ValueExtractor[T]
 var fieldNameToExtractor typeBijection[interface{}, string]                // ValueExtractor[T] <-> string
 
 func RegisterValueExtractor[E ValueExtractor[T], T any](name string) {
 	var fieldValue T
-	if err := fieldNameToType.Add(fieldValue, name); err != nil {
+	if err := fieldNameToType.Add(name, fieldValue); err != nil {
 		panic(fmt.Sprintf("routing: %s", err))
 	}
 
@@ -103,6 +117,7 @@ const (
 	ArgTypeString      ArgType = "string"
 	ArgTypeIntArray    ArgType = "[]int"
 	ArgTypeStringArray ArgType = "[]string"
+	ArgTypeIpRange     ArgType = "acl.IpRange"
 )
 
 type MatcherDescription struct {
@@ -226,7 +241,9 @@ func GetFieldConditionDescription(fieldCondition Condition) (*FieldConditionDesc
 }
 
 func FieldNames() []string {
-	return fieldNameToType.AllObj()
+	res := fieldNameToType.Keys()
+	sort.Strings(res)
+	return res
 }
 
 func MatchersDescriptionsByFieldName(fieldName string) ([]MatcherDescription, error) {
