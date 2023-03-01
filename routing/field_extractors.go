@@ -3,8 +3,8 @@ package routing
 import (
 	"net"
 	"net/http"
-	"net/url"
 	"path/filepath"
+	"strings"
 )
 
 type HostExtractor struct{}
@@ -58,16 +58,36 @@ var UserAgent = UserAgentExtractor{}
 
 //=============================================================================
 
-type QueryExtractor struct{}
+type QueryExtractor struct {
+	Name string `label:"Query name"`
+}
 
-func (e QueryExtractor) ExtractValue(r *http.Request) url.Values { return r.URL.Query() }
+func (e QueryExtractor) ExtractValue(r *http.Request) *string {
+	values := r.URL.Query()[e.Name]
+	if len(values) == 0 {
+		return nil
+	}
+	res := strings.Join(values, ",")
+	return &res
+}
 
-var Query = QueryExtractor{}
+func Query(name string) QueryExtractor {
+	return QueryExtractor{Name: name}
+}
 
 //=============================================================================
 
-type HeaderExtractor struct{}
+type HeaderExtractor struct {
+	Name string `label:"Header name"`
+}
 
-func (e HeaderExtractor) ExtractValue(r *http.Request) http.Header { return r.Header }
+func (e HeaderExtractor) ExtractValue(r *http.Request) *string {
+	if h := r.Header.Get(e.Name); len(h) == 0 {
+		return &h
+	}
+	return nil
+}
 
-var Header = HeaderExtractor{}
+func Header(name string) HeaderExtractor {
+	return HeaderExtractor{Name: name}
+}

@@ -17,15 +17,7 @@ type Action interface {
 	Apply(http.Handler) http.Handler
 }
 
-const ArgsMethodName = "Args"
-
-type IArgs[A any] interface {
-	SetArgs(A) error
-	Args() A
-}
-
-type ValueMatcher[T any, A any] interface {
-	IArgs[A]
+type ValueMatcher[T any] interface {
 	MatchValue(val T) (bool, error)
 }
 

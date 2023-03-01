@@ -37,7 +37,7 @@ func TestRouting(t *testing.T) {
 			args: args{
 				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
 				rule: routing.NewRule(
-					routing.NewFieldCondition[string, []string](routing.Host, routing.MatchesAnyOf("example.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google.com"}),
+					routing.NewFieldCondition[string](routing.Host, routing.AnyOf("example.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google.com"}),
 				handler: OkHandler,
 			},
 			want: &http.Response{

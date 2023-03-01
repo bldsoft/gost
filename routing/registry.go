@@ -17,36 +17,32 @@ func init() {
 	RegisterAction[MultiAction]("multi")
 	RegisterAction[ActionRedirect]("redirect")
 
-	// field type | matcher argument params
+	// field type
 	RegisterCondition[MultiCondition]("multi")
-	RegisterCondition[*FieldCondition[string, []string]]()
-	RegisterCondition[*FieldCondition[int, []int]]()
+	RegisterCondition[*FieldCondition[string]]("string")
+	RegisterCondition[*FieldCondition[int]]("int")
 
 	// exctractor | field type
-	RegisterValueExtractor[HostExtractor, string]("host")
-	RegisterValueExtractor[IpExtractor, net.IP]("client IP")
-	RegisterValueExtractor[PathExtractor, string]("path")
-	RegisterValueExtractor[FileNameExtractor, string]("filename")
-	RegisterValueExtractor[FileExtExtractor, string]("ext")
-	// RegisterValueExtractor[QueryExtractor, url.Values]("query")
-	// RegisterValueExtractor[HeaderExtractor, http.Header]("header")
+	RegisterValueExtractor[IpExtractor, net.IP]("clientIP", "Client IP")
+	RegisterValueExtractor[HostExtractor, string]("host", "Host")
+	RegisterValueExtractor[PathExtractor, string]("path", "Path")
+	RegisterValueExtractor[FileNameExtractor, string]("filename", "File name")
+	RegisterValueExtractor[FileExtExtractor, string]("ext", "File extension")
+	RegisterValueExtractor[*QueryExtractor, *string]("query", "Query param")
+	RegisterValueExtractor[*HeaderExtractor, *string]("header", "Request Header")
 
-	// matcher | field type | matcher argument params type
-	RegisterValueMatcher[*MatcherClientIPAnyOf, net.IP, acl.IpRange]("anyOf", "Matches any of")
-	RegisterValueMatcher[*MatcherClientIPNotAnyOf, net.IP, acl.IpRange]("notAnyOf", "Does not matches any of")
+	// matcher | field type
+	RegisterValueMatcher[*MatcherClientIPAnyOf, net.IP]("anyOf", "Matches any of")
+	RegisterValueMatcher[*MatcherClientIPNotAnyOf, net.IP]("notAnyOf", "Does not matches any of")
 
-	RegisterValueMatcher[*MatcherAnyOf[string], string, []string]("anyOf", "Matches any of")
-	RegisterValueMatcher[*MatcherNotAnyOf[string], string, []string]("notAnyOf", "Does not match any of")
+	RegisterValueMatcher[*MatcherAnyOf[string], string]("anyOf", "Matches any of")
+	RegisterValueMatcher[*MatcherNotAnyOf[string], string]("notAnyOf", "Does not match any of")
 
-	// RegisterValueMatcher[*MatcherQueryOrHeaderAnyOf[url.Values], url.Values, []string]("anyOf", "Matches any of")
-	// RegisterValueMatcher[*MatcherQueryOrHeaderNotAnyOf[url.Values], url.Values, []string]("notAnyOf", "Does not match any of")
-	// RegisterValueMatcher[*MatcherQueryOrHeaderExists[url.Values], url.Values, string]("exists", "Exists")
-	// RegisterValueMatcher[*MatcherQueryOrHeaderNotExists[url.Values], url.Values, string]("notExists", "Does not exists")
+	RegisterValueMatcher[*MatcherAnyOfPtr[string], *string]("anyOf", "Matches any of")
+	RegisterValueMatcher[*MatcherNotAnyOfPtr[string], *string]("notAnyOf", "Does not match any of")
+	RegisterValueMatcher[*MatcherZero[*string], *string]("exists", "Exists")
+	RegisterValueMatcher[*MatcherNotZero[*string], *string]("notExists", "Does not exists")
 
-	// RegisterValueMatcher[*MatcherQueryOrHeaderAnyOf[http.Header], http.Header, []string]("anyOf", "Matches any of")
-	// RegisterValueMatcher[*MatcherQueryOrHeaderNotAnyOf[http.Header], http.Header, []string]("notAnyOf", "Does not match any of")
-	// RegisterValueMatcher[*MatcherQueryOrHeaderExists[http.Header], http.Header, string]("exists", "Exists")
-	// RegisterValueMatcher[*MatcherQueryOrHeaderNotExists[http.Header], http.Header, string]("notExists", "Does not exists")
 }
 
 var ruleMarshaller = &PolymorphMarshaller[IRule]{}
@@ -78,8 +74,9 @@ func RegisterCondition[T Condition](name ...string) {
 var fieldNameToType objToTypeMap[string, interface{}]                      // reflect.Type 		 -> string
 var fieldTypeToExtractorMarshaller typeBijection[interface{}, interface{}] // reflect.Type 		<-> ValueExtractor[T]
 var fieldNameToExtractor typeBijection[interface{}, string]                // ValueExtractor[T] <-> string
+var fieldNameToExtractorDescription sync.Map                               // string -> FieldExtractorDescription
 
-func RegisterValueExtractor[E ValueExtractor[T], T any](name string) {
+func RegisterValueExtractor[E ValueExtractor[T], T any](name string, label string) {
 	var fieldValue T
 	if err := fieldNameToType.Add(name, fieldValue); err != nil {
 		panic(fmt.Sprintf("routing: %s", err))
@@ -97,6 +94,19 @@ func RegisterValueExtractor[E ValueExtractor[T], T any](name string) {
 	if fieldNameToExtractor.Add(extractorValue, name); err != nil {
 		panic(fmt.Sprintf("routing: %s", err))
 	}
+
+	extractorDescription := FieldExtractorDescription{
+		Name:  name,
+		Label: label,
+	}
+	extractorDescription.ArgDescription, err = getArgsDescription(extractorValue)
+	if err != nil {
+		panic(fmt.Sprintf("routing: extractor: %s", err))
+	}
+
+	if _, dup := fieldNameToExtractorDescription.LoadOrStore(name, extractorDescription); dup {
+		panic(fmt.Sprintf("routing: duplicated extractor description for %s: ", name))
+	}
 }
 
 func valueExtractorMarshaller[T any]() (*PolymorphMarshaller[ValueExtractor[T]], error) {
@@ -106,6 +116,21 @@ func valueExtractorMarshaller[T any]() (*PolymorphMarshaller[ValueExtractor[T]],
 		return nil, fmt.Errorf("no value extractor found for %T", fieldValue)
 	}
 	return valueExtractorMarshaller.(*PolymorphMarshaller[ValueExtractor[T]]), nil
+}
+
+type FieldExtractorDescription struct {
+	Name           string
+	Label          string
+	ArgDescription []ArgDescription
+}
+
+func ExtractorDescriptionsByFieldName(fieldName string) (*FieldExtractorDescription, error) {
+	description, ok := fieldNameToExtractorDescription.Load(fieldName)
+	if !ok {
+		return nil, fmt.Errorf("routing: no extractor for %s", fieldName)
+	}
+	d := description.(FieldExtractorDescription)
+	return &d, nil
 }
 
 // ===================================================
@@ -120,88 +145,89 @@ const (
 	ArgTypeIpRange     ArgType = "acl.IpRange"
 )
 
-type MatcherDescription struct {
-	Name    string
-	Label   string
-	ArgType ArgType
+func ValueToArgType(v interface{}) (ArgType, error) {
+	switch any(v).(type) {
+	case int:
+		return ArgTypeInt, nil
+	case string:
+		return ArgTypeString, nil
+	case []int:
+		return ArgTypeIntArray, nil
+	case []string:
+		return ArgTypeStringArray, nil
+	case acl.IpRange:
+		return ArgTypeIpRange, nil
+	}
+	return "", fmt.Errorf("unsupported value type %T", v)
 }
 
-type marshallerGenericTypes struct {
-	fieldType reflect.Type
-	argsType  reflect.Type
+type MatcherDescription struct {
+	Name           string
+	Label          string
+	ArgDescription []ArgDescription
 }
 
 type matcherTypeKeyType struct {
-	marshallerGenericTypes
+	fieldType   reflect.Type
 	matcherName string
 }
 
-var matcherInterfaceToFieldConditionType objToTypeMap[marshallerGenericTypes, Condition] // marshallerGenericTypes -> *FieldCondition[T,A]
-var matcherInterfaceToMatcherMarshaller sync.Map                                         // marshallerGenericTypes -> *PolymorphMarshaller[ValueMatcher[T, A]]
-var matcherTypeBijection typeBijection[interface{}, matcherTypeKeyType]                  // matcherTypeKeyType <-> ValueMatcher[T,A]
-var fieldTypeToMatcherDescriptions sync.Map                                              // interface{} -> MatcherDescription
+var matcherFieldTypeToFieldConditionType objToTypeMap[interface{}, Condition]   // reflect.Type -> *FieldCondition[T]
+var matcherFieldTypeToMatcherMarshaller typeBijection[interface{}, interface{}] // reflect.Type <-> *PolymorphMarshaller[ValueMatcher[T]]
+var matcherTypeBijection typeBijection[interface{}, matcherTypeKeyType]         // matcherTypeKeyType <-> ValueMatcher[T]
+var fieldTypeToMatcherDescriptions sync.Map                                     // interface{} -> MatcherDescription
 
-func matcherMarshallerKey[T, A any]() marshallerGenericTypes {
+func matcherTypeKey[T any](matcherName string) matcherTypeKeyType {
 	var fieldValue T
-	var argsValue A
-	return matcherMarshallerKeyFromValues(fieldValue, argsValue)
-}
-
-func matcherMarshallerKeyFromValues[T, A any](fieldValue T, argsValue A) marshallerGenericTypes {
-	fieldType := reflect.TypeOf(fieldValue)
-	argsType := reflect.TypeOf(argsValue)
-	return marshallerGenericTypes{fieldType, argsType}
-}
-
-func matcherTypeKey[T, A any](matcherName string) matcherTypeKeyType {
-	var fieldValue T
-	var argsValue A
 	return matcherTypeKeyType{
-		marshallerGenericTypes: marshallerGenericTypes{
-			fieldType: reflect.TypeOf(fieldValue),
-			argsType:  reflect.TypeOf(argsValue),
-		},
+		fieldType:   reflect.TypeOf(fieldValue),
 		matcherName: matcherName,
 	}
 }
 
-func matcherMarshaller[T, A any]() (*PolymorphMarshaller[ValueMatcher[T, A]], error) {
-	key := matcherMarshallerKey[T, A]()
-	valueMatcherMarshaller, ok := matcherInterfaceToMatcherMarshaller.Load(key)
+func matcherMarshaller[T any]() (*PolymorphMarshaller[ValueMatcher[T]], error) {
+	var fieldValue T
+	valueMatcherMarshaller, ok := matcherFieldTypeToMatcherMarshaller.GetObj(fieldValue)
 	if !ok {
-		return nil, fmt.Errorf("no value matcher found for %v", key)
+		return nil, fmt.Errorf("no value matcher found for %T", fieldValue)
 	}
-	return valueMatcherMarshaller.(*PolymorphMarshaller[ValueMatcher[T, A]]), nil
+	return valueMatcherMarshaller.(*PolymorphMarshaller[ValueMatcher[T]]), nil
 }
 
-func RegisterValueMatcher[M ValueMatcher[T, A], T, A any](name string, label string) {
-	key := matcherMarshallerKey[T, A]()
-	valueMatcherMarshaller, _ := matcherInterfaceToMatcherMarshaller.LoadOrStore(key, &PolymorphMarshaller[ValueMatcher[T, A]]{})
-
-	var matcherValue M
-	valueMatcherMarshaller.(*PolymorphMarshaller[ValueMatcher[T, A]]).Register(name, matcherValue)
-
-	matcherDescription := MatcherDescription{
-		Name:    name,
-		Label:   label,
-		ArgType: ArgType(key.argsType.String()),
-	}
-
-	matchers, dup := fieldTypeToMatcherDescriptions.LoadOrStore(key.fieldType, &[]MatcherDescription{matcherDescription})
-	if dup {
-		appended := append(*matchers.(*[]MatcherDescription), matcherDescription)
-		for !fieldTypeToMatcherDescriptions.CompareAndSwap(key.fieldType, matchers, &appended) {
-			matchers, _ = fieldTypeToMatcherDescriptions.Load(key.fieldType)
-		}
-	}
-
-	matcherKey := matcherTypeKey[T, A](name)
-	if err := matcherTypeBijection.Add(matcherValue, matcherKey); err != nil {
+func RegisterValueMatcher[M ValueMatcher[T], T any](name string, label string) {
+	var fieldValue T
+	valueMatcherMarshaller, err := matcherFieldTypeToMatcherMarshaller.AddOrGetObj(fieldValue, &PolymorphMarshaller[ValueMatcher[T]]{})
+	if err != nil {
 		panic(fmt.Sprintf("routing: %s", err))
 	}
 
-	var fieldCondtition FieldCondition[T, A]
-	if err := matcherInterfaceToFieldConditionType.Add(matcherKey.marshallerGenericTypes, fieldCondtition); err != nil {
+	var matcherValue M
+	valueMatcherMarshaller.(*PolymorphMarshaller[ValueMatcher[T]]).Register(name, matcherValue)
+
+	matcherDescription := MatcherDescription{
+		Name:  name,
+		Label: label,
+	}
+	matcherDescription.ArgDescription, err = getArgsDescription(matcherValue)
+	if err != nil {
+		panic(fmt.Sprintf("routing: matcher: %s", err))
+	}
+
+	fieldType := reflect.TypeOf(fieldValue)
+	matchers, dup := fieldTypeToMatcherDescriptions.LoadOrStore(fieldType, &[]MatcherDescription{matcherDescription})
+	if dup {
+		appended := append(*matchers.(*[]MatcherDescription), matcherDescription)
+		for !fieldTypeToMatcherDescriptions.CompareAndSwap(fieldType, matchers, &appended) {
+			matchers, _ = fieldTypeToMatcherDescriptions.Load(fieldType)
+		}
+	}
+
+	if err := matcherTypeBijection.Add(matcherValue, matcherTypeKey[T](name)); err != nil {
+		panic(fmt.Sprintf("routing: %s", err))
+	}
+
+	var fieldCondtition FieldCondition[T]
+	if err := matcherFieldTypeToFieldConditionType.Add(fieldType, fieldCondtition); err != nil {
 		panic(fmt.Sprintf("routing: %s", err))
 	}
 }
@@ -209,9 +235,10 @@ func RegisterValueMatcher[M ValueMatcher[T, A], T, A any](name string, label str
 // =======================================================
 
 type FieldConditionDescription struct {
-	Field   string
-	Matcher string
-	Args    interface{}
+	Field              string
+	FieldExtractorArgs []ArgDescription
+	Matcher            string
+	MatcherArgs        []ArgDescription
 }
 
 func GetFieldConditionDescription(fieldCondition Condition) (*FieldConditionDescription, error) {
@@ -224,6 +251,10 @@ func GetFieldConditionDescription(fieldCondition Condition) (*FieldConditionDesc
 	if !ok {
 		return nil, fmt.Errorf("failed to find extractor field for %T", extractor)
 	}
+	extractorArgsDescription, err := getArgsDescription(extractor)
+	if err != nil {
+		return nil, err
+	}
 
 	matcherValue := condValue.FieldByName(fieldConditionMatcherFieldName).Elem()
 	matcher := matcherValue.Interface()
@@ -231,12 +262,16 @@ func GetFieldConditionDescription(fieldCondition Condition) (*FieldConditionDesc
 	if !ok {
 		return nil, fmt.Errorf("failed to find matcher field for %T", matcher)
 	}
-	argValues := matcherValue.MethodByName(ArgsMethodName).Call(nil)
+	matcherArgsDescription, err := getArgsDescription(matcher)
+	if err != nil {
+		return nil, err
+	}
 
 	return &FieldConditionDescription{
-		Field:   extractorName,
-		Matcher: matcherTypeKey.matcherName,
-		Args:    argValues[0].Interface(),
+		Field:              extractorName,
+		FieldExtractorArgs: extractorArgsDescription,
+		Matcher:            matcherTypeKey.matcherName,
+		MatcherArgs:        matcherArgsDescription,
 	}, nil
 }
 
@@ -259,39 +294,50 @@ func MatchersDescriptionsByFieldName(fieldName string) ([]MatcherDescription, er
 	return *matcherDescriptions.(*[]MatcherDescription), nil
 }
 
-func BuildFieldCondition[A any](field, op string, args A) (Condition, error) {
+func BuildFieldCondition(field string, extractorArgs []Arg, op string, opArgs []Arg) (Condition, error) {
 	fieldType, ok := fieldNameToType.GetType(field)
 	if !ok {
 		return nil, fmt.Errorf("routing: unknown field %s", field)
 	}
 
-	argsType := reflect.TypeOf(args)
-	key := matcherTypeKeyType{
-		marshallerGenericTypes: marshallerGenericTypes{
-			argsType:  reflect.TypeOf(args),
-			fieldType: fieldType,
-		},
-		matcherName: op,
-	}
-
-	_, condValue, err := matcherInterfaceToFieldConditionType.allocValue(key.marshallerGenericTypes)
+	_, condValue, err := matcherFieldTypeToFieldConditionType.allocValue(fieldType)
 	if err != nil {
 		return nil, fmt.Errorf("routing: field condition: %w", err)
 	}
 	// condValue := reflect.ValueOf(cond).Addr()
 
-	matcher, err := matcherTypeBijection.AllocValue(key)
-	if !ok {
-		return nil, fmt.Errorf("routing: no matchers %s for type %s, %s", op, fieldType, argsType)
+	matcher, err := matcherTypeBijection.AllocValue(matcherTypeKeyType{
+		fieldType:   fieldType,
+		matcherName: op,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("routing: matcher: %w", err)
 	}
-	matcher.(IArgs[A]).SetArgs(args)
+	if err := setArgs(matcher, opArgs); err != nil {
+		return nil, err
+	}
 	condValue.FieldByName(fieldConditionMatcherFieldName).Set(reflect.ValueOf(matcher))
 
 	extractor, err := fieldNameToExtractor.AllocValue(field)
 	if err != nil {
-		return nil, fmt.Errorf("routing: %w", err)
+		return nil, fmt.Errorf("routing: extractor: %w", err)
+	}
+	if err := setArgs(extractor, extractorArgs); err != nil {
+		return nil, err
 	}
 	condValue.FieldByName(fieldConditionExtractorFieldName).Set(reflect.ValueOf(extractor))
 
 	return condValue.Addr().Interface().(Condition), nil
+}
+
+func FieldDecriptionByName(fieldName string) (*FieldExtractorDescription, []MatcherDescription, error) {
+	extractorDescription, err := ExtractorDescriptionsByFieldName(fieldName)
+	if err != nil {
+		return nil, nil, err
+	}
+	matcherDescriptions, err := MatchersDescriptionsByFieldName(fieldName)
+	if err != nil {
+		return nil, nil, err
+	}
+	return extractorDescription, matcherDescriptions, nil
 }
