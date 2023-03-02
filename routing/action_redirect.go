@@ -6,12 +6,13 @@ import (
 )
 
 type ActionRedirect struct {
-	Code        int    `json:"code" bson:"code"`
-	Scheme      string `json:"scheme,omitempty" bson:"scheme,omitempty"`
-	Host        string `json:"host,omitempty" bson:"host,omitempty"`
-	ReplacePath string `json:"replacePath,omitempty" bson:"replacePath,omitempty"`
-	PathPrefix  string `json:"pathPrefix,omitempty" bson:"pathPrefix,omitempty"`
-	ClearQuery  bool   `json:"clearQuery,omitempty" bson:"clearQuery,omitempty"`
+	IncomingRequest bool   `json:"incomingRequest" bson:"incomingRequest"`
+	Code            int    `json:"code" bson:"code"`
+	Scheme          string `json:"scheme,omitempty" bson:"scheme,omitempty"`
+	Host            string `json:"host,omitempty" bson:"host,omitempty"`
+	ReplacePath     string `json:"replacePath,omitempty" bson:"replacePath,omitempty"`
+	PathPrefix      string `json:"pathPrefix,omitempty" bson:"pathPrefix,omitempty"`
+	ClearQuery      bool   `json:"clearQuery,omitempty" bson:"clearQuery,omitempty"`
 }
 
 func setIfNotZero[T comparable](dst *T, val T) {
@@ -23,6 +24,9 @@ func setIfNotZero[T comparable](dst *T, val T) {
 
 func (ar ActionRedirect) Apply(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !ar.IncomingRequest {
+			h.ServeHTTP(w, r)
+		}
 		url := *r.URL
 
 		setIfNotZero(&url.Scheme, ar.Scheme)
