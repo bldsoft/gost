@@ -8,6 +8,7 @@ import (
 )
 
 type MultiCondition struct {
+	MatchAny   bool
 	Conditions []Condition
 }
 
@@ -17,17 +18,24 @@ func JoinConditions(conditions ...Condition) MultiCondition {
 	}
 }
 
+func (c MultiCondition) MatchAll() bool {
+	return !c.MatchAny
+}
+
 func (c MultiCondition) Match(r *http.Request) (matched bool, err error) {
 	for _, condition := range c.Conditions {
 		matched, err = condition.Match(r)
 		if err != nil {
 			return false, err
 		}
-		if !matched {
+		if c.MatchAny && matched {
+			return true, nil
+		}
+		if c.MatchAll() && !matched {
 			return false, nil
 		}
 	}
-	return true, nil
+	return c.MatchAll(), nil
 }
 
 func (c MultiCondition) MarshalBSON() ([]byte, error) {
