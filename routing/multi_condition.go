@@ -12,8 +12,9 @@ type MultiCondition struct {
 	Conditions []Condition
 }
 
-func JoinConditions(conditions ...Condition) MultiCondition {
+func JoinConditions(matchAll bool, conditions ...Condition) MultiCondition {
 	return MultiCondition{
+		MatchAny:   !matchAll,
 		Conditions: conditions,
 	}
 }
