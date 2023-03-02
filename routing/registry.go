@@ -16,6 +16,7 @@ func init() {
 
 	RegisterAction[MultiAction]("multi")
 	RegisterAction[ActionRedirect]("redirect")
+	RegisterAction[ActionModifyHeader]("modHeader")
 
 	// field type
 	RegisterCondition[MultiCondition]("multi")
