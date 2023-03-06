@@ -35,7 +35,7 @@ func init() {
 
 	// matcher | field type
 	RegisterValueMatcher[*MatcherClientIPAnyOf, net.IP]("anyOf", "Matches any of")
-	RegisterValueMatcher[*MatcherClientIPNotAnyOf, net.IP]("notAnyOf", "Does not matches any of")
+	RegisterValueMatcher[*MatcherClientIPNotAnyOf, net.IP]("notAnyOf", "Does not match any of")
 
 	RegisterValueMatcher[*MatcherAnyOf[string], string]("anyOf", "Matches any of")
 	RegisterValueMatcher[*MatcherNotAnyOf[string], string]("notAnyOf", "Does not match any of")
