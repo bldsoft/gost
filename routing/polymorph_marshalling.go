@@ -2,6 +2,7 @@ package routing
 
 import (
 	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -25,6 +26,7 @@ func (pm *PolymorphMarshaller[T]) Register(name string, value T) {
 	// if name == "" {
 	// 	panic("routing: attempt to register empty name")
 	// }
+	gob.Register(value) // for cached repository
 
 	if err := pm.Add(value, name); err != nil {
 		panic(fmt.Sprintf("polymoprh marshaller: register %s", err))
