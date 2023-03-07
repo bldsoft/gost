@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
@@ -51,7 +52,7 @@ func (r *WatchedRepository[T, U]) init() {
 	r.Watcher.SetHandler(func(fullDocument bson.Raw, opType OperationType) {
 		var e T
 		if err := bson.Unmarshal(fullDocument, &e); err != nil {
-			log.Logger.ErrorWithFields(log.Fields{"err": err}, "WatchedRepository: failed to update %T")
+			log.Logger.ErrorWithFields(log.Fields{"err": err, "type": reflect.TypeOf(e).String()}, "WatchedRepository: failed to update")
 		}
 		updateC <- &UpdateEvent[T, U]{
 			Entity: &e,
