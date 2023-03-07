@@ -45,21 +45,28 @@ func (c MultiCondition) MarshalBSON() ([]byte, error) {
 		return nil, err
 	}
 	type tempCond struct {
+		MatchAny   bool                          `bson:"matchAny"`
 		Conditions []marshallingField[Condition] `bson:"conditions"`
 	}
-	return addTypeAndMashalBson(tempCond{Conditions: makeMarshallingFields(conditionPolymorphMarshaller, c.Conditions...)}, name)
+	return addTypeAndMashalBson(tempCond{
+		MatchAny:   c.MatchAny,
+		Conditions: makeMarshallingFields(conditionPolymorphMarshaller, c.Conditions...),
+	}, name)
 }
 
 func (c MultiCondition) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		MatchAny   bool                          `json:"matchAny"`
 		Conditions []marshallingField[Condition] `json:"conditions"`
 	}{
+		MatchAny:   c.MatchAny,
 		Conditions: makeMarshallingFields(conditionPolymorphMarshaller, c.Conditions...),
 	})
 }
 
 func (rl *MultiCondition) UnmarshalJSON(b []byte) error {
 	type outConditionList struct {
+		MatchAny   bool              `json:"matchAny"`
 		Conditions []json.RawMessage `json:"conditions"`
 	}
 	temp := &outConditionList{}
@@ -68,6 +75,7 @@ func (rl *MultiCondition) UnmarshalJSON(b []byte) error {
 	}
 
 	rl.Conditions = nil
+	rl.MatchAny = temp.MatchAny
 	for _, condData := range temp.Conditions {
 		cond, err := conditionPolymorphMarshaller.UnmarshalJSON(condData)
 		if err != nil {
@@ -80,6 +88,7 @@ func (rl *MultiCondition) UnmarshalJSON(b []byte) error {
 
 func (rl *MultiCondition) UnmarshalBSON(b []byte) error {
 	type outConditionList struct {
+		MatchAny   bool       `bson:"matchAny"`
 		Conditions []bson.Raw `bson:"conditions"`
 	}
 	temp := &outConditionList{}
@@ -88,6 +97,7 @@ func (rl *MultiCondition) UnmarshalBSON(b []byte) error {
 	}
 
 	rl.Conditions = nil
+	rl.MatchAny = temp.MatchAny
 	for _, condData := range temp.Conditions {
 		cond, err := conditionPolymorphMarshaller.UnmarshalBSON(condData)
 		if err != nil {
