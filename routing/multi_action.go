@@ -38,15 +38,9 @@ func (a MultiAction) MarshalBSON() ([]byte, error) {
 }
 
 func (a MultiAction) MarshalJSON() ([]byte, error) {
-	name, err := actionMarshaller.NameByValue(a)
-	if err != nil {
-		return nil, err
-	}
 	return json.Marshal(struct {
-		Name    string                     `json:"type"`
 		Actions []marshallingField[Action] `json:"actions"`
 	}{
-		Name:    name,
 		Actions: makeMarshallingFields(actionMarshaller, a.Actions...),
 	})
 }

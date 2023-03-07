@@ -51,15 +51,9 @@ func (c MultiCondition) MarshalBSON() ([]byte, error) {
 }
 
 func (c MultiCondition) MarshalJSON() ([]byte, error) {
-	name, err := conditionPolymorphMarshaller.NameByValue(c)
-	if err != nil {
-		return nil, err
-	}
 	return json.Marshal(struct {
-		Name       string                        `json:"type"`
 		Conditions []marshallingField[Condition] `json:"conditions"`
 	}{
-		Name:       name,
 		Conditions: makeMarshallingFields(conditionPolymorphMarshaller, c.Conditions...),
 	})
 }
