@@ -75,17 +75,18 @@ func (f FieldCondition[T]) marshalHelper(marshalFunc func(val interface{}) ([]by
 	})
 }
 
+type outFieldCondition[T any] struct {
+	Field string                            `json:"field" bson:"field"`
+	Op    marshallingField[ValueMatcher[T]] `json:"op" bson:"op"`
+}
+
 func (f *FieldCondition[T]) unmarshalHelper(b []byte, unmarshalFunc func(data []byte, v any) error) (err error) {
 	valueExtractorMarshaller, valueMatcherMarshaller, err := f.marshallers()
 	if err != nil {
 		return err
 	}
 
-	type outFieldCondition struct {
-		Field string                            `json:"field" bson:"field"`
-		Op    marshallingField[ValueMatcher[T]] `json:"op" bson:"op"`
-	}
-	temp := &outFieldCondition{
+	temp := &outFieldCondition[T]{
 		Op: marshallingField[ValueMatcher[T]]{f.Matcher, valueMatcherMarshaller},
 	}
 	if err := unmarshalFunc(b, &temp); err != nil {
