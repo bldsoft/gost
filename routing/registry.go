@@ -23,6 +23,7 @@ func init() {
 	RegisterCondition[*FieldCondition[string]]("string")
 	RegisterCondition[*FieldCondition[int]]("int")
 	RegisterCondition[*FieldCondition[net.IP]]("ip")
+	RegisterCondition[*FieldCondition[*string]]("*string")
 
 	// exctractor | field type
 	RegisterValueExtractor[IpExtractor, net.IP]("clientIP", "Client IP")
