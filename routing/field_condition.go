@@ -60,24 +60,18 @@ func (f FieldCondition[T]) marshalHelper(marshalFunc func(val interface{}) ([]by
 	if err != nil {
 		return nil, err
 	}
-
-	fieldName, err := valueExtractorMarshaller.NameByValue(f.Extractor)
-	if err != nil {
-		return nil, err
-	}
-
 	return marshalFunc(struct {
-		Field string                            `json:"field" bson:"field"`
-		Op    marshallingField[ValueMatcher[T]] `json:"op" bson:"op"`
+		Extractor marshallingField[ValueExtractor[T]] `json:"extractor,omitempty" bson:"extractor,omitempty"`
+		Op        marshallingField[ValueMatcher[T]]   `json:"op" bson:"op"`
 	}{
-		Field: fieldName,
-		Op:    marshallingField[ValueMatcher[T]]{f.Matcher, valueMatcherMarshaller},
+		Extractor: marshallingField[ValueExtractor[T]]{f.Extractor, valueExtractorMarshaller},
+		Op:        marshallingField[ValueMatcher[T]]{f.Matcher, valueMatcherMarshaller},
 	})
 }
 
 type outFieldCondition[T any] struct {
-	Field string                            `json:"field" bson:"field"`
-	Op    marshallingField[ValueMatcher[T]] `json:"op" bson:"op"`
+	Extractor marshallingField[ValueExtractor[T]] `json:"extractor,omitempty" bson:"extractor,omitempty"`
+	Op        marshallingField[ValueMatcher[T]]   `json:"op" bson:"op"`
 }
 
 func (f *FieldCondition[T]) unmarshalHelper(b []byte, unmarshalFunc func(data []byte, v any) error) (err error) {
@@ -87,15 +81,13 @@ func (f *FieldCondition[T]) unmarshalHelper(b []byte, unmarshalFunc func(data []
 	}
 
 	temp := &outFieldCondition[T]{
-		Op: marshallingField[ValueMatcher[T]]{f.Matcher, valueMatcherMarshaller},
+		Op:        marshallingField[ValueMatcher[T]]{f.Matcher, valueMatcherMarshaller},
+		Extractor: marshallingField[ValueExtractor[T]]{f.Extractor, valueExtractorMarshaller},
 	}
 	if err := unmarshalFunc(b, &temp); err != nil {
 		return err
 	}
 	f.Matcher = temp.Op.Value
-	f.Extractor, err = valueExtractorMarshaller.AllocValue(temp.Field)
-	if err != nil {
-		return
-	}
+	f.Extractor = temp.Extractor.Value
 	return nil
 }
