@@ -2,6 +2,7 @@ package routing
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -17,6 +18,20 @@ func NewRule(cond Condition, action Action) *Rule {
 		Condition: cond,
 		Action:    action,
 	}
+}
+
+func (rule Rule) Match(r *http.Request) (matched bool, err error) {
+	if rule.Condition != nil {
+		return rule.Condition.Match(r)
+	}
+	return true, nil
+}
+
+func (r Rule) Apply(h http.Handler) http.Handler {
+	if r.Action != nil {
+		return r.Action.Apply(h)
+	}
+	return h
 }
 
 func (r *Rule) WithName(name string) *Rule {
