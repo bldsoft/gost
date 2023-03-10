@@ -3,6 +3,8 @@ package routing
 import (
 	"net/http"
 	"path/filepath"
+
+	"github.com/bldsoft/gost/utils"
 )
 
 type ActionRedirect struct {
@@ -25,7 +27,9 @@ func setIfNotZero[T comparable](dst *T, val T) {
 func (ar ActionRedirect) Apply(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !ar.IncomingRequest {
-			h.ServeHTTP(w, r)
+			ww := utils.WrapResponseWriter(w)
+			defer ww.Flush()
+			h.ServeHTTP(ww, r)
 		}
 		url := *r.URL
 
@@ -39,6 +43,7 @@ func (ar ActionRedirect) Apply(h http.Handler) http.Handler {
 			url.RawQuery = ""
 		}
 		http.Redirect(w, r, url.String(), ar.Code)
+
 	})
 }
 
