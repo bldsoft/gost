@@ -13,8 +13,8 @@ type RuleList struct {
 	Rules []IRule
 }
 
-func JoinRules(rules ...IRule) RuleList {
-	return RuleList{
+func JoinRules(rules ...IRule) *RuleList {
+	return &RuleList{
 		Rules: rules,
 	}
 }
@@ -48,7 +48,7 @@ func (rl RuleList) Apply(next http.Handler) http.Handler {
 }
 
 func (rl RuleList) MarshalBSON() ([]byte, error) {
-	name, err := ruleMarshaller.NameByValue(rl)
+	name, err := ruleMarshaller.NameByValue(&rl)
 	if err != nil {
 		return nil, err
 	}
@@ -63,11 +63,10 @@ func (rl RuleList) MarshalBSON() ([]byte, error) {
 }
 
 func (rl RuleList) MarshalJSON() ([]byte, error) {
-	name, err := ruleMarshaller.NameByValue(rl)
+	name, err := ruleMarshaller.NameByValue(&rl)
 	if err != nil {
 		return nil, err
 	}
-	type tempRuleList RuleList // avoid recursion
 	return json.Marshal(struct {
 		Name  string                    `json:"type"`
 		Rule  *marshallingField[IRule]  `json:"rule,omitempty"`
