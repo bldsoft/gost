@@ -19,8 +19,8 @@ func JoinActions(action ...Action) MultiAction {
 
 func (a MultiAction) Apply(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for _, action := range a.Actions {
-			h = action.Apply(h)
+		for i := len(a.Actions) - 1; i >= 0; i-- {
+			h = a.Actions[i].Apply(h)
 		}
 		h.ServeHTTP(w, r)
 	})

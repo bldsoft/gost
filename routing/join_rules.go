@@ -28,10 +28,9 @@ func (rl RuleList) Match(r *http.Request) (matched bool, err error) {
 
 func (rl RuleList) Apply(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if rl.Rule != nil {
-			next = rl.Rule.Apply(next)
-		}
-		for _, rule := range rl.Rules {
+
+		for i := len(rl.Rules) - 1; i >= 0; i-- {
+			rule := rl.Rules[i]
 			if rule == nil {
 				continue
 			}
@@ -43,6 +42,11 @@ func (rl RuleList) Apply(next http.Handler) http.Handler {
 				log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err}, "Routing: checking the rule condition for the request")
 			}
 		}
+
+		if rl.Rule != nil {
+			next = rl.Rule.Apply(next)
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
