@@ -23,6 +23,64 @@ func TestRouting(t *testing.T) {
 		args args
 		want *http.Response
 	}{
+
+		{
+			name: "set request header",
+			args: args{
+				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule: routing.NewRule(nil,
+					routing.JoinActions(
+						routing.ActionModifyHeader{IncomingRequest: true, Add: true, HeaderName: "Header", Value: "value"},
+					)),
+				handler: func(t *testing.T) http.Handler {
+					return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						assert.Equal(t, http.Header{
+							"Header": []string{"value"},
+						}, r.Header)
+						w.WriteHeader(http.StatusOK)
+					})
+				},
+			},
+			want: &http.Response{
+				StatusCode: http.StatusOK,
+			},
+		},
+		{
+			name: "set response header",
+			args: args{
+				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule: routing.NewRule(nil,
+					routing.JoinActions(
+						routing.ActionModifyHeader{IncomingRequest: false, Add: true, HeaderName: "Header", Value: "value"},
+					)),
+				handler: OkHandler,
+			},
+			want: &http.Response{
+				StatusCode: http.StatusOK,
+				Header: http.Header{
+					"Header": []string{"value"},
+				},
+			},
+		},
+		{
+			name: "multi action",
+			args: args{
+				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule: routing.NewRule(nil,
+					routing.JoinActions(
+						routing.ActionModifyHeader{IncomingRequest: false, Add: true, HeaderName: "Header", Value: "value"},
+						routing.ActionModifyHeader{IncomingRequest: false, Add: true, HeaderName: "Header1", Value: "value1"},
+					)),
+				handler: OkHandler,
+			},
+			want: &http.Response{
+				StatusCode: http.StatusOK,
+				Header: http.Header{
+					"Header":  []string{"value"},
+					"Header1": []string{"value1"},
+				},
+			},
+		},
 		{
 			name: "incoming redirect",
 			args: args{
@@ -86,44 +144,6 @@ func TestRouting(t *testing.T) {
 				StatusCode: http.StatusMovedPermanently,
 				Header: http.Header{
 					"Location": []string{"http://incoming1"},
-				},
-			},
-		},
-		{
-			name: "set request header",
-			args: args{
-				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
-				rule: routing.NewRule(nil,
-					routing.JoinActions(
-						routing.ActionModifyHeader{IncomingRequest: true, Add: true, HeaderName: "Header", Value: "value"},
-					)),
-				handler: func(t *testing.T) http.Handler {
-					return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-						assert.Equal(t, http.Header{
-							"Header": []string{"value"},
-						}, r.Header)
-						w.WriteHeader(http.StatusOK)
-					})
-				},
-			},
-			want: &http.Response{
-				StatusCode: http.StatusOK,
-			},
-		},
-		{
-			name: "set response header",
-			args: args{
-				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
-				rule: routing.NewRule(nil,
-					routing.JoinActions(
-						routing.ActionModifyHeader{IncomingRequest: false, Add: true, HeaderName: "Header", Value: "value"},
-					)),
-				handler: OkHandler,
-			},
-			want: &http.Response{
-				StatusCode: http.StatusOK,
-				Header: http.Header{
-					"Header": []string{"value"},
 				},
 			},
 		},
