@@ -52,14 +52,33 @@ func TestRouting(t *testing.T) {
 			},
 		},
 		{
-			name: "multiple incoming redirects with first incoming",
+			name: "last outgoing redirect",
+			args: args{
+				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule: routing.NewRule(nil,
+					routing.JoinActions(
+						routing.ActionRedirect{IncomingRequest: false, Code: http.StatusMovedPermanently, Host: "outgoing1"},
+						routing.ActionRedirect{IncomingRequest: false, Code: http.StatusMovedPermanently, Host: "outgoing2"},
+						routing.ActionRedirect{IncomingRequest: false, Code: http.StatusMovedPermanently, Host: "outgoing3"},
+					)),
+				handler: OkHandler,
+			},
+			want: &http.Response{
+				StatusCode: http.StatusMovedPermanently,
+				Header: http.Header{
+					"Location": []string{"http://outgoing3"},
+				},
+			},
+		},
+		{
+			name: "last incoming redirect",
 			args: args{
 				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
 				rule: routing.NewRule(nil,
 					routing.JoinActions(
 						routing.ActionRedirect{IncomingRequest: true, Code: http.StatusMovedPermanently, Host: "incoming1"},
 						routing.ActionRedirect{IncomingRequest: true, Code: http.StatusMovedPermanently, Host: "incoming2"},
-						routing.ActionRedirect{IncomingRequest: false, Code: http.StatusMovedPermanently, Host: "outgoing"},
+						routing.ActionRedirect{IncomingRequest: true, Code: http.StatusMovedPermanently, Host: "incoming3"},
 					)),
 				handler: OkHandler,
 			},
@@ -67,25 +86,6 @@ func TestRouting(t *testing.T) {
 				StatusCode: http.StatusMovedPermanently,
 				Header: http.Header{
 					"Location": []string{"http://incoming1"},
-				},
-			},
-		},
-		{
-			name: "multiple incoming redirects with first outgoing",
-			args: args{
-				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
-				rule: routing.NewRule(nil,
-					routing.JoinActions(
-						routing.ActionRedirect{IncomingRequest: false, Code: http.StatusMovedPermanently, Host: "outgoing1"},
-						routing.ActionRedirect{IncomingRequest: false, Code: http.StatusMovedPermanently, Host: "outgoing2"},
-						routing.ActionRedirect{IncomingRequest: true, Code: http.StatusMovedPermanently, Host: "incoming"},
-					)),
-				handler: OkHandler,
-			},
-			want: &http.Response{
-				StatusCode: http.StatusMovedPermanently,
-				Header: http.Header{
-					"Location": []string{"http://outgoing1"},
 				},
 			},
 		},
@@ -206,18 +206,16 @@ type WriteBodyAction struct {
 	str      string
 }
 
-func (a WriteBodyAction) Incoming() bool {
-	return a.incoming
+func (a WriteBodyAction) DoBeforeHandle(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, error) {
+	if a.incoming {
+		_, _ = w.Write([]byte(a.str))
+	}
+	return w, r, nil
 }
 
-func (a WriteBodyAction) Apply(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if a.incoming {
-			w.Write([]byte(a.str))
-		}
-		h.ServeHTTP(w, r)
-		if !a.incoming {
-			w.Write([]byte(a.str))
-		}
-	})
+func (a WriteBodyAction) DoAfterHandle(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, error) {
+	if !a.incoming {
+		_, _ = w.Write([]byte(a.str))
+	}
+	return w, r, nil
 }

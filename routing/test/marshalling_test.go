@@ -58,7 +58,7 @@ func TestRuleListMarshal(t *testing.T) {
 		},
 		{
 			name: "rules list with rule",
-			rule: routing.RuleList{
+			rule: &routing.RuleList{
 				Rule: routing.NewRule(routing.NewFieldCondition[string](routing.Host, routing.AnyOf("example.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google.com"}),
 				Rules: []routing.IRule{
 					routing.NewRule(routing.NewFieldCondition[string](routing.Host, routing.AnyOf("example2.com")), routing.ActionRedirect{Code: http.StatusMovedPermanently, Host: "google2.com"}),
@@ -78,7 +78,7 @@ func TestRuleListMarshal(t *testing.T) {
 		},
 	}
 
-	for testNameSuffix, format := range map[string]struct {
+	for testNamePrefix, format := range map[string]struct {
 		marshal   func(v any) ([]byte, error)
 		unmarshal func(data []byte, v any) error
 	}{
@@ -86,7 +86,7 @@ func TestRuleListMarshal(t *testing.T) {
 		"bson": {bson.Marshal, bson.Unmarshal},
 	} {
 		for _, tt := range tests {
-			t.Run(fmt.Sprintf("%s_%s", tt.name, testNameSuffix), func(t *testing.T) {
+			t.Run(fmt.Sprintf("%s_%s", testNamePrefix, tt.name), func(t *testing.T) {
 				data, err := format.marshal(tt.rule)
 				assert.NoError(t, err)
 
@@ -94,7 +94,7 @@ func TestRuleListMarshal(t *testing.T) {
 				var rules routing.RuleList
 				err = format.unmarshal(data, &rules)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.rule, rules)
+				assert.Equal(t, tt.rule, &rules)
 			})
 		}
 	}

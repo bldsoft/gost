@@ -65,11 +65,11 @@ func TestBuildFieldConditionAnyOf(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, cond)
 
-	m, err := cond.Match(httptest.NewRequest("GET", "http://example.com", nil))
+	m, _, err := cond.IncomingMatch(nil, httptest.NewRequest("GET", "http://example.com", nil))
 	assert.NoError(t, err)
 	assert.False(t, m)
 
-	m, err = cond.Match(httptest.NewRequest("GET", "http://123", nil))
+	m, _, err = cond.IncomingMatch(nil, httptest.NewRequest("GET", "http://123", nil))
 	assert.NoError(t, err)
 	assert.True(t, m)
 
@@ -77,5 +77,4 @@ func TestBuildFieldConditionAnyOf(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "anyOf", d.Matcher)
 	assert.Equal(t, []string{"123"}, d.MatcherArgs[0].Value)
-
 }

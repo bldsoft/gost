@@ -31,8 +31,8 @@ func init() {
 	RegisterValueExtractor[PathExtractor, string]("path", "Path")
 	RegisterValueExtractor[FileNameExtractor, string]("filename", "File name")
 	RegisterValueExtractor[FileExtExtractor, string]("ext", "File extension")
-	RegisterValueExtractor[*QueryExtractor, *string]("query", "Query param")
-	RegisterValueExtractor[*HeaderExtractor, *string]("header", "Request Header")
+	RegisterValueExtractor[QueryExtractor, *string]("query", "Query param")
+	RegisterValueExtractor[HeaderExtractor, *string]("header", "Request Header")
 
 	// matcher | field type
 	RegisterValueMatcher[*MatcherClientIPAnyOf, net.IP]("anyOf", "Matches any of")
@@ -321,14 +321,14 @@ func BuildFieldCondition(field string, extractorArgs []Arg, op string, opArgs []
 	}
 	condValue.FieldByName(fieldConditionMatcherFieldName).Set(reflect.ValueOf(matcher))
 
-	extractor, err := fieldNameToExtractor.AllocValue(field)
+	extractorPtr, extractor, err := fieldNameToExtractor.allocValue(field)
 	if err != nil {
 		return nil, fmt.Errorf("routing: extractor: %w", err)
 	}
-	if err := setArgs(extractor, extractorArgs); err != nil {
+	if err := setArgs(extractorPtr.Interface(), extractorArgs); err != nil {
 		return nil, err
 	}
-	condValue.FieldByName(fieldConditionExtractorFieldName).Set(reflect.ValueOf(extractor))
+	condValue.FieldByName(fieldConditionExtractorFieldName).Set(extractor)
 
 	return condValue.Addr().Interface().(Condition), nil
 }
