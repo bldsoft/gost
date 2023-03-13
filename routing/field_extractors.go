@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+
+	"github.com/bldsoft/gost/utils"
 )
 
 type Incoming struct{}
@@ -109,3 +111,13 @@ func (e HeaderExtractor) ExtractValue(w http.ResponseWriter, r *http.Request) *s
 func Header(name string) HeaderExtractor {
 	return HeaderExtractor{Name: name}
 }
+
+//=============================================================================
+
+type ResponseCodeExtractor struct{ Outgoing }
+
+func (e ResponseCodeExtractor) ExtractValue(w http.ResponseWriter, r *http.Request) int {
+	return w.(*utils.ResponseWriter).Code
+}
+
+var StatusCode = ResponseCodeExtractor{}

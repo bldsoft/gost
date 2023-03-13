@@ -33,6 +33,7 @@ func init() {
 	RegisterValueExtractor[FileExtExtractor, string]("ext", "File extension")
 	RegisterValueExtractor[QueryExtractor, *string]("query", "Query param")
 	RegisterValueExtractor[HeaderExtractor, *string]("header", "Request Header")
+	RegisterValueExtractor[ResponseCodeExtractor, int]("status_code", "Response status code")
 
 	// matcher | field type
 	RegisterValueMatcher[*MatcherClientIPAnyOf, net.IP]("anyOf", "Matches any of")
