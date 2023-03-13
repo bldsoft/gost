@@ -23,20 +23,48 @@ func (c MultiCondition) MatchAll() bool {
 	return !c.MatchAny
 }
 
-func (c MultiCondition) Match(r *http.Request) (matched bool, err error) {
+func (c MultiCondition) IncomingMatch(w http.ResponseWriter, r *http.Request) (matched bool, outgoingMatch outgoingMatchFunc, err error) {
+	var outgoingMatches []outgoingMatchFunc
 	for _, condition := range c.Conditions {
-		matched, err = condition.Match(r)
+		matched, outgoingMatch, err := condition.IncomingMatch(w, r)
 		if err != nil {
-			return false, err
+			return false, nil, err
 		}
+
+		if outgoingMatch != nil {
+			outgoingMatches = append(outgoingMatches, outgoingMatch)
+		}
+
 		if c.MatchAny && matched {
-			return true, nil
+			return matched, nil, nil
 		}
+
 		if c.MatchAll() && !matched {
-			return false, nil
+			return matched, nil, nil
 		}
 	}
-	return c.MatchAll(), nil
+
+	if len(outgoingMatches) == 0 {
+		return c.MatchAll(), nil, nil
+	}
+
+	return false, func(w http.ResponseWriter, r *http.Request) (matched bool, err error) {
+		for _, match := range outgoingMatches {
+			matched, err := match(w, r)
+			if err != nil {
+				return false, err
+			}
+
+			if c.MatchAny && matched {
+				return matched, nil
+			}
+
+			if c.MatchAll() && !matched {
+				return matched, nil
+			}
+		}
+		return c.MatchAll(), nil
+	}, nil
 }
 
 func (c MultiCondition) MarshalBSON() ([]byte, error) {

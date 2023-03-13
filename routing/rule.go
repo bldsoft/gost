@@ -8,7 +8,7 @@ import (
 )
 
 type Rule struct {
-	Name string
+	name string
 	Condition
 	Action
 }
@@ -20,22 +20,33 @@ func NewRule(cond Condition, action Action) *Rule {
 	}
 }
 
-func (rule Rule) Match(r *http.Request) (matched bool, err error) {
-	if rule.Condition != nil {
-		return rule.Condition.Match(r)
-	}
-	return true, nil
+func (rule Rule) Name() string {
+	return rule.name
 }
 
-func (r Rule) Apply(h http.Handler) http.Handler {
-	if r.Action != nil {
-		return r.Action.Apply(h)
+func (rule Rule) IncomingMatch(w http.ResponseWriter, r *http.Request) (matched bool, outgoingMatch outgoingMatchFunc, err error) {
+	if rule.Condition != nil {
+		return rule.Condition.IncomingMatch(w, r)
 	}
-	return h
+	return true, nil, nil
+}
+
+func (rule Rule) DoBeforeHandle(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, error) {
+	if rule.Action != nil {
+		return rule.Action.DoBeforeHandle(w, r)
+	}
+	return w, r, nil
+}
+
+func (rule Rule) DoAfterHandle(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, error) {
+	if rule.Action != nil {
+		return rule.Action.DoAfterHandle(w, r)
+	}
+	return w, r, nil
 }
 
 func (r *Rule) WithName(name string) *Rule {
-	r.Name = name
+	r.name = name
 	return r
 }
 
@@ -61,7 +72,7 @@ func (r Rule) marshalHelper(marshalFunc func(val interface{}) ([]byte, error)) (
 		Condition marshallingField[Condition] `json:"condition" bson:"condition"`
 		Action    marshallingField[Action]    `json:"action" bson:"action"`
 	}{
-		Name:      r.Name,
+		Name:      r.name,
 		Condition: marshallingField[Condition]{r.Condition, conditionPolymorphMarshaller},
 		Action:    marshallingField[Action]{r.Action, actionMarshaller},
 	})
@@ -80,7 +91,7 @@ func (r *Rule) unmarshalHelper(b []byte, unmarshalFunc func(data []byte, v any) 
 	if err := unmarshalFunc(b, &temp); err != nil {
 		return err
 	}
-	r.Name = temp.Name
+	r.name = temp.Name
 	r.Condition = temp.Condition.Value
 	r.Action = temp.Action.Value
 	return nil

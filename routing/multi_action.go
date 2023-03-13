@@ -17,13 +17,26 @@ func JoinActions(action ...Action) MultiAction {
 	}
 }
 
-func (a MultiAction) Apply(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for i := len(a.Actions) - 1; i >= 0; i-- {
-			h = a.Actions[i].Apply(h)
+func (a MultiAction) DoBeforeHandle(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, error) {
+	var err error
+	for _, action := range a.Actions {
+		w, r, err = action.DoBeforeHandle(w, r)
+		if err != nil {
+			return nil, nil, err
 		}
-		h.ServeHTTP(w, r)
-	})
+	}
+	return w, r, nil
+}
+
+func (a MultiAction) DoAfterHandle(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, error) {
+	var err error
+	for _, action := range a.Actions {
+		w, r, err = action.DoAfterHandle(w, r)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	return w, r, nil
 }
 
 func (a MultiAction) MarshalBSON() ([]byte, error) {

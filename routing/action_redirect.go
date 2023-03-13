@@ -3,8 +3,6 @@ package routing
 import (
 	"net/http"
 	"path/filepath"
-
-	"github.com/bldsoft/gost/utils"
 )
 
 type ActionRedirect struct {
@@ -24,27 +22,36 @@ func setIfNotZero[T comparable](dst *T, val T) {
 	}
 }
 
-func (ar ActionRedirect) Apply(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !ar.IncomingRequest {
-			ww := utils.WrapResponseWriter(w)
-			defer ww.Flush()
-			h.ServeHTTP(ww, r)
-		}
-		url := *r.URL
+func (ar ActionRedirect) redirect(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+	url := *r.URL
 
-		setIfNotZero(&url.Scheme, ar.Scheme)
-		setIfNotZero(&url.Host, ar.Host)
-		setIfNotZero(&url.Path, ar.ReplacePath)
-		if ar.PathPrefix != "" {
-			url.Path = filepath.Join(ar.PathPrefix, url.Path)
-		}
-		if ar.ClearQuery {
-			url.RawQuery = ""
-		}
-		http.Redirect(w, r, url.String(), ar.Code)
+	setIfNotZero(&url.Scheme, ar.Scheme)
+	setIfNotZero(&url.Host, ar.Host)
+	setIfNotZero(&url.Path, ar.ReplacePath)
+	if ar.PathPrefix != "" {
+		url.Path = filepath.Join(ar.PathPrefix, url.Path)
+	}
+	if ar.ClearQuery {
+		url.RawQuery = ""
+	}
+	http.Redirect(w, r, url.String(), ar.Code)
+	return w, r
+}
 
-	})
+func (ar ActionRedirect) DoBeforeHandle(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, error) {
+	if ar.IncomingRequest {
+		w, r := ar.redirect(w, r)
+		return w, r, ErrStopHandling
+	}
+	return w, r, nil
+}
+
+func (ar ActionRedirect) DoAfterHandle(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, error) {
+	if !ar.IncomingRequest {
+		w, r := ar.redirect(w, r)
+		return w, r, nil
+	}
+	return w, r, nil
 }
 
 // for graphql

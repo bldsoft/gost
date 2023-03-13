@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/bldsoft/gost/log"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -19,36 +18,31 @@ func JoinRules(rules ...IRule) *RuleList {
 	}
 }
 
-func (rl RuleList) Match(r *http.Request) (matched bool, err error) {
-	if rl.Rule == nil {
-		return true, nil
+func (rl RuleList) Name() string {
+	if rl.Rule != nil {
+		rl.Rule.Name()
 	}
-	return rl.Rule.Match(r)
+	return ""
 }
 
-func (rl RuleList) Apply(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (rl RuleList) IncomingMatch(w http.ResponseWriter, r *http.Request) (matched bool, outgoingMatch outgoingMatchFunc, err error) {
+	if rl.Rule != nil {
+		return rl.Rule.IncomingMatch(w, r)
+	}
+	return true, nil, nil
+}
 
-		for i := len(rl.Rules) - 1; i >= 0; i-- {
-			rule := rl.Rules[i]
-			if rule == nil {
-				continue
-			}
-			matched, err := rule.Match(r)
-			switch {
-			case matched:
-				next = rule.Apply(next)
-			case err != nil:
-				log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err}, "Routing: checking the rule condition for the request")
-			}
-		}
-
-		if rl.Rule != nil {
-			next = rl.Rule.Apply(next)
-		}
-
-		next.ServeHTTP(w, r)
-	})
+func (rl RuleList) DoBeforeHandle(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, error) {
+	if rl.Rule != nil {
+		return rl.Rule.DoBeforeHandle(w, r)
+	}
+	return w, r, nil
+}
+func (rl RuleList) DoAfterHandle(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, error) {
+	if rl.Rule != nil {
+		return rl.Rule.DoAfterHandle(w, r)
+	}
+	return w, r, nil
 }
 
 func (rl RuleList) MarshalBSON() ([]byte, error) {

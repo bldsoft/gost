@@ -2,8 +2,6 @@ package routing
 
 import (
 	"net/http"
-
-	"github.com/bldsoft/gost/utils"
 )
 
 type ActionModifyHeader struct {
@@ -21,22 +19,18 @@ func (a ActionModifyHeader) modifyHeader(header http.Header) {
 	}
 }
 
-func (a ActionModifyHeader) Apply(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if a.IncomingRequest {
-			a.modifyHeader(r.Header)
-		} else {
-			ww := utils.WrapResponseWriter(w)
-			defer ww.Flush()
-			w = ww
-		}
+func (a ActionModifyHeader) DoBeforeHandle(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, error) {
+	if a.IncomingRequest {
+		a.modifyHeader(r.Header)
+	}
+	return w, r, nil
+}
 
-		h.ServeHTTP(w, r)
-
-		if !a.IncomingRequest {
-			a.modifyHeader(w.Header())
-		}
-	})
+func (a ActionModifyHeader) DoAfterHandle(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request, error) {
+	if !a.IncomingRequest {
+		a.modifyHeader(w.Header())
+	}
+	return w, r, nil
 }
 
 // for graphql

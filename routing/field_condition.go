@@ -22,9 +22,21 @@ func NewFieldCondition[T any](e ValueExtractor[T], m ValueMatcher[T]) Condition 
 	}
 }
 
-func (f FieldCondition[T]) Match(r *http.Request) (matched bool, err error) {
-	v := f.Extractor.ExtractValue(r)
-	return f.Matcher.MatchValue(v)
+func (f FieldCondition[T]) IsIncoming() bool {
+	return f.Extractor.IsIncoming()
+}
+
+func (f FieldCondition[T]) IncomingMatch(w http.ResponseWriter, r *http.Request) (matched bool, outgoingMatch outgoingMatchFunc, err error) {
+	if f.Extractor.IsIncoming() {
+		v := f.Extractor.ExtractValue(w, r)
+		matched, err := f.Matcher.MatchValue(v)
+		return matched, nil, err
+	}
+
+	return false, func(w http.ResponseWriter, r *http.Request) (matched bool, err error) {
+		v := f.Extractor.ExtractValue(w, r)
+		return f.Matcher.MatchValue(v)
+	}, nil
 }
 
 func (f *FieldCondition[T]) UnmarshalJSON(b []byte) (err error) {
