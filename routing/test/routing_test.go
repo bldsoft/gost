@@ -127,6 +127,131 @@ func TestRouting(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			name: "outgoing match, incoming action",
+			args: args{
+				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule: routing.NewRule(
+					routing.NewFieldCondition[int](routing.StatusCode, routing.AnyOf(http.StatusOK)),
+					WriteBodyAction{incoming: true, str: "1"},
+				),
+				handler: OkHandler,
+			},
+			want: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("OK")), // incoming action doesn't affect response if it matches after handling
+			},
+		},
+		{
+			name: "incoming match any success, incoming action",
+			args: args{
+				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule: routing.NewRule(
+					routing.JoinConditions(false,
+						routing.NewFieldCondition[int](routing.StatusCode, routing.AnyOf(http.StatusOK)),
+						routing.NewFieldCondition[string](routing.Host, routing.AnyOf("example.com")),
+					),
+					WriteBodyAction{incoming: true, str: "1"},
+				),
+				handler: OkHandler,
+			},
+			want: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("1OK")), // managed to match before handling
+			},
+		},
+		{
+			name: "incoming match any fail, incoming action",
+			args: args{
+				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule: routing.NewRule(
+					routing.JoinConditions(false,
+						routing.NewFieldCondition[int](routing.StatusCode, routing.AnyOf(http.StatusOK)),
+						routing.NewFieldCondition[string](routing.Host, routing.AnyOf("not-example.com")),
+					),
+					WriteBodyAction{incoming: true, str: "1"},
+				),
+				handler: OkHandler,
+			},
+			want: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("OK")), // incoming action doesn't affect response if it matches after handling
+			},
+		},
+		{
+			name: "outgoing match any success, outgoing action",
+			args: args{
+				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule: routing.NewRule(
+					routing.JoinConditions(false,
+						routing.NewFieldCondition[int](routing.StatusCode, routing.AnyOf(http.StatusOK)),
+						routing.NewFieldCondition[string](routing.Host, routing.AnyOf("not-example.com")),
+					),
+					WriteBodyAction{incoming: false, str: "1"},
+				),
+				handler: OkHandler,
+			},
+			want: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("OK1")),
+			},
+		},
+		{
+			name: "incoming match all success, incoming action",
+			args: args{
+				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule: routing.NewRule(
+					routing.JoinConditions(true,
+						routing.NewFieldCondition[string](routing.Host, routing.AnyOf("example.com")),
+						routing.NewFieldCondition[string](routing.Path, routing.AnyOf("")),
+					),
+					WriteBodyAction{incoming: true, str: "1"},
+				),
+				handler: OkHandler,
+			},
+			want: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("1OK")), // managed to match before handling
+			},
+		},
+		{
+			name: "incoming match all fail, incoming action",
+			args: args{
+				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule: routing.NewRule(
+					routing.JoinConditions(true,
+						routing.NewFieldCondition[string](routing.Host, routing.AnyOf("not-example.com")),
+						routing.NewFieldCondition[string](routing.Path, routing.AnyOf("")),
+					),
+					WriteBodyAction{incoming: true, str: "1"},
+				),
+				handler: OkHandler,
+			},
+			want: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("OK")), // incoming action doesn't affect response if it matches after handling
+			},
+		},
+		{
+			name: "outgoing match all success, outgoing action",
+			args: args{
+				r: httptest.NewRequest(http.MethodGet, "http://example.com", nil),
+				rule: routing.NewRule(
+					routing.JoinConditions(true,
+						routing.NewFieldCondition[string](routing.Host, routing.AnyOf("example.com")),
+						routing.NewFieldCondition[int](routing.StatusCode, routing.AnyOf(http.StatusOK)),
+					),
+					WriteBodyAction{incoming: false, str: "1"},
+				),
+				handler: OkHandler,
+			},
+			want: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader("OK1")),
+			},
+		},
+
 		{
 			name: "action order",
 			args: args{
@@ -181,12 +306,16 @@ func OkHandler(t *testing.T) http.Handler {
 	})
 }
 
+func EmptyBodyOkHandler(t *testing.T) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
+}
+
 func ResponseEqual(t *testing.T, want, got *http.Response) {
 	assert.Equal(t, want.StatusCode, got.StatusCode)
 
 	if want.Body != nil {
 		wantBody := ResponseBody(t, want)
-		assert.Equal(t, wantBody, ResponseBody(t, got))
+		assert.Equal(t, string(wantBody), string(ResponseBody(t, got)))
 	}
 
 	for name, value := range want.Header {

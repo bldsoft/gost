@@ -33,6 +33,7 @@ func (c MultiCondition) IncomingMatch(w http.ResponseWriter, r *http.Request) (m
 
 		if outgoingMatch != nil {
 			outgoingMatches = append(outgoingMatches, outgoingMatch)
+			continue
 		}
 
 		if c.MatchAny && matched {
