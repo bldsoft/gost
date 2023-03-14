@@ -24,12 +24,14 @@ type LoggedRepository[T any, U LoggedEntity[T]] struct {
 
 func NewLoggedRepository[T any, U LoggedEntity[T]](db *mongo.Storage, collectionName string, changeLogRep *ChangeLogRepository) *LoggedRepository[T, U] {
 	rep := mongo.NewRepository[T, U](db, collectionName)
-	db.Db.CreateCollection(context.Background(), collectionName)
+	_ = db.Db.CreateCollection(context.Background(), collectionName)
 
 	return &LoggedRepository[T, U]{rep, changeLogRep}
 }
 
 func WrapRepository[T any, U LoggedEntity[T]](repo mongo.Repository[T, U], changeLogRepo *ChangeLogRepository) *LoggedRepository[T, U] {
+	db := repo.Collection().Database()
+	_ = db.CreateCollection(context.Background(), repo.Collection().Name())
 	return &LoggedRepository[T, U]{repo, changeLogRepo}
 }
 
