@@ -23,7 +23,9 @@ type ResponseWriter struct {
 
 // Flush the response
 func (rw *ResponseWriter) Flush() (int, error) {
-	rw.original.WriteHeader(rw.state.Code)
+	if rw.state.Code > 0 {
+		rw.original.WriteHeader(rw.state.Code)
+	}
 	return rw.original.Write(rw.state.Body.Bytes())
 }
 
