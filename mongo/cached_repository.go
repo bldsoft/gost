@@ -36,7 +36,7 @@ func (h *cacheChangeHandler[T, U]) WarmUp(ctx context.Context, rep Repository[T,
 	}
 	err = h.CacheSet(entities...)
 	if err != nil {
-		return fmt.Errorf("failed to cached entities: %w", err)
+		return fmt.Errorf("failed to cache entities: %w", err)
 	}
 	return nil
 }
