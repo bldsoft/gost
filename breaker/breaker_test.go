@@ -9,10 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var defaultCB *CircuitBreaker
-var customCB *CircuitBreaker
-var negativeDurationCB *CircuitBreaker
-
 type StateChange struct {
 	name string
 	from State
@@ -79,40 +75,33 @@ func causePanic(cb *CircuitBreaker) error {
 }
 
 func newCustom() *CircuitBreaker {
-	var customSt Settings
-	customSt.Name = "cb"
-	customSt.MaxRequests = 3
-	customSt.Interval = time.Duration(30) * time.Second
-	customSt.Timeout = time.Duration(90) * time.Second
-	customSt.ReadyToTrip = func(counts Counts) bool {
-		numReqs := counts.Requests
-		failureRatio := float64(counts.TotalFailures) / float64(numReqs)
-
-		counts.clear() // no effect on customCB.counts
-
-		return numReqs >= 3 && failureRatio >= 0.6
-	}
-	customSt.OnStateChange = func(name string, from State, to State) {
-		stateChange = StateChange{name, from, to}
-	}
-
-	return NewCircuitBreaker(customSt)
+	return NewCircuitBreaker(Settings().
+		WithName("cb").
+		WithMaxRequests(3).
+		WithInterval(time.Duration(30) * time.Second).
+		WithTimeout(time.Duration(90) * time.Second).
+		WithReadyToTrip(func(counts Counts) bool {
+			numReqs := counts.Requests
+			failureRatio := float64(counts.TotalFailures) / float64(numReqs)
+			counts.clear() // no effect on customCB.counts
+			return numReqs >= 3 && failureRatio >= 0.6
+		}).
+		WithOnStateChange(func(name string, from State, to State) {
+			stateChange = StateChange{name, from, to}
+		}))
 }
 
 func newNegativeDurationCB() *CircuitBreaker {
-	var negativeSt Settings
-	negativeSt.Name = "ncb"
-	negativeSt.Interval = time.Duration(-30) * time.Second
-	negativeSt.Timeout = time.Duration(-90) * time.Second
-
-	return NewCircuitBreaker(negativeSt)
+	return NewCircuitBreaker(
+		Settings().
+			WithName("ncb").
+			WithInterval(time.Duration(-30) * time.Second).
+			WithTimeout(time.Duration(-90) * time.Second))
 }
 
-func init() {
-	defaultCB = NewCircuitBreaker(Settings{})
-	customCB = newCustom()
-	negativeDurationCB = newNegativeDurationCB()
-}
+var defaultCB = NewCircuitBreaker(Settings())
+var customCB = newCustom()
+var negativeDurationCB = newNegativeDurationCB()
 
 func TestStateConstants(t *testing.T) {
 	assert.Equal(t, State(0), StateClosed)
@@ -126,7 +115,7 @@ func TestStateConstants(t *testing.T) {
 }
 
 func TestNewCircuitBreaker(t *testing.T) {
-	defaultCB := NewCircuitBreaker(Settings{})
+	defaultCB := NewCircuitBreaker(Settings())
 	assert.Equal(t, "", defaultCB.name)
 	assert.Equal(t, uint32(1), defaultCB.maxRequests)
 	assert.Equal(t, time.Duration(0), defaultCB.interval)
@@ -267,7 +256,7 @@ func TestCustomCircuitBreaker(t *testing.T) {
 }
 
 func TestTwoStepCircuitBreaker(t *testing.T) {
-	tscb := NewTwoStepCircuitBreaker(Settings{Name: "tscb"})
+	tscb := NewTwoStepCircuitBreaker(Settings().WithName("tscb"))
 	assert.Equal(t, "tscb", tscb.Name())
 
 	for i := 0; i < 5; i++ {
@@ -348,7 +337,7 @@ func TestCustomIsSuccessful(t *testing.T) {
 	isSuccessful := func(error) bool {
 		return true
 	}
-	cb := NewCircuitBreaker(Settings{IsSuccessful: isSuccessful})
+	cb := NewCircuitBreaker(Settings().WithIsSuccessful(isSuccessful))
 
 	for i := 0; i < 5; i++ {
 		assert.Nil(t, fail(cb))
