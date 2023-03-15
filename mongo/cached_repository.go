@@ -15,19 +15,30 @@ import (
 type cacheChangeHandler[T any, U repository.IEntityIDPtr[T]] struct {
 	cache          cache.ILocalCacheRepository
 	cacheKeyPrefix string
+	needWarmUp     bool
 }
 
-func newCacheChangeHandler[T any, U repository.IEntityIDPtr[T]](cache cache.ILocalCacheRepository, cacheKeyPrefix string) *cacheChangeHandler[T, U] {
+func newCacheChangeHandler[T any, U repository.IEntityIDPtr[T]](cache cache.ILocalCacheRepository, cacheKeyPrefix string, needWarmUp bool) *cacheChangeHandler[T, U] {
 	return &cacheChangeHandler[T, U]{
 		cache:          cache,
 		cacheKeyPrefix: cacheKeyPrefix,
+		needWarmUp:     needWarmUp,
 	}
 }
 
-func (h *cacheChangeHandler[T, U]) OnWarmUp(entities []U) {
-	if err := h.CacheSet(entities...); err != nil {
-		log.ErrorWithFields(log.Fields{"err": err}, "failed to warm up local cache")
+func (h *cacheChangeHandler[T, U]) WarmUp(ctx context.Context, rep Repository[T, U]) error {
+	if !h.needWarmUp {
+		return nil
 	}
+	entities, err := rep.GetAll(ctx)
+	if err != nil {
+		return err
+	}
+	err = h.CacheSet(entities...)
+	if err != nil {
+		return fmt.Errorf("failed to cache entities: %w", err)
+	}
+	return nil
 }
 
 func (h *cacheChangeHandler[T, U]) OnChange(upd *UpdateEvent[T, U]) {
@@ -113,9 +124,9 @@ func NewCachedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, colle
 	if len(opt) > 0 {
 		options = opt[0]
 	}
-	changeHandler := newCacheChangeHandler[T, U](cache, options.CacheKeyPrefix)
+	changeHandler := newCacheChangeHandler[T, U](cache, options.CacheKeyPrefix, options.WarmUp)
 	return &CachedRepository[T, U]{
-		WatchedRepository: NewWatchedRepository[T, U](db, collectionName, changeHandler, options.WarmUp),
+		WatchedRepository: NewWatchedRepository[T, U](db, collectionName, changeHandler),
 		cache:             changeHandler,
 	}
 }
