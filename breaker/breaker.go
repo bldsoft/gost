@@ -87,13 +87,6 @@ type CircuitBreaker struct {
 	expiry     time.Time
 }
 
-// TwoStepCircuitBreaker is like CircuitBreaker but instead of surrounding a function
-// with the breaker functionality, it only checks whether a request can proceed and
-// expects the caller to report the outcome in a separate step using a callback.
-type TwoStepCircuitBreaker struct {
-	cb *CircuitBreaker
-}
-
 // NewCircuitBreaker returns a new CircuitBreaker configured with the given Settings.
 func NewCircuitBreaker(st settings) *CircuitBreaker {
 	cb := new(CircuitBreaker)
@@ -101,13 +94,6 @@ func NewCircuitBreaker(st settings) *CircuitBreaker {
 	cb.toNewGeneration(time.Now())
 
 	return cb
-}
-
-// NewTwoStepCircuitBreaker returns a new TwoStepCircuitBreaker configured with the given Settings.
-func NewTwoStepCircuitBreaker(st settings) *TwoStepCircuitBreaker {
-	return &TwoStepCircuitBreaker{
-		cb: NewCircuitBreaker(st),
-	}
 }
 
 // Name returns the name of the CircuitBreaker.
@@ -155,35 +141,6 @@ func (cb *CircuitBreaker) Execute(req func() (interface{}, error)) (interface{},
 	result, err := req()
 	cb.afterRequest(generation, cb.isSuccessful(err))
 	return result, err
-}
-
-// Name returns the name of the TwoStepCircuitBreaker.
-func (tscb *TwoStepCircuitBreaker) Name() string {
-	return tscb.cb.Name()
-}
-
-// State returns the current state of the TwoStepCircuitBreaker.
-func (tscb *TwoStepCircuitBreaker) State() State {
-	return tscb.cb.State()
-}
-
-// Counts returns internal counters
-func (tscb *TwoStepCircuitBreaker) Counts() Counts {
-	return tscb.cb.Counts()
-}
-
-// Allow checks if a new request can proceed. It returns a callback that should be used to
-// register the success or failure in a separate step. If the circuit breaker doesn't allow
-// requests, it returns an error.
-func (tscb *TwoStepCircuitBreaker) Allow() (done func(success bool), err error) {
-	generation, err := tscb.cb.beforeRequest()
-	if err != nil {
-		return nil, err
-	}
-
-	return func(success bool) {
-		tscb.cb.afterRequest(generation, success)
-	}, nil
 }
 
 func (cb *CircuitBreaker) beforeRequest() (uint64, error) {
