@@ -13,21 +13,19 @@ import (
 )
 
 type cacheChangeHandler[T any, U repository.IEntityIDPtr[T]] struct {
-	cache          cache.ILocalCacheRepository
-	cacheKeyPrefix string
-	needWarmUp     bool
+	cache cache.ILocalCacheRepository
+	opt   CachedRepositoryOptions
 }
 
-func newCacheChangeHandler[T any, U repository.IEntityIDPtr[T]](cache cache.ILocalCacheRepository, cacheKeyPrefix string, needWarmUp bool) *cacheChangeHandler[T, U] {
+func newCacheChangeHandler[T any, U repository.IEntityIDPtr[T]](cache cache.ILocalCacheRepository, opt CachedRepositoryOptions) *cacheChangeHandler[T, U] {
 	return &cacheChangeHandler[T, U]{
-		cache:          cache,
-		cacheKeyPrefix: cacheKeyPrefix,
-		needWarmUp:     needWarmUp,
+		cache: cache,
+		opt:   opt,
 	}
 }
 
 func (h *cacheChangeHandler[T, U]) WarmUp(ctx context.Context, rep Repository[T, U]) error {
-	if !h.needWarmUp {
+	if !h.opt.WarmUp {
 		return nil
 	}
 	entities, err := rep.GetAll(ctx)
@@ -57,6 +55,9 @@ func (h *cacheChangeHandler[T, U]) OnChange(upd *UpdateEvent[T, U]) {
 }
 
 func (h cacheChangeHandler[T, U]) cacheMarshal(e U) ([]byte, error) {
+	if marshal := h.opt.Marshal; marshal != nil {
+		return marshal(e)
+	}
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(e); err != nil {
@@ -66,16 +67,22 @@ func (h cacheChangeHandler[T, U]) cacheMarshal(e U) ([]byte, error) {
 }
 
 func (h cacheChangeHandler[T, U]) cacheUnmarshal(data []byte) (U, error) {
-	dec := gob.NewDecoder(bytes.NewBuffer(data))
 	var e T
-	if err := dec.Decode(&e); err != nil {
+	var err error
+	if unmarshal := h.opt.Unmarshal; unmarshal != nil {
+		err = unmarshal(data, &e)
+	} else {
+		dec := gob.NewDecoder(bytes.NewBuffer(data))
+		err = dec.Decode(&e)
+	}
+	if err != nil {
 		return nil, err
 	}
 	return &e, nil
 }
 
 func (h cacheChangeHandler[T, U]) cacheKey(id string) string {
-	return fmt.Sprintf("%s:%s", h.cacheKeyPrefix, id)
+	return fmt.Sprintf("%s:%s", h.opt.CacheKeyPrefix, id)
 }
 
 func (h cacheChangeHandler[T, U]) CacheSet(entities ...U) error {
@@ -109,6 +116,8 @@ func (h cacheChangeHandler[T, U]) CacheGet(id string) (U, error) {
 type CachedRepositoryOptions struct {
 	CacheKeyPrefix string
 	WarmUp         bool
+	Marshal        func(any) ([]byte, error)      // gob if nil
+	Unmarshal      func(data []byte, v any) error // gob if nil
 }
 
 // CachedRepository is a wrapper for Repository, that keeps the entire collection in cache, updating it with Watcher.
@@ -124,7 +133,7 @@ func NewCachedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, colle
 	if len(opt) > 0 {
 		options = opt[0]
 	}
-	changeHandler := newCacheChangeHandler[T, U](cache, options.CacheKeyPrefix, options.WarmUp)
+	changeHandler := newCacheChangeHandler[T, U](cache, options)
 	return &CachedRepository[T, U]{
 		WatchedRepository: NewWatchedRepository[T, U](db, collectionName, changeHandler),
 		cache:             changeHandler,
