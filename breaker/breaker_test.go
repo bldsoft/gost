@@ -51,9 +51,9 @@ func succeed2Step(cb *TwoStepCircuitBreaker) error {
 }
 
 func fail(cb *CircuitBreaker) error {
-	msg := "fail"
-	_, err := cb.Execute(func() (interface{}, error) { return nil, fmt.Errorf(msg) })
-	if err.Error() == msg {
+	failErr := fmt.Errorf("fail")
+	_, err := cb.Execute(func() (interface{}, error) { return nil, failErr })
+	if err == failErr {
 		return nil
 	}
 	return err
@@ -334,8 +334,8 @@ func TestGeneration(t *testing.T) {
 }
 
 func TestCustomIsSuccessful(t *testing.T) {
-	isSuccessful := func(error) bool {
-		return true
+	isSuccessful := func(any, error) error {
+		return nil
 	}
 	cb := NewCircuitBreaker(Settings().WithIsSuccessful(isSuccessful))
 
@@ -347,8 +347,8 @@ func TestCustomIsSuccessful(t *testing.T) {
 
 	cb.counts.clear()
 
-	cb.isSuccessful = func(err error) bool {
-		return err == nil
+	cb.isSuccessful = func(res any, err error) error {
+		return err
 	}
 	for i := 0; i < 6; i++ {
 		assert.Nil(t, fail(cb))

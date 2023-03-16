@@ -139,7 +139,12 @@ func (cb *CircuitBreaker) Execute(req func() (interface{}, error)) (interface{},
 	}()
 
 	result, err := req()
-	cb.afterRequest(generation, cb.isSuccessful(err))
+
+	if cb.isSuccessful != nil {
+		err = cb.isSuccessful(result, err)
+	}
+
+	cb.afterRequest(generation, err == nil)
 	return result, err
 }
 

@@ -27,10 +27,10 @@ import (
 //
 // OnStateChange is called whenever the state of the CircuitBreaker changes.
 //
-// IsSuccessful is called with the error returned from a request.
-// If IsSuccessful returns true, the error is counted as a success.
+// IsSuccessful is called with the result and error returned from a request.
+// If IsSuccessful returns nil, it is counted as a success.
 // Otherwise the error is counted as a failure.
-// If IsSuccessful is nil, default IsSuccessful is used, which returns false for all non-nil errors.
+// If IsSuccessful is nil, default IsSuccessful is used, which returns error from a request
 type settings struct {
 	name          string
 	maxRequests   uint32
@@ -38,17 +38,16 @@ type settings struct {
 	timeout       time.Duration
 	readyToTrip   func(counts Counts) bool
 	onStateChange func(name string, from State, to State)
-	isSuccessful  func(err error) bool
+	isSuccessful  func(result any, err error) error
 }
 
 func Settings() settings {
 	return settings{
-		name:         "",
-		maxRequests:  1,
-		interval:     time.Duration(0) * time.Second,
-		timeout:      time.Duration(60) * time.Second,
-		readyToTrip:  func(counts Counts) bool { return counts.ConsecutiveFailures > 5 },
-		isSuccessful: func(err error) bool { return err == nil },
+		name:        "",
+		maxRequests: 1,
+		interval:    time.Duration(0) * time.Second,
+		timeout:     time.Duration(60) * time.Second,
+		readyToTrip: func(counts Counts) bool { return counts.ConsecutiveFailures > 5 },
 	}
 }
 
@@ -86,7 +85,7 @@ func (s settings) WithOnStateChange(onStateChange func(name string, from State, 
 	return s
 }
 
-func (s settings) WithIsSuccessful(isSuccessful func(err error) bool) settings {
+func (s settings) WithIsSuccessful(isSuccessful func(result any, err error) error) settings {
 	s.isSuccessful = isSuccessful
 	return s
 }
