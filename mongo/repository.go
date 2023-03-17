@@ -220,7 +220,7 @@ func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntit
 
 func (r *BaseRepository[T, U]) UpsertOne(ctx context.Context, filter interface{}, update U) error {
 	opts := options.Update().SetUpsert(true)
-	result, err := r.Collection().UpdateOne(ctx, filter, update, opts)
+	result, err := r.Collection().UpdateOne(ctx, filter, bson.M{"$set": update}, opts)
 	if err == nil && result.MatchedCount+result.UpsertedCount == 0 {
 		return utils.ErrObjectNotFound
 	}
