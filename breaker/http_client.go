@@ -12,9 +12,9 @@ type Client struct {
 	circuitBreaker *CircuitBreaker
 }
 
-func NewClient(c *http.Client, settings settings) *Client {
-	if settings.isSuccessful == nil {
-		settings = settings.WithIsSuccessful(func(result any, err error) error {
+func NewClient(c *http.Client, settings Settings) *Client {
+	if settings.IsSuccessful == nil {
+		settings.IsSuccessful = func(result any, err error) error {
 			if err != nil {
 				return err
 			}
@@ -23,7 +23,7 @@ func NewClient(c *http.Client, settings settings) *Client {
 				return fmt.Errorf("%d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 			}
 			return nil
-		})
+		}
 	}
 	return &Client{Client: c, circuitBreaker: NewCircuitBreaker(settings)}
 }

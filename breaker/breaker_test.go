@@ -75,31 +75,32 @@ func causePanic(cb *CircuitBreaker) error {
 }
 
 func newCustom() *CircuitBreaker {
-	return NewCircuitBreaker(Settings().
-		WithName("cb").
-		WithMaxRequests(3).
-		WithInterval(time.Duration(30) * time.Second).
-		WithTimeout(time.Duration(90) * time.Second).
-		WithReadyToTrip(func(counts Counts) bool {
+	return NewCircuitBreaker(Settings{
+		Name:        "cb",
+		MaxRequests: 3,
+		Interval:    time.Duration(30) * time.Second,
+		Timeout:     time.Duration(90) * time.Second,
+		ReadyToTrip: func(counts Counts) bool {
 			numReqs := counts.Requests
 			failureRatio := float64(counts.TotalFailures) / float64(numReqs)
 			counts.clear() // no effect on customCB.counts
 			return numReqs >= 3 && failureRatio >= 0.6
-		}).
-		WithOnStateChange(func(name string, from State, to State) {
+		},
+		OnStateChange: func(name string, from State, to State) {
 			stateChange = StateChange{name, from, to}
-		}))
+		},
+	})
 }
 
 func newNegativeDurationCB() *CircuitBreaker {
-	return NewCircuitBreaker(
-		Settings().
-			WithName("ncb").
-			WithInterval(time.Duration(-30) * time.Second).
-			WithTimeout(time.Duration(-90) * time.Second))
+	return NewCircuitBreaker(Settings{
+		Name:     "ncb",
+		Interval: time.Duration(-30) * time.Second,
+		Timeout:  time.Duration(-90) * time.Second,
+	})
 }
 
-var defaultCB = NewCircuitBreaker(Settings())
+var defaultCB = NewCircuitBreaker(Settings{})
 var customCB = newCustom()
 var negativeDurationCB = newNegativeDurationCB()
 
@@ -115,7 +116,7 @@ func TestStateConstants(t *testing.T) {
 }
 
 func TestNewCircuitBreaker(t *testing.T) {
-	defaultCB := NewCircuitBreaker(Settings())
+	defaultCB := NewCircuitBreaker(Settings{})
 	assert.Equal(t, "", defaultCB.name)
 	assert.Equal(t, uint32(1), defaultCB.maxRequests)
 	assert.Equal(t, time.Duration(0), defaultCB.interval)
@@ -256,7 +257,9 @@ func TestCustomCircuitBreaker(t *testing.T) {
 }
 
 func TestTwoStepCircuitBreaker(t *testing.T) {
-	tscb := NewTwoStepCircuitBreaker(Settings().WithName("tscb"))
+	tscb := NewTwoStepCircuitBreaker(Settings{
+		Name: "tscb",
+	})
 	assert.Equal(t, "tscb", tscb.Name())
 
 	for i := 0; i < 5; i++ {
@@ -337,7 +340,7 @@ func TestCustomIsSuccessful(t *testing.T) {
 	isSuccessful := func(any, error) error {
 		return nil
 	}
-	cb := NewCircuitBreaker(Settings().WithIsSuccessful(isSuccessful))
+	cb := NewCircuitBreaker(Settings{IsSuccessful: isSuccessful})
 
 	for i := 0; i < 5; i++ {
 		assert.Nil(t, fail(cb))

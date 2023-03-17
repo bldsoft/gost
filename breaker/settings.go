@@ -31,61 +31,19 @@ import (
 // If IsSuccessful returns nil, it is counted as a success.
 // Otherwise the error is counted as a failure.
 // If IsSuccessful is nil, default IsSuccessful is used, which returns error from a request
-type settings struct {
-	name          string
-	maxRequests   uint32
-	interval      time.Duration
-	timeout       time.Duration
-	readyToTrip   func(counts Counts) bool
-	onStateChange func(name string, from State, to State)
-	isSuccessful  func(result any, err error) error
+type Settings struct {
+	Name          string
+	MaxRequests   uint32
+	Interval      time.Duration
+	Timeout       time.Duration
+	ReadyToTrip   func(counts Counts) bool
+	OnStateChange func(name string, from State, to State)
+	IsSuccessful  func(result any, err error) error
 }
 
-func Settings() settings {
-	return settings{
-		name:        "",
-		maxRequests: 1,
-		interval:    time.Duration(0) * time.Second,
-		timeout:     time.Duration(60) * time.Second,
-		readyToTrip: func(counts Counts) bool { return counts.ConsecutiveFailures > 5 },
-	}
-}
+const defaultInterval = time.Duration(0) * time.Second
+const defaultTimeout = time.Duration(60) * time.Second
 
-func (s settings) WithName(name string) settings {
-	s.name = name
-	return s
-}
-
-func (s settings) WithMaxRequests(maxRequests uint32) settings {
-	s.maxRequests = maxRequests
-	return s
-}
-
-func (s settings) WithInterval(interval time.Duration) settings {
-	if interval > 0 {
-		s.interval = interval
-	}
-	return s
-}
-
-func (s settings) WithTimeout(timeout time.Duration) settings {
-	if timeout > 0 {
-		s.timeout = timeout
-	}
-	return s
-}
-
-func (s settings) WithReadyToTrip(readyToTrip func(counts Counts) bool) settings {
-	s.readyToTrip = readyToTrip
-	return s
-}
-
-func (s settings) WithOnStateChange(onStateChange func(name string, from State, to State)) settings {
-	s.onStateChange = onStateChange
-	return s
-}
-
-func (s settings) WithIsSuccessful(isSuccessful func(result any, err error) error) settings {
-	s.isSuccessful = isSuccessful
-	return s
+func defaultReadyToTrip(counts Counts) bool {
+	return counts.ConsecutiveFailures > 5
 }

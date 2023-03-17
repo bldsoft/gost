@@ -8,7 +8,7 @@ type TwoStepCircuitBreaker struct {
 }
 
 // NewTwoStepCircuitBreaker returns a new TwoStepCircuitBreaker configured with the given Settings.
-func NewTwoStepCircuitBreaker(st settings) *TwoStepCircuitBreaker {
+func NewTwoStepCircuitBreaker(st Settings) *TwoStepCircuitBreaker {
 	return &TwoStepCircuitBreaker{
 		cb: NewCircuitBreaker(st),
 	}
