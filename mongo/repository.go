@@ -276,6 +276,9 @@ func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.I
 
 			var entity EntityTimeStamp
 			result.Decode(&entity)
+			if entity.CreateTime == nil {
+				entity.CreateTime = &time.Time{}
+			}
 			entityTimestamp.SetCreateFields(*entity.CreateTime, entity.CreateUserID)
 		}
 	}
