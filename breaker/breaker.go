@@ -126,7 +126,7 @@ func NewCircuitBreaker(st Settings) *CircuitBreaker {
 
 	cb.isSuccessful = st.IsSuccessful
 
-	cb.toNewGeneration(time.Now())
+	cb.ToNewGeneration(time.Now())
 
 	return cb
 }
@@ -245,7 +245,7 @@ func (cb *CircuitBreaker) currentState(now time.Time) (State, uint64) {
 	switch cb.state {
 	case StateClosed:
 		if !cb.expiry.IsZero() && cb.expiry.Before(now) {
-			cb.toNewGeneration(now)
+			cb.ToNewGeneration(now)
 		}
 	case StateOpen:
 		if cb.expiry.Before(now) {
@@ -263,14 +263,14 @@ func (cb *CircuitBreaker) setState(state State, now time.Time) {
 	prev := cb.state
 	cb.state = state
 
-	cb.toNewGeneration(now)
+	cb.ToNewGeneration(now)
 
 	if cb.onStateChange != nil {
 		cb.onStateChange(cb.name, prev, state)
 	}
 }
 
-func (cb *CircuitBreaker) toNewGeneration(now time.Time) {
+func (cb *CircuitBreaker) ToNewGeneration(now time.Time) {
 	cb.generation++
 	cb.counts.clear()
 
