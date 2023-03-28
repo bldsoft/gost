@@ -47,7 +47,7 @@ func ReadConfig(config IConfig, envPrefix string) {
 	}
 }
 
-//FormatEnv formats all environment variables in yaml
+// FormatEnv formats all environment variables in yaml
 func FormatEnv(config IConfig) string {
 	d, _ := yaml.Marshal(config)
 	return fmt.Sprintf("GOMAXPROCS: %d\n%s",
@@ -135,6 +135,9 @@ func iterateFields(config interface{}, prefix string, startSructCb structCallbac
 
 	for i := 0; i < configType.NumField(); i++ {
 		field := configType.Field(i)
+		if !field.IsExported() {
+			continue
+		}
 		tagValue := field.Tag.Get("mapstructure")
 		if field := reflect.Indirect(reflect.Indirect(value).Field(i)); field.Kind() == reflect.Struct {
 			if err := iterateFields(field.Addr().Interface(), addPrefix(tagValue, prefix), startSructCb, fieldCb, finishStructCb); err != nil {
