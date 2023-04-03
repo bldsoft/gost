@@ -103,10 +103,8 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 				next.ServeHTTP(w, r)
 				return
 			}
-			if !c.saveSession(w, r, session) {
-				return
-			}
 			next.ServeHTTP(w, WithUserContext(WithSessionRequest(r, session), &user))
+			c.saveSession(w, r, session)
 		})
 
 	}
