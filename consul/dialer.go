@@ -4,6 +4,8 @@ import (
 	"context"
 	"net"
 	"time"
+
+	"github.com/hashicorp/consul/api"
 )
 
 type Dialer struct {
@@ -11,13 +13,17 @@ type Dialer struct {
 	resolver *Resolver
 }
 
-func DefaultDialer(d *Discovery) *Dialer {
-	resolver := NewResolver(d)
+func DefaultDialer(consulClient *api.Client) *Dialer {
+	resolver := NewResolver(consulClient)
 	baseDialer := &net.Dialer{
 		Timeout:   30 * time.Second,
 		KeepAlive: 30 * time.Second,
 	}
 	return NewDialer(baseDialer, resolver)
+}
+
+func DefaultDialerFromDiscovery(d *Discovery) *Dialer {
+	return DefaultDialer(d.consulClient)
 }
 
 func NewDialer(d *net.Dialer, r *Resolver) *Dialer {

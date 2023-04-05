@@ -8,19 +8,19 @@ import (
 )
 
 type Resolver struct {
-	d *Discovery
+	consulClient *api.Client
 }
 
-func NewResolver(discovery *Discovery) *Resolver {
-	return &Resolver{d: discovery}
+func NewResolver(consulClient *api.Client) *Resolver {
+	return &Resolver{consulClient: consulClient}
 }
 
-func (r *Resolver) consulClient() *api.Client {
-	return r.d.consulClient
+func NewResolverFromDiscovery(discovery *Discovery) *Resolver {
+	return NewResolver(discovery.ApiClient())
 }
 
 func (r *Resolver) LookupServices(ctx context.Context, serviceCluster string) ([]string, error) {
-	_, checkInfos, err := r.consulClient().Agent().AgentHealthServiceByNameOpts(serviceCluster,
+	_, checkInfos, err := r.consulClient.Agent().AgentHealthServiceByNameOpts(serviceCluster,
 		&api.QueryOptions{
 			Near: "_agent",
 			// TODO: filter status "passing"

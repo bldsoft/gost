@@ -4,13 +4,19 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+
+	"github.com/hashicorp/consul/api"
 )
 
-func NewTransport(t http.RoundTripper, d *Discovery) http.RoundTripper {
+func NewTransport(t http.RoundTripper, consulClient *api.Client) http.RoundTripper {
 	return &transport{
 		base:     t,
-		resolver: NewResolver(d),
+		resolver: NewResolver(consulClient),
 	}
+}
+
+func NewTransportFromDiscovery(t http.RoundTripper, discovery *Discovery) http.RoundTripper {
+	return NewTransport(t, discovery.ApiClient())
 }
 
 type transport struct {
@@ -24,7 +30,7 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		host = req.URL.Host
 	}
 
-	if net.ParseIP(host) == nil {
+	if net.ParseIP(host) != nil {
 		return t.base.RoundTrip(req)
 	}
 

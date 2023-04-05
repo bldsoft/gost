@@ -12,7 +12,7 @@ type ConsulConfig struct {
 
 func (c *ConsulConfig) SetDefaults() {
 	c.ConsulScheme = "http"
-	c.ConsulAddr = "127.0.0.1:8600"
+	c.ConsulAddr = "127.0.0.1:8500"
 }
 
 func (c *ConsulConfig) Validate() error {

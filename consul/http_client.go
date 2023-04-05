@@ -2,20 +2,26 @@ package consul
 
 import (
 	"net/http"
+
+	"github.com/hashicorp/consul/api"
 )
 
-func NewHttpClient(d *Discovery, sticky ...bool) *http.Client {
+func NewHttpClient(consulClient *api.Client, sticky ...bool) *http.Client {
 	client := *http.DefaultClient
-	client.Transport = newTransport(d, sticky...)
+	client.Transport = newTransport(consulClient, sticky...)
 	return &client
 }
 
-func newTransport(d *Discovery, sticky ...bool) http.RoundTripper {
+func NewHttpClientFromDiscovery(d *Discovery, sticky ...bool) *http.Client {
+	return NewHttpClient(d.ApiClient(), sticky...)
+}
+
+func newTransport(consulClient *api.Client, sticky ...bool) http.RoundTripper {
 	if len(sticky) > 0 && sticky[0] {
 		return &http.Transport{
 			Proxy:       http.ProxyFromEnvironment,
-			DialContext: DefaultDialer(d).DialContext,
+			DialContext: DefaultDialer(consulClient).DialContext,
 		}
 	}
-	return NewTransport(http.DefaultTransport, d)
+	return NewTransport(http.DefaultTransport, consulClient)
 }
