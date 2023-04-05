@@ -34,6 +34,10 @@ func (d *Dialer) DialContext(ctx context.Context, network, addr string) (net.Con
 		host = addr
 	}
 
+	if net.ParseIP(host) != nil {
+		return d.base.DialContext(ctx, network, addr)
+	}
+
 	addrs, err := d.resolver.LookupServices(ctx, host)
 	if err != nil {
 		return nil, err
