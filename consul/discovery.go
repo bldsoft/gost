@@ -13,6 +13,10 @@ type Discovery struct {
 	consulClient *api.Client
 }
 
+func (d *Discovery) ApiClient() *api.Client {
+	return d.consulClient
+}
+
 func Register(cfg Config) *Discovery {
 	d := &Discovery{cfg: cfg}
 	if err := d.init(); err != nil {
