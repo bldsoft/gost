@@ -12,10 +12,10 @@ type expCacheEntry struct {
 }
 
 type ExpiringCacheRepository struct {
-	ILocalCacheRepository
+	ILocalCacheRepository[[]byte]
 }
 
-func NewExpiringRepository(rep ILocalCacheRepository) *ExpiringCacheRepository {
+func NewExpiringRepository(rep ILocalCacheRepository[[]byte]) *ExpiringCacheRepository {
 	return &ExpiringCacheRepository{ILocalCacheRepository: rep}
 }
 

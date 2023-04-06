@@ -9,9 +9,9 @@ import (
 	"github.com/bldsoft/gost/log"
 )
 
-//DistrMutex - implementation of distributed lock
+// DistrMutex - implementation of distributed lock
 type DistrMutex struct {
-	cache           IDistrCacheRepository
+	cache           IDistrCacheRepository[[]byte]
 	lockKey         string
 	uniqueID        []byte
 	ticker          *time.Ticker
@@ -32,7 +32,7 @@ const (
 
 // NewDistrMutex creates an implementation of distributed lock.
 // If the gouritine locks m and then finishes running without calling Unlock(), m unlocks after unlockTime.
-func NewDistrMutex(cache IDistrCacheRepository, lockKey string, unlockTime time.Duration) *DistrMutex {
+func NewDistrMutex(cache IDistrCacheRepository[[]byte], lockKey string, unlockTime time.Duration) *DistrMutex {
 	uniqueID := make([]byte, 4)
 	rand.Read(uniqueID)
 
