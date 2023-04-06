@@ -46,6 +46,7 @@ func (d *Discovery) registerService() error {
 	check := &api.AgentServiceCheck{
 		TTL:     d.cfg.HealthCheckTTL.String(),
 		CheckID: d.cfg.checkID(),
+		Status:  api.HealthPassing,
 	}
 	if d.cfg.DeregisterTTL > 0 {
 		check.DeregisterCriticalServiceAfter = d.cfg.DeregisterTTL.String()
