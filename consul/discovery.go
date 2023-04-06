@@ -19,7 +19,7 @@ func (d *Discovery) ApiClient() *api.Client {
 	return d.consulClient
 }
 
-func Register(cfg Config) *Discovery {
+func NewDiscovery(cfg Config) *Discovery {
 	d := &Discovery{cfg: cfg}
 	if err := d.initClient(); err != nil {
 		panic(err)
