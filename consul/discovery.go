@@ -25,11 +25,11 @@ func NewDiscovery(cfg Config) *Discovery {
 		panic(err)
 	}
 	d.AsyncRunner = server.NewContextAsyncRunner(func(ctx context.Context) error {
-		if err := d.registerService(); err != nil {
+		if err := d.Register(); err != nil {
 			return err
 		}
 		d.heartBeat(ctx, d.cfg.HealthCheckTTL/3)
-		return d.consulClient.Agent().ServiceDeregister(cfg.ServiceID)
+		return d.Deregister()
 	})
 	return d
 }
@@ -42,7 +42,7 @@ func (d *Discovery) initClient() (err error) {
 	return err
 }
 
-func (d *Discovery) registerService() error {
+func (d *Discovery) Register() error {
 	check := &api.AgentServiceCheck{
 		TTL:     d.cfg.HealthCheckTTL.String(),
 		CheckID: d.cfg.checkID(),
@@ -61,6 +61,10 @@ func (d *Discovery) registerService() error {
 	}
 
 	return d.consulClient.Agent().ServiceRegister(reg)
+}
+
+func (d *Discovery) Deregister() error {
+	return d.consulClient.Agent().ServiceDeregister(d.cfg.ServiceID)
 }
 
 func (d *Discovery) heartBeat(ctx context.Context, interval time.Duration) {

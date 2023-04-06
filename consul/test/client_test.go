@@ -36,10 +36,12 @@ func runTestService(t *testing.T, cluster, serviceID string) (cancel func()) {
 	cfg.ServicePort, err = strconv.Atoi(port)
 	assert.NoError(t, err)
 
-	consul.Register(cfg)
+	d := consul.NewDiscovery(cfg)
+	d.Register()
 
 	return func() {
 		srv.Close()
+		d.Deregister()
 	}
 }
 
