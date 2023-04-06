@@ -3,6 +3,8 @@ package consul
 import (
 	"errors"
 	"time"
+
+	"github.com/bldsoft/gost/utils"
 )
 
 type ConsulConfig struct {
@@ -42,7 +44,7 @@ func (c *ServiceConfig) Validate() error {
 		return errors.New("CONSUL_CLUSTER is required")
 	}
 	if len(c.ServiceID) == 0 {
-		return errors.New("CONSUL_SERVICE_ID is required")
+		c.ServiceID = utils.RandString(32)
 	}
 	return nil
 }
