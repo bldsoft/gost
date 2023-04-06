@@ -19,7 +19,7 @@ type Repository struct {
 }
 
 func NewRepository(jsonConfig string) *Repository {
-	defConfig := bigcache.DefaultConfig(5 * time.Minute)
+	defConfig := bigcache.DefaultConfig(time.Minute)
 	if err := json.Unmarshal([]byte(jsonConfig), &defConfig); err != nil {
 		log.WarnWithFields(log.Fields{"err": err}, "Failed to unmarshal Ristretto config")
 	}
