@@ -5,12 +5,14 @@ import (
 	"time"
 
 	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/server"
 	"github.com/hashicorp/consul/api"
 )
 
 type Discovery struct {
 	cfg          Config
 	consulClient *api.Client
+	server.AsyncRunner
 }
 
 func (d *Discovery) ApiClient() *api.Client {
@@ -19,21 +21,17 @@ func (d *Discovery) ApiClient() *api.Client {
 
 func Register(cfg Config) *Discovery {
 	d := &Discovery{cfg: cfg}
-	if err := d.init(); err != nil {
+	if err := d.initClient(); err != nil {
 		panic(err)
 	}
+	d.AsyncRunner = server.NewContextAsyncRunner(func(ctx context.Context) error {
+		if err := d.registerService(); err != nil {
+			return err
+		}
+		d.heartBeat(ctx, d.cfg.HealthCheckTTL/3)
+		return d.consulClient.Agent().ServiceDeregister(cfg.ServiceID)
+	})
 	return d
-}
-
-func (d *Discovery) init() (err error) {
-	if err = d.initClient(); err != nil {
-		return
-	}
-	if err = d.registerService(); err != nil {
-		return
-	}
-	go d.heartBeat(context.Background(), d.cfg.HealthCheckTTL/3)
-	return
 }
 
 func (d *Discovery) initClient() (err error) {
