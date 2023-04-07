@@ -7,10 +7,10 @@ import (
 )
 
 type TypedRepository[T any] struct {
-	IExpiringCacheRepository[[]byte]
+	IExpiringCacheRepository
 }
 
-func Typed[T any](rep IExpiringCacheRepository[[]byte]) *TypedRepository[T] {
+func Typed[T any](rep IExpiringCacheRepository) *TypedRepository[T] {
 	return &TypedRepository[T]{rep}
 }
 

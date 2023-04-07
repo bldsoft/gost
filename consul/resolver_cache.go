@@ -12,7 +12,7 @@ import (
 var ErrCacheMiss = errors.New("cache miss")
 
 type resolverCache struct {
-	cache cache.IExpiringCacheRepository[[]string] // cluster name -> addrs
+	cache cache.Repository[[]string] // cluster name -> addrs
 	ttl   time.Duration
 }
 
