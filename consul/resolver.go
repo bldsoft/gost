@@ -3,6 +3,7 @@ package consul
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/consul/api"
 )
@@ -18,7 +19,7 @@ type Resolver struct {
 }
 
 func NewResolver(consulClient *api.Client) *Resolver {
-	return &Resolver{consulClient: consulClient, balancer: &RoundRobin{}}
+	return &Resolver{consulClient: consulClient, cache: newResolverCache(5 * time.Minute), balancer: &RoundRobin{}}
 }
 
 func NewResolverFromDiscovery(discovery *Discovery) *Resolver {
