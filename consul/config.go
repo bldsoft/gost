@@ -8,8 +8,8 @@ import (
 )
 
 type ConsulConfig struct {
-	ConsulAddr   string `mapstructure:"ADDRESS"`
-	ConsulScheme string `mapstructure:"SCHEME"`
+	ConsulAddr   string `mapstructure:"ADDRESS" description:"Address of the Consul server"`
+	ConsulScheme string `mapstructure:"SCHEME" description:"URI scheme for the Consul server"`
 }
 
 func (c *ConsulConfig) SetDefaults() {
@@ -22,12 +22,12 @@ func (c *ConsulConfig) Validate() error {
 }
 
 type ServiceConfig struct {
-	ServiceID      string        `mapstructure:"SERVICE_ID"`
-	Cluster        string        `mapstructure:"CLUSTER"`
-	ServiceAddr    string        `mapstructure:"SERVICE_ADDRESS"`
-	ServicePort    int           `mapstructure:"SERVICE_PORT"`
-	HealthCheckTTL time.Duration `mapstructure:"HEALTH_CHECK_TTL"`
-	DeregisterTTL  time.Duration `mapstructure:"DEREREGISTER_TTL"`
+	ServiceID      string        `mapstructure:"SERVICE_ID" description:"The ID of the service. If empty, a random one will be generated"`
+	Cluster        string        `mapstructure:"CLUSTER" description:"The name of the service to register"`
+	ServiceAddr    string        `mapstructure:"SERVICE_ADDRESS" description:"The address of the service"`
+	ServicePort    int           `mapstructure:"SERVICE_PORT" description:"The port of the service"`
+	HealthCheckTTL time.Duration `mapstructure:"HEALTH_CHECK_TTL" description:"Check TTL"`
+	DeregisterTTL  time.Duration `mapstructure:"DEREREGISTER_TTL" description:"If a check is in the critical state for more than this configured value,	then the service will automatically be deregistered"`
 }
 
 func (c *ServiceConfig) checkID() string {
