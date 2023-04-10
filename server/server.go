@@ -39,6 +39,7 @@ type Server struct {
 	microservices     []IMicroservice
 	commonMiddlewares chi.Middlewares
 	runnerManager     *AsyncJobManager
+	routerWrapper     func(http.Handler) http.Handler
 }
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
@@ -68,6 +69,11 @@ func (s *Server) SetMiddlewares(middlewares ...func(http.Handler) http.Handler) 
 	return s
 }
 
+func (s *Server) SetRouterWrapper(middleware func(http.Handler) http.Handler) *Server {
+	s.routerWrapper = middleware
+	return s
+}
+
 func (s *Server) AddAsyncRunners(runners ...AsyncRunner) *Server {
 	s.runnerManager.Append(runners...)
 	return s
@@ -88,7 +94,11 @@ func (s *Server) init() {
 		})
 	}
 
-	http.Handle("/", s.router)
+	if s.routerWrapper != nil {
+		http.Handle("/", s.routerWrapper(s.router))
+	} else {
+		http.Handle("/", s.router)
+	}
 }
 
 func (s *Server) Start() {
