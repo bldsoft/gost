@@ -27,7 +27,7 @@ func NewRepository(jsonConfig string) *Repository {
 	}
 	client, err := ristretto.NewCache(defConfig)
 	if err != nil {
-		log.Fatalf("Ristretto cache failed: %v", err)
+		log.Panicf("Ristretto cache failed: %v", err)
 	}
 	return &Repository{cache: client}
 }

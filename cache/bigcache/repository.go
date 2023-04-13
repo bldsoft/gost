@@ -25,7 +25,7 @@ func NewRepository(jsonConfig string) *Repository {
 	}
 	client, err := bigcache.NewBigCache(defConfig)
 	if err != nil {
-		log.Fatalf("BigCache failed: %v", err)
+		log.Panicf("BigCache failed: %v", err)
 	}
 
 	return &Repository{cache: client}

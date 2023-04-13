@@ -55,7 +55,7 @@ func (db *Storage) Connect() {
 	var err error
 	db.Client, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		log.FatalWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB connection failed")
+		log.PanicWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB connection failed")
 	}
 	db.Db = db.Client.Database(db.config.DbName)
 

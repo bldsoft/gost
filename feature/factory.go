@@ -17,7 +17,7 @@ func CreateService(s storage.IStorage, serviceName string) IFeatureService {
 	case *mongo.Storage:
 		return NewService(NewMongoRepository(s, serviceName))
 	default:
-		log.Fatalf("%s doesn't support feature repository", reflect.TypeOf(s))
+		log.Panicf("%s doesn't support feature repository", reflect.TypeOf(s))
 		return nil
 	}
 }

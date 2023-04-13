@@ -14,7 +14,7 @@ import (
 type Storage struct {
 	*memcache.Client
 	statClient *stat_client.Client
-	keyPrefix string
+	keyPrefix  string
 }
 
 func NewStorage(cfg Config) *Storage {
@@ -23,7 +23,7 @@ func NewStorage(cfg Config) *Storage {
 		client.Timeout = time.Duration(cfg.TimeoutMs) * time.Millisecond
 	}
 	if err := client.Ping(); err != nil {
-		log.Fatalf("Memcached connection failed: %v", err)
+		log.Panicf("Memcached connection failed: %v", err)
 	}
 	statClient, err := stat_client.New(cfg.Servers...)
 	if err != nil {
@@ -32,7 +32,7 @@ func NewStorage(cfg Config) *Storage {
 	return &Storage{
 		Client:     client,
 		statClient: statClient,
-		keyPrefix: cfg.KeyPrefix,
+		keyPrefix:  cfg.KeyPrefix,
 	}
 }
 
