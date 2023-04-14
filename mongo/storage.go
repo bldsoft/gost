@@ -62,7 +62,7 @@ func (db *Storage) Connect() {
 	// Check the connection
 	err = db.Client.Ping(ctx, nil)
 	if err != nil {
-		log.ErrorWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB ping failed")
+		log.PanicWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB ping failed")
 	}
 
 	<-db.migrationReadyC
