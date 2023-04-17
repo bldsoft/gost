@@ -8,7 +8,7 @@ import (
 	"github.com/bldsoft/gost/log"
 )
 
-func DBConnect(wg *sync.WaitGroup, connect func(), n int, sleepPeriod time.Duration) {
+func DBConnectAsync(wg *sync.WaitGroup, connect func(), n int, sleepPeriod time.Duration) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
