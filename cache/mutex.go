@@ -9,7 +9,7 @@ import (
 	"github.com/bldsoft/gost/log"
 )
 
-//DistrMutex - implementation of distributed lock
+// DistrMutex - implementation of distributed lock
 type DistrMutex struct {
 	cache           IDistrCacheRepository
 	lockKey         string

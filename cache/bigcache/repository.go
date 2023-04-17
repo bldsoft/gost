@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/allegro/bigcache"
+	"github.com/bldsoft/gost/cache"
 	"github.com/bldsoft/gost/log"
 )
 
@@ -36,19 +37,20 @@ func (r *Repository) Add(key string, value []byte) error {
 }
 
 func (r *Repository) AddFor(key string, value []byte, expiration time.Duration) error {
-	return r.Set(key, value)
+	return ErrNotImplemented
 }
 
 func (r *Repository) Get(key string) ([]byte, error) {
 	res, err := r.cache.Get(key)
+	if err != nil {
+		if errors.Is(err, bigcache.ErrEntryNotFound) {
+			return nil, cache.ErrCacheMiss
+		}
+	}
 	return res, err
 }
 
 func (r *Repository) Set(key string, value []byte) error {
-	return r.cache.Set(key, value)
-}
-
-func (r *Repository) SetFor(key string, value []byte, expiration time.Duration) error {
 	return r.cache.Set(key, value)
 }
 
