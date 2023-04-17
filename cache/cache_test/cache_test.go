@@ -10,18 +10,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
+var (
 	key  = "key"
-	data = "value"
+	data = []byte("value")
 )
 
 func Test_SetFor(t *testing.T) {
 	tests := []struct {
 		Name string
-		Rep  cache.IExpiringCacheRepository[string]
+		Rep  cache.IExpiringCacheRepository
 	}{
-		{"bigcache", cache.Typed[string](bigcache.NewExpiringRepository("{}"))},
-		{"ristretto", cache.Typed[string](ristretto.NewRepository("{}"))},
+		{"bigcache", bigcache.NewExpiringRepository("{}")},
+		{"ristretto", ristretto.NewRepository("{}")},
 	}
 
 	for _, tt := range tests {
