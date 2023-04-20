@@ -20,7 +20,7 @@ func TestProbe(t *testing.T) {
 		{
 			name: "",
 			args: args{
-				path: "media_test.ts",
+				path: "test_files/media_test.ts",
 			},
 			want: tmp{
 				Duration: 6.013333,
