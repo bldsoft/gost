@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -136,6 +137,9 @@ func (r *BaseRepository[T, U]) prepareInsertEntity(ctx context.Context, entity U
 func (r *BaseRepository[T, U]) Insert(ctx context.Context, entity U) error {
 	r.prepareInsertEntity(ctx, entity)
 	_, err := r.Collection().InsertOne(ctx, entity)
+	if mongo.IsDuplicateKeyError(err) {
+		return fmt.Errorf("%w: %w", repository.ErrAlreadyExists, err)
+	}
 	return err
 }
 
