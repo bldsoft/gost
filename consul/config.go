@@ -4,12 +4,14 @@ import (
 	"errors"
 	"time"
 
+	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/utils"
 )
 
 type ConsulConfig struct {
-	ConsulAddr   string `mapstructure:"ADDRESS" description:"Address of the Consul server"`
-	ConsulScheme string `mapstructure:"SCHEME" description:"URI scheme for the Consul server"`
+	ConsulAddr   string              `mapstructure:"ADDRESS" description:"Address of the Consul server"`
+	ConsulScheme string              `mapstructure:"SCHEME" description:"URI scheme for the Consul server"`
+	Token        config.HiddenString `mapstructure:"TOKEN" description:" Token is used to provide a per-request ACL token"`
 }
 
 func (c *ConsulConfig) SetDefaults() {

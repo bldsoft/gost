@@ -38,6 +38,7 @@ func (d *Discovery) initClient() (err error) {
 	d.consulClient, err = api.NewClient(&api.Config{
 		Address: d.cfg.ConsulAddr,
 		Scheme:  d.cfg.ConsulScheme,
+		Token:   d.cfg.Token.String(),
 	})
 	return err
 }
