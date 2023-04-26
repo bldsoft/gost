@@ -25,6 +25,9 @@ func NewDiscovery(cfg Config) *Discovery {
 		panic(err)
 	}
 	d.AsyncRunner = server.NewContextAsyncRunner(func(ctx context.Context) error {
+		if len(cfg.ServiceAddr) == 0 { // do not register in consul
+			return nil
+		}
 		if err := d.Register(); err != nil {
 			return err
 		}
