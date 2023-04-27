@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -136,6 +137,9 @@ func (r *BaseRepository[T, U]) prepareInsertEntity(ctx context.Context, entity U
 func (r *BaseRepository[T, U]) Insert(ctx context.Context, entity U) error {
 	r.prepareInsertEntity(ctx, entity)
 	_, err := r.Collection().InsertOne(ctx, entity)
+	if mongo.IsDuplicateKeyError(err) {
+		return fmt.Errorf("%w: %w", repository.ErrAlreadyExists, err)
+	}
 	return err
 }
 
@@ -216,6 +220,10 @@ func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntit
 		}
 		return &result, nil
 	}
+}
+
+func (r *BaseRepository[T, U]) Upsert(ctx context.Context, entity U, opt ...*repository.QueryOptions) error {
+	return r.UpsertOne(ctx, r.where(bson.M{"_id": entity.RawID()}, opt...), entity)
 }
 
 func (r *BaseRepository[T, U]) UpsertOne(ctx context.Context, filter interface{}, update U) error {
