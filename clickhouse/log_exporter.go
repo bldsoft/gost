@@ -174,8 +174,8 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 	}
 	if filter.Search != nil && len(*filter.Search) > 0 {
 		where = append(where, sq.Or{
-			sq.NotEq{fmt.Sprintf(`position(%s, '%s')`, MsgColumnName, *filter.Search): 0},
-			sq.NotEq{fmt.Sprintf(`position(%s, '%s')`, FieldsColumnName, *filter.Search): 0},
+			sq.NotEq{fmt.Sprintf(`positionCaseInsensitive(%s, '%s')`, MsgColumnName, *filter.Search): 0},
+			sq.NotEq{fmt.Sprintf(`positionCaseInsensitive(%s, '%s')`, FieldsColumnName, *filter.Search): 0},
 		})
 	}
 
