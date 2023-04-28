@@ -32,7 +32,8 @@ func (l *DefaultFormatter) NewLogEntry(r *http.Request) (middleware.LogEntry, *h
 	if r.TLS != nil {
 		scheme = "https"
 	}
-	logFields["uri"] = fmt.Sprintf("%s://%s%s?%s", scheme, r.Host, r.URL.Path, r.URL.RawQuery)
+
+	logFields["uri"] = fmt.Sprintf("%s://%s%s", scheme, r.Host, r.URL.RequestURI())
 	logFields["pr"] = r.Proto
 	logFields["mt"] = r.Method
 	logFields["from"] = r.RemoteAddr
