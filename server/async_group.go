@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"runtime/debug"
+	"strings"
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/utils/errgroup"
@@ -43,6 +45,11 @@ func (m *AsyncJobGroup) runParallel(f func(r AsyncRunner) error) error {
 
 func (m *AsyncJobGroup) Run() error {
 	return m.runParallel(func(r AsyncRunner) error {
+		defer func() {
+			if e := recover(); e != nil {
+				log.Errorf("%s job ended: %v\nstacktrace:\n%s", getType(r), e, strings.TrimSpace(string(debug.Stack())))
+			}
+		}()
 		err := r.Run()
 		log.DebugOrErrorf(err, "%s job ended ", getType(r))
 		return err
