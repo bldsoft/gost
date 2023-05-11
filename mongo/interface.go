@@ -25,6 +25,7 @@ type Repository[T any, U repository.IEntityIDPtr[T]] interface {
 	UpdateMany(ctx context.Context, entities []U) error
 	UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*repository.QueryOptions) error
 	UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, queryOpt ...*repository.QueryOptions) (U, error)
+	Upsert(ctx context.Context, entity U, opt ...*repository.QueryOptions) error
 	UpsertOne(ctx context.Context, filter interface{}, update U) error
 	Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error
 	DeleteMany(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) error

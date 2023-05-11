@@ -37,7 +37,7 @@ func (s *Storage) IsReplicationEnabled() bool {
 	return err == nil
 }
 
-//AddMigration adds a migration. All migrations should be added before db.Connect
+// AddMigration adds a migration. All migrations should be added before db.Connect
 func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string) {
 	db.migrations.Append(&source.Migration{Version: version, Direction: source.Up, Identifier: migrationUp})
 	db.migrations.Append(&source.Migration{Version: version, Direction: source.Down, Identifier: migrationDown})
@@ -102,7 +102,7 @@ func (db *Storage) LogError(err error) {
 
 func (db *Storage) runMigrations(dbname string) bool {
 	log.Debug("Checking clickhouse DB schema...")
-	cfg := &mm.Config{DatabaseName: dbname}
+	cfg := &mm.Config{DatabaseName: dbname, MultiStatementEnabled: true}
 
 	driver, err := mm.WithInstance(db.Db, cfg)
 	if err != nil {
