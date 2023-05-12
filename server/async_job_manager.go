@@ -14,7 +14,7 @@ type AsyncJobManager struct {
 }
 
 func NewAsyncJobManager(runners ...AsyncRunner) *AsyncJobManager {
-	return &AsyncJobManager{AsyncJobGroup{runners}}
+	return &AsyncJobManager{jobGroup: AsyncJobGroup{runners}}
 }
 
 func (m *AsyncJobManager) Append(runners ...AsyncRunner) {

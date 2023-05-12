@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sync"
+	"runtime/debug"
+	"strings"
 
 	"github.com/bldsoft/gost/log"
-	"github.com/hashicorp/go-multierror"
+	"github.com/bldsoft/gost/utils/errgroup"
 )
 
 // AsyncJobGroup runs jobs in parallel
@@ -30,52 +31,35 @@ func getType(myvar interface{}) string {
 		return t.Name()
 	}
 }
-func errFormat(errors []error) string {
-	result := fmt.Sprintf("%d error occurred", len(errors))
-	for _, err := range errors {
-		result += "\n"
-		result += fmt.Sprintf("* %v", err)
-	}
-	return result
-}
-func (m *AsyncJobGroup) runParallel(f func(r AsyncRunner) error) error {
-	errC := make(chan error, len(m.runners))
-	go func() {
-		defer close(errC)
-		var wg sync.WaitGroup
-		wg.Add(len(m.runners))
-		for _, runner := range m.runners {
-			go func(r AsyncRunner) {
-				if err := f(r); err != nil {
-					errC <- fmt.Errorf("%s: %w", getType(r), err)
-				}
-				wg.Done()
-			}(runner)
-		}
-		wg.Wait()
-	}()
 
-	var multiErr *multierror.Error
-	for err := range errC {
-		multiErr = multierror.Append(multiErr, err)
+func (m *AsyncJobGroup) runParallel(f func(r AsyncRunner) error) error {
+	var errGroup errgroup.Group
+	for _, runner := range m.runners {
+		r := runner
+		errGroup.Go(func() error {
+			return f(r)
+		})
 	}
-	if multiErr == nil {
-		return nil
-	}
-	multiErr.ErrorFormat = errFormat
-	return multiErr
+	return errGroup.Wait()
 }
 
 func (m *AsyncJobGroup) Run() error {
 	return m.runParallel(func(r AsyncRunner) error {
+		defer func() {
+			if e := recover(); e != nil {
+				log.Errorf("%s job ended: %v\nstacktrace:\n%s", getType(r), e, strings.TrimSpace(string(debug.Stack())))
+			}
+		}()
 		err := r.Run()
 		log.DebugOrErrorf(err, "%s job ended ", getType(r))
 		return err
 	})
 }
-
 func (m *AsyncJobGroup) Stop(ctx context.Context) error {
 	return m.runParallel(func(r AsyncRunner) error {
-		return r.Stop(ctx)
+		if err := r.Stop(ctx); err != nil {
+			return fmt.Errorf("%s: %w", getType(r), err)
+		}
+		return nil
 	})
 }
