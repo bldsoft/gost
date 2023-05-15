@@ -151,7 +151,7 @@ func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 	defer stmt.Close()
 
 	for _, r := range records {
-		if _, err := stmt.Exec(r.Instance, time.UnixMilli(r.Timestamp).UnixNano(), r.Level, r.ReqID, r.Msg, r.Fields); err != nil {
+		if _, err := stmt.Exec(r.Instance, r.Timestamp, int8(r.Level), r.ReqID, r.Msg, r.Fields); err != nil {
 			return err
 		}
 	}
