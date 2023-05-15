@@ -3,11 +3,10 @@ package clickhouse
 import (
 	"context"
 	"database/sql"
-	"net/url"
 	"sync"
 	"sync/atomic"
 
-	"github.com/ClickHouse/clickhouse-go"
+	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/storage"
 	"github.com/golang-migrate/migrate/v4"
@@ -44,21 +43,17 @@ func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string)
 }
 
 func (db *Storage) Connect() {
-	connect, err := sql.Open("clickhouse", db.cfg.Dsn.String())
-	if err != nil {
-		log.ErrorWithFields(log.Fields{"dsn": &db.cfg.Dsn, "error": err}, "Failed to connect clickhouse db")
-		return
-	}
+	connect := clickhouse.OpenDB(db.cfg.options)
 
 	if err := connect.Ping(); err != nil {
 		db.LogError(err)
 		return
 	}
 
-	dbname := db.getDsnQueryParam("database")
+	dbname := db.cfg.options.Auth.Database
 
 	use_db := "USE " + dbname + ";"
-	if _, err = connect.Exec(use_db); err != nil {
+	if _, err := connect.Exec(use_db); err != nil {
 		db.LogError(err)
 	}
 
@@ -71,7 +66,7 @@ func (db *Storage) Connect() {
 
 func (db *Storage) RunMigrations() {
 	db.doOnce.Do(func() {
-		dbname := db.getDsnQueryParam("database")
+		dbname := db.cfg.options.Auth.Database
 		db.runMigrations(dbname)
 	})
 }
@@ -130,15 +125,6 @@ func (db *Storage) runMigrations(dbname string) bool {
 	}
 
 	return true
-}
-
-func (db *Storage) getDsnQueryParam(name string) string {
-	url, err := url.Parse(db.cfg.Dsn.String())
-	if err != nil {
-		return ""
-	}
-
-	return url.Query().Get(name)
 }
 
 func (db *Storage) Stats(ctx context.Context) (map[string]interface{}, error) {
