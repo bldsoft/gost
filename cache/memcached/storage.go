@@ -19,10 +19,10 @@ type Storage struct {
 
 func NewStorage(cfg Config) (*Storage, *Storage) {
 	master := singleStorage(cfg.Servers, cfg.TimeoutMs, cfg.KeyPrefix)
-	if len(cfg.Slaves) == 0 {
+	if len(cfg.ReadOnlyServers) == 0 {
 		return master, nil
 	}
-	return master, singleStorage(cfg.Slaves, cfg.TimeoutMs, cfg.KeyPrefix)
+	return master, singleStorage(cfg.ReadOnlyServers, cfg.TimeoutMs, cfg.KeyPrefix)
 }
 
 func singleStorage(servers []string, timeOut int, keyPrefix string) *Storage {
