@@ -10,10 +10,8 @@ import (
 	"github.com/bldsoft/gost/log"
 )
 
-var (
-	// ErrNotImplemented means repository method not implemented
-	ErrNotImplemented = errors.New("BigCacheRepositor: method not implemented")
-)
+// ErrNotImplemented means repository method not implemented
+var ErrNotImplemented = errors.New("BigCacheRepositor: method not implemented")
 
 type Repository struct {
 	cache *bigcache.BigCache
@@ -71,6 +69,10 @@ func (r *Repository) GetWithFlags(key string) (data []byte, flags uint32, err er
 }
 
 func (r *Repository) SetWithFlags(key string, value []byte, flags uint32) error {
+	return ErrNotImplemented
+}
+
+func (r *Repository) SetForWithFlags(key string, value []byte, flags uint32, ttl time.Duration) error {
 	return ErrNotImplemented
 }
 

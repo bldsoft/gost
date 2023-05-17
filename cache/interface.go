@@ -5,9 +5,7 @@ import (
 	"time"
 )
 
-var (
-	ErrCacheMiss = errors.New("cache miss")
-)
+var ErrCacheMiss = errors.New("cache miss")
 
 // ILocalCacheRepository ...
 type ILocalCacheRepository interface {
@@ -26,12 +24,13 @@ type IExpiringCacheRepository interface {
 type IDistrCacheRepository interface {
 	IExpiringCacheRepository
 
-	//TODO: add it to ILocalCacheRepository
+	// TODO: add it to ILocalCacheRepository
 	GetWithFlags(key string) (data []byte, flags uint32, err error)
 	Exist(key string) bool
 	Add(key string, value []byte) error
 	AddFor(key string, value []byte, ttl time.Duration) error
 	SetWithFlags(key string, value []byte, flags uint32) error
+	SetForWithFlags(key string, value []byte, flags uint32, ttl time.Duration) error
 	CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error
 }
 

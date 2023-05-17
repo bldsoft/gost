@@ -81,6 +81,11 @@ func (r *MemcacheRepository) SetWithFlags(key string, value []byte, flags uint32
 	return r.cache.Set(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: int32(r.liveTime.Seconds())})
 }
 
+func (r *MemcacheRepository) SetForWithFlags(key string, value []byte, flags uint32, expiration time.Duration) error {
+	key = r.cache.PrepareKey(key)
+	return r.cache.Set(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: r.truncExpiration(expiration)})
+}
+
 // Exist checks if the key exists
 func (r *MemcacheRepository) Exist(key string) bool {
 	key = r.cache.PrepareKey(key)
