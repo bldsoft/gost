@@ -30,8 +30,8 @@ func singleStorage(servers []string, cfg Config) *Storage {
 	if cfg.TimeoutMs != 0 {
 		client.Timeout = time.Duration(cfg.TimeoutMs) * time.Millisecond
 	}
-	if cfg.MaxIdleConns != nil {
-		client.MaxIdleConns = *cfg.MaxIdleConns
+	if cfg.MaxIdleConns != 0 {
+		client.MaxIdleConns = cfg.MaxIdleConns
 	}
 	if err := client.Ping(); err != nil {
 		log.Panicf("Memcached connection failed: %v", err)
