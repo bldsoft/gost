@@ -17,15 +17,7 @@ type Storage struct {
 	keyPrefix  string
 }
 
-func NewStorage(cfg Config) (*Storage, *Storage) {
-	master := singleStorage(cfg.Servers, cfg)
-	if len(cfg.ReadOnlyServers) == 0 {
-		return master, nil
-	}
-	return master, singleStorage(cfg.ReadOnlyServers, cfg)
-}
-
-func singleStorage(servers []string, cfg Config) *Storage {
+func NewStorage(servers []string, cfg Config) *Storage {
 	client := memcache.New(servers...)
 	if cfg.TimeoutMs != 0 {
 		client.Timeout = time.Duration(cfg.TimeoutMs) * time.Millisecond
