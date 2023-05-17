@@ -18,21 +18,25 @@ type Storage struct {
 }
 
 func NewStorage(cfg Config) (*Storage, *Storage) {
-	master := singleStorage(cfg.Servers, cfg.TimeoutMs, cfg.KeyPrefix)
+	master := singleStorage(cfg.Servers, cfg)
 	if len(cfg.ReadOnlyServers) == 0 {
 		return master, nil
 	}
-	return master, singleStorage(cfg.ReadOnlyServers, cfg.TimeoutMs, cfg.KeyPrefix)
+	return master, singleStorage(cfg.ReadOnlyServers, cfg)
 }
 
-func singleStorage(servers []string, timeOut int, keyPrefix string) *Storage {
+func singleStorage(servers []string, cfg Config) *Storage {
 	client := memcache.New(servers...)
-	if timeOut != 0 {
-		client.Timeout = time.Duration(timeOut) * time.Millisecond
+	if cfg.TimeoutMs != 0 {
+		client.Timeout = time.Duration(cfg.TimeoutMs) * time.Millisecond
+	}
+	if cfg.MaxIdleConns != nil {
+		client.MaxIdleConns = *cfg.MaxIdleConns
 	}
 	if err := client.Ping(); err != nil {
 		log.Panicf("Memcached connection failed: %v", err)
 	}
+
 	statClient, err := stat_client.New(servers...)
 	if err != nil {
 		log.Logger.WarnWithFields(log.Fields{"err": err}, "failed to create stat memcached client")
@@ -40,7 +44,7 @@ func singleStorage(servers []string, timeOut int, keyPrefix string) *Storage {
 	return &Storage{
 		Client:     client,
 		statClient: statClient,
-		keyPrefix:  keyPrefix,
+		keyPrefix:  cfg.KeyPrefix,
 	}
 }
 
