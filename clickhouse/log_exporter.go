@@ -170,7 +170,11 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 		where = append(where, sq.LtOrEq{TimestampColumnName: filter.To})
 	}
 	if len(filter.Levels) > 0 {
-		where = append(where, sq.Eq{LevelColumName: filter.Levels})
+		int8Levels := make([]int8, 0, len(filter.Levels))
+		for _, lvl := range filter.Levels {
+			int8Levels = append(int8Levels, int8(lvl))
+		}
+		where = append(where, sq.Eq{LevelColumName: int8Levels})
 	}
 	if filter.Search != nil && len(*filter.Search) > 0 {
 		where = append(where, sq.Or{
