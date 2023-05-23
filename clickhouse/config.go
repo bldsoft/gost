@@ -14,7 +14,7 @@ type Config struct {
 
 // SetDefaults ...
 func (c *Config) SetDefaults() {
-	c.Dsn = "tcp://127.0.0.1:9000/test?username=test_user&password=test_pass"
+	c.Dsn = "clickhouse://127.0.0.1:9000/test?username=test_user&password=test_pass"
 }
 
 // Validate ...
