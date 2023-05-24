@@ -151,7 +151,7 @@ func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 	defer stmt.Close()
 
 	for _, r := range records {
-		if _, err := stmt.Exec(r.Instance, time.UnixMilli(r.Timestamp).UnixNano(), r.Level, r.ReqID, r.Msg, r.Fields); err != nil {
+		if _, err := stmt.Exec(r.Instance, r.Timestamp, int8(r.Level), r.ReqID, r.Msg, r.Fields); err != nil {
 			return err
 		}
 	}
@@ -170,7 +170,11 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 		where = append(where, sq.LtOrEq{TimestampColumnName: filter.To})
 	}
 	if len(filter.Levels) > 0 {
-		where = append(where, sq.Eq{LevelColumName: filter.Levels})
+		int8Levels := make([]int8, 0, len(filter.Levels))
+		for _, lvl := range filter.Levels {
+			int8Levels = append(int8Levels, int8(lvl))
+		}
+		where = append(where, sq.Eq{LevelColumName: int8Levels})
 	}
 	if filter.Search != nil && len(*filter.Search) > 0 {
 		where = append(where, sq.Or{
