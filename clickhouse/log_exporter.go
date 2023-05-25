@@ -37,7 +37,7 @@ type LogExporterConfig struct {
 func (c *LogExporterConfig) SetDefaults() {
 	c.FlushTimeMs = 1000
 	c.MaxBatchSize = 1000
-	c.ChanBufSize = 4096
+	c.ChanBufSize = 16384
 	c.TableName = "LOG_RECORDS"
 }
 
@@ -73,9 +73,17 @@ func (e *ClickHouseLogExporter) WriteLogRecord(rec *log.LogRecord) error {
 	case <-e.stop:
 		// do nothing
 	default:
-		e.recordC <- rec
+		e.writeToChan(rec)
 	}
 	return nil
+}
+
+func (e *ClickHouseLogExporter) writeToChan(rec *log.LogRecord) {
+	select {
+	case e.recordC <- rec:
+	default:
+		// channel is full
+	}
 }
 
 func (e *ClickHouseLogExporter) Run() error {
@@ -87,37 +95,50 @@ func (e *ClickHouseLogExporter) Run() error {
 		log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to create log table")
 	}
 
-	ticker := time.NewTicker(time.Duration(e.config.FlushTimeMs) * time.Millisecond)
+	flushInterval := time.Duration(e.config.FlushTimeMs) * time.Millisecond
+	ticker := time.NewTicker(flushInterval)
 	defer ticker.Stop()
 
-	flush := func() bool {
+	last_flush := time.Now()
+
+	tryFlush := func() bool {
 		if len(e.records) == 0 {
 			return true
 		}
 
 		if err := e.insertMany(e.records); err != nil {
-			log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to export log records")
+			log.Logger.ErrorWithFields(log.Fields{"err": err, "current batch": len(e.records), "queued": len(e.recordC)}, "failed to export log records")
 			return false
 		}
 		// log.Logger.TraceWithFields(log.Fields{"record count": len(e.records)}, "log exported")
 		e.records = e.records[:0]
+		last_flush = time.Now()
 		return true
+	}
+
+	mustFlush := func() {
+		for !tryFlush() {
+			<-ticker.C
+		}
 	}
 
 	for {
 		select {
 		case record := <-e.recordC:
-			if len(e.records) < cap(e.records) || flush() {
-				e.records = append(e.records, record)
+			e.records = append(e.records, record)
+			if len(e.records) == cap(e.records) {
+				mustFlush()
 			}
 		case <-ticker.C:
-			flush()
+			if time.Since(last_flush) >= flushInterval {
+				mustFlush()
+			}
 		case <-e.stop:
 			close(e.recordC)
 			for record := range e.recordC {
 				e.records = append(e.records, record)
 			}
-			flush()
+			tryFlush()
 			return nil
 		}
 	}
