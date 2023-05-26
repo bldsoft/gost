@@ -8,25 +8,24 @@ import (
 	context "context"
 	reflect "reflect"
 
-	mongo "github.com/bldsoft/gost/mongo"
 	repository "github.com/bldsoft/gost/repository"
 	gomock "github.com/golang/mock/gomock"
 	mongo0 "go.mongodb.org/mongo-driver/mongo"
 )
 
 // MockRepository is a mock of Repository interface.
-type MockRepository[T any, U repository.IEntityIDPtr[mongo.T]] struct {
+type MockRepository[T any, U repository.IEntityIDPtr[T]] struct {
 	ctrl     *gomock.Controller
 	recorder *MockRepositoryMockRecorder[T, U]
 }
 
 // MockRepositoryMockRecorder is the mock recorder for MockRepository.
-type MockRepositoryMockRecorder[T any, U repository.IEntityIDPtr[mongo.T]] struct {
+type MockRepositoryMockRecorder[T any, U repository.IEntityIDPtr[T]] struct {
 	mock *MockRepository[T, U]
 }
 
 // NewMockRepository creates a new mock instance.
-func NewMockRepository[T any, U repository.IEntityIDPtr[mongo.T]](ctrl *gomock.Controller) *MockRepository[T, U] {
+func NewMockRepository[T any, U repository.IEntityIDPtr[T]](ctrl *gomock.Controller) *MockRepository[T, U] {
 	mock := &MockRepository[T, U]{ctrl: ctrl}
 	mock.recorder = &MockRepositoryMockRecorder[T, U]{mock}
 	return mock

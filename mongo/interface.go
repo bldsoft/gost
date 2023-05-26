@@ -7,6 +7,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// NOTE: I used golang/mock@v1.7.0-rc.1 to generate mocks for mongo
+// the probleim is it treated T withing repository.IEntityIDPtr as a custom type from this package
+// meaning, it generated the following signature for mock:
+// MockRepository[T any, U repository.IEntityIDPtr[mongo.T]] struct
+// if regeneration is neaded, make sure to replace it with
+// MockRepository[T any, U repository.IEntityIDPtr[T]] struct
 type Repository[T any, U repository.IEntityIDPtr[T]] interface {
 	Name() string
 	Collection() *mongo.Collection
