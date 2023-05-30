@@ -127,7 +127,7 @@ func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 	case nil:
 		session.Values[SessionUserKey] = *user
 		if c.saveSession(w, r, session) {
-			log.FromContext(ctx).InfoWithFields(log.Fields{"login": user.Login()}, "User is logged in")
+			// log.FromContext(ctx).InfoWithFields(log.Fields{"login": user.Login()}, "User is logged in")
 			c.ResponseJson(w, r, user)
 		}
 	default:
