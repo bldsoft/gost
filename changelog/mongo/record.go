@@ -7,17 +7,17 @@ import (
 	"github.com/bldsoft/gost/mongo"
 )
 
-type record struct {
+type Record struct {
 	mongo.EntityID    `bson:",inline"`
 	*changelog.Record `bson:",inline"`
 }
 
-func newRecord(ctx context.Context, collectionName string, op changelog.Operation) (*record, error) {
+func NewRecord(ctx context.Context, collectionName string, op changelog.Operation) (*Record, error) {
 	baseRecord, err := changelog.NewRecord(ctx, collectionName, op, nil)
 	if err != nil {
 		return nil, err
 	}
-	rec := &record{Record: baseRecord}
+	rec := &Record{Record: baseRecord}
 	rec.GenerateID()
 	return rec, nil
 }
