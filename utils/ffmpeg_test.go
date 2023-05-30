@@ -45,49 +45,49 @@ func TestProbe(t *testing.T) {
 }
 
 func TestProbeInto(t *testing.T) {
+	type ffprobeRes struct {
+		Format struct {
+			Duration string `json:"duration"`
+		} `json:"format"`
+	}
+
 	type args struct {
 		path string
-		res  interface{}
+		res  *ffprobeRes
 		args map[string]interface{}
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
+		want    *ffprobeRes
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success",
+			args: args{
+				path: "test_files/media_test.ts",
+				res:  &ffprobeRes{},
+				args: map[string]interface{}{
+					"show_entries": "format=duration",
+				},
+			},
+			wantErr: false,
+			want: &ffprobeRes{
+				Format: struct {
+					Duration string "json:\"duration\""
+				}{
+					Duration: "6.013333",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := ProbeInto(tt.args.path, tt.args.res, tt.args.args); (err != nil) != tt.wantErr {
 				t.Errorf("ProbeInto() error = %v, wantErr %v", err, tt.wantErr)
 			}
-		})
-	}
-}
-
-func TestProbeWithArgs(t *testing.T) {
-	type args struct {
-		path string
-		args map[string]interface{}
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *FFMpegProbe
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := ProbeWithArgs(tt.args.path, tt.args.args)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ProbeWithArgs() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ProbeWithArgs() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(tt.args.res, tt.want) {
+				t.Errorf("ProbeInto() got = %v, want %v", tt.args.res, tt.want)
 			}
 		})
 	}
