@@ -13,7 +13,6 @@ func RecursiveParse(filter bson.M, t interface{}, prefix string) {
 
 	fv := reflect.Indirect(reflect.ValueOf(t))
 	ft := fv.Type()
-
 	for i, limit := 0, fv.NumField(); i < limit; i++ {
 		field := ft.Field(i)
 
@@ -33,6 +32,5 @@ func RecursiveParse(filter bson.M, t interface{}, prefix string) {
 		default:
 			continue
 		}
-
 	}
 }
