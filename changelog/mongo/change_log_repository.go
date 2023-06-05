@@ -15,11 +15,11 @@ import (
 )
 
 type ChangeLogRepository struct {
-	rep mongo.Repository[record, *record]
+	rep mongo.Repository[Record, *Record]
 }
 
 func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
-	r := &ChangeLogRepository{mongo.NewRepository[record, *record](db, "change_log")}
+	r := &ChangeLogRepository{mongo.NewRepository[Record](db, "change_log")}
 
 	indexes := []driver.IndexModel{
 		{Keys: bson.D{bson.E{Key: changelog.BsonFieldNameUserID, Value: 1}}},
@@ -36,7 +36,7 @@ func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
 	return r
 }
 
-func (r *ChangeLogRepository) Insert(ctx context.Context, record *record) error {
+func (r *ChangeLogRepository) Insert(ctx context.Context, record *Record) error {
 	_, err := r.rep.Collection().InsertOne(ctx, record)
 	return err
 }

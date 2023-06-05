@@ -13,6 +13,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chi/chi/v5 v5.0.4
 	github.com/go-chi/jwtauth v1.2.0
+	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/golang-migrate/migrate/v4 v4.15.1
 	github.com/golang/mock v1.6.0
 	github.com/gorilla/schema v1.2.0
@@ -25,6 +26,7 @@ require (
 	github.com/mattn/go-colorable v0.1.12
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
+	github.com/rbcervilla/redisstore v1.1.0
 	github.com/rs/zerolog v1.21.0
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.8.2
