@@ -134,7 +134,7 @@ func (mstore *MongoDBStore) Save(r *http.Request, w http.ResponseWriter, session
 	ctx := context.Background()
 
 	if session.Options.MaxAge < 0 {
-		if err := mstore.rep.Delete(ctx, session.ID); err != nil {
+		if err := mstore.rep.Delete(ctx, session.ID, &repository.QueryOptions{Archived: false}); err != nil {
 			return err
 		}
 		http.SetCookie(w, sessions.NewCookie(session.Name(), "", session.Options))
