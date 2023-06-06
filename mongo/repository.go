@@ -57,8 +57,13 @@ func (r *BaseRepository[T, U]) WithTransaction(ctx context.Context, f func(ctx m
 func (r *BaseRepository[T, U]) projection(opt ...*repository.QueryOptions) interface{} {
 	if len(opt) != 0 && len(opt[0].Fields) > 0 {
 		var projection bson.D
+		set := make(map[string]struct{})
 		for _, field := range opt[0].Fields {
+			if _, ok := set[field]; ok {
+				continue
+			}
 			projection = append(projection, bson.E{Key: field, Value: 1})
+			set[field] = struct{}{}
 		}
 		return projection
 	}
