@@ -7,7 +7,10 @@ import (
 	"github.com/bldsoft/gost/repository"
 )
 
-var ErrWrongPassword = fmt.Errorf("wrong password")
+var (
+	ErrWrongPassword  = fmt.Errorf("wrong password")
+	ErrChangePassword = fmt.Errorf("change password required")
+)
 
 // AuthService ...
 type AuthService[PT AuthenticablePtr[T], T any] struct {
@@ -24,6 +27,10 @@ func (s *AuthService[PT, T]) Login(ctx context.Context, username, password strin
 	user, err := s.userRep.FindByLogin(ctx, username, &repository.QueryOptions{Archived: false})
 	if err != nil {
 		return nil, err
+	}
+
+	if user.ChangePasswordRequired() {
+		return nil, ErrChangePassword
 	}
 
 	if err := s.passwordHasher.VerifyPassword(user.Password(), password); err != nil {
