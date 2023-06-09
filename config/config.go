@@ -96,6 +96,7 @@ func ReadFromEnv(config interface{}, envPrefix string) error {
 		viper.KeyDelimiter("."),
 	)
 	v.AutomaticEnv()
+	v.AllowEmptyEnv(true)
 
 	var tagToEnvKeyStack [][]string
 	return iterateFields(config, envPrefix, func(cfg interface{}) error {
