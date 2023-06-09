@@ -1,9 +1,10 @@
 package auth
 
 const (
-	BsonFieldNameEmail    = "name"
-	BsonFieldNamePassword = "password"
-	BsonFieldNameRole     = "role"
+	BsonFieldNameEmail          = "name"
+	BsonFieldNamePassword       = "password"
+	BsonFieldNameChangePassword = "changePasswordRequired"
+	BsonFieldNameRole           = "role"
 )
 
 type EntityPassword struct {

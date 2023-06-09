@@ -18,12 +18,12 @@ func RandString(n int) string {
 }
 
 func RandToken(n int) (string, error) {
-	codes := make([]byte, 6)
+	codes := make([]byte, n)
 	if _, err := cryptoRand.Read(codes); err != nil {
 		return "", err
 	}
 
-	for i := 0; i < 6; i++ {
+	for i := 0; i < n; i++ {
 		codes[i] = uint8(48 + (codes[i] % 10))
 	}
 
