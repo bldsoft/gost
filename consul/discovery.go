@@ -13,14 +13,20 @@ type Discovery struct {
 	cfg          Config
 	consulClient *api.Client
 	server.AsyncRunner
+
+	serviceMeta map[string]string
 }
 
 func (d *Discovery) ApiClient() *api.Client {
 	return d.consulClient
 }
 
+func (d *Discovery) SetMetadata(name string, value string) {
+	d.serviceMeta[name] = value
+}
+
 func NewDiscovery(cfg Config) *Discovery {
-	d := &Discovery{cfg: cfg}
+	d := &Discovery{cfg: cfg, serviceMeta: make(map[string]string)}
 	if err := d.initClient(); err != nil {
 		panic(err)
 	}
@@ -62,6 +68,7 @@ func (d *Discovery) Register() error {
 		Address: d.cfg.ServiceAddr,
 		Port:    d.cfg.ServicePort,
 		Check:   check,
+		Meta:    d.serviceMeta,
 	}
 
 	return d.consulClient.Agent().ServiceRegister(reg)
