@@ -1,8 +1,10 @@
 package memcached
 
 import (
+	"errors"
 	"time"
 
+	"github.com/bldsoft/gost/cache"
 	"github.com/bradfitz/gomemcache/memcache"
 )
 
@@ -28,7 +30,7 @@ func (r *MemcacheRepository) Get(key string) ([]byte, error) {
 	key = r.cache.PrepareKey(key)
 	item, err := r.cache.Get(key)
 	if err != nil || item == nil {
-		return nil, err
+		return nil, r.mapError(err)
 	}
 	return item.Value, err
 }
@@ -37,7 +39,7 @@ func (r *MemcacheRepository) GetWithFlags(key string) (data []byte, flags uint32
 	key = r.cache.PrepareKey(key)
 	item, err := r.cache.Get(key)
 	if err != nil || item == nil {
-		return nil, 0, err
+		return nil, 0, r.mapError(err)
 	}
 	return item.Value, item.Flags, err
 }
@@ -108,7 +110,7 @@ func (r *MemcacheRepository) AddFor(key string, value []byte, expiration time.Du
 // Delete deletes the item with the provided key.
 func (r *MemcacheRepository) Delete(key string) error {
 	key = r.cache.PrepareKey(key)
-	return r.cache.Delete(key)
+	return r.mapError(r.cache.Delete(key))
 }
 
 // Reset ...
@@ -145,4 +147,15 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value []byt
 	}
 
 	return err
+}
+
+func (r *MemcacheRepository) mapError(err error) error {
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, memcache.ErrCacheMiss):
+		return cache.ErrCacheMiss
+	default:
+		return err
+	}
 }
