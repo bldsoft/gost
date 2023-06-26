@@ -12,8 +12,10 @@ import (
 
 const SessionUserKey = "user"
 
-var UserEntryCtxKey interface{} = "UserEntry"
-var SessionEntryCtxKey interface{} = "SessionEntry"
+var (
+	UserEntryCtxKey    interface{} = "UserEntry"
+	SessionEntryCtxKey interface{} = "SessionEntry"
+)
 
 func requestContextAdd(r *http.Request, key, value interface{}) *http.Request {
 	r = r.WithContext(context.WithValue(r.Context(), key, value))
@@ -106,7 +108,6 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 			next.ServeHTTP(w, WithUserContext(WithSessionRequest(r, session), &user))
 			c.saveSession(w, r, session)
 		})
-
 	}
 }
 

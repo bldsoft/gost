@@ -1,6 +1,7 @@
 package utils
 
 import (
+	cryptoRand "crypto/rand"
 	"math/rand"
 	"strings"
 )
@@ -14,4 +15,17 @@ func RandString(n int) string {
 		sb.WriteByte(letterBytes[rand.Intn(len(letterBytes))])
 	}
 	return sb.String()
+}
+
+func RandToken(n int) (string, error) {
+	codes := make([]byte, n)
+	if _, err := cryptoRand.Read(codes); err != nil {
+		return "", err
+	}
+
+	for i := 0; i < n; i++ {
+		codes[i] = uint8(48 + (codes[i] % 10))
+	}
+
+	return string(codes), nil
 }

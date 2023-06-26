@@ -1,11 +1,15 @@
 package auth
 
-const BsonFieldNameEmail = "name"
-const BsonFieldNamePassword = "password"
-const BsonFieldNameRole = "role"
+const (
+	BsonFieldNameEmail          = "name"
+	BsonFieldNamePassword       = "password"
+	BsonFieldNameChangePassword = "changePasswordRequired"
+	BsonFieldNameRole           = "role"
+)
 
 type EntityPassword struct {
-	UserPassword string `json:"password,omitempty" bson:"password,omitempty"`
+	UserPassword   string `json:"password,omitempty" bson:"password,omitempty"`
+	ChangePassword bool   `json:"changePasswordRequired,omitempty" bson:"changePasswordRequired"`
 }
 
 func (c *EntityPassword) SetPassword(password string) {
@@ -14,6 +18,10 @@ func (c *EntityPassword) SetPassword(password string) {
 
 func (c *EntityPassword) Password() string {
 	return c.UserPassword
+}
+
+func (c *EntityPassword) ChangePasswordRequired() bool {
+	return c.ChangePassword
 }
 
 type Creds struct {

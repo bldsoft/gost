@@ -15,13 +15,15 @@ import (
 )
 
 func TestAuthMiddleware(t *testing.T) {
-	reg := &User{Creds{"user", EntityPassword{"password"}}}
+	reg := &User{Creds{"user", EntityPassword{UserPassword: "password"}}}
+	changePassReg := &User{Creds{"user", EntityPassword{UserPassword: "password", ChangePassword: true}}}
 	testCases := []struct {
 		name         string
 		user         *User
 		expectedCode int
 	}{
 		{"Authorized", reg, http.StatusOK},
+		{"ChangePass", changePassReg, http.StatusOK},
 		{"Unauthorized", nil, http.StatusOK},
 	}
 
@@ -50,5 +52,4 @@ func TestAuthMiddleware(t *testing.T) {
 			assert.Equal(t, testCase.expectedCode, w.Code)
 		})
 	}
-
 }

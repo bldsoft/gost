@@ -13,6 +13,7 @@ type Authenticable interface {
 	Login() string
 	Password() string
 	SetPassword(string)
+	ChangePasswordRequired() bool
 }
 
 type AuthenticablePtr[T any] interface {
