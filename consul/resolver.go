@@ -8,18 +8,18 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
-type Balancer interface {
-	Balance(serviceCluster string, addrs []string) []string
+type Balancer[T any] interface {
+	Balance(serviceCluster string, addrs []T) []T
 }
 
 type Resolver struct {
 	consulClient *api.Client
-	balancer     Balancer
+	balancer     Balancer[string]
 	cache        resolverCache
 }
 
 func NewResolver(consulClient *api.Client) *Resolver {
-	return &Resolver{consulClient: consulClient, cache: newResolverCache(5 * time.Minute), balancer: &RoundRobin{}}
+	return &Resolver{consulClient: consulClient, cache: newResolverCache(5 * time.Minute), balancer: &RoundRobin[string]{}}
 }
 
 func NewResolverFromDiscovery(discovery *Discovery) *Resolver {
