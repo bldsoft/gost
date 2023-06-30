@@ -116,7 +116,13 @@ func (r *BaseRepository[T, U]) findByRawIDs(ctx context.Context, ids []interface
 }
 
 func (r *BaseRepository[T, U]) Find(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) ([]U, error) {
-	findOpt := options.Find().SetProjection(r.projection(opt...))
+	findOpt := options.Find().
+		SetProjection(r.projection(opt...))
+
+	if len(opt) != 0 && len(opt[0].Sort) != 0 {
+		findOpt = findOpt.SetSort(r.sort(opt[0].Sort))
+	}
+
 	cur, err := r.Collection().Find(ctx, r.where(filter, opt...), findOpt)
 	if err != nil {
 		return nil, err
@@ -126,6 +132,18 @@ func (r *BaseRepository[T, U]) Find(ctx context.Context, filter interface{}, opt
 		return nil, err
 	}
 	return results, nil
+}
+
+func (r *BaseRepository[T, U]) sort(opt repository.SortOpt) bson.D {
+	var res bson.D
+	for _, sortParam := range opt {
+		order := 1
+		if sortParam.Desc {
+			order = -1
+		}
+		res = append(res, bson.E{Key: sortParam.Field, Value: order})
+	}
+	return res
 }
 
 func (r *BaseRepository[T, U]) GetAll(ctx context.Context, options ...*repository.QueryOptions) ([]U, error) {
