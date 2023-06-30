@@ -9,6 +9,7 @@ import (
 
 	gost_mongo "github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
+	"github.com/bldsoft/gost/utils"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"go.mongodb.org/mongo-driver/bson"
@@ -162,8 +163,15 @@ func (mstore *MongoDBStore) Save(r *http.Request, w http.ResponseWriter, session
 		}
 		sessDoc.Modified = modified
 	}
-
-	if err = mstore.rep.Upsert(ctx, sessDoc); err != nil {
+	if session.IsNew {
+		err = mstore.rep.Upsert(ctx, sessDoc)
+	} else {
+		err = mstore.rep.Update(ctx, sessDoc)
+		if errors.Is(err, utils.ErrObjectNotFound) {
+			err = nil
+		}
+	}
+	if err != nil {
 		return err
 	}
 	encodedID, err := securecookie.EncodeMulti(session.Name(), session.ID, mstore.codecs...)
