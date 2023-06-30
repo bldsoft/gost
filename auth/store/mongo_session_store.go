@@ -263,6 +263,8 @@ func (mstore *MongoDBStore) AllSessions(ctx context.Context, name string, offset
 	return res, nil
 }
 
-func (mstore *MongoDBStore) KillSession(ctx context.Context, id string) error {
-	return mstore.rep.Delete(ctx, id, &repository.QueryOptions{Archived: false})
+func (mstore *MongoDBStore) KillSessions(ctx context.Context, ids ...string) error {
+	rawIDs := repository.StringsToRawIDs[sessionDoc, *sessionDoc](ids)
+	filter := bson.M{"_id": bson.M{"$in": rawIDs}}
+	return mstore.rep.DeleteMany(ctx, filter, &repository.QueryOptions{Archived: false})
 }

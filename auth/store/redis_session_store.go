@@ -69,6 +69,9 @@ func (s *RedisSessionStore) AllSessions(ctx context.Context, name string, offset
 	return res, nil
 }
 
-func (s *RedisSessionStore) KillSession(ctx context.Context, sessionID string) error {
-	return s.client.Del(s.keyPrefix + sessionID).Err()
+func (s *RedisSessionStore) KillSessions(ctx context.Context, sessionIDs ...string) error {
+	for i, id := range sessionIDs {
+		sessionIDs[i] = s.keyPrefix + id
+	}
+	return s.client.Del(sessionIDs...).Err()
 }
