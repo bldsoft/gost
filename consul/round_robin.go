@@ -4,11 +4,11 @@ import (
 	"sync/atomic"
 )
 
-type RoundRobin struct {
+type RoundRobin[T any] struct {
 	offset atomic.Int64
 }
 
-func (rr *RoundRobin) Balance(serviceCluster string, addrs []string) []string {
+func (rr *RoundRobin[T]) Balance(serviceCluster string, addrs []T) []T {
 	if len(addrs) == 0 {
 		return addrs
 	}
