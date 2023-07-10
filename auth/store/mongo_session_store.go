@@ -187,7 +187,7 @@ func (mstore *MongoDBStore) Save(r *http.Request, w http.ResponseWriter, session
 func (mstore *MongoDBStore) ensureIndexTTL() error {
 	ctx := context.Background()
 
-	indexName := "modified_at_TTL"
+	indexName := "modified_TTL"
 
 	cursor, err := mstore.rep.Collection().Indexes().List(ctx)
 	if err != nil {
@@ -216,7 +216,7 @@ func (mstore *MongoDBStore) ensureIndexTTL() error {
 
 	indexModel := mongo.IndexModel{
 		Keys: bson.M{
-			"modified_at": 1,
+			"modified": 1,
 		},
 		Options: indexOpts,
 	}
