@@ -249,7 +249,12 @@ func (mstore *MongoDBStore) AllSessions(ctx context.Context, name string, offset
 		SetLimit(int64(limit)).
 		SetSkip(int64(offset)).
 		SetSort(bson.M{"_id": 1})
-	cur, err := mstore.rep.Collection().Find(ctx, bson.M{}, findOpt)
+	cur, err := mstore.rep.Collection().Find(ctx,
+		bson.M{
+			"modified": bson.M{
+				"$gte": time.Now().Add(-time.Duration(mstore.options.MaxAge) * time.Second),
+			},
+		}, findOpt)
 	if err != nil {
 		return nil, err
 	}
