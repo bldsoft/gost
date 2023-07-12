@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/bldsoft/gost/repository"
-	"github.com/bldsoft/gost/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -76,7 +75,7 @@ func (r *BaseRepository[T, U]) FindOne(ctx context.Context, filter interface{}, 
 	findOneOpt := options.FindOne().SetProjection(r.projection(opt...))
 	err := r.Collection().FindOne(ctx, r.where(filter, opt...), findOneOpt).Decode(&result)
 	if err != nil && err == mongo.ErrNoDocuments {
-		return nil, utils.ErrObjectNotFound
+		return nil, repository.ErrNotFound
 	}
 	return &result, err
 }
@@ -183,7 +182,7 @@ func (r *BaseRepository[T, U]) Update(ctx context.Context, entity U, options ...
 	r.fillTimeStamp(ctx, entity, false)
 	result, err := r.Collection().ReplaceOne(ctx, r.where(bson.M{"_id": entity.RawID()}, options...), entity)
 	if err == nil && result.MatchedCount == 0 {
-		return utils.ErrObjectNotFound
+		return repository.ErrNotFound
 	}
 	return err
 }
@@ -217,7 +216,7 @@ func (r *BaseRepository[T, U]) UpdateMany(ctx context.Context, entities []U) err
 func (r *BaseRepository[T, U]) UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*repository.QueryOptions) error {
 	result, err := r.Collection().UpdateOne(ctx, r.where(filter, options...), update)
 	if err == nil && result.MatchedCount == 0 {
-		return utils.ErrObjectNotFound
+		return repository.ErrNotFound
 	}
 	return err
 }
@@ -233,7 +232,7 @@ func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntit
 	res := r.Collection().FindOneAndUpdate(ctx, r.where(bson.M{"_id": updateEntity.RawID()}, queryOpt...), bson.M{"$set": updateEntity}, opt)
 	switch {
 	case res.Err() == mongo.ErrNoDocuments:
-		return nil, utils.ErrObjectNotFound
+		return nil, repository.ErrNotFound
 	case res.Err() != nil:
 		return nil, res.Err()
 	default:
@@ -253,7 +252,7 @@ func (r *BaseRepository[T, U]) UpsertOne(ctx context.Context, filter interface{}
 	opts := options.Update().SetUpsert(true)
 	result, err := r.Collection().UpdateOne(ctx, filter, bson.M{"$set": update}, opts)
 	if err == nil && result.MatchedCount+result.UpsertedCount == 0 {
-		return utils.ErrObjectNotFound
+		return repository.ErrNotFound
 	}
 	return err
 }
@@ -350,7 +349,7 @@ func (r *BaseRepository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.
 	defer cursor.Close(ctx)
 
 	if !cursor.Next(ctx) {
-		return utils.ErrObjectNotFound
+		return repository.ErrNotFound
 	}
 	return cursor.Decode(entity)
 }
