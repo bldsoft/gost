@@ -17,12 +17,16 @@ func NewUserService[PT IUserPtr[T], T any](rep IUserRepository[PT], passwordHash
 	return &UserService[PT, T]{userRep: rep, passwordHasher: passwordHasher}
 }
 
-func (s *UserService[PT, T]) Create(ctx context.Context, user PT) error {
+func (s *UserService[PT, T]) Create(ctx context.Context, user PT, recoverDeleted bool) error {
 	hashedPass, err := s.passwordHasher.HashAndSalt(user.Password())
 	if err != nil {
 		return err
 	}
 	user.SetPassword(hashedPass)
+
+	if recoverDeleted {
+		return s.userRep.InsertOrRecover(ctx, user)
+	}
 	return s.userRep.Insert(ctx, user)
 }
 

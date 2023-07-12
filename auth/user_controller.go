@@ -59,7 +59,7 @@ func (c *UserController[PT, T]) PostHandler(w http.ResponseWriter, r *http.Reque
 	if !c.GetObjectFromBody(w, r, &user) {
 		return
 	}
-	err := c.service.Create(r.Context(), &user)
+	err := c.service.Create(r.Context(), &user, true)
 	switch {
 	case err == nil:
 		c.ResponseJson(w, r, &user)
