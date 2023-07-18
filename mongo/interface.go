@@ -13,6 +13,8 @@ import (
 // MockRepository[T any, U repository.IEntityIDPtr[mongo.T]] struct
 // if regeneration is neaded, make sure to replace the resulting signature with
 // MockRepository[T any, U repository.IEntityIDPtr[T]] struct
+//
+//go:generate mockery --name Repository
 type Repository[T any, U repository.IEntityIDPtr[T]] interface {
 	Name() string
 	Collection() *mongo.Collection
