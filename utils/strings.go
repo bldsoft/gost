@@ -29,3 +29,11 @@ func RandToken(n int) (string, error) {
 
 	return string(codes), nil
 }
+
+func EnsureSuffix(s string, suffix string) string {
+	return strings.TrimSuffix(s, suffix) + suffix
+}
+
+func EnsurePrefix(s string, prefix string) string {
+	return prefix + strings.TrimPrefix(s, prefix)
+}
