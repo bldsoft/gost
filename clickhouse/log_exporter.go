@@ -172,7 +172,7 @@ func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 	defer stmt.Close()
 
 	for _, r := range records {
-		if _, err := stmt.Exec(r.Instance, r.Timestamp, int8(r.Level), r.ReqID, r.Msg, r.Fields); err != nil {
+		if _, err := stmt.Exec(r.Instance, time.UnixMicro(r.Timestamp), int8(r.Level), r.ReqID, r.Msg, r.Fields); err != nil {
 			return err
 		}
 	}
@@ -364,7 +364,7 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 
 	_, err := e.storage.Db.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 			`+InstanseColumnName+` LowCardinality(String),
-			`+TimestampColumnName+` DateTime64(3),
+			`+TimestampColumnName+` DateTime64(6),
 			`+LevelColumName+` Enum8('DEBUG'=0, 'INFO'=1, 'WARN'=2, 'ERROR'=3, 'FATAL'=4, 'PANIC'=5, 'TRACE'=-1),
 			`+ReqIDColumnName+` String,
 			`+MsgColumnName+` String,

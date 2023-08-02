@@ -22,7 +22,7 @@ func InitLogger(config *Config) {
 }
 
 func initZerolog(logFile, logLevel string, color bool, exportWriter *ExportLogWriter) {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMicro
 	zerolog.TimestampFieldName = "t"
 	zerolog.LevelFieldName = "l"
 	zerolog.MessageFieldName = "m"
