@@ -6,7 +6,14 @@ import (
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
+	"github.com/bldsoft/gost/version"
 	"github.com/hashicorp/consul/api"
+)
+
+const (
+	MetadataKeyVersion = "version"
+	MetadataKeyBranch  = "branch"
+	MetadataKeyCommmit = "commit"
 )
 
 type Discovery struct {
@@ -30,6 +37,11 @@ func NewDiscovery(cfg Config) *Discovery {
 	if err := d.initClient(); err != nil {
 		panic(err)
 	}
+
+	d.SetMetadata(MetadataKeyVersion, version.Version)
+	d.SetMetadata(MetadataKeyBranch, version.GitBranch)
+	d.SetMetadata(MetadataKeyCommmit, version.GitCommit)
+
 	d.AsyncRunner = server.NewContextAsyncRunner(func(ctx context.Context) error {
 		if len(cfg.ServiceAddr) == 0 { // do not register in consul
 			return nil
