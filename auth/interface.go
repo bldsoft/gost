@@ -5,7 +5,10 @@ import (
 	"errors"
 
 	"github.com/bldsoft/gost/repository"
+	"github.com/gorilla/sessions"
 )
+
+//go:generate mockery --case=camel --all --with-expecter=true
 
 var ErrUnauthorized = errors.New("unauthorized")
 
@@ -61,3 +64,5 @@ type IUserService[PT AuthenticablePtr[T], T any] interface {
 	UpdatePassword(ctx context.Context, id, password string) error
 	Delete(ctx context.Context, id string, archived bool) error
 }
+
+type Store = sessions.Store
