@@ -2,7 +2,6 @@ package consul
 
 import (
 	"context"
-	"os"
 	"sort"
 	"time"
 
@@ -62,12 +61,7 @@ func (d *Discovery) initMetadata() {
 	d.SetMetadata(MetadataKeyVersion, version.Version)
 	d.SetMetadata(MetadataKeyBranch, version.GitBranch)
 	d.SetMetadata(MetadataKeyCommmit, version.GitCommit)
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		log.Error("Failed to get hostname")
-	}
-	d.SetMetadata(MetadataKeyNode, hostname)
+	d.SetMetadata(MetadataKeyNode, discovery.Hostname())
 }
 
 func (d *Discovery) initClient() (err error) {
@@ -82,7 +76,7 @@ func (d *Discovery) initClient() (err error) {
 func (d *Discovery) Register() error {
 	check := &api.AgentServiceCheck{
 		TTL:     d.cfg.HealthCheckTTL.String(),
-		CheckID: d.cfg.checkID(),
+		CheckID: d.cfg.ServiceID,
 		Status:  api.HealthPassing,
 	}
 	if d.cfg.DeregisterTTL > 0 {
@@ -91,7 +85,7 @@ func (d *Discovery) Register() error {
 
 	reg := &api.AgentServiceRegistration{
 		ID:      d.cfg.ServiceID,
-		Name:    d.cfg.Cluster,
+		Name:    d.cfg.ServiceName,
 		Address: d.cfg.ServiceAddr,
 		Port:    d.cfg.ServicePort,
 		Check:   check,
@@ -109,7 +103,7 @@ func (d *Discovery) heartBeat(ctx context.Context, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
-		if err := d.consulClient.Agent().UpdateTTL(d.cfg.checkID(), "online", api.HealthPassing); err != nil {
+		if err := d.consulClient.Agent().UpdateTTL(d.cfg.ServiceID, "online", api.HealthPassing); err != nil {
 			log.FromContext(ctx).ErrorfWithFields(log.Fields{"err": err}, "Consul health check failed")
 		}
 		select {
