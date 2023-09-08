@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	ErrWrongPassword  = fmt.Errorf("wrong password")
-	ErrChangePassword = fmt.Errorf("change password required")
+	ErrWrongPassword = fmt.Errorf("wrong password")
+	ErrNotActive     = fmt.Errorf("user is not active")
 )
 
 // AuthService ...
@@ -23,14 +23,14 @@ func NewAuthService[PT AuthenticablePtr[T], T any](rep IAuthRepository[PT], pass
 	return &AuthService[PT, T]{userRep: rep, passwordHasher: passwordHasher}
 }
 
-func (s *AuthService[PT, T]) Login(ctx context.Context, username, password string) (PT, error) {
+func (s *AuthService[PT, T]) Login(ctx context.Context, username, password string, opts ...*repository.QueryOptions) (PT, error) {
 	user, err := s.userRep.FindByLogin(ctx, username, &repository.QueryOptions{Archived: false})
 	if err != nil {
 		return nil, err
 	}
 
-	if user.ChangePasswordRequired() {
-		return nil, ErrChangePassword
+	if err := user.Active(); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrNotActive, err)
 	}
 
 	if err := s.passwordHasher.VerifyPassword(user.Password(), password); err != nil {

@@ -26,7 +26,6 @@ require (
 	github.com/mattn/go-colorable v0.1.12
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
-	github.com/rbcervilla/redisstore v1.1.0
 	github.com/rs/zerolog v1.21.0
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.8.2
@@ -49,6 +48,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/u2takey/go-utils v0.3.1 // indirect
 	go.opentelemetry.io/otel v1.13.0 // indirect
 	go.opentelemetry.io/otel/trace v1.13.0 // indirect

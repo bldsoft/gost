@@ -1,11 +1,15 @@
 package auth
 
+import "fmt"
+
 const (
 	BsonFieldNameEmail          = "name"
 	BsonFieldNamePassword       = "password"
 	BsonFieldNameChangePassword = "changePasswordRequired"
 	BsonFieldNameRole           = "role"
 )
+
+var ErrChangePassword = fmt.Errorf("change password required")
 
 type EntityPassword struct {
 	UserPassword   string `json:"password,omitempty" bson:"password,omitempty"`
@@ -20,8 +24,11 @@ func (c *EntityPassword) Password() string {
 	return c.UserPassword
 }
 
-func (c *EntityPassword) ChangePasswordRequired() bool {
-	return c.ChangePassword
+func (c *EntityPassword) Active() error {
+	if c.ChangePassword {
+		return ErrChangePassword
+	}
+	return nil
 }
 
 type Creds struct {
