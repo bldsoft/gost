@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bldsoft/gost/consul"
+	"github.com/bldsoft/gost/discovery/consul"
 	"github.com/hashicorp/consul/api"
 	"github.com/stretchr/testify/assert"
 )

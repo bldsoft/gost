@@ -3,10 +3,13 @@ package consul
 import (
 	"context"
 	"os"
+	"sort"
 	"time"
 
+	"github.com/bldsoft/gost/discovery"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
+	"github.com/bldsoft/gost/utils/errgroup"
 	"github.com/bldsoft/gost/version"
 	"github.com/hashicorp/consul/api"
 )
@@ -115,4 +118,85 @@ func (d *Discovery) heartBeat(ctx context.Context, interval time.Duration) {
 			return
 		}
 	}
+}
+
+func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, error) {
+	services, _, err := d.ApiClient().Catalog().Services(&api.QueryOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	var eg errgroup.Group
+	serviceInfoC := make(chan discovery.ServiceInfo, len(services))
+	for service := range services {
+		service := service
+		eg.Go(func() (err error) {
+			nodes, _, err := d.ApiClient().Health().Service(service, "", false, &api.QueryOptions{})
+			if err != nil {
+				return err
+			}
+
+			serviceInfo := discovery.ServiceInfo{
+				Name: service,
+			}
+			for _, node := range nodes {
+				healthy := true
+				for _, check := range node.Checks {
+					if check.Status != api.HealthPassing {
+						healthy = false
+					}
+				}
+
+				// addr := net.JoinHostPort(node.Service.Address, strconv.Itoa(node.Service.Port))
+				serviceInfo.Instances = append(serviceInfo.Instances, discovery.ServiceInstanceInfo{
+					Address: node.Service.Address,
+					Node:    node.Service.Meta[MetadataKeyNode],
+					Version: node.Service.Meta[MetadataKeyVersion],
+					Branch:  node.Service.Meta[MetadataKeyBranch],
+					Commit:  node.Service.Meta[MetadataKeyCommmit],
+					Healthy: healthy,
+					Meta:    node.Service.Meta,
+				})
+			}
+			serviceInfoC <- serviceInfo
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	close(serviceInfoC)
+
+	res := make([]*discovery.ServiceInfo, 0, len(services))
+	for info := range serviceInfoC {
+		res = append(res, &info)
+	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Name < res[j].Name
+	})
+	return res, nil
+}
+
+func (d *Discovery) ServiceByName(ctx context.Context, name string) (*discovery.ServiceInfo, error) {
+	_, checkInfos, err := d.ApiClient().Agent().AgentHealthServiceByName(name)
+	if err != nil {
+		return nil, err
+	}
+	if len(checkInfos) == 0 {
+		return nil, discovery.NotFound
+	}
+
+	res := &discovery.ServiceInfo{Name: name}
+	for _, info := range checkInfos {
+		res.Instances = append(res.Instances, discovery.ServiceInstanceInfo{
+			Address: info.Service.Address,
+			Node:    info.Service.Meta[MetadataKeyNode],
+			Version: info.Service.Meta[MetadataKeyVersion],
+			Branch:  info.Service.Meta[MetadataKeyBranch],
+			Commit:  info.Service.Meta[MetadataKeyCommmit],
+			Healthy: info.Checks.AggregatedStatus() == api.HealthPassing,
+			Meta:    info.Service.Meta,
+		})
+	}
+	return res, nil
 }

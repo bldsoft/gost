@@ -1,4 +1,4 @@
-package consul
+package discovery
 
 import (
 	"sync/atomic"
