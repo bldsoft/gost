@@ -67,9 +67,9 @@ func (l *ContextLoggerEntry) Write(status, bytes int, header http.Header, elapse
 	}
 
 	switch {
-	case 200 <= status && status < 300:
+	case 200 <= status && status < 400:
 		l.Logger.InfoWithFields(fields, "RESPONSE")
-	case status == http.StatusInternalServerError:
+	case status >= 500:
 		l.Logger.ErrorWithFields(fields, "RESPONSE")
 	default:
 		l.Logger.WarnWithFields(fields, "RESPONSE")

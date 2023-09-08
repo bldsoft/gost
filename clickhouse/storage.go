@@ -17,6 +17,8 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/stub"
 )
 
+type Auth = clickhouse.Auth
+
 type Storage struct {
 	cfg Config
 
@@ -29,6 +31,10 @@ type Storage struct {
 
 func NewStorage(config Config) *Storage {
 	return &Storage{cfg: config, migrations: source.NewMigrations()}
+}
+
+func (s *Storage) Auth() Auth {
+	return s.cfg.options.Auth
 }
 
 func (s *Storage) IsReplicationEnabled() bool {

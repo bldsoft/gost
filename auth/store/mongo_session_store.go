@@ -187,7 +187,7 @@ func (mstore *MongoDBStore) Save(r *http.Request, w http.ResponseWriter, session
 func (mstore *MongoDBStore) ensureIndexTTL() error {
 	ctx := context.Background()
 
-	indexName := "modified_at_TTL"
+	indexName := "modified_TTL"
 
 	cursor, err := mstore.rep.Collection().Indexes().List(ctx)
 	if err != nil {
@@ -216,7 +216,7 @@ func (mstore *MongoDBStore) ensureIndexTTL() error {
 
 	indexModel := mongo.IndexModel{
 		Keys: bson.M{
-			"modified_at": 1,
+			"modified": 1,
 		},
 		Options: indexOpts,
 	}
@@ -249,7 +249,12 @@ func (mstore *MongoDBStore) AllSessions(ctx context.Context, name string, offset
 		SetLimit(int64(limit)).
 		SetSkip(int64(offset)).
 		SetSort(bson.M{"_id": 1})
-	cur, err := mstore.rep.Collection().Find(ctx, bson.M{}, findOpt)
+	cur, err := mstore.rep.Collection().Find(ctx,
+		bson.M{
+			"modified": bson.M{
+				"$gte": time.Now().Add(-time.Duration(mstore.options.MaxAge) * time.Second),
+			},
+		}, findOpt)
 	if err != nil {
 		return nil, err
 	}

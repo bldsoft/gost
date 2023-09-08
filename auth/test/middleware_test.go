@@ -5,21 +5,22 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/bldsoft/gost/auth"
 	"github.com/bldsoft/gost/auth/mocks"
 	"github.com/bldsoft/gost/controller"
 	"github.com/go-chi/chi/v5"
-	"github.com/golang/mock/gomock"
 	"github.com/gorilla/sessions"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestAuthMiddleware(t *testing.T) {
-	reg := &User{Creds{"user", EntityPassword{UserPassword: "password"}}}
-	changePassReg := &User{Creds{"user", EntityPassword{UserPassword: "password", ChangePassword: true}}}
+	reg := &auth.User{auth.Creds{"user", auth.EntityPassword{UserPassword: "password"}}}
+	changePassReg := &auth.User{auth.Creds{"user", auth.EntityPassword{UserPassword: "password", ChangePassword: true}}}
 	testCases := []struct {
 		name         string
-		user         *User
+		user         *auth.User
 		expectedCode int
 	}{
 		{"Authorized", reg, http.StatusOK},
@@ -29,10 +30,8 @@ func TestAuthMiddleware(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			mockCtrl := gomock.NewController(t)
-			defer mockCtrl.Finish()
-			store := mocks.NewMockStore(mockCtrl)
-			authController := NewAuthController[*User](nil, store, "")
+			store := mocks.NewStore(t)
+			authController := auth.NewAuthController[*auth.User](nil, store, "")
 
 			r := chi.NewRouter()
 			r.Use(authController.AuthenticateMiddleware())
@@ -42,10 +41,10 @@ func TestAuthMiddleware(t *testing.T) {
 			assert.NoError(t, err)
 			session := sessions.NewSession(store, "")
 			if testCase.user != nil {
-				session.Values[SessionUserKey] = *testCase.user
-				store.EXPECT().Save(gomock.Any(), gomock.Any(), gomock.Any())
+				session.Values[auth.SessionUserKey] = *testCase.user
+				store.EXPECT().Save(mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			}
-			store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(session, nil).AnyTimes()
+			store.EXPECT().Get(mock.Anything, mock.Anything).Return(session, nil).Maybe()
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
 
