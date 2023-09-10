@@ -6,9 +6,9 @@ import (
 	"github.com/bldsoft/gost/discovery/memberlist"
 )
 
-//go:generate go run github.com/abice/go-enum -f=$GOFILE --noprefix
+//go:generate go run github.com/abice/go-enum -f=$GOFILE
 
-// ENUM(memberlist, consul)
+// ENUM(none, memberlist, consul)
 type DiscoveryType string
 
 type Config struct {
@@ -19,7 +19,7 @@ type Config struct {
 }
 
 func (c *Config) SetDefaults() {
-	c.DiscoveryType = DiscoveryTypeMemberlist
+	c.DiscoveryType = DiscoveryTypeNone
 }
 
 func (c *Config) Validate() error {

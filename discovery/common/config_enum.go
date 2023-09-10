@@ -12,6 +12,8 @@ import (
 )
 
 const (
+	// DiscoveryTypeNone is a DiscoveryType of type none.
+	DiscoveryTypeNone DiscoveryType = "none"
 	// DiscoveryTypeMemberlist is a DiscoveryType of type memberlist.
 	DiscoveryTypeMemberlist DiscoveryType = "memberlist"
 	// DiscoveryTypeConsul is a DiscoveryType of type consul.
@@ -33,6 +35,7 @@ func (x DiscoveryType) IsValid() bool {
 }
 
 var _DiscoveryTypeValue = map[string]DiscoveryType{
+	"none":       DiscoveryTypeNone,
 	"memberlist": DiscoveryTypeMemberlist,
 	"consul":     DiscoveryTypeConsul,
 }
