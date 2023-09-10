@@ -18,6 +18,7 @@ const (
 	MetadataKeyBranch  = "branch"
 	MetadataKeyCommmit = "commit"
 	MetadataKeyNode    = "node"
+	MetadataKeyProto   = "proto"
 )
 
 type Discovery struct {
@@ -62,6 +63,7 @@ func (d *Discovery) initMetadata() {
 	d.SetMetadata(MetadataKeyBranch, version.GitBranch)
 	d.SetMetadata(MetadataKeyCommmit, version.GitCommit)
 	d.SetMetadata(MetadataKeyNode, discovery.Hostname())
+	d.SetMetadata(MetadataKeyProto, d.cfg.ServiceProto)
 }
 
 func (d *Discovery) initClient() (err error) {
@@ -144,6 +146,7 @@ func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, err
 				// addr := net.JoinHostPort(node.Service.Address, strconv.Itoa(node.Service.Port))
 				serviceInfo.Instances = append(serviceInfo.Instances, discovery.ServiceInstanceInfo{
 					Address: node.Service.Address,
+					Proto:   node.Service.Meta[MetadataKeyProto],
 					Node:    node.Service.Meta[MetadataKeyNode],
 					Version: node.Service.Meta[MetadataKeyVersion],
 					Branch:  node.Service.Meta[MetadataKeyBranch],

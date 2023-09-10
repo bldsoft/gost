@@ -22,6 +22,7 @@ type ServiceInfo struct {
 
 type ServiceInstanceInfo struct {
 	ID      string            `json:"id"`
+	Proto   string            `json:"proto"`
 	Address string            `json:"address"`
 	Port    int               `json:"port"`
 	Node    string            `json:"node"`
