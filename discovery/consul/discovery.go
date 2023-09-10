@@ -184,6 +184,7 @@ func (d *Discovery) ServiceByName(ctx context.Context, name string) (*discovery.
 	for _, info := range checkInfos {
 		res.Instances = append(res.Instances, discovery.ServiceInstanceInfo{
 			Address: info.Service.Address,
+			Port:    info.Service.Port,
 			Node:    info.Service.Meta[MetadataKeyNode],
 			Version: info.Service.Meta[MetadataKeyVersion],
 			Branch:  info.Service.Meta[MetadataKeyBranch],
