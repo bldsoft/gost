@@ -6,7 +6,9 @@ import (
 	"encoding/gob"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/bldsoft/gost/discovery"
 	"github.com/bldsoft/gost/log"
@@ -59,11 +61,19 @@ func (d *Discovery) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to create memberlist: %w", err)
 	}
-
-	// Join an existing cluster by specifying at least one known member.
-	_, err = d.list.Join(d.cfg.ClusterMembers)
-	if err != nil {
-		return fmt.Errorf("failed to join memberlist cluster: %w", err)
+	if len(d.cfg.ClusterMembers) == 0 {
+		return nil
+	}
+	t := time.NewTicker(10 * time.Second)
+	defer t.Stop()
+	for {
+		// Join an existing cluster by specifying at least one known member.
+		if _, err = d.list.Join(d.cfg.ClusterMembers); err != nil {
+			log.Errorf("Failed to join memberlist cluster: %s", strings.TrimSpace(err.Error()))
+		} else {
+			break
+		}
+		<-t.C
 	}
 	return nil
 }
