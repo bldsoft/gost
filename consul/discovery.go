@@ -2,6 +2,7 @@ package consul
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/bldsoft/gost/log"
@@ -14,6 +15,7 @@ const (
 	MetadataKeyVersion = "version"
 	MetadataKeyBranch  = "branch"
 	MetadataKeyCommmit = "commit"
+	MetadataKeyNode    = "node"
 )
 
 type Discovery struct {
@@ -38,9 +40,7 @@ func NewDiscovery(cfg Config) *Discovery {
 		panic(err)
 	}
 
-	d.SetMetadata(MetadataKeyVersion, version.Version)
-	d.SetMetadata(MetadataKeyBranch, version.GitBranch)
-	d.SetMetadata(MetadataKeyCommmit, version.GitCommit)
+	d.initMetadata()
 
 	d.AsyncRunner = server.NewContextAsyncRunner(func(ctx context.Context) error {
 		if len(cfg.ServiceAddr) == 0 { // do not register in consul
@@ -53,6 +53,18 @@ func NewDiscovery(cfg Config) *Discovery {
 		return d.Deregister()
 	})
 	return d
+}
+
+func (d *Discovery) initMetadata() {
+	d.SetMetadata(MetadataKeyVersion, version.Version)
+	d.SetMetadata(MetadataKeyBranch, version.GitBranch)
+	d.SetMetadata(MetadataKeyCommmit, version.GitCommit)
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Error("Failed to get hostname")
+	}
+	d.SetMetadata(MetadataKeyNode, hostname)
 }
 
 func (d *Discovery) initClient() (err error) {
