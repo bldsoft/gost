@@ -3,6 +3,7 @@ package consul
 import (
 	"context"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/bldsoft/gost/discovery"
@@ -46,7 +47,7 @@ func NewDiscovery(cfg Config) *Discovery {
 	d.initMetadata()
 
 	d.AsyncRunner = server.NewContextAsyncRunner(func(ctx context.Context) error {
-		if len(cfg.ServiceAddr) == 0 { // do not register in consul
+		if len(cfg.ServiceHost) == 0 { // do not register in consul
 			return nil
 		}
 		if err := d.Register(); err != nil {
@@ -88,8 +89,8 @@ func (d *Discovery) Register() error {
 	reg := &api.AgentServiceRegistration{
 		ID:      d.cfg.ServiceID,
 		Name:    d.cfg.ServiceName,
-		Address: d.cfg.ServiceAddr,
-		Port:    d.cfg.ServicePort,
+		Address: d.cfg.ServiceHost,
+		Port:    d.cfg.Port(),
 		Check:   check,
 		Meta:    d.serviceMeta,
 	}
@@ -143,9 +144,9 @@ func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, err
 					}
 				}
 
-				// addr := net.JoinHostPort(node.Service.Address, strconv.Itoa(node.Service.Port))
 				serviceInfo.Instances = append(serviceInfo.Instances, discovery.ServiceInstanceInfo{
-					Address: node.Service.Address,
+					Host:    node.Service.Address,
+					Port:    strconv.Itoa(node.Service.Port),
 					Proto:   node.Service.Meta[MetadataKeyProto],
 					Node:    node.Service.Meta[MetadataKeyNode],
 					Version: node.Service.Meta[MetadataKeyVersion],
@@ -166,6 +167,7 @@ func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, err
 
 	res := make([]*discovery.ServiceInfo, 0, len(services))
 	for info := range serviceInfoC {
+		info := info
 		res = append(res, &info)
 	}
 	sort.Slice(res, func(i, j int) bool {
@@ -186,8 +188,8 @@ func (d *Discovery) ServiceByName(ctx context.Context, name string) (*discovery.
 	res := &discovery.ServiceInfo{Name: name}
 	for _, info := range checkInfos {
 		res.Instances = append(res.Instances, discovery.ServiceInstanceInfo{
-			Address: info.Service.Address,
-			Port:    info.Service.Port,
+			Host:    info.Service.Address,
+			Port:    strconv.Itoa(info.Service.Port),
 			Node:    info.Service.Meta[MetadataKeyNode],
 			Version: info.Service.Meta[MetadataKeyVersion],
 			Branch:  info.Service.Meta[MetadataKeyBranch],

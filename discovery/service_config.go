@@ -2,7 +2,9 @@ package discovery
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/utils"
@@ -12,12 +14,23 @@ import (
 type ServiceConfig struct {
 	ServiceID    string `mapstructure:"SERVICE_ID" description:"The ID of the service. This must be unique in the cluster. If empty, a random one will be generated"`
 	ServiceName  string `mapstructure:"SERVICE_NAME" description:"The name of the service to register"`
-	ServiceProto string `mapstructure:"SERVICE_PROTO" description:"The proto of the service. Default - http"`
-	ServiceAddr  string `mapstructure:"SERVICE_ADDRESS" description:"The address of the service. If it's empty the service doesn't register in discovery"`
-	ServicePort  int    `mapstructure:"SERVICE_PORT" description:"The port of the service"`
+	ServiceProto string `mapstructure:"SERVICE_PROTO" description:"The proto of the service"`
+	ServiceHost  string `mapstructure:"SERVICE_HOST" description:"The address of the service. If it's empty the service doesn't register in discovery"`
+	ServicePort  string `mapstructure:"SERVICE_PORT" description:"The port of the service"`
+	meta         map[string]string
+}
+
+func (c *ServiceConfig) Port() int {
+	port, _ := strconv.Atoi(c.ServicePort)
+	return port
+}
+
+func (c *ServiceConfig) AddMetadata(key, value string) {
+	c.meta[key] = value
 }
 
 func (c *ServiceConfig) SetDefaults() {
+	c.meta = make(map[string]string)
 	c.ServiceProto = "http"
 }
 
@@ -28,12 +41,18 @@ func (c *ServiceConfig) Validate() error {
 	if len(c.ServiceID) == 0 {
 		c.ServiceID = utils.RandString(32)
 	}
+
+	if c.ServicePort != "" {
+		if _, err := strconv.Atoi(c.ServicePort); err != nil {
+			return fmt.Errorf("failed to parse port: %w", err)
+		}
+	}
 	return nil
 }
 
 func (c *ServiceConfig) ServiceInstanceInfo() ServiceInstanceInfo {
 	return ServiceInstanceInfo{
-		Address: c.ServiceAddr,
+		Host:    c.ServiceHost,
 		Proto:   c.ServiceProto,
 		Port:    c.ServicePort,
 		Node:    Hostname(),
@@ -41,6 +60,7 @@ func (c *ServiceConfig) ServiceInstanceInfo() ServiceInstanceInfo {
 		Commit:  version.GitCommit,
 		Branch:  version.GitBranch,
 		Healthy: true,
+		Meta:    c.meta,
 	}
 }
 

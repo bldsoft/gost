@@ -2,6 +2,8 @@ package discovery
 
 import (
 	"context"
+	"fmt"
+	"net"
 
 	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/gost/utils"
@@ -23,12 +25,26 @@ type ServiceInfo struct {
 type ServiceInstanceInfo struct {
 	ID      string            `json:"id"`
 	Proto   string            `json:"proto"`
-	Address string            `json:"address"`
-	Port    int               `json:"port"`
+	Host    string            `json:"host"`
+	Port    string            `json:"port"`
 	Node    string            `json:"node"`
 	Version string            `json:"version"`
 	Commit  string            `json:"commit"`
 	Branch  string            `json:"branch"`
 	Healthy bool              `json:"healthy"`
 	Meta    map[string]string `json:"-"`
+}
+
+func (i ServiceInstanceInfo) HostPort() string {
+	if i.Port == "" {
+		return i.Host
+	}
+	return net.JoinHostPort(i.Host, i.Port)
+}
+
+func (i ServiceInstanceInfo) Address() string {
+	if i.Proto == "http" || i.Proto == "https" {
+		return fmt.Sprintf("%s://%s", i.Proto, i.HostPort())
+	}
+	return i.HostPort()
 }

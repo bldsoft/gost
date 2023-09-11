@@ -12,10 +12,10 @@ import (
 type DiscoveryType string
 
 type Config struct {
-	DiscoveryType           DiscoveryType `mapstructure:"DISCOVERY_TYPE" description:"Discovery type"`
-	discovery.ServiceConfig `mapstructure:"DISCOVERY"`
-	MemberList              memberlist.MemberListConfig `mapstructure:"DISCOVERY_MEMBERLIST"`
-	Consul                  consul.ConsulConfig         `mapstructure:"DISCOVERY_CONSUL"`
+	discovery.ServiceConfig
+	DiscoveryType DiscoveryType               `mapstructure:"TYPE" description:"Discovery type"`
+	MemberList    memberlist.MemberListConfig `mapstructure:"MEMBERLIST"`
+	Consul        consul.ConsulConfig         `mapstructure:"CONSUL"`
 }
 
 func (c *Config) SetDefaults() {

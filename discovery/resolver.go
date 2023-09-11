@@ -2,7 +2,6 @@ package discovery
 
 import (
 	"context"
-	"fmt"
 	"time"
 )
 
@@ -44,7 +43,7 @@ func (r *Resolver) lookupServices(ctx context.Context, serviceName string) ([]st
 
 	addrs := make([]string, 0, len(serviceInfo.Instances))
 	for _, info := range serviceInfo.Instances {
-		addrs = append(addrs, fmt.Sprintf("%s:%d", info.Address, info.Port))
+		addrs = append(addrs, info.HostPort())
 	}
 
 	r.cache.put(serviceName, addrs)

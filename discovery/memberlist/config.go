@@ -3,8 +3,8 @@ package memberlist
 import "github.com/bldsoft/gost/discovery"
 
 type MemberListConfig struct {
-	MemberlistAddr string   `mapstructure:"ADDRESS" description:"The address of the service. If it's empty the service doesn't register in consul"`
-	MemberlistPort int      `mapstructure:"PORT" description:"Any existing member of the cluster to join it"`
+	MemberlistHost string   `mapstructure:"HOST" description:"Memberlist host"`
+	MemberlistPort int      `mapstructure:"PORT" description:"Meberlist port"`
 	ClusterMembers []string `mapstructure:"CLUSTER_MEMBERS" description:"Any existing member of the cluster to join it"`
 }
 

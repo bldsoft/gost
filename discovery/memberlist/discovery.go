@@ -46,7 +46,7 @@ func (d *Discovery) memberlistConfig() *memberlist.Config {
 	memberlistCfg := memberlist.DefaultLocalConfig()
 	memberlistCfg.LogOutput = logOutput{}
 	memberlistCfg.Name = d.cfg.ServiceID
-	memberlistCfg.BindAddr = d.cfg.MemberlistAddr
+	memberlistCfg.BindAddr = d.cfg.MemberlistHost
 	memberlistCfg.BindPort = d.cfg.MemberlistPort
 	memberlistCfg.Delegate = d
 	memberlistCfg.Events = d
