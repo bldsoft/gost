@@ -62,21 +62,27 @@ func (d *Discovery) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to create memberlist: %w", err)
 	}
-	if len(d.cfg.ClusterMembers) == 0 {
-		return nil
+	d.join(d.cfg.ClusterMembers...)
+	return nil
+}
+
+func (d *Discovery) join(members ...string) {
+	if len(members) == 0 {
+		return
 	}
+	log.Logger.InfoWithFields(log.Fields{"members": members}, "memberlist: joining")
 	t := time.NewTicker(10 * time.Second)
 	defer t.Stop()
 	for {
 		// Join an existing cluster by specifying at least one known member.
-		if _, err = d.list.Join(d.cfg.ClusterMembers); err != nil {
-			log.Errorf("Failed to join memberlist cluster: %s", strings.TrimSpace(err.Error()))
+		if _, err := d.list.Join(members); err != nil {
+			log.Errorf("memberlist: failed to join cluster: %s", strings.TrimSpace(err.Error()))
 		} else {
 			break
 		}
 		<-t.C
 	}
-	return nil
+	log.Logger.InfoWithFields(log.Fields{"members": members}, "memberlist: joined")
 }
 
 func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
@@ -100,8 +106,10 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 		return si.ID == meta.ID
 	})
 	if i >= 0 {
+		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "memberlist: updated service")
 		serviceInfo.Instances[i] = meta.ServiceInstanceInfo
 	} else {
+		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "memberlist: new service")
 		serviceInfo.Instances = append(serviceInfo.Instances, meta.ServiceInstanceInfo)
 	}
 }
@@ -207,6 +215,7 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 		log.Errorf(err.Error())
 		return
 	}
+	log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "memberlist: service is down")
 
 	d.servicesMtx.RLock()
 	defer d.servicesMtx.RUnlock()
@@ -216,6 +225,9 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 			instaces[i].Healthy = false
 			break
 		}
+	}
+	if addr := node.FullAddress().Addr; slices.Contains(d.cfg.MemberListConfig.ClusterMembers, addr) {
+		go d.join(addr)
 	}
 }
 
