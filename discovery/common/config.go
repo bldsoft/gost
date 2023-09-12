@@ -13,7 +13,7 @@ type DiscoveryType string
 
 type Config struct {
 	discovery.ServiceConfig
-	DiscoveryType DiscoveryType               `mapstructure:"TYPE" description:"Discovery type"`
+	DiscoveryType DiscoveryType               `mapstructure:"TYPE" description:"Discovery type (none, memberlist, consul)"`
 	MemberList    memberlist.MemberListConfig `mapstructure:"MEMBERLIST"`
 	Consul        consul.ConsulConfig         `mapstructure:"CONSUL"`
 }
