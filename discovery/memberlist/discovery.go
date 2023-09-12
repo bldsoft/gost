@@ -14,6 +14,7 @@ import (
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/utils"
 	"github.com/hashicorp/memberlist"
+	"golang.org/x/exp/slices"
 )
 
 var NotFound = utils.ErrObjectNotFound
@@ -95,7 +96,14 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 		d.services[meta.Service] = serviceInfo
 	}
 	meta.ServiceInstanceInfo.Healthy = true
-	serviceInfo.Instances = append(serviceInfo.Instances, meta.ServiceInstanceInfo)
+	i := slices.IndexFunc(serviceInfo.Instances, func(si discovery.ServiceInstanceInfo) bool {
+		return si.ID == meta.ID
+	})
+	if i >= 0 {
+		serviceInfo.Instances[i] = meta.ServiceInstanceInfo
+	} else {
+		serviceInfo.Instances = append(serviceInfo.Instances, meta.ServiceInstanceInfo)
+	}
 }
 
 func (d *Discovery) Stop(ctx context.Context) error {
@@ -202,9 +210,10 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 
 	d.servicesMtx.RLock()
 	defer d.servicesMtx.RUnlock()
-	for _, instance := range d.services[meta.Service].Instances {
-		if instance.ID == d.cfg.ServiceID {
-			instance.Healthy = false
+	instaces := d.services[meta.Service].Instances
+	for i := range instaces {
+		if instaces[i].ID == meta.ServiceInstanceInfo.ID {
+			instaces[i].Healthy = false
 			break
 		}
 	}

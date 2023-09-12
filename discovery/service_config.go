@@ -52,6 +52,7 @@ func (c *ServiceConfig) Validate() error {
 
 func (c *ServiceConfig) ServiceInstanceInfo() ServiceInstanceInfo {
 	return ServiceInstanceInfo{
+		ID:      c.ServiceID,
 		Host:    c.ServiceHost,
 		Proto:   c.ServiceProto,
 		Port:    c.ServicePort,
