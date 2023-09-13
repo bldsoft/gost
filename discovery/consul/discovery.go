@@ -47,7 +47,7 @@ func NewDiscovery(cfg Config) *Discovery {
 	d.initMetadata()
 
 	d.AsyncRunner = server.NewContextAsyncRunner(func(ctx context.Context) error {
-		if len(cfg.ServiceHost) == 0 { // do not register in consul
+		if len(cfg.ServiceAddr) == 0 { // do not register in consul
 			return nil
 		}
 		if err := d.Register(); err != nil {
@@ -64,7 +64,7 @@ func (d *Discovery) initMetadata() {
 	d.SetMetadata(MetadataKeyBranch, version.GitBranch)
 	d.SetMetadata(MetadataKeyCommmit, version.GitCommit)
 	d.SetMetadata(MetadataKeyNode, discovery.Hostname())
-	d.SetMetadata(MetadataKeyProto, d.cfg.ServiceProto)
+	d.SetMetadata(MetadataKeyProto, d.cfg.Proto())
 }
 
 func (d *Discovery) initClient() (err error) {
@@ -89,7 +89,7 @@ func (d *Discovery) Register() error {
 	reg := &api.AgentServiceRegistration{
 		ID:      d.cfg.ServiceID,
 		Name:    d.cfg.ServiceName,
-		Address: d.cfg.ServiceHost,
+		Address: d.cfg.Host(),
 		Port:    d.cfg.Port(),
 		Check:   check,
 		Meta:    d.serviceMeta,

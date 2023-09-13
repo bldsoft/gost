@@ -2,9 +2,10 @@ package discovery
 
 import (
 	"errors"
-	"fmt"
+	"net"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/utils"
@@ -12,17 +13,39 @@ import (
 )
 
 type ServiceConfig struct {
-	ServiceID    string `mapstructure:"SERVICE_ID" description:"The ID of the service. This must be unique in the cluster. If empty, a random one will be generated"`
-	ServiceName  string `mapstructure:"SERVICE_NAME" description:"The name of the service to register"`
-	ServiceProto string `mapstructure:"SERVICE_PROTO" description:"The proto of the service"`
-	ServiceHost  string `mapstructure:"SERVICE_HOST" description:"The address of the service. If it's empty the service doesn't register in discovery"`
-	ServicePort  string `mapstructure:"SERVICE_PORT" description:"The port of the service"`
-	meta         map[string]string
+	ServiceID   string `mapstructure:"SERVICE_ID" description:"The ID of the service. This must be unique in the cluster. If empty, a random one will be generated"`
+	ServiceName string `mapstructure:"SERVICE_NAME" description:"The name of the service to register"`
+	ServiceAddr string `mapstructure:"SERVICE_ADDRESS" description:"The address of the service"`
+	meta        map[string]string
+}
+
+func (c *ServiceConfig) SplittedAddr() (proto, host, port string) {
+	host = c.ServiceAddr
+	if i := strings.Index(c.ServiceAddr, "://"); i > 0 {
+		proto = c.ServiceAddr[:i]
+		host = c.ServiceAddr[i+3:]
+	}
+	if h, p, err := net.SplitHostPort(host); err == nil {
+		host = h
+		port = p
+	}
+	return proto, "", ""
+}
+
+func (c *ServiceConfig) Proto() string {
+	proto, _, _ := c.SplittedAddr()
+	return proto
+}
+
+func (c *ServiceConfig) Host() string {
+	_, host, _ := c.SplittedAddr()
+	return host
 }
 
 func (c *ServiceConfig) Port() int {
-	port, _ := strconv.Atoi(c.ServicePort)
-	return port
+	_, _, port := c.SplittedAddr()
+	portInt, _ := strconv.Atoi(port)
+	return portInt
 }
 
 func (c *ServiceConfig) AddMetadata(key, value string) {
@@ -31,7 +54,7 @@ func (c *ServiceConfig) AddMetadata(key, value string) {
 
 func (c *ServiceConfig) SetDefaults() {
 	c.meta = make(map[string]string)
-	c.ServiceProto = "http"
+	c.ServiceAddr = "http://0.0.0.0:3000"
 }
 
 func (c *ServiceConfig) Validate() error {
@@ -41,21 +64,16 @@ func (c *ServiceConfig) Validate() error {
 	if len(c.ServiceID) == 0 {
 		c.ServiceID = utils.RandString(32)
 	}
-
-	if c.ServicePort != "" {
-		if _, err := strconv.Atoi(c.ServicePort); err != nil {
-			return fmt.Errorf("failed to parse port: %w", err)
-		}
-	}
 	return nil
 }
 
 func (c *ServiceConfig) ServiceInstanceInfo() ServiceInstanceInfo {
+	proto, host, port := c.SplittedAddr()
 	return ServiceInstanceInfo{
 		ID:      c.ServiceID,
-		Host:    c.ServiceHost,
-		Proto:   c.ServiceProto,
-		Port:    c.ServicePort,
+		Host:    host,
+		Proto:   proto,
+		Port:    port,
 		Node:    Hostname(),
 		Version: version.Version,
 		Commit:  version.GitCommit,
