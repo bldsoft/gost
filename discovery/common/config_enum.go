@@ -14,8 +14,8 @@ import (
 const (
 	// DiscoveryTypeNone is a DiscoveryType of type none.
 	DiscoveryTypeNone DiscoveryType = "none"
-	// DiscoveryTypeMemberlist is a DiscoveryType of type memberlist.
-	DiscoveryTypeMemberlist DiscoveryType = "memberlist"
+	// DiscoveryTypeInHouse is a DiscoveryType of type in-house.
+	DiscoveryTypeInHouse DiscoveryType = "in-house"
 	// DiscoveryTypeConsul is a DiscoveryType of type consul.
 	DiscoveryTypeConsul DiscoveryType = "consul"
 )
@@ -35,9 +35,9 @@ func (x DiscoveryType) IsValid() bool {
 }
 
 var _DiscoveryTypeValue = map[string]DiscoveryType{
-	"none":       DiscoveryTypeNone,
-	"memberlist": DiscoveryTypeMemberlist,
-	"consul":     DiscoveryTypeConsul,
+	"none":     DiscoveryTypeNone,
+	"in-house": DiscoveryTypeInHouse,
+	"consul":   DiscoveryTypeConsul,
 }
 
 // ParseDiscoveryType attempts to convert a string to a DiscoveryType.

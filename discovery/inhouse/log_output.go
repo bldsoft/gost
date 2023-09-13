@@ -1,4 +1,4 @@
-package memberlist
+package inhouse
 
 import (
 	"fmt"
@@ -13,6 +13,7 @@ func (logOutput) Write(p []byte) (n int, err error) {
 	if _, err := fmt.Sscanf(string(p), "[%s] %s", &lvl, &msg); err != nil {
 		return 0, err
 	}
+	msg = "inhouse: " + msg
 	n = len(p)
 	switch lvl {
 	case "INFO":

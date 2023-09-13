@@ -1,4 +1,4 @@
-package memberlist
+package inhouse
 
 import (
 	"bytes"
@@ -49,8 +49,8 @@ func (d *Discovery) memberlistConfig() *memberlist.Config {
 	memberlistCfg := memberlist.DefaultLocalConfig()
 	memberlistCfg.LogOutput = logOutput{}
 	memberlistCfg.Name = d.cfg.ServiceID
-	memberlistCfg.BindAddr = d.cfg.MemberlistHost
-	memberlistCfg.BindPort = d.cfg.MemberlistPort
+	memberlistCfg.BindAddr = d.cfg.InHouseHost
+	memberlistCfg.BindPort = d.cfg.InHousePort
 	memberlistCfg.Delegate = d
 	memberlistCfg.Events = d
 	return memberlistCfg
@@ -70,19 +70,19 @@ func (d *Discovery) join(members ...string) {
 	if len(members) == 0 {
 		return
 	}
-	log.Logger.InfoWithFields(log.Fields{"members": members}, "memberlist: joining")
+	log.Logger.InfoWithFields(log.Fields{"members": members}, "in-house: joining")
 	t := time.NewTicker(10 * time.Second)
 	defer t.Stop()
 	for {
 		// Join an existing cluster by specifying at least one known member.
 		if _, err := d.list.Join(members); err != nil {
-			log.Errorf("memberlist: failed to join cluster: %s", strings.TrimSpace(err.Error()))
+			log.Errorf("in-house: failed to join cluster: %s", strings.TrimSpace(err.Error()))
 		} else {
 			break
 		}
 		<-t.C
 	}
-	log.Logger.InfoWithFields(log.Fields{"members": members}, "memberlist: joined")
+	log.Logger.InfoWithFields(log.Fields{"members": members}, "in-house: joined")
 }
 
 func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
@@ -106,10 +106,10 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 		return si.ID == meta.ID
 	})
 	if i >= 0 {
-		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "memberlist: updated service")
+		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "in-house: updated service")
 		serviceInfo.Instances[i] = meta.ServiceInstanceInfo
 	} else {
-		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "memberlist: new service")
+		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "in-house: new service")
 		serviceInfo.Instances = append(serviceInfo.Instances, meta.ServiceInstanceInfo)
 	}
 }
@@ -151,7 +151,7 @@ func (d *Discovery) NodeMeta(limit int) []byte {
 	buf.Grow(limit)
 	encoder := gob.NewEncoder(&buf)
 	if err := encoder.Encode(d.serviceInfo); err != nil {
-		log.Error("memberlist: failed to encode service info: %w")
+		log.Error("in-house: failed to encode service info: %w")
 		return nil
 	}
 	return buf.Bytes()
@@ -162,7 +162,7 @@ func (d *Discovery) parseMeta(node *memberlist.Node) (*serviceInfo, error) {
 	decoder := gob.NewDecoder(bytes.NewReader(node.Meta))
 	err := decoder.Decode(&meta)
 	if err != nil {
-		return nil, fmt.Errorf("memberlist: failed to decode service info: %w", err)
+		return nil, fmt.Errorf("in-house: failed to decode service info: %w", err)
 	}
 	return &meta, nil
 }
@@ -215,7 +215,7 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 		log.Errorf(err.Error())
 		return
 	}
-	log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "memberlist: service is down")
+	log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "in-house: service is down")
 
 	d.servicesMtx.RLock()
 	defer d.servicesMtx.RUnlock()
@@ -226,7 +226,7 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 			break
 		}
 	}
-	if addr := node.FullAddress().Addr; slices.Contains(d.cfg.MemberListConfig.ClusterMembers, addr) {
+	if addr := node.FullAddress().Addr; slices.Contains(d.cfg.InHouseConfig.ClusterMembers, addr) {
 		go d.join(addr)
 	}
 }

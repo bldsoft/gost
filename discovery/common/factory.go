@@ -4,7 +4,7 @@ import (
 	"github.com/bldsoft/gost/discovery"
 	"github.com/bldsoft/gost/discovery/consul"
 	"github.com/bldsoft/gost/discovery/fake"
-	"github.com/bldsoft/gost/discovery/memberlist"
+	"github.com/bldsoft/gost/discovery/inhouse"
 )
 
 func NewDiscovery(cfg Config) discovery.Discovery {
@@ -14,10 +14,10 @@ func NewDiscovery(cfg Config) discovery.Discovery {
 			ConsulConfig:  cfg.Consul,
 			ServiceConfig: cfg.ServiceConfig,
 		})
-	case DiscoveryTypeMemberlist:
-		return memberlist.NewDiscovery(memberlist.Config{
-			MemberListConfig: cfg.MemberList,
-			ServiceConfig:    cfg.ServiceConfig,
+	case DiscoveryTypeInHouse:
+		return inhouse.NewDiscovery(inhouse.Config{
+			InHouseConfig: cfg.InHouse,
+			ServiceConfig: cfg.ServiceConfig,
 		})
 	case DiscoveryTypeNone:
 		fallthrough
