@@ -64,13 +64,13 @@ func (d *Discovery) initMetadata() {
 	d.SetMetadata(MetadataKeyBranch, version.GitBranch)
 	d.SetMetadata(MetadataKeyCommmit, version.GitCommit)
 	d.SetMetadata(MetadataKeyNode, discovery.Hostname())
-	d.SetMetadata(MetadataKeyProto, d.cfg.Proto())
+	d.SetMetadata(MetadataKeyProto, d.cfg.ServiceAddr.Scheme())
 }
 
 func (d *Discovery) initClient() (err error) {
 	d.consulClient, err = api.NewClient(&api.Config{
-		Address: d.cfg.ConsulAddr,
-		Scheme:  d.cfg.ConsulScheme,
+		Address: d.cfg.ConsulAddr.HostPort(),
+		Scheme:  d.cfg.ConsulAddr.Scheme(),
 		Token:   d.cfg.Token.String(),
 	})
 	return err
@@ -89,8 +89,8 @@ func (d *Discovery) Register() error {
 	reg := &api.AgentServiceRegistration{
 		ID:      d.cfg.ServiceID,
 		Name:    d.cfg.ServiceName,
-		Address: d.cfg.Host(),
-		Port:    d.cfg.Port(),
+		Address: d.cfg.ServiceAddr.Host(),
+		Port:    d.cfg.ServiceAddr.PortInt(),
 		Check:   check,
 		Meta:    d.serviceMeta,
 	}

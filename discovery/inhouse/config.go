@@ -1,14 +1,18 @@
 package inhouse
 
-import "github.com/bldsoft/gost/discovery"
+import (
+	"github.com/bldsoft/gost/config"
+	"github.com/bldsoft/gost/discovery"
+)
 
 type InHouseConfig struct {
-	InHouseHost    string   `mapstructure:"HOST" description:"Host used for in-house discovery communication"`
-	InHousePort    int      `mapstructure:"PORT" description:"Port used for in-house discovery communication"`
-	ClusterMembers []string `mapstructure:"CLUSTER_MEMBERS" description:"Any existing member of the cluster to join it"`
+	Address        config.Address `mapstructure:"ADDRESS" description:"The address used for in-house discovery communication"`
+	ClusterMembers []string       `mapstructure:"CLUSTER_MEMBERS" description:"Comma separated list of any existing member of the cluster to join it. Example: '127.0.0.1:3001'"`
 }
 
-func (c *InHouseConfig) SetDefaults() {}
+func (c *InHouseConfig) SetDefaults() {
+	c.Address = "0.0.0.0:3001"
+}
 
 func (c *InHouseConfig) Validate() error { return nil }
 

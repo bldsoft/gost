@@ -2,50 +2,19 @@ package discovery
 
 import (
 	"errors"
-	"net"
 	"os"
-	"strconv"
-	"strings"
 
+	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/utils"
 	"github.com/bldsoft/gost/version"
 )
 
 type ServiceConfig struct {
-	ServiceID   string `mapstructure:"SERVICE_ID" description:"The ID of the service. This must be unique in the cluster. If empty, a random one will be generated"`
-	ServiceName string `mapstructure:"SERVICE_NAME" description:"The name of the service to register"`
-	ServiceAddr string `mapstructure:"SERVICE_ADDRESS" description:"The address of the service"`
+	ServiceID   string         `mapstructure:"SERVICE_ID" description:"The ID of the service. This must be unique in the cluster. If empty, a random one will be generated"`
+	ServiceName string         `mapstructure:"SERVICE_NAME" description:"The name of the service to register"`
+	ServiceAddr config.Address `mapstructure:"SERVICE_ADDRESS" description:"The address of the current service"`
 	meta        map[string]string
-}
-
-func (c *ServiceConfig) SplittedAddr() (proto, host, port string) {
-	host = c.ServiceAddr
-	if i := strings.Index(c.ServiceAddr, "://"); i > 0 {
-		proto = c.ServiceAddr[:i]
-		host = c.ServiceAddr[i+3:]
-	}
-	if h, p, err := net.SplitHostPort(host); err == nil {
-		host = h
-		port = p
-	}
-	return proto, "", ""
-}
-
-func (c *ServiceConfig) Proto() string {
-	proto, _, _ := c.SplittedAddr()
-	return proto
-}
-
-func (c *ServiceConfig) Host() string {
-	_, host, _ := c.SplittedAddr()
-	return host
-}
-
-func (c *ServiceConfig) Port() int {
-	_, _, port := c.SplittedAddr()
-	portInt, _ := strconv.Atoi(port)
-	return portInt
 }
 
 func (c *ServiceConfig) AddMetadata(key, value string) {
@@ -68,7 +37,7 @@ func (c *ServiceConfig) Validate() error {
 }
 
 func (c *ServiceConfig) ServiceInstanceInfo() ServiceInstanceInfo {
-	proto, host, port := c.SplittedAddr()
+	proto, host, port := c.ServiceAddr.Splitted()
 	return ServiceInstanceInfo{
 		ID:      c.ServiceID,
 		Host:    host,
