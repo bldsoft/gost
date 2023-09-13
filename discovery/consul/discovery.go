@@ -107,7 +107,7 @@ func (d *Discovery) heartBeat(ctx context.Context, interval time.Duration) {
 	defer ticker.Stop()
 	for {
 		if err := d.consulClient.Agent().UpdateTTL(d.cfg.ServiceID, "online", api.HealthPassing); err != nil {
-			log.FromContext(ctx).ErrorfWithFields(log.Fields{"err": err}, "Consul health check failed")
+			log.FromContext(ctx).ErrorfWithFields(log.Fields{"err": err}, "Discovery: consul health check failed")
 		}
 		select {
 		case <-ticker.C:

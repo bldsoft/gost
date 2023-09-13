@@ -70,19 +70,19 @@ func (d *Discovery) join(members ...string) {
 	if len(members) == 0 {
 		return
 	}
-	log.Logger.InfoWithFields(log.Fields{"members": members}, "in-house: joining")
+	log.Logger.InfoWithFields(log.Fields{"members": members}, "Discovery: joining")
 	t := time.NewTicker(10 * time.Second)
 	defer t.Stop()
 	for {
 		// Join an existing cluster by specifying at least one known member.
 		if _, err := d.list.Join(members); err != nil {
-			log.Errorf("in-house: failed to join cluster: %s", strings.TrimSpace(err.Error()))
+			log.Errorf("Discovery: failed to join cluster: %s", strings.TrimSpace(err.Error()))
 		} else {
 			break
 		}
 		<-t.C
 	}
-	log.Logger.InfoWithFields(log.Fields{"members": members}, "in-house: joined")
+	log.Logger.InfoWithFields(log.Fields{"members": members}, "Discovery: joined")
 }
 
 func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
@@ -106,10 +106,10 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 		return si.ID == meta.ID
 	})
 	if i >= 0 {
-		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "in-house: updated service")
+		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "Discovery: service updated")
 		serviceInfo.Instances[i] = meta.ServiceInstanceInfo
 	} else {
-		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "in-house: new service")
+		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "Discovery: new service added")
 		serviceInfo.Instances = append(serviceInfo.Instances, meta.ServiceInstanceInfo)
 	}
 }
@@ -151,7 +151,7 @@ func (d *Discovery) NodeMeta(limit int) []byte {
 	buf.Grow(limit)
 	encoder := gob.NewEncoder(&buf)
 	if err := encoder.Encode(d.serviceInfo); err != nil {
-		log.Error("in-house: failed to encode service info: %w")
+		log.Error("Discovery: failed to encode service info: %w")
 		return nil
 	}
 	return buf.Bytes()
@@ -162,7 +162,7 @@ func (d *Discovery) parseMeta(node *memberlist.Node) (*serviceInfo, error) {
 	decoder := gob.NewDecoder(bytes.NewReader(node.Meta))
 	err := decoder.Decode(&meta)
 	if err != nil {
-		return nil, fmt.Errorf("in-house: failed to decode service info: %w", err)
+		return nil, fmt.Errorf("Discovery: failed to decode service info: %w", err)
 	}
 	return &meta, nil
 }
@@ -215,7 +215,7 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 		log.Errorf(err.Error())
 		return
 	}
-	log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "in-house: service is down")
+	log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "Discovery: service is down")
 
 	d.servicesMtx.RLock()
 	defer d.servicesMtx.RUnlock()
