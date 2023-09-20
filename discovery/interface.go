@@ -17,6 +17,10 @@ type Discovery interface {
 	ServiceByName(ctx context.Context, name string) (*ServiceInfo, error)
 }
 
+type NotifyingDiscovery interface {
+	Subscribe(handler EventServiceHandler, handlers ...EventServiceHandler)
+}
+
 type ServiceInfo struct {
 	Name      string                `json:"name"`
 	Instances []ServiceInstanceInfo `json:"instances"`
@@ -47,4 +51,16 @@ func (i ServiceInstanceInfo) Address() string {
 		return fmt.Sprintf("%s://%s", i.Proto, i.HostPort())
 	}
 	return i.HostPort()
+}
+
+type ServiceInstanceInfoFull struct {
+	ServiceName string `json:"serviceName"`
+	ServiceInstanceInfo
+}
+
+func NewServiceInstanceInfoFull(serviceName string, instanceInfo ServiceInstanceInfo) ServiceInstanceInfoFull {
+	return ServiceInstanceInfoFull{
+		ServiceName:         serviceName,
+		ServiceInstanceInfo: instanceInfo,
+	}
 }
