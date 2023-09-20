@@ -19,16 +19,13 @@ import (
 
 var NotFound = utils.ErrObjectNotFound
 
-type serviceInfo struct {
-	Service string `json:"service"`
-	discovery.ServiceInstanceInfo
-}
-
 type Discovery struct {
+	discovery.BaseDiscovery
+
 	cfg  Config
 	list *memberlist.Memberlist
 
-	serviceInfo serviceInfo
+	serviceInfo discovery.ServiceInstanceInfoFull
 
 	services    map[string]*discovery.ServiceInfo
 	servicesMtx sync.RWMutex
@@ -36,12 +33,9 @@ type Discovery struct {
 
 func NewDiscovery(cfg Config) *Discovery {
 	return &Discovery{
-		cfg: cfg,
-		serviceInfo: serviceInfo{
-			Service:             cfg.ServiceName,
-			ServiceInstanceInfo: cfg.ServiceInstanceInfo(),
-		},
-		services: make(map[string]*discovery.ServiceInfo),
+		cfg:         cfg,
+		serviceInfo: discovery.NewServiceInstanceInfoFull(cfg.ServiceName, cfg.ServiceInstanceInfo()),
+		services:    make(map[string]*discovery.ServiceInfo),
 	}
 }
 
@@ -96,21 +90,32 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 		d.servicesMtx.Lock()
 		defer d.servicesMtx.Unlock()
 	}
-	serviceInfo, ok := d.services[meta.Service]
+	serviceInfo, ok := d.services[meta.ServiceName]
 	if !ok {
-		serviceInfo = &discovery.ServiceInfo{Name: meta.Service}
-		d.services[meta.Service] = serviceInfo
+		serviceInfo = &discovery.ServiceInfo{Name: meta.ServiceName}
+		d.services[meta.ServiceName] = serviceInfo
 	}
 	meta.ServiceInstanceInfo.Healthy = true
 	i := slices.IndexFunc(serviceInfo.Instances, func(si discovery.ServiceInstanceInfo) bool {
 		return si.ID == meta.ID
 	})
 	if i >= 0 {
-		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "Discovery: service updated")
+		switch {
+		case !serviceInfo.Instances[i].Healthy && meta.ServiceInstanceInfo.Healthy:
+			d.TriggerEvent(discovery.ServiceEventTypeUp, meta)
+		case serviceInfo.Instances[i].Healthy && !meta.ServiceInstanceInfo.Healthy:
+			d.TriggerEvent(discovery.ServiceEventTypeDown, meta)
+		}
+
 		serviceInfo.Instances[i] = meta.ServiceInstanceInfo
+		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "Discovery: service updated")
 	} else {
-		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "Discovery: new service added")
 		serviceInfo.Instances = append(serviceInfo.Instances, meta.ServiceInstanceInfo)
+
+		d.TriggerEvent(discovery.ServiceEventTypeDiscovered, meta)
+		d.TriggerEvent(discovery.ServiceEventTypeUp, meta)
+
+		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "Discovery: new service added")
 	}
 }
 
@@ -157,8 +162,8 @@ func (d *Discovery) NodeMeta(limit int) []byte {
 	return buf.Bytes()
 }
 
-func (d *Discovery) parseMeta(node *memberlist.Node) (*serviceInfo, error) {
-	var meta serviceInfo
+func (d *Discovery) parseMeta(node *memberlist.Node) (*discovery.ServiceInstanceInfoFull, error) {
+	var meta discovery.ServiceInstanceInfoFull
 	decoder := gob.NewDecoder(bytes.NewReader(node.Meta))
 	err := decoder.Decode(&meta)
 	if err != nil {
@@ -219,7 +224,7 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 
 	d.servicesMtx.RLock()
 	defer d.servicesMtx.RUnlock()
-	instaces := d.services[meta.Service].Instances
+	instaces := d.services[meta.ServiceName].Instances
 	for i := range instaces {
 		if instaces[i].ID == meta.ServiceInstanceInfo.ID {
 			instaces[i].Healthy = false
@@ -229,6 +234,8 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 	if addr := node.FullAddress().Addr; slices.Contains(d.cfg.InHouseConfig.ClusterMembers, addr) {
 		go d.join(addr)
 	}
+
+	d.TriggerEvent(discovery.ServiceEventTypeDown, meta)
 }
 
 // NotifyUpdate is invoked when a node is detected to have
@@ -237,3 +244,5 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 func (d *Discovery) NotifyUpdate(node *memberlist.Node) {
 
 }
+
+var _ discovery.NotifyingDiscovery = &Discovery{}
