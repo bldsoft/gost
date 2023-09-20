@@ -10,6 +10,8 @@ import (
 )
 
 type Discovery struct {
+	discovery.BaseDiscovery
+
 	server.AsyncJob
 	cfg discovery.ServiceConfig
 
@@ -30,6 +32,11 @@ func (d *Discovery) AddService(serviceInfo *discovery.ServiceInfo) {
 	d.servicesMtx.Lock()
 	defer d.servicesMtx.Unlock()
 	d.services[serviceInfo.Name] = serviceInfo
+	for _, instance := range serviceInfo.Instances {
+		instanceInfoFull := discovery.NewServiceInstanceInfoFull(serviceInfo.Name, instance)
+		d.TriggerEvent(discovery.ServiceEventTypeDiscovered, &instanceInfoFull)
+		d.TriggerEvent(discovery.ServiceEventTypeUp, &instanceInfoFull)
+	}
 }
 
 func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, error) {
@@ -54,3 +61,5 @@ func (d *Discovery) ServiceByName(ctx context.Context, name string) (*discovery.
 	}
 	return s, nil
 }
+
+var _ discovery.NotifyingDiscovery = &Discovery{}
