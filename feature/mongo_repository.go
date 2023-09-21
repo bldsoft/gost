@@ -13,13 +13,13 @@ import (
 
 // MongoRepository implements IFeatureRepository interface
 type MongoRepository struct {
-	rep         mongo.Repository[Feature, *Feature]
-	serviceName string
+	rep                 mongo.Repository[Feature, *Feature]
+	serviceInstanceName string
 }
 
 // NewMongoRepository creates feature repository.
-func NewMongoRepository(db *mongo.Storage, serviceName string) *MongoRepository {
-	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, "feature"), serviceName: serviceName}
+func NewMongoRepository(db *mongo.Storage, serviceInstanceName string) *MongoRepository {
+	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, "feature"), serviceInstanceName: serviceInstanceName}
 	if err := rep.Load(); err != nil {
 		log.Error("Failed to load features")
 	} else {
@@ -48,7 +48,7 @@ func (r *MongoRepository) SetFeature(feature *Feature) {
 	value := *feature.GlobalValue
 	if feature.SrvValues != nil {
 		for _, serviceValue := range *feature.SrvValues {
-			if serviceValue.SrvName == r.serviceName {
+			if serviceValue.SrvName == r.serviceInstanceName {
 				value = serviceValue.Value
 				break
 			}
