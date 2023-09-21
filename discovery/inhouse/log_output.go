@@ -13,7 +13,7 @@ func (logOutput) Write(p []byte) (n int, err error) {
 	if _, err := fmt.Sscanf(string(p), "[%s] %s", &lvl, &msg); err != nil {
 		return 0, err
 	}
-	msg = "inhouse: " + msg
+	msg = "Discovery: " + msg
 	n = len(p)
 	switch lvl {
 	case "INFO":

@@ -14,6 +14,7 @@ import (
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/gost/utils"
+	"github.com/go-chi/chi/v5"
 	"github.com/hashicorp/memberlist"
 	"golang.org/x/exp/slices"
 )
@@ -28,6 +29,8 @@ type Discovery struct {
 
 	services    map[string]*discovery.ServiceInfo
 	servicesMtx sync.RWMutex
+
+	transport *Transport
 }
 
 func NewDiscovery(serviceCfg server.Config, cfg Config) *Discovery {
@@ -36,6 +39,15 @@ func NewDiscovery(serviceCfg server.Config, cfg Config) *Discovery {
 		BaseDiscovery: discovery.NewBaseDiscovery(serviceCfg),
 		services:      make(map[string]*discovery.ServiceInfo),
 	}
+
+	if d.cfg.Embedded {
+		var err error
+		d.transport, err = NewTransport(serviceCfg.ServiceAddress)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	return d
 }
 
@@ -47,6 +59,9 @@ func (d *Discovery) memberlistConfig() (*memberlist.Config, error) {
 	memberlistCfg.BindPort = d.cfg.BindAddress.PortInt()
 	memberlistCfg.AdvertiseAddr = d.ServiceInfo.Host
 	memberlistCfg.AdvertisePort = d.ServiceInfo.PortInt()
+	if d.transport != nil {
+		memberlistCfg.Transport = d.transport
+	}
 	memberlistCfg.Delegate = d
 	memberlistCfg.Events = d
 	return memberlistCfg, nil
@@ -127,7 +142,15 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 }
 
 func (d *Discovery) Stop(ctx context.Context) error {
-	return nil
+	if deadline, ok := ctx.Deadline(); ok {
+		if timeout := time.Now().Sub(deadline); timeout > 0 {
+			err := d.list.Leave(timeout)
+			if err != nil {
+				log.Logger.InfoOrError(err, "Discovery: leaving from the cluster")
+			}
+		}
+	}
+	return d.list.Shutdown()
 }
 
 func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, error) {
@@ -151,6 +174,12 @@ func (d *Discovery) ServiceByName(ctx context.Context, name string) (*discovery.
 		return nil, discovery.NotFound
 	}
 	return s, nil
+}
+
+func (d *Discovery) Mount(r chi.Router) {
+	if d.transport != nil {
+		d.transport.Mount(r)
+	}
 }
 
 // Delegates
