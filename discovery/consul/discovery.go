@@ -23,23 +23,22 @@ const (
 )
 
 type Discovery struct {
+	base         discovery.BaseDiscovery
 	cfg          Config
 	consulClient *api.Client
 	server.AsyncRunner
-
-	serviceMeta map[string]string
 }
 
 func (d *Discovery) ApiClient() *api.Client {
 	return d.consulClient
 }
 
-func (d *Discovery) SetMetadata(name string, value string) {
-	d.serviceMeta[name] = value
+func (d *Discovery) SetMetadata(key string, value string) {
+	d.base.SetMetadata(key, value)
 }
 
-func NewDiscovery(cfg Config) *Discovery {
-	d := &Discovery{cfg: cfg, serviceMeta: make(map[string]string)}
+func NewDiscovery(serviceCfg server.Config, consulCfg Config) *Discovery {
+	d := &Discovery{base: discovery.NewBaseDiscovery(serviceCfg), cfg: consulCfg}
 	if err := d.initClient(); err != nil {
 		panic(err)
 	}
@@ -47,7 +46,7 @@ func NewDiscovery(cfg Config) *Discovery {
 	d.initMetadata()
 
 	d.AsyncRunner = server.NewContextAsyncRunner(func(ctx context.Context) error {
-		if len(cfg.ServiceAddr) == 0 { // do not register in consul
+		if len(serviceCfg.ServiceAddress) == 0 { // do not register in consul
 			return nil
 		}
 		if err := d.Register(); err != nil {
@@ -64,7 +63,7 @@ func (d *Discovery) initMetadata() {
 	d.SetMetadata(MetadataKeyBranch, version.GitBranch)
 	d.SetMetadata(MetadataKeyCommmit, version.GitCommit)
 	d.SetMetadata(MetadataKeyNode, discovery.Hostname())
-	d.SetMetadata(MetadataKeyProto, d.cfg.ServiceAddr.Scheme())
+	d.SetMetadata(MetadataKeyProto, d.base.ServiceInfo.Proto)
 }
 
 func (d *Discovery) initClient() (err error) {
@@ -79,7 +78,7 @@ func (d *Discovery) initClient() (err error) {
 func (d *Discovery) Register() error {
 	check := &api.AgentServiceCheck{
 		TTL:     d.cfg.HealthCheckTTL.String(),
-		CheckID: d.cfg.ServiceID,
+		CheckID: d.base.ServiceInfo.ID,
 		Status:  api.HealthPassing,
 	}
 	if d.cfg.DeregisterTTL > 0 {
@@ -87,26 +86,26 @@ func (d *Discovery) Register() error {
 	}
 
 	reg := &api.AgentServiceRegistration{
-		ID:      d.cfg.ServiceID,
-		Name:    d.cfg.ServiceName,
-		Address: d.cfg.ServiceAddr.Host(),
-		Port:    d.cfg.ServiceAddr.PortInt(),
+		ID:      d.base.ServiceInfo.ID,
+		Name:    d.base.ServiceInfo.ServiceName,
+		Address: d.base.ServiceInfo.Host,
+		Port:    d.base.ServiceInfo.PortInt(),
 		Check:   check,
-		Meta:    d.serviceMeta,
+		Meta:    d.base.ServiceInfo.Meta,
 	}
 
 	return d.consulClient.Agent().ServiceRegister(reg)
 }
 
 func (d *Discovery) Deregister() error {
-	return d.consulClient.Agent().ServiceDeregister(d.cfg.ServiceID)
+	return d.consulClient.Agent().ServiceDeregister(d.base.ServiceInfo.ID)
 }
 
 func (d *Discovery) heartBeat(ctx context.Context, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
-		if err := d.consulClient.Agent().UpdateTTL(d.cfg.ServiceID, "online", api.HealthPassing); err != nil {
+		if err := d.consulClient.Agent().UpdateTTL(d.base.ServiceInfo.ID, "online", api.HealthPassing); err != nil {
 			log.FromContext(ctx).ErrorfWithFields(log.Fields{"err": err}, "Discovery: consul health check failed")
 		}
 		select {

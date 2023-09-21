@@ -12,6 +12,7 @@ import (
 
 	"github.com/bldsoft/gost/discovery"
 	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/gost/utils"
 	"github.com/hashicorp/memberlist"
 	"golang.org/x/exp/slices"
@@ -25,36 +26,40 @@ type Discovery struct {
 	cfg  Config
 	list *memberlist.Memberlist
 
-	serviceInfo discovery.ServiceInstanceInfoFull
-
 	services    map[string]*discovery.ServiceInfo
 	servicesMtx sync.RWMutex
 }
 
-func NewDiscovery(cfg Config) *Discovery {
-	return &Discovery{
-		cfg:         cfg,
-		serviceInfo: discovery.NewServiceInstanceInfoFull(cfg.ServiceName, cfg.ServiceInstanceInfo()),
-		services:    make(map[string]*discovery.ServiceInfo),
+func NewDiscovery(serviceCfg server.Config, cfg Config) *Discovery {
+	d := &Discovery{
+		cfg:           cfg,
+		BaseDiscovery: discovery.NewBaseDiscovery(serviceCfg),
+		services:      make(map[string]*discovery.ServiceInfo),
 	}
+	return d
 }
 
-func (d *Discovery) memberlistConfig() *memberlist.Config {
+func (d *Discovery) memberlistConfig() (*memberlist.Config, error) {
 	memberlistCfg := memberlist.DefaultLocalConfig()
 	memberlistCfg.LogOutput = logOutput{}
-	memberlistCfg.Name = d.cfg.ServiceID
+	memberlistCfg.Name = d.ServiceInfo.ID
 	memberlistCfg.BindAddr = d.cfg.BindAddress.Host()
 	memberlistCfg.BindPort = d.cfg.BindAddress.PortInt()
-	memberlistCfg.AdvertiseAddr = d.cfg.AdvertiseAddress.Host()
-	memberlistCfg.AdvertisePort = d.cfg.AdvertiseAddress.PortInt()
+	memberlistCfg.AdvertiseAddr = d.ServiceInfo.Host
+	memberlistCfg.AdvertisePort = d.ServiceInfo.PortInt()
 	memberlistCfg.Delegate = d
 	memberlistCfg.Events = d
-	return memberlistCfg
+	return memberlistCfg, nil
 }
 
 func (d *Discovery) Run() error {
 	var err error
-	d.list, err = memberlist.Create(d.memberlistConfig())
+	cfg, err := d.memberlistConfig()
+	if err != nil {
+		return err
+	}
+
+	d.list, err = memberlist.Create(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to create memberlist: %w", err)
 	}
@@ -97,27 +102,27 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 		serviceInfo = &discovery.ServiceInfo{Name: meta.ServiceName}
 		d.services[meta.ServiceName] = serviceInfo
 	}
-	meta.ServiceInstanceInfo.Healthy = true
+	meta.Healthy = true
 	i := slices.IndexFunc(serviceInfo.Instances, func(si discovery.ServiceInstanceInfo) bool {
 		return si.ID == meta.ID
 	})
 	if i >= 0 {
 		switch {
-		case !serviceInfo.Instances[i].Healthy && meta.ServiceInstanceInfo.Healthy:
-			d.TriggerEvent(discovery.ServiceEventTypeUp, meta)
-		case serviceInfo.Instances[i].Healthy && !meta.ServiceInstanceInfo.Healthy:
-			d.TriggerEvent(discovery.ServiceEventTypeDown, meta)
+		case !serviceInfo.Instances[i].Healthy && meta.Healthy:
+			d.TriggerEvent(discovery.ServiceEventTypeUp, *meta)
+		case serviceInfo.Instances[i].Healthy && !meta.Healthy:
+			d.TriggerEvent(discovery.ServiceEventTypeDown, *meta)
 		}
 
-		serviceInfo.Instances[i] = meta.ServiceInstanceInfo
-		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "Discovery: service updated")
+		serviceInfo.Instances[i] = *meta
+		log.Logger.InfoWithFields(log.Fields{"service": meta}, "Discovery: service updated")
 	} else {
-		serviceInfo.Instances = append(serviceInfo.Instances, meta.ServiceInstanceInfo)
+		serviceInfo.Instances = append(serviceInfo.Instances, *meta)
 
-		d.TriggerEvent(discovery.ServiceEventTypeDiscovered, meta)
-		d.TriggerEvent(discovery.ServiceEventTypeUp, meta)
+		d.TriggerEvent(discovery.ServiceEventTypeDiscovered, *meta)
+		d.TriggerEvent(discovery.ServiceEventTypeUp, *meta)
 
-		log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "Discovery: new service added")
+		log.Logger.InfoWithFields(log.Fields{"service": meta}, "Discovery: new service added")
 	}
 }
 
@@ -157,15 +162,15 @@ func (d *Discovery) NodeMeta(limit int) []byte {
 	var buf bytes.Buffer
 	buf.Grow(limit)
 	encoder := gob.NewEncoder(&buf)
-	if err := encoder.Encode(d.serviceInfo); err != nil {
+	if err := encoder.Encode(d.ServiceInfo); err != nil {
 		log.Error("Discovery: failed to encode service info: %w")
 		return nil
 	}
 	return buf.Bytes()
 }
 
-func (d *Discovery) parseMeta(node *memberlist.Node) (*discovery.ServiceInstanceInfoFull, error) {
-	var meta discovery.ServiceInstanceInfoFull
+func (d *Discovery) parseMeta(node *memberlist.Node) (*discovery.ServiceInstanceInfo, error) {
+	var meta discovery.ServiceInstanceInfo
 	decoder := gob.NewDecoder(bytes.NewReader(node.Meta))
 	err := decoder.Decode(&meta)
 	if err != nil {
@@ -217,27 +222,27 @@ func (d *Discovery) NotifyJoin(node *memberlist.Node) {
 // NotifyLeave is invoked when a node is detected to have left.
 // The Node argument must not be modified.
 func (d *Discovery) NotifyLeave(node *memberlist.Node) {
-	meta, err := d.parseMeta(node)
+	serviceInfo, err := d.parseMeta(node)
 	if err != nil {
 		log.Errorf(err.Error())
 		return
 	}
-	log.Logger.InfoWithFields(log.Fields{"service": meta.ServiceInstanceInfo}, "Discovery: service is down")
+	log.Logger.InfoWithFields(log.Fields{"service": serviceInfo}, "Discovery: service is down")
 
 	d.servicesMtx.RLock()
 	defer d.servicesMtx.RUnlock()
-	instaces := d.services[meta.ServiceName].Instances
+	instaces := d.services[serviceInfo.ServiceName].Instances
 	for i := range instaces {
-		if instaces[i].ID == meta.ServiceInstanceInfo.ID {
+		if instaces[i].ID == serviceInfo.ID {
 			instaces[i].Healthy = false
 			break
 		}
 	}
-	if addr := node.FullAddress().Addr; slices.Contains(d.cfg.InHouseConfig.ClusterMembers, addr) {
+	if addr := node.FullAddress().Addr; slices.Contains(d.cfg.ClusterMembers, addr) {
 		go d.join(addr)
 	}
 
-	d.TriggerEvent(discovery.ServiceEventTypeDown, meta)
+	d.TriggerEvent(discovery.ServiceEventTypeDown, *serviceInfo)
 }
 
 // NotifyUpdate is invoked when a node is detected to have

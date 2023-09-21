@@ -5,23 +5,18 @@ import (
 	"github.com/bldsoft/gost/discovery/consul"
 	"github.com/bldsoft/gost/discovery/fake"
 	"github.com/bldsoft/gost/discovery/inhouse"
+	"github.com/bldsoft/gost/server"
 )
 
-func NewDiscovery(cfg Config) discovery.Discovery {
+func NewDiscovery(serviceCfg server.Config, cfg Config) discovery.Discovery {
 	switch cfg.DiscoveryType {
 	case DiscoveryTypeConsul:
-		return consul.NewDiscovery(consul.Config{
-			ConsulConfig:  cfg.Consul,
-			ServiceConfig: cfg.ServiceConfig,
-		})
+		return consul.NewDiscovery(serviceCfg, cfg.Consul)
 	case DiscoveryTypeInHouse:
-		return inhouse.NewDiscovery(inhouse.Config{
-			InHouseConfig: cfg.InHouse,
-			ServiceConfig: cfg.ServiceConfig,
-		})
+		return inhouse.NewDiscovery(serviceCfg, cfg.InHouse)
 	case DiscoveryTypeNone:
 		fallthrough
 	default:
-		return fake.NewDiscovery(cfg.ServiceConfig)
+		return fake.NewDiscovery(serviceCfg)
 	}
 }

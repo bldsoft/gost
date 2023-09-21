@@ -23,7 +23,7 @@ func runTestService(t *testing.T, cluster, serviceID string) (cancel func()) {
 	}))
 
 	var cfg consul.Config
-	cfg.ConsulConfig.SetDefaults()
+	cfg.Config.SetDefaults()
 	cfg.ServiceConfig.SetDefaults()
 	cfg.ServiceID = serviceID
 	cfg.Cluster = cluster

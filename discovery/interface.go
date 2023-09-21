@@ -2,8 +2,7 @@ package discovery
 
 import (
 	"context"
-	"fmt"
-	"net"
+	"strconv"
 
 	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/gost/utils"
@@ -15,6 +14,7 @@ type Discovery interface {
 	server.AsyncRunner
 	Services(ctx context.Context) ([]*ServiceInfo, error)
 	ServiceByName(ctx context.Context, name string) (*ServiceInfo, error)
+	SetMetadata(key, value string)
 }
 
 type NotifyingDiscovery interface {
@@ -27,40 +27,20 @@ type ServiceInfo struct {
 }
 
 type ServiceInstanceInfo struct {
-	ID      string            `json:"id"`
-	Proto   string            `json:"proto"`
-	Host    string            `json:"host"`
-	Port    string            `json:"port"`
-	Node    string            `json:"node"`
-	Version string            `json:"version"`
-	Commit  string            `json:"commit"`
-	Branch  string            `json:"branch"`
-	Healthy bool              `json:"healthy"`
-	Meta    map[string]string `json:"-"`
+	ServiceName string            `json:"serviceName"`
+	ID          string            `json:"id"`
+	Proto       string            `json:"proto"`
+	Host        string            `json:"host"`
+	Port        string            `json:"port"`
+	Node        string            `json:"node"`
+	Version     string            `json:"version"`
+	Commit      string            `json:"commit"`
+	Branch      string            `json:"branch"`
+	Healthy     bool              `json:"healthy"`
+	Meta        map[string]string `json:"-"`
 }
 
-func (i ServiceInstanceInfo) HostPort() string {
-	if i.Port == "" {
-		return i.Host
-	}
-	return net.JoinHostPort(i.Host, i.Port)
-}
-
-func (i ServiceInstanceInfo) Address() string {
-	if i.Proto == "http" || i.Proto == "https" {
-		return fmt.Sprintf("%s://%s", i.Proto, i.HostPort())
-	}
-	return i.HostPort()
-}
-
-type ServiceInstanceInfoFull struct {
-	ServiceName string `json:"serviceName"`
-	ServiceInstanceInfo
-}
-
-func NewServiceInstanceInfoFull(serviceName string, instanceInfo ServiceInstanceInfo) ServiceInstanceInfoFull {
-	return ServiceInstanceInfoFull{
-		ServiceName:         serviceName,
-		ServiceInstanceInfo: instanceInfo,
-	}
+func (i ServiceInstanceInfo) PortInt() int {
+	port, _ := strconv.Atoi(i.Port)
+	return port
 }

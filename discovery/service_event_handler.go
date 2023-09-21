@@ -9,8 +9,8 @@ type ServiceEventType int
 
 type EventServiceHandler struct {
 	eventTypes []ServiceEventType
-	handler    func(ctx context.Context, instance *ServiceInstanceInfoFull)
-	filters    []func(ctx context.Context, instance *ServiceInstanceInfoFull) bool
+	handler    func(ctx context.Context, instance ServiceInstanceInfo)
+	filters    []func(ctx context.Context, instance ServiceInstanceInfo) bool
 }
 
 func NewEventServiceHandler(eventType ServiceEventType, eventTypes ...ServiceEventType) *EventServiceHandler {
@@ -25,20 +25,20 @@ func (h *EventServiceHandler) Types() []ServiceEventType {
 }
 
 func (h *EventServiceHandler) ServiceName(name string) *EventServiceHandler {
-	h.filters = append(h.filters, func(ctx context.Context, instance *ServiceInstanceInfoFull) bool {
+	h.filters = append(h.filters, func(ctx context.Context, instance ServiceInstanceInfo) bool {
 		return instance.ServiceName == name
 	})
 	return h
 }
 
 func (h *EventServiceHandler) Node(node string) *EventServiceHandler {
-	h.filters = append(h.filters, func(ctx context.Context, instance *ServiceInstanceInfoFull) bool {
+	h.filters = append(h.filters, func(ctx context.Context, instance ServiceInstanceInfo) bool {
 		return instance.Node == node
 	})
 	return h
 }
 
-func (h *EventServiceHandler) TriggerEvent(ctx context.Context, instance *ServiceInstanceInfoFull) {
+func (h *EventServiceHandler) TriggerEvent(ctx context.Context, instance ServiceInstanceInfo) {
 	for _, f := range h.filters {
 		if !f(ctx, instance) {
 			return

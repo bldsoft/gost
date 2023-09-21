@@ -11,19 +11,17 @@ import (
 
 type Discovery struct {
 	discovery.BaseDiscovery
-
 	server.AsyncJob
-	cfg discovery.ServiceConfig
 
 	services    map[string]*discovery.ServiceInfo
 	servicesMtx sync.RWMutex
 }
 
-func NewDiscovery(cfg discovery.ServiceConfig) *Discovery {
-	d := &Discovery{cfg: cfg, services: make(map[string]*discovery.ServiceInfo)}
+func NewDiscovery(cfg server.Config) *Discovery {
+	d := &Discovery{BaseDiscovery: discovery.NewBaseDiscovery(cfg), services: make(map[string]*discovery.ServiceInfo)}
 	d.services[cfg.ServiceName] = &discovery.ServiceInfo{
 		Name:      cfg.ServiceName,
-		Instances: []discovery.ServiceInstanceInfo{cfg.ServiceInstanceInfo()},
+		Instances: []discovery.ServiceInstanceInfo{d.ServiceInfo},
 	}
 	return d
 }
@@ -33,9 +31,8 @@ func (d *Discovery) AddService(serviceInfo *discovery.ServiceInfo) {
 	defer d.servicesMtx.Unlock()
 	d.services[serviceInfo.Name] = serviceInfo
 	for _, instance := range serviceInfo.Instances {
-		instanceInfoFull := discovery.NewServiceInstanceInfoFull(serviceInfo.Name, instance)
-		d.TriggerEvent(discovery.ServiceEventTypeDiscovered, &instanceInfoFull)
-		d.TriggerEvent(discovery.ServiceEventTypeUp, &instanceInfoFull)
+		d.TriggerEvent(discovery.ServiceEventTypeDiscovered, instance)
+		d.TriggerEvent(discovery.ServiceEventTypeUp, instance)
 	}
 }
 
