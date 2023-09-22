@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/discovery"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
@@ -63,7 +64,7 @@ func (d *Discovery) initMetadata() {
 	d.SetMetadata(MetadataKeyBranch, version.GitBranch)
 	d.SetMetadata(MetadataKeyCommmit, version.GitCommit)
 	d.SetMetadata(MetadataKeyNode, discovery.Hostname())
-	d.SetMetadata(MetadataKeyProto, d.base.ServiceInfo.Proto)
+	d.SetMetadata(MetadataKeyProto, d.base.ServiceInfo.Address.Scheme())
 }
 
 func (d *Discovery) initClient() (err error) {
@@ -88,8 +89,8 @@ func (d *Discovery) Register() error {
 	reg := &api.AgentServiceRegistration{
 		ID:      d.base.ServiceInfo.ID,
 		Name:    d.base.ServiceInfo.ServiceName,
-		Address: d.base.ServiceInfo.Host,
-		Port:    d.base.ServiceInfo.PortInt(),
+		Address: d.base.ServiceInfo.Address.Host(),
+		Port:    d.base.ServiceInfo.Address.PortInt(),
 		Check:   check,
 		Meta:    d.base.ServiceInfo.Meta,
 	}
@@ -144,9 +145,7 @@ func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, err
 				}
 
 				serviceInfo.Instances = append(serviceInfo.Instances, discovery.ServiceInstanceInfo{
-					Host:    node.Service.Address,
-					Port:    strconv.Itoa(node.Service.Port),
-					Proto:   node.Service.Meta[MetadataKeyProto],
+					Address: config.NewAddress(node.Service.Meta[MetadataKeyProto], node.Service.Address, strconv.Itoa(node.Service.Port)),
 					Node:    node.Service.Meta[MetadataKeyNode],
 					Version: node.Service.Meta[MetadataKeyVersion],
 					Branch:  node.Service.Meta[MetadataKeyBranch],
@@ -187,8 +186,7 @@ func (d *Discovery) ServiceByName(ctx context.Context, name string) (*discovery.
 	res := &discovery.ServiceInfo{Name: name}
 	for _, info := range checkInfos {
 		res.Instances = append(res.Instances, discovery.ServiceInstanceInfo{
-			Host:    info.Service.Address,
-			Port:    strconv.Itoa(info.Service.Port),
+			Address: config.NewAddress(info.Service.Meta[MetadataKeyProto], info.Service.Address, strconv.Itoa(info.Service.Port)),
 			Node:    info.Service.Meta[MetadataKeyNode],
 			Version: info.Service.Meta[MetadataKeyVersion],
 			Branch:  info.Service.Meta[MetadataKeyBranch],

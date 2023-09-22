@@ -2,8 +2,8 @@ package discovery
 
 import (
 	"context"
-	"strconv"
 
+	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/gost/utils"
 )
@@ -29,18 +29,11 @@ type ServiceInfo struct {
 type ServiceInstanceInfo struct {
 	ServiceName string            `json:"serviceName"`
 	ID          string            `json:"id"`
-	Proto       string            `json:"proto"`
-	Host        string            `json:"host"`
-	Port        string            `json:"port"`
+	Address     config.Address    `json:"address"`
 	Node        string            `json:"node"`
 	Version     string            `json:"version"`
 	Commit      string            `json:"commit"`
 	Branch      string            `json:"branch"`
 	Healthy     bool              `json:"healthy"`
 	Meta        map[string]string `json:"-"`
-}
-
-func (i ServiceInstanceInfo) PortInt() int {
-	port, _ := strconv.Atoi(i.Port)
-	return port
 }

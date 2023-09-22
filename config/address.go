@@ -8,6 +8,20 @@ import (
 
 type Address string
 
+func NewAddress(proto, host, port string) Address {
+	var sb strings.Builder
+	if proto != "" {
+		sb.WriteString(strings.TrimSuffix(proto, "://"))
+		sb.WriteString("://")
+	}
+	sb.WriteString(host)
+	if port != "" {
+		sb.WriteString(":")
+		sb.WriteString(strings.TrimPrefix(port, ":"))
+	}
+	return Address(sb.String())
+}
+
 func (a Address) Splitted() (proto, host, port string) {
 	s := string(a)
 	host = s
