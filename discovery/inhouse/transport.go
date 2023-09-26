@@ -233,5 +233,6 @@ func (t *Transport) Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Transport) Mount(r chi.Router) {
+	log.NotLoggedEndpoints = append(log.NotLoggedEndpoints, t.endpointPath)
 	r.HandleFunc(t.endpointPath, t.Handler)
 }
