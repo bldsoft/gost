@@ -74,6 +74,10 @@ func (d *Discovery) Run() error {
 		return err
 	}
 
+	if d.transport != nil {
+		go d.transport.Run()
+	}
+
 	d.list, err = memberlist.Create(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to create memberlist: %w", err)
@@ -143,7 +147,7 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 
 func (d *Discovery) Stop(ctx context.Context) error {
 	if deadline, ok := ctx.Deadline(); ok {
-		if timeout := time.Now().Sub(deadline); timeout > 0 {
+		if timeout := time.Since(deadline); timeout > 0 {
 			err := d.list.Leave(timeout)
 			if err != nil {
 				log.Logger.InfoOrError(err, "Discovery: leaving from the cluster")

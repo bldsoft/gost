@@ -71,15 +71,18 @@ func NewTransport(bindAddress config.Address) (*Transport, error) {
 		return nil, fmt.Errorf("failed to resize UDP buffer: %w", err)
 	}
 
-	t.wg.Add(1)
-	go t.udpListen(t.udpListener)
-
 	ok = true
 	return t, nil
 }
 
-func (t *Transport) udpListen(udpLn *net.UDPConn) {
+func (t *Transport) Run() error {
+	t.wg.Add(1)
 	defer t.wg.Done()
+	t.udpListen(t.udpListener)
+	return nil
+}
+
+func (t *Transport) udpListen(udpLn *net.UDPConn) {
 	for {
 		// Do a blocking read into a fresh buffer. Grab a time stamp as
 		// close as possible to the I/O.
