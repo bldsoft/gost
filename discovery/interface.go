@@ -18,7 +18,7 @@ type Discovery interface {
 }
 
 type NotifyingDiscovery interface {
-	Subscribe(handler EventServiceHandler, handlers ...EventServiceHandler)
+	Subscribe(handler *EventHandler, handlers ...*EventHandler)
 }
 
 type ServiceInfo struct {

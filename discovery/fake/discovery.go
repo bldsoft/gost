@@ -31,8 +31,8 @@ func (d *Discovery) AddService(serviceInfo *discovery.ServiceInfo) {
 	defer d.servicesMtx.Unlock()
 	d.services[serviceInfo.Name] = serviceInfo
 	for _, instance := range serviceInfo.Instances {
-		d.TriggerEvent(discovery.ServiceEventTypeDiscovered, instance)
-		d.TriggerEvent(discovery.ServiceEventTypeUp, instance)
+		d.TriggerEvent(discovery.EventTypeDiscovered, instance)
+		d.TriggerEvent(discovery.EventTypeUp, instance)
 	}
 }
 

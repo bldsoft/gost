@@ -124,9 +124,9 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 	if i >= 0 {
 		switch {
 		case !serviceInfo.Instances[i].Healthy && meta.Healthy:
-			d.TriggerEvent(discovery.ServiceEventTypeUp, *meta)
+			d.TriggerEvent(discovery.EventTypeUp, *meta)
 		case serviceInfo.Instances[i].Healthy && !meta.Healthy:
-			d.TriggerEvent(discovery.ServiceEventTypeDown, *meta)
+			d.TriggerEvent(discovery.EventTypeDown, *meta)
 		}
 
 		serviceInfo.Instances[i] = *meta
@@ -134,8 +134,8 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 	} else {
 		serviceInfo.Instances = append(serviceInfo.Instances, *meta)
 
-		d.TriggerEvent(discovery.ServiceEventTypeDiscovered, *meta)
-		d.TriggerEvent(discovery.ServiceEventTypeUp, *meta)
+		d.TriggerEvent(discovery.EventTypeDiscovered, *meta)
+		d.TriggerEvent(discovery.EventTypeUp, *meta)
 
 		log.Logger.InfoWithFields(log.Fields{"service": meta}, "Discovery: new service added")
 	}
@@ -271,7 +271,7 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 		go d.join(addr)
 	}
 
-	d.TriggerEvent(discovery.ServiceEventTypeDown, *serviceInfo)
+	d.TriggerEvent(discovery.EventTypeDown, *serviceInfo)
 }
 
 // NotifyUpdate is invoked when a node is detected to have
