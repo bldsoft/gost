@@ -2,10 +2,9 @@ package discovery
 
 import (
 	"context"
-	"os"
 
-	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
+	"github.com/bldsoft/gost/utils"
 	"github.com/bldsoft/gost/version"
 )
 
@@ -21,7 +20,7 @@ func NewBaseDiscovery(serviceCfg server.Config) BaseDiscovery {
 			ServiceName: serviceCfg.ServiceName,
 			ID:          serviceCfg.ServiceID(),
 			Address:     serviceCfg.ServiceAddress,
-			Node:        Hostname(),
+			Node:        utils.Hostname(),
 			Version:     version.Version,
 			Commit:      version.GitCommit,
 			Branch:      version.GitBranch,
@@ -60,15 +59,4 @@ func (d *BaseDiscovery) TriggerEventCtx(ctx context.Context, eventType EventType
 
 func (d *BaseDiscovery) TriggerEvent(eventType EventType, instance ServiceInstanceInfo) {
 	d.TriggerEventCtx(context.Background(), eventType, instance)
-}
-
-func Hostname(allowPanic ...bool) string {
-	hostname, err := os.Hostname()
-	if err != nil {
-		if len(allowPanic) > 0 || allowPanic[0] {
-			panic(err)
-		}
-		log.Errorf("Failed to get hostname: %s", err)
-	}
-	return hostname
 }

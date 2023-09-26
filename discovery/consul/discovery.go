@@ -63,7 +63,7 @@ func (d *Discovery) initMetadata() {
 	d.SetMetadata(MetadataKeyVersion, version.Version)
 	d.SetMetadata(MetadataKeyBranch, version.GitBranch)
 	d.SetMetadata(MetadataKeyCommmit, version.GitCommit)
-	d.SetMetadata(MetadataKeyNode, discovery.Hostname())
+	d.SetMetadata(MetadataKeyNode, d.base.ServiceInfo.Node)
 	d.SetMetadata(MetadataKeyProto, d.base.ServiceInfo.Address.Scheme())
 }
 
