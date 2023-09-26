@@ -59,6 +59,7 @@ func (d *Discovery) memberlistConfig() (*memberlist.Config, error) {
 	memberlistCfg.BindPort = d.cfg.BindAddress.PortInt()
 	memberlistCfg.AdvertiseAddr = d.ServiceInfo.Address.Host()
 	memberlistCfg.AdvertisePort = d.ServiceInfo.Address.PortInt()
+	memberlistCfg.SecretKey = []byte(d.cfg.SecretKey.String())
 	if d.transport != nil {
 		memberlistCfg.Transport = d.transport
 	}
