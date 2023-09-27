@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/bldsoft/gost/config"
+	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/utils"
 )
 
@@ -41,6 +42,7 @@ func (c *Config) Validate() error {
 		return errors.New("ServiceName is not set. Do it in SetDefaults method")
 	}
 	if len(c.ServiceBindAddress) == 0 {
+		log.Warn("SERVICE_HOST and SERVICE_PORT are deprecated, use SERVICE_BIND_ADDRESS instead")
 		c.ServiceBindAddress = config.Address(net.JoinHostPort(c.ServiceBindHost, strconv.Itoa(c.ServiceBindPort)))
 	}
 	if len(c.ServiceAddress) == 0 {
@@ -50,6 +52,7 @@ func (c *Config) Validate() error {
 		c.DeprecatedServiceInstance = utils.Hostname()
 	}
 	if len(c.ServiceInstance) == 0 {
+		log.Warn("SERVICE_NAME is deprecated, use SERVICE_INSTANCE_NAME instead")
 		c.ServiceInstance = c.DeprecatedServiceInstance
 	}
 	return err
