@@ -13,5 +13,5 @@ func (rr *RoundRobin[T]) Balance(serviceCluster string, addrs []T) []T {
 		return addrs
 	}
 	i := (rr.offset.Add(1) - 1) % int64(len(addrs))
-	return append(addrs[i:], addrs[i+1:]...)
+	return append(addrs[i:], addrs[:i]...)
 }
