@@ -155,6 +155,7 @@ func (t *Transport) WriteToAddress(b []byte, a memberlist.Address) (time.Time, e
 
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
+		log.ErrorWithFields(log.Fields{"err": err, "addr": addr}, "Discovery: ResolveUDPAddr")
 		return time.Time{}, err
 	}
 
@@ -163,6 +164,9 @@ func (t *Transport) WriteToAddress(b []byte, a memberlist.Address) (time.Time, e
 	// write call comes back, which will underestimate the time a little,
 	// but help account for any delays before the write occurs.
 	_, err = t.udpListener.WriteTo(b, udpAddr)
+	if err != nil {
+		log.ErrorWithFields(log.Fields{"err": err, "addr": addr}, "Discovery: udp write")
+	}
 	return time.Now(), err
 }
 
@@ -183,6 +187,7 @@ func (t *Transport) DialTimeout(addr string, timeout time.Duration) (net.Conn, e
 	u := url.URL{Scheme: "ws", Host: addr, Path: t.endpointPath}
 	c, _, err := dialer.Dial(u.String(), nil)
 	if err != nil {
+		log.ErrorfWithFields(log.Fields{"err": err, "url": u.String()}, "Discovery: ws dial")
 		return nil, err
 	}
 	return c.UnderlyingConn(), nil
