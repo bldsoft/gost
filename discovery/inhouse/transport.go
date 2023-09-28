@@ -121,7 +121,11 @@ func (t *Transport) FinalAdvertiseAddr(ip string, port int) (net.IP, int, error)
 	// If they've supplied an address, use that.
 	advertiseAddr := net.ParseIP(ip)
 	if advertiseAddr == nil {
-		return nil, 0, fmt.Errorf("failed to parse advertise address %q", ip)
+		resolvedIPs, err := net.LookupIP(ip)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to parse advertise address %q", ip)
+		}
+		advertiseAddr = resolvedIPs[0]
 	}
 
 	// Ensure IPv4 conversion if necessary.
