@@ -18,6 +18,7 @@ type Discovery interface {
 }
 
 type NotifyingDiscovery interface {
+	Discovery
 	Subscribe(handler *EventHandler, handlers ...*EventHandler)
 }
 
