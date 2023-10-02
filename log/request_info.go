@@ -1,7 +1,9 @@
 package log
 
-type RequestMethodType byte
-type ResponseCodeType uint16
+type (
+	RequestMethodType byte
+	ResponseCodeType  uint16
+)
 
 const (
 	GET RequestMethodType = iota
@@ -11,6 +13,7 @@ const (
 	OPTIONS
 	HEAD
 	PATCH
+	ORIGIN_GET
 
 	ERROR
 )
@@ -58,6 +61,8 @@ func GetRequestMethodType(type_str string) RequestMethodType {
 		return HEAD
 	case "PATCH":
 		return PATCH
+	case "ORIGIN_GET":
+		return ORIGIN_GET
 	default:
 		return ERROR
 	}
