@@ -18,7 +18,22 @@ const (
 )
 
 type LogExporterConfig struct {
-	Instance string `mapstructure:"SERVICE_NAME" description:"The name is used to identify the service in logs"`
+	DeprecatedServiceInstance string `mapstructure:"SERVICE_NAME" description:"DEPRECATED. The name is used to identify the service in logs. " `
+	Instance                  string `mapstructure:"SERVICE_INSTANCE_NAME" description:"The name is used to identify the service in logs. "`
+}
+
+// SetDefaults ...
+func (c *LogExporterConfig) SetDefaults() {
+	c.DeprecatedServiceInstance = "default_name"
+}
+
+// Validate ...
+func (c *LogExporterConfig) Validate() error {
+	var err error
+	if len(c.Instance) == 0 {
+		c.Instance = c.DeprecatedServiceInstance
+	}
+	return err
 }
 
 type LogExporter interface {

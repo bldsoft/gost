@@ -64,10 +64,16 @@ type LogFormatter interface {
 	NewLogEntry(r *http.Request) (middleware.LogEntry, *http.Request)
 }
 
+var NotLoggedEndpoints []string
+
 // requestLogger is a copy of the chi middleware.RequestLogger with changed LogFormatter interface
 func requestLogger(f LogFormatter) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
+			if utils.IsIn(r.URL.Path, NotLoggedEndpoints...) {
+				next.ServeHTTP(w, r)
+				return
+			}
 			entry, r := f.NewLogEntry(r)
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
