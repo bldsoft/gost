@@ -272,7 +272,7 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 			break
 		}
 	}
-	if addr := node.FullAddress().Addr; slices.Contains(d.cfg.ClusterMembers, addr) {
+	if addr := serviceInfo.Address.String(); slices.Contains(d.cfg.ClusterMembers, addr) {
 		go d.join(addr)
 	}
 
