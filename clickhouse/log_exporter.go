@@ -17,12 +17,14 @@ var (
 )
 
 const (
-	LevelColumName      = "level"
-	MsgColumnName       = "msg"
-	InstanseColumnName  = "instanse"
-	TimestampColumnName = "timestamp"
-	ReqIDColumnName     = "req_id"
-	FieldsColumnName    = "fields"
+	LevelColumName           = "level"
+	MsgColumnName            = "msg"
+	ServiceColumnName        = "service"
+	ServiceVersionColumnName = "service_version"
+	InstanseColumnName       = "instanse"
+	TimestampColumnName      = "timestamp"
+	ReqIDColumnName          = "req_id"
+	FieldsColumnName         = "fields"
 )
 
 type LogExporterConfig struct {
@@ -56,7 +58,6 @@ type ClickHouseLogExporter struct {
 	config LogExporterConfig
 
 	storage *Storage
-
 	recordC chan *log.LogRecord
 	records []*log.LogRecord
 
@@ -164,15 +165,15 @@ func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 		return err
 	}
 	defer tx.Rollback()
-	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (%s,%s,%s,%s,%s,%s) VALUES (?,?,?,?,?,?)", e.config.TableName,
-		InstanseColumnName, TimestampColumnName, LevelColumName, ReqIDColumnName, MsgColumnName, FieldsColumnName))
+	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (%s,%s,%s,%s,%s,%s,%s,%s) VALUES (?,?,?,?,?,?,?,?)",
+		e.config.TableName, ServiceColumnName, ServiceVersionColumnName, InstanseColumnName, TimestampColumnName, LevelColumName, ReqIDColumnName, MsgColumnName, FieldsColumnName))
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, r := range records {
-		if _, err := stmt.Exec(r.Instance, time.UnixMicro(r.Timestamp), int8(r.Level), r.ReqID, r.Msg, r.Fields); err != nil {
+		if _, err := stmt.Exec(r.Service, r.ServiceVersion, r.Instance, time.UnixMicro(r.Timestamp), int8(r.Level), r.ReqID, r.Msg, r.Fields); err != nil {
 			return err
 		}
 	}
@@ -216,6 +217,12 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 	if len(filter.Instances) > 0 {
 		where = append(where, sq.Eq{InstanseColumnName: filter.Instances})
 	}
+	if len(filter.Services) > 0 {
+		where = append(where, sq.Eq{ServiceColumnName: filter.Services})
+	}
+	if len(filter.ServiceVersions) > 0 {
+		where = append(where, sq.Eq{ServiceVersionColumnName: filter.ServiceVersions})
+	}
 	return where
 }
 
@@ -249,6 +256,8 @@ func (e *ClickHouseLogExporter) countLogs(ctx context.Context, params log.LogsPa
 
 func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams) (*log.Logs, error) {
 	query := sq.Select().
+		Column(ServiceColumnName).
+		Column(ServiceVersionColumnName).
 		Column(InstanseColumnName).
 		Column(fmt.Sprintf("toUnixTimestamp64Milli(%s)", TimestampColumnName)).
 		Column(fmt.Sprintf("CAST(%s, 'Int8') %s", LevelColumName, LevelColumName)).
@@ -270,7 +279,7 @@ func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams)
 	var logs log.Logs
 	for rows.Next() {
 		var r log.LogRecord
-		if err := rows.Scan(&r.Instance, &r.Timestamp, &r.Level, &r.ReqID, &r.Msg, &r.Fields); err != nil {
+		if err := rows.Scan(&r.Service, &r.ServiceVersion, &r.Instance, &r.Timestamp, &r.Level, &r.ReqID, &r.Msg, &r.Fields); err != nil {
 			return nil, err
 		}
 		logs.Records = append(logs.Records, r)
@@ -282,7 +291,19 @@ func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams)
 }
 
 func (e *ClickHouseLogExporter) Instances(ctx context.Context, filter log.Filter) ([]string, error) {
-	query := sq.Select("distinct " + InstanseColumnName).
+	return e.distinctValues(ctx, InstanseColumnName, filter)
+}
+
+func (e *ClickHouseLogExporter) Services(ctx context.Context, filter log.Filter) ([]string, error) {
+	return e.distinctValues(ctx, ServiceColumnName, filter)
+}
+
+func (e *ClickHouseLogExporter) ServiceVersions(ctx context.Context, filter log.Filter) ([]string, error) {
+	return e.distinctValues(ctx, ServiceVersionColumnName, filter)
+}
+
+func (e *ClickHouseLogExporter) distinctValues(ctx context.Context, column string, filter log.Filter) ([]string, error) {
+	query := sq.Select("distinct " + column).
 		From(e.config.TableName).
 		Where(e.filter(&filter))
 	rows, err := query.RunWith(e.storage.Db).Query()
@@ -363,6 +384,8 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 	}
 
 	_, err := e.storage.Db.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
+			`+ServiceColumnName+` LowCardinality(String),
+			`+ServiceVersionColumnName+` LowCardinality(String),
 			`+InstanseColumnName+` LowCardinality(String),
 			`+TimestampColumnName+` DateTime64(6),
 			`+LevelColumName+` Enum8('DEBUG'=0, 'INFO'=1, 'WARN'=2, 'ERROR'=3, 'FATAL'=4, 'PANIC'=5, 'TRACE'=-1),
@@ -375,7 +398,9 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 	TTL `+`toDateTime(`+TimestampColumnName+`) + INTERVAL 1 MONTH 
 	ORDER BY (`+strings.Join([]string{
 		"CAST(" + LevelColumName + ",'Int8')",
+		ServiceColumnName,
 		InstanseColumnName,
+		ServiceVersionColumnName,
 		"toDateTime(" + TimestampColumnName + ")",
 	}, ",")+`)`, e.config.TableName, engine))
 	return err

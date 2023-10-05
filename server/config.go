@@ -15,12 +15,19 @@ const serviceInstanceHostname = "hostname"
 type Config struct {
 	ServiceName               string `description:"-"` // General name of the service.
 	DeprecatedServiceInstance string `mapstructure:"SERVICE_NAME" description:"DEPRECATED. Unique service instance name. Use 'hostname' to set the hostname value. "`
-	ServiceInstance           string `mapstructure:"SERVICE_INSTANCE_NAME" description:"Unique service instance name. Use 'hostname' to set the hostname value. "`
+	ServiceInstance           string `mapstructure:"SERVICE_INSTANCE_NAME" description:"Unique service instance name. Use 'hostname' to set the hostname value. The name is used to identify the service in logs."`
 
 	ServiceBindHost    string         `mapstructure:"SERVICE_HOST" description:"DEPRECATED. IP address, or a host name that can be resolved to IP addresses"`
 	ServiceBindPort    int            `mapstructure:"SERVICE_PORT" description:"DEPRECATED. Service port"`
 	ServiceBindAddress config.Address `mapstructure:"SERVICE_BIND_ADDRESS" description:"Service configuration related to what address bind to and port to listen on"`
 	ServiceAddress     config.Address `mapstructure:"SERVICE_ADDRESS" description:"Service public address"`
+}
+
+func (c *Config) LogExporterConfig() log.LogExporterConfig {
+	return log.LogExporterConfig{
+		Service:  c.ServiceName,
+		Instance: c.ServiceInstance,
+	}
 }
 
 func (c *Config) ServiceID() string {

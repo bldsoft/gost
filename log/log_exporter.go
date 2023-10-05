@@ -18,28 +18,16 @@ const (
 )
 
 type LogExporterConfig struct {
-	DeprecatedServiceInstance string `mapstructure:"SERVICE_NAME" description:"DEPRECATED. The name is used to identify the service in logs. " `
-	Instance                  string `mapstructure:"SERVICE_INSTANCE_NAME" description:"The name is used to identify the service in logs. "`
-}
-
-// SetDefaults ...
-func (c *LogExporterConfig) SetDefaults() {
-	c.DeprecatedServiceInstance = "default_name"
-}
-
-// Validate ...
-func (c *LogExporterConfig) Validate() error {
-	var err error
-	if len(c.Instance) == 0 {
-		c.Instance = c.DeprecatedServiceInstance
-	}
-	return err
+	Service  string
+	Instance string
 }
 
 type LogExporter interface {
 	WriteLogRecord(r *LogRecord) error
 	Logs(ctx context.Context, params LogsParams) (*Logs, error)
 	Instances(ctx context.Context, filter Filter) ([]string, error)
+	Services(ctx context.Context, filter Filter) ([]string, error)
+	ServiceVersions(ctx context.Context, filter Filter) ([]string, error)
 	RequestIDs(ctx context.Context, filter Filter, limit *int) ([]string, int64, error)
 }
 
@@ -51,12 +39,14 @@ type LogsParams struct {
 }
 
 type Filter struct {
-	Instances  []string  `json:"instances,omitempty" schema:"instances,omitempty"`
-	Search     *string   `json:"search,omitempty" schema:"search,omitempty"`
-	From       time.Time `json:"from" schema:"from,omitempty"`
-	To         time.Time `json:"to" schema:"to,omitempty"`
-	RequestIDs []string  `json:"requestIDs,omitempty" schema:"reqID,omitempty"`
-	Levels     []Level   `json:"levels,omitempty" schema:"levels,omitempty"`
+	Services        []string  `json:"services,omitempty" schema:"services,omitempty"`
+	ServiceVersions []string  `json:"serviceVersions,omitempty" schema:"serviceVersions,omitempty"`
+	Instances       []string  `json:"instances,omitempty" schema:"instances,omitempty"`
+	Search          *string   `json:"search,omitempty" schema:"search,omitempty"`
+	From            time.Time `json:"from" schema:"from,omitempty"`
+	To              time.Time `json:"to" schema:"to,omitempty"`
+	RequestIDs      []string  `json:"requestIDs,omitempty" schema:"reqID,omitempty"`
+	Levels          []Level   `json:"levels,omitempty" schema:"levels,omitempty"`
 }
 
 type Sort struct {
