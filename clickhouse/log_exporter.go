@@ -400,7 +400,7 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 		"CAST(" + LevelColumName + ",'Int8')",
 		ServiceColumnName,
 		InstanseColumnName,
-		ServiceVersionColumnName,
+		// ServiceVersionColumnName,
 		"toDateTime(" + TimestampColumnName + ")",
 	}, ",")+`)`, e.config.TableName, engine))
 	return err
