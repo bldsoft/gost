@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/bldsoft/gost/config/feature"
+	"github.com/bldsoft/gost/utils"
 	"github.com/bldsoft/gost/version"
 	"github.com/hashicorp/go-multierror"
 	"github.com/rs/zerolog"
@@ -40,14 +41,15 @@ func (r *LogRecord) UnmarshalJSON(data []byte) error {
 }
 
 type ExportLogWriter struct {
-	cfg LogExporterConfig
+	cfg      LogExporterConfig
+	hostname string
 
 	exporters        []LogExporter
 	exportersToggles []*feature.Bool
 }
 
 func NewExportLogWriter(cfg LogExporterConfig) *ExportLogWriter {
-	return &ExportLogWriter{cfg: cfg}
+	return &ExportLogWriter{cfg: cfg, hostname: utils.Hostname()}
 }
 
 func (w *ExportLogWriter) Append(exporter LogExporter, isOn *feature.Bool) {
@@ -76,7 +78,7 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 	rec := LogRecord{
 		Service:        w.cfg.Service,
 		ServiceVersion: version.LongVersion(),
-		Instance:       w.cfg.Instance,
+		Instance:       w.hostname,
 	}
 
 	if l, ok := event[zerolog.LevelFieldName].(string); ok {
