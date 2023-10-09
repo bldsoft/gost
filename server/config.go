@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"strconv"
 
@@ -10,12 +11,12 @@ import (
 	"github.com/bldsoft/gost/utils"
 )
 
-const serviceInstanceHostname = "hostname"
+const serviceInstanceAuto = "auto"
 
 type Config struct {
 	ServiceName               string `description:"-"` // General name of the service.
-	DeprecatedServiceInstance string `mapstructure:"SERVICE_NAME" description:"DEPRECATED. Unique service instance name. Use 'hostname' to set the hostname value. "`
-	ServiceInstance           string `mapstructure:"SERVICE_INSTANCE_NAME" description:"Unique service instance name. Use 'hostname' to set the hostname value. The name is used to identify the service in logs."`
+	DeprecatedServiceInstance string `mapstructure:"SERVICE_NAME" description:"DEPRECATED. Unique service instance name. Use 'auto' to set the hostname+service value. "`
+	ServiceInstance           string `mapstructure:"SERVICE_INSTANCE_NAME" description:"Unique service instance name. Use 'auto' to set the hostname+service value. The name is used to identify the service in logs."`
 
 	ServiceBindHost    string         `mapstructure:"SERVICE_HOST" description:"DEPRECATED. IP address, or a host name that can be resolved to IP addresses"`
 	ServiceBindPort    int            `mapstructure:"SERVICE_PORT" description:"DEPRECATED. Service port"`
@@ -36,7 +37,7 @@ func (c *Config) ServiceID() string {
 
 // SetDefaults ...
 func (c *Config) SetDefaults() {
-	c.DeprecatedServiceInstance = serviceInstanceHostname
+	c.DeprecatedServiceInstance = serviceInstanceAuto
 	// c.ServiceInstance = serviceInstanceHostname // use value from DeprecatedServiceInstance
 	c.ServiceBindHost = "0.0.0.0"
 	c.ServiceBindPort = 3000
@@ -55,8 +56,8 @@ func (c *Config) Validate() error {
 	if len(c.ServiceAddress) == 0 {
 		c.ServiceAddress = c.ServiceBindAddress
 	}
-	if c.DeprecatedServiceInstance == serviceInstanceHostname {
-		c.DeprecatedServiceInstance = utils.Hostname()
+	if c.DeprecatedServiceInstance == serviceInstanceAuto {
+		c.DeprecatedServiceInstance = fmt.Sprintf("%s(%s)", c.ServiceName, utils.Hostname())
 	}
 	if len(c.ServiceInstance) == 0 {
 		log.Warn("SERVICE_NAME is deprecated, use SERVICE_INSTANCE_NAME instead")
