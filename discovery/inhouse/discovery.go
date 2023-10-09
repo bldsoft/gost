@@ -21,24 +21,34 @@ import (
 
 var NotFound = utils.ErrObjectNotFound
 
+type instanceKey struct {
+	serviceName string
+	instanceID  string
+}
+
 type Discovery struct {
 	discovery.BaseDiscovery
+	server.AsyncRunner
 
 	cfg  Config
 	list *memberlist.Memberlist
 
-	services    map[string]*discovery.ServiceInfo
-	servicesMtx sync.RWMutex
+	services                  map[string]*discovery.ServiceInfo
+	instanceIDToDownTimestamp map[instanceKey]time.Time
+	servicesMtx               sync.RWMutex
 
 	transport *Transport
 }
 
 func NewDiscovery(serviceCfg server.Config, cfg Config) *Discovery {
 	d := &Discovery{
-		cfg:           cfg,
-		BaseDiscovery: discovery.NewBaseDiscovery(serviceCfg),
-		services:      make(map[string]*discovery.ServiceInfo),
+		cfg:                       cfg,
+		BaseDiscovery:             discovery.NewBaseDiscovery(serviceCfg),
+		services:                  make(map[string]*discovery.ServiceInfo),
+		instanceIDToDownTimestamp: make(map[instanceKey]time.Time),
 	}
+
+	d.AsyncRunner = server.NewContextAsyncRunner(d.run)
 
 	if d.cfg.Embedded {
 		var err error
@@ -68,7 +78,7 @@ func (d *Discovery) memberlistConfig() (*memberlist.Config, error) {
 	return memberlistCfg, nil
 }
 
-func (d *Discovery) Run() error {
+func (d *Discovery) run(ctx context.Context) error {
 	var err error
 	cfg, err := d.memberlistConfig()
 	if err != nil {
@@ -83,11 +93,21 @@ func (d *Discovery) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to create memberlist: %w", err)
 	}
-	d.join(d.cfg.ClusterMembers...)
-	return nil
+	d.join(ctx, d.cfg.ClusterMembers...)
+
+	t := time.NewTicker(d.cfg.DeregisterServiceAfter / 2)
+	defer t.Stop()
+	for {
+		select {
+		case <-t.C:
+			d.deregisterExpired()
+		case <-ctx.Done():
+			return nil
+		}
+	}
 }
 
-func (d *Discovery) join(members ...string) {
+func (d *Discovery) join(ctx context.Context, members ...string) {
 	if len(members) == 0 {
 		return
 	}
@@ -101,9 +121,58 @@ func (d *Discovery) join(members ...string) {
 		} else {
 			break
 		}
-		<-t.C
+		select {
+		case <-t.C:
+		case <-ctx.Done():
+			return
+		}
+
 	}
 	log.Logger.InfoWithFields(log.Fields{"members": members}, "Discovery: joined")
+}
+
+func (d *Discovery) instanceKey(si *discovery.ServiceInstanceInfo) instanceKey {
+	return instanceKey{si.ServiceName, si.ID}
+}
+
+func (d *Discovery) TriggerEventCtx(ctx context.Context, eventType discovery.EventType, instance discovery.ServiceInstanceInfo) {
+	switch eventType {
+	case discovery.EventTypeDown:
+		d.instanceIDToDownTimestamp[d.instanceKey(&instance)] = time.Now()
+	case discovery.EventTypeDiscovered:
+		fallthrough
+	case discovery.EventTypeUp:
+		fallthrough
+	case discovery.EventTypeRemoved:
+		delete(d.instanceIDToDownTimestamp, d.instanceKey(&instance))
+	}
+	d.BaseDiscovery.TriggerEventCtx(ctx, eventType, instance)
+}
+
+func (d *Discovery) TriggerEvent(eventType discovery.EventType, instance discovery.ServiceInstanceInfo) {
+	d.TriggerEventCtx(context.Background(), eventType, instance)
+}
+
+func (d *Discovery) deregisterExpired() {
+	d.servicesMtx.Lock()
+	defer d.servicesMtx.Unlock()
+	for instanceKey, ts := range d.instanceIDToDownTimestamp {
+		if time.Since(ts) > d.cfg.DeregisterServiceAfter {
+			service := d.services[instanceKey.serviceName]
+
+			i := slices.IndexFunc(service.Instances, func(sii discovery.ServiceInstanceInfo) bool {
+				return sii.ID == instanceKey.instanceID
+			})
+			instance := service.Instances[i]
+
+			service.Instances = slices.Delete(service.Instances, i, i+1)
+			if len(service.Instances) == 0 {
+				delete(d.services, instanceKey.serviceName)
+			}
+
+			d.TriggerEvent(discovery.EventTypeRemoved, instance)
+		}
+	}
 }
 
 func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
@@ -265,15 +334,15 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 
 	d.servicesMtx.RLock()
 	defer d.servicesMtx.RUnlock()
-	instaces := d.services[serviceInfo.ServiceName].Instances
-	for i := range instaces {
-		if instaces[i].ID == serviceInfo.ID {
-			instaces[i].Healthy = false
+	instances := d.services[serviceInfo.ServiceName].Instances
+	for i := range instances {
+		if instances[i].ID == serviceInfo.ID {
+			instances[i].Healthy = false
 			break
 		}
 	}
 	if addr := serviceInfo.Address.String(); slices.Contains(d.cfg.ClusterMembers, addr) {
-		go d.join(addr)
+		go d.join(context.Background(), addr)
 	}
 
 	d.TriggerEvent(discovery.EventTypeDown, *serviceInfo)
