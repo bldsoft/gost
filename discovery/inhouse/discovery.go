@@ -95,7 +95,8 @@ func (d *Discovery) run(ctx context.Context) error {
 	}
 	d.join(ctx, d.cfg.ClusterMembers...)
 
-	t := time.NewTicker(d.cfg.DeregisterServiceAfter / 2)
+	checkExpiredInterval := min(d.cfg.DeregisterServiceAfter/2, 5*time.Minute)
+	t := time.NewTicker(checkExpiredInterval)
 	defer t.Stop()
 	for {
 		select {
