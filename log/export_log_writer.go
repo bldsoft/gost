@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/bldsoft/gost/config/feature"
+	"github.com/bldsoft/gost/utils"
 	"github.com/bldsoft/gost/version"
 	"github.com/hashicorp/go-multierror"
 	"github.com/rs/zerolog"
@@ -14,38 +15,41 @@ import (
 type Level = zerolog.Level
 
 type LogRecord struct {
-	Instance  string        `json:"instance,omitempty"`
-	Timestamp int64         `json:"timestamp,omitempty"`
-	Level     zerolog.Level `json:"level,string,omitempty"`
-	ReqID     string        `json:"reqID,omitempty"`
-	Msg       string        `json:"msg,omitempty"`
-	Fields    []byte        `json:"fields,omitempty"` // json
+	Service        string        `json:"service,omitempty"`
+	ServiceVersion string        `json:"serviceVersion,omitempty"`
+	Instance       string        `json:"instance,omitempty"`
+	Timestamp      int64         `json:"timestamp,omitempty"`
+	Level          zerolog.Level `json:"level,string,omitempty"`
+	ReqID          string        `json:"reqID,omitempty"`
+	Msg            string        `json:"msg,omitempty"`
+	Fields         []byte        `json:"fields,omitempty"` // json
 }
 
 // for level parsing
 func (r *LogRecord) UnmarshalJSON(data []byte) error {
 	type Record struct {
-		Instance  string        `json:"instance,omitempty"`
-		Timestamp int64         `json:"timestamp,omitempty"`
-		Level     zerolog.Level `json:"level,omitempty"`
-		ReqID     string        `json:"reqID,omitempty"`
-		Msg       string        `json:"msg,omitempty"`
-		Fields    []byte        `json:"fields,omitempty"` // json
+		Service        string        `json:"service,omitempty"`
+		ServiceVersion string        `json:"serviceVersion,omitempty"`
+		Instance       string        `json:"instance,omitempty"`
+		Timestamp      int64         `json:"timestamp,omitempty"`
+		Level          zerolog.Level `json:"level,omitempty"`
+		ReqID          string        `json:"reqID,omitempty"`
+		Msg            string        `json:"msg,omitempty"`
+		Fields         []byte        `json:"fields,omitempty"` // json
 	}
 	return json.Unmarshal(data, (*Record)(r))
 }
 
 type ExportLogWriter struct {
-	cfg LogExporterConfig
+	cfg      LogExporterConfig
+	hostname string
 
 	exporters        []LogExporter
 	exportersToggles []*feature.Bool
-
-	instanceFieldValue string
 }
 
 func NewExportLogWriter(cfg LogExporterConfig) *ExportLogWriter {
-	return &ExportLogWriter{cfg: cfg, instanceFieldValue: fmt.Sprintf("%s / %s", cfg.Instance, version.LongVersion())}
+	return &ExportLogWriter{cfg: cfg, hostname: utils.Hostname()}
 }
 
 func (w *ExportLogWriter) Append(exporter LogExporter, isOn *feature.Bool) {
@@ -72,7 +76,9 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 	}
 
 	rec := LogRecord{
-		Instance: w.instanceFieldValue,
+		Service:        w.cfg.Service,
+		ServiceVersion: version.LongVersion(),
+		Instance:       w.hostname,
 	}
 
 	if l, ok := event[zerolog.LevelFieldName].(string); ok {

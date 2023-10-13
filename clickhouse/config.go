@@ -19,6 +19,10 @@ func (c *Config) SetDefaults() {
 
 // Validate ...
 func (c *Config) Validate() (err error) {
+	if c.Dsn == "" {
+		return nil
+	}
+
 	if err := c.prepareDsn(); err != nil {
 		return err
 	}

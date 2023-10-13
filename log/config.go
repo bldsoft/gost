@@ -5,10 +5,9 @@ import (
 )
 
 type Config struct {
-	File     string `mapstructure:"LOG_FILE" description:"-"`
-	Level    string `mapstructure:"LOG_LEVEL" description:"Log level"`
-	Color    bool   `mapstructure:"LOG_COLOR_ENABLED" description:"Enable the colorized output"`
-	Exporter LogExporterConfig
+	File  string `mapstructure:"LOG_FILE" description:"-"`
+	Level string `mapstructure:"LOG_LEVEL" description:"Log level"`
+	Color bool   `mapstructure:"LOG_COLOR_ENABLED" description:"Enable the colorized output"`
 }
 
 // SetDefaults ...

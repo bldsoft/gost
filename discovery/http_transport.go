@@ -1,22 +1,16 @@
-package consul
+package discovery
 
 import (
 	"fmt"
 	"net"
 	"net/http"
-
-	"github.com/hashicorp/consul/api"
 )
 
-func NewTransport(t http.RoundTripper, consulClient *api.Client) http.RoundTripper {
+func NewTransport(t http.RoundTripper, d Discovery) http.RoundTripper {
 	return &transport{
 		base:     t,
-		resolver: NewResolver(consulClient),
+		resolver: NewResolver(d),
 	}
-}
-
-func NewTransportFromDiscovery(t http.RoundTripper, discovery *Discovery) http.RoundTripper {
-	return NewTransport(t, discovery.ApiClient())
 }
 
 type transport struct {
