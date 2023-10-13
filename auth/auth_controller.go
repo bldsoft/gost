@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/bldsoft/gost/controller"
@@ -124,13 +125,15 @@ func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := WithSessionContext(r.Context(), session)
 
 	user, err := c.authService.Login(ctx, PT(&creds).Login(), PT(&creds).Password())
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 		session.Values[SessionUserKey] = *user
 		if c.saveSession(w, r, session) {
 			// log.FromContext(ctx).InfoWithFields(log.Fields{"login": user.Login()}, "User is logged in")
 			c.ResponseJson(w, r, user)
 		}
+	case errors.Is(err, ErrNotActive):
+		c.ResponseError(w, err.Error(), http.StatusForbidden)
 	default:
 		log.FromContext(ctx).Error(err.Error())
 		c.ResponseError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)

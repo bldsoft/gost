@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"bufio"
 	"bytes"
+	"errors"
+	"net"
 	"net/http"
 
 	"github.com/felixge/httpsnoop"
@@ -27,6 +30,14 @@ func (rw *ResponseWriter) Flush() (int, error) {
 		rw.original.WriteHeader(rw.state.Code)
 	}
 	return rw.original.Write(rw.state.Body.Bytes())
+}
+
+func (rw *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h, ok := rw.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("hijack not supported")
+	}
+	return h.Hijack()
 }
 
 func WrapResponseWriter(w http.ResponseWriter) *ResponseWriter {

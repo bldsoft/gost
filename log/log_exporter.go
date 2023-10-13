@@ -18,13 +18,16 @@ const (
 )
 
 type LogExporterConfig struct {
-	Instance string `mapstructure:"SERVICE_NAME" description:"The name is used to identify the service in logs"`
+	Service  string
+	Instance string
 }
 
 type LogExporter interface {
 	WriteLogRecord(r *LogRecord) error
 	Logs(ctx context.Context, params LogsParams) (*Logs, error)
 	Instances(ctx context.Context, filter Filter) ([]string, error)
+	Services(ctx context.Context, filter Filter) ([]string, error)
+	ServiceVersions(ctx context.Context, filter Filter) ([]string, error)
 	RequestIDs(ctx context.Context, filter Filter, limit *int) ([]string, int64, error)
 }
 
@@ -36,12 +39,14 @@ type LogsParams struct {
 }
 
 type Filter struct {
-	Instances  []string  `json:"instances,omitempty" schema:"instances,omitempty"`
-	Search     *string   `json:"search,omitempty" schema:"search,omitempty"`
-	From       time.Time `json:"from" schema:"from,omitempty"`
-	To         time.Time `json:"to" schema:"to,omitempty"`
-	RequestIDs []string  `json:"requestIDs,omitempty" schema:"reqID,omitempty"`
-	Levels     []Level   `json:"levels,omitempty" schema:"levels,omitempty"`
+	Services        []string  `json:"services,omitempty" schema:"services,omitempty"`
+	ServiceVersions []string  `json:"serviceVersions,omitempty" schema:"serviceVersions,omitempty"`
+	Instances       []string  `json:"instances,omitempty" schema:"instances,omitempty"`
+	Search          *string   `json:"search,omitempty" schema:"search,omitempty"`
+	From            time.Time `json:"from" schema:"from,omitempty"`
+	To              time.Time `json:"to" schema:"to,omitempty"`
+	RequestIDs      []string  `json:"requestIDs,omitempty" schema:"reqID,omitempty"`
+	Levels          []Level   `json:"levels,omitempty" schema:"levels,omitempty"`
 }
 
 type Sort struct {

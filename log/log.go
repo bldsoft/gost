@@ -16,8 +16,8 @@ import (
 var Logger = ServiceLogger{logger: zerolog.New(os.Stderr)}
 
 // InitLogger initializes log
-func InitLogger(config *Config) {
-	exportWriter := NewExportLogWriter(config.Exporter)
+func InitLogger(config *Config, exportConfig LogExporterConfig) {
+	exportWriter := NewExportLogWriter(exportConfig)
 	initZerolog(config.File, config.Level, config.Color, exportWriter)
 }
 
