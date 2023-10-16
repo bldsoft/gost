@@ -56,7 +56,7 @@ func (f *Poly[T]) UnmarshalJSON(data []byte) error {
 
 	ptr, res, err := f.typesMap().allocValue(temp.Type)
 	if err != nil {
-		return err
+		panic(fmt.Errorf("poly: unregistered type %s for interface %s", temp.Type, f.interfaceString()))
 	}
 	ptri := ptr.Interface()
 

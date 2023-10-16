@@ -9,6 +9,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+func init() {
+	poly.Register[SomeInterface]().
+		Type("A", A{}).
+		Type("B", B{})
+}
+
 type SomeInterface interface {
 	SomeMethod()
 }
@@ -43,9 +49,6 @@ type Container struct {
 }
 
 func TestPolyJSONMarshal(t *testing.T) {
-	poly.Register[SomeInterface]().
-		Type("A", A{}).
-		Type("B", B{})
 
 	testCases := []struct {
 		value interface{}
@@ -76,10 +79,6 @@ func testJSONUnmarshal[T any](t *testing.T, data string, expected T) {
 }
 
 func TestPolyJSONUnmarshal(t *testing.T) {
-	poly.Register[SomeInterface]().
-		Type("A", A{}).
-		Type("B", B{})
-
 	testJSONUnmarshal[Container](t, `{"SomeField":{"type":"A","AField":"AValue"}}`, Container{poly.Poly[SomeInterface]{A{AField: "AValue"}}})
 	testJSONUnmarshal[poly.Poly[SomeInterface]](t, `{"type":"A","AField":"AValue"}`, poly.Poly[SomeInterface]{A{AField: "AValue"}})
 }
@@ -94,11 +93,7 @@ func testBSON[T any](t *testing.T, val T) {
 }
 
 func TestPolyBSON(t *testing.T) {
-	poly.Register[SomeInterface]().
-		Type("A", A{}).
-		Type("B", B{})
-
-	testBSON(t, poly.Poly[SomeInterface]{A{AField: "AValue"}})
+	testBSON(t, poly.Poly[SomeInterface]{Value: A{AField: "AValue"}})
 	testBSON(t, Container{poly.Poly[SomeInterface]{A{AField: "AValue"}}})
 }
 
