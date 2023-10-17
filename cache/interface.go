@@ -7,6 +7,8 @@ import (
 
 var ErrCacheMiss = errors.New("cache miss")
 
+//go:generate go run github.com/vektra/mockery/v2 --all --with-expecter
+
 // ILocalCacheRepository ...
 type ILocalCacheRepository interface {
 	Get(key string) ([]byte, error)
