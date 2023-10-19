@@ -11,19 +11,6 @@ import (
 
 const updateChanBufferSize = 12500
 
-type ChangeHandler[T any, U repository.IEntityIDPtr[T]] interface {
-	OnChange(upd *UpdateEvent[T, U])
-}
-
-type WarmUper[T any, U repository.IEntityIDPtr[T]] interface {
-	WarmUp(ctx context.Context, rep Repository[T, U]) error
-}
-
-type UpdateEvent[T any, U repository.IEntityIDPtr[T]] struct {
-	Entity U
-	OpType OperationType
-}
-
 type WatchedRepositoryOptions struct {
 	CacheKeyPrefix string
 	WarmUp         bool
@@ -32,46 +19,65 @@ type WatchedRepositoryOptions struct {
 // WatchedRepository is a helper wrapper for Repository, that allows you to monitor changes via Watcher
 type WatchedRepository[T any, U repository.IEntityIDPtr[T]] struct {
 	Repository[T, U]
-	Watcher *Watcher
-	handler ChangeHandler[T, U]
+	mongoWatcher *Watcher
+	handlers     []repository.Watcher[T, U]
+	handlerC     chan repository.Watcher[T, U]
 }
 
-func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, handler ChangeHandler[T, U]) *WatchedRepository[T, U] {
+func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, watchers ...repository.Watcher[T, U]) *WatchedRepository[T, U] {
 	rep := &WatchedRepository[T, U]{
 		Repository: NewRepository[T, U](db, collectionName),
-		handler:    handler,
+		handlerC:   make(chan repository.Watcher[T, U]),
 	}
 	rep.init()
+	for _, w := range watchers {
+		rep.AddWatcher(w)
+	}
 	return rep
 }
 
-func (r *WatchedRepository[T, U]) init() {
-	updateC := make(chan *UpdateEvent[T, U], updateChanBufferSize)
+func (r *WatchedRepository[T, U]) AddWatcher(w repository.Watcher[T, U]) {
+	r.handlerC <- w
+}
 
-	r.Watcher = NewWatcher(r.Repository.Collection())
-	r.Watcher.SetHandler(func(fullDocument bson.Raw, opType OperationType) {
+func (r *WatchedRepository[T, U]) init() {
+	updateC := make(chan repository.Event[T, U], updateChanBufferSize)
+
+	convertEventType := map[OperationType]repository.EventType{
+		Insert: repository.EventTypeCreate,
+		Update: repository.EventTypeUpdate,
+		Delete: repository.EventTypeDelete,
+	}
+
+	r.mongoWatcher = NewWatcher(r.Repository.Collection())
+	r.mongoWatcher.SetHandler(func(fullDocument bson.Raw, opType OperationType) {
 		var e T
 		if err := bson.Unmarshal(fullDocument, &e); err != nil {
 			log.Logger.ErrorWithFields(log.Fields{"err": err, "type": reflect.TypeOf(e).String()}, "WatchedRepository: failed to update")
 		}
-		updateC <- &UpdateEvent[T, U]{
+
+		updateC <- repository.Event[T, U]{
 			Entity: &e,
-			OpType: opType,
+			Type:   convertEventType[opType],
 		}
 	})
-	r.Watcher.Start()
-
-	if wu, ok := r.handler.(WarmUper[T, U]); ok {
-		if err := wu.WarmUp(context.Background(), r.Repository); err != nil {
-			log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.Name()}, "Failed to warm up")
-		} else {
-			log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.Name()}, "Warmed up")
-		}
-	}
+	r.mongoWatcher.Start()
 
 	go func() {
-		for upd := range updateC {
-			r.handler.OnChange(upd)
+		for {
+			select {
+			case handler := <-r.handlerC:
+				if err := handler.WarmUp(context.Background(), r.Repository); err != nil {
+					log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.Name()}, "Failed to warm up")
+				} else {
+					log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.Name()}, "Warmed up")
+				}
+				r.handlers = append(r.handlers, handler)
+			case upd := <-updateC:
+				for _, handler := range r.handlers {
+					handler.OnEvent(upd)
+				}
+			}
 		}
 	}()
 }

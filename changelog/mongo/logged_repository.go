@@ -70,7 +70,7 @@ func (r *LoggedRepository[T, U]) getDiff(old U, new U) ([]byte, error) {
 	return patch, nil
 }
 
-func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U) error {
+func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U, opt ...*repository.QueryOptions) error {
 	rec, err := NewRecord(ctx, r.Name(), changelog.Update)
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U) error {
 
 	_, err = r.Repository.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
 		entity.SetChangeID(rec.StringID())
-		oldEntity, err := r.Repository.UpdateAndGetByID(ctx, entity, false)
+		oldEntity, err := r.Repository.UpdateAndGetByID(ctx, entity, false, opt...)
 		if err != nil {
 			return nil, err
 		}

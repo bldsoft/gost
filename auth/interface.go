@@ -52,7 +52,7 @@ type IUserRepository[PT any] interface {
 	InsertOrRecover(ctx context.Context, user PT) error
 	GetAll(ctx context.Context, options ...*repository.QueryOptions) ([]PT, error)
 	FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (PT, error)
-	Update(ctx context.Context, user PT) error
+	Update(ctx context.Context, user PT, options ...*repository.QueryOptions) error
 	Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error
 }
 

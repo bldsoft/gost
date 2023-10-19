@@ -12,19 +12,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type cacheChangeHandler[T any, U repository.IEntityIDPtr[T]] struct {
+type cacheWatcher[T any, U repository.IEntityIDPtr[T]] struct {
 	cache cache.ILocalCacheRepository
 	opt   CachedRepositoryOptions
 }
 
-func newCacheChangeHandler[T any, U repository.IEntityIDPtr[T]](cache cache.ILocalCacheRepository, opt CachedRepositoryOptions) *cacheChangeHandler[T, U] {
-	return &cacheChangeHandler[T, U]{
+func newCacheWatcher[T any, U repository.IEntityIDPtr[T]](cache cache.ILocalCacheRepository, opt CachedRepositoryOptions) *cacheWatcher[T, U] {
+	return &cacheWatcher[T, U]{
 		cache: cache,
 		opt:   opt,
 	}
 }
 
-func (h *cacheChangeHandler[T, U]) WarmUp(ctx context.Context, rep Repository[T, U]) error {
+func (h *cacheWatcher[T, U]) WarmUp(ctx context.Context, rep repository.Repository[T, U]) error {
 	if !h.opt.WarmUp {
 		return nil
 	}
@@ -39,22 +39,22 @@ func (h *cacheChangeHandler[T, U]) WarmUp(ctx context.Context, rep Repository[T,
 	return nil
 }
 
-func (h *cacheChangeHandler[T, U]) OnChange(upd *UpdateEvent[T, U]) {
-	switch upd.OpType {
-	case Insert:
+func (h *cacheWatcher[T, U]) OnEvent(upd repository.Event[T, U]) {
+	switch upd.Type {
+	case repository.EventTypeCreate:
 		fallthrough
-	case Update:
+	case repository.EventTypeUpdate:
 		if err := h.CacheSet(upd.Entity); err != nil {
 			log.Logger.ErrorWithFields(log.Fields{"err": err, "entity": upd.Entity}, "failed to update cache value")
 		}
-	case Delete:
+	case repository.EventTypeDelete:
 		if err := h.CacheDelete(upd.Entity.StringID()); err != nil {
 			log.Logger.DebugWithFields(log.Fields{"err": err, "cache key": h.cacheKey(upd.Entity.StringID())}, "failed to delete cache value")
 		}
 	}
 }
 
-func (h cacheChangeHandler[T, U]) cacheMarshal(e U) ([]byte, error) {
+func (h cacheWatcher[T, U]) cacheMarshal(e U) ([]byte, error) {
 	if marshal := h.opt.Marshal; marshal != nil {
 		return marshal(e)
 	}
@@ -66,7 +66,7 @@ func (h cacheChangeHandler[T, U]) cacheMarshal(e U) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h cacheChangeHandler[T, U]) cacheUnmarshal(data []byte) (U, error) {
+func (h cacheWatcher[T, U]) cacheUnmarshal(data []byte) (U, error) {
 	var e T
 	var err error
 	if unmarshal := h.opt.Unmarshal; unmarshal != nil {
@@ -81,11 +81,11 @@ func (h cacheChangeHandler[T, U]) cacheUnmarshal(data []byte) (U, error) {
 	return &e, nil
 }
 
-func (h cacheChangeHandler[T, U]) cacheKey(id string) string {
+func (h cacheWatcher[T, U]) cacheKey(id string) string {
 	return fmt.Sprintf("%s:%s", h.opt.CacheKeyPrefix, id)
 }
 
-func (h cacheChangeHandler[T, U]) CacheSet(entities ...U) error {
+func (h cacheWatcher[T, U]) CacheSet(entities ...U) error {
 	for _, e := range entities {
 		if e == nil {
 			continue
@@ -101,11 +101,11 @@ func (h cacheChangeHandler[T, U]) CacheSet(entities ...U) error {
 	return nil
 }
 
-func (h cacheChangeHandler[T, U]) CacheDelete(id string) error {
+func (h cacheWatcher[T, U]) CacheDelete(id string) error {
 	return h.cache.Delete(h.cacheKey(id))
 }
 
-func (h cacheChangeHandler[T, U]) CacheGet(id string) (U, error) {
+func (h cacheWatcher[T, U]) CacheGet(id string) (U, error) {
 	data, err := h.cache.Get(h.cacheKey(id))
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ type CachedRepositoryOptions struct {
 // Only FindByID, FindByStringIDs, FindByIDs return cached results
 type CachedRepository[T any, U repository.IEntityIDPtr[T]] struct {
 	*WatchedRepository[T, U]
-	cache *cacheChangeHandler[T, U]
+	cache *cacheWatcher[T, U]
 }
 
 func NewCachedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, cache cache.ILocalCacheRepository, opt ...CachedRepositoryOptions) *CachedRepository[T, U] {
@@ -133,10 +133,10 @@ func NewCachedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, colle
 	if len(opt) > 0 {
 		options = opt[0]
 	}
-	changeHandler := newCacheChangeHandler[T, U](cache, options)
+	cacheWatcher := newCacheWatcher[T, U](cache, options)
 	return &CachedRepository[T, U]{
-		WatchedRepository: NewWatchedRepository[T, U](db, collectionName, changeHandler),
-		cache:             changeHandler,
+		WatchedRepository: NewWatchedRepository[T, U](db, collectionName, cacheWatcher),
+		cache:             cacheWatcher,
 	}
 }
 
