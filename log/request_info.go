@@ -27,18 +27,18 @@ type IRequestInfo interface {
 }
 
 type RequestInfo struct {
-	RequestMethod RequestMethodType
-	Path          string
-	Query         string
-	ClientIp      string
-	UserAgent     string
-	ResponseCode  ResponseCodeType
-	Size          uint32
-	RequestTime   int64
-	HandleTime    uint32
-	Instance      string
-	RequestId     string
-	Error         string
+	RequestMethod RequestMethodType `requestinfo:"RequestMethod"`
+	Path          string            `requestinfo:"Path"`
+	Query         string            `requestinfo:"Query"`
+	ClientIp      string            `requestinfo:"ClientIp"`
+	UserAgent     string            `requestinfo:"UserAgent"`
+	ResponseCode  ResponseCodeType  `requestinfo:"ResponseCode"`
+	Size          uint32            `requestinfo:"Size"`
+	RequestTime   int64             `requestinfo:"RequestTime"`
+	HandleTime    uint32            `requestinfo:"HandleTime"`
+	Instance      string            `requestinfo:"Instance"`
+	RequestId     string            `requestinfo:"RequestId"`
+	Error         string            `requestinfo:"Error"`
 }
 
 func (r *RequestInfo) BaseRequestInfo() *RequestInfo {
