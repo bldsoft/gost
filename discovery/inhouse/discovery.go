@@ -353,7 +353,7 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 // updated, usually involving the meta data. The Node argument
 // must not be modified.
 func (d *Discovery) NotifyUpdate(node *memberlist.Node) {
-
+	d.addService(node, true)
 }
 
 var _ discovery.NotifyingDiscovery = &Discovery{}
