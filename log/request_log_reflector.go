@@ -10,10 +10,14 @@ const tag_name = "requestinfo"
 
 func PrepareQuery(ri any, into string) (string, error) {
 	fields := []string{}
-	f := func(field reflect.StructField, _ reflect.Value, into *[]string) {
-		fields = append(fields, field.Tag.Get(tag_name))
+	f := func(field reflect.StructField, _ reflect.Value) {
+		tag, ok := tagCheck(field)
+		if !ok {
+			return
+		}
+		fields = append(fields, tag)
 	}
-	if err := traverse[string](ri, &fields, f); err != nil {
+	if err := traverse[string](ri, f); err != nil {
 		return "", err
 	}
 
@@ -25,18 +29,21 @@ func PrepareQuery(ri any, into string) (string, error) {
 
 func Values(ri any) ([]any, error) {
 	values := []any{}
-	f := func(_ reflect.StructField, value reflect.Value, into *[]any) {
+	f := func(field reflect.StructField, value reflect.Value) {
+		if _, ok := tagCheck(field); !ok {
+			return
+		}
 		values = append(values, value.Interface())
 	}
 
-	if err := traverse[any](ri, &values, f); err != nil {
+	if err := traverse[any](ri, f); err != nil {
 		return nil, err
 	}
 
 	return values, nil
 }
 
-func traverse[T any](ri any, into *[]T, f func(field reflect.StructField, value reflect.Value, into *[]T)) error {
+func traverse[T any](ri any, f func(field reflect.StructField, value reflect.Value)) error {
 	t := reflect.TypeOf(ri)
 	rk := t.Kind()
 	if rk == reflect.Pointer {
@@ -52,15 +59,16 @@ func traverse[T any](ri any, into *[]T, f func(field reflect.StructField, value 
 	for i := 0; i < size; i++ {
 		field := t.Field(i)
 		if field.Type.Kind() == reflect.Struct {
-			_ = traverse[T](v.Field(i).Interface(), into, f)
+			_ = traverse[T](v.Field(i).Interface(), f)
 			continue
 		}
-		tag := field.Tag.Get(tag_name)
-		if len(tag) == 0 {
-			continue
-		}
-		f(field, v.Field(i), into)
+		f(field, v.Field(i))
 	}
 
 	return nil
+}
+
+func tagCheck(field reflect.StructField) (string, bool) {
+	tag := field.Tag.Get(tag_name)
+	return tag, len(tag) > 0
 }
