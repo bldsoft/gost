@@ -53,6 +53,23 @@ func ProbeInto(path string, res interface{}, args map[string]interface{}) error 
 	return json.Unmarshal([]byte(probeRaw), &res)
 }
 
+func ProbeIntoWithTimeout(path string, res interface{}, args map[string]interface{}, timeout time.Duration) error {
+	jsonFormat := ffmpeg.KwArgs{
+		"of": "json",
+	}
+
+	probeRaw, err := ffmpeg.ProbeWithTimeoutExec(
+		path,
+		timeout,
+		ffmpeg.MergeKwArgs([]ffmpeg.KwArgs{jsonFormat, ffmpeg.KwArgs(args)}),
+	)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal([]byte(probeRaw), &res)
+}
+
 type FFMpegProbe struct {
 	Format struct {
 		Duration       string `json:"duration"`
