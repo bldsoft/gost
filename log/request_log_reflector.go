@@ -17,7 +17,7 @@ func PrepareQuery(ri any, into string) (string, error) {
 		}
 		fields = append(fields, tag)
 	}
-	if err := traverse[string](ri, f); err != nil {
+	if err := traverse(ri, f); err != nil {
 		return "", err
 	}
 
@@ -36,14 +36,14 @@ func Values(ri any) ([]any, error) {
 		values = append(values, value.Interface())
 	}
 
-	if err := traverse[any](ri, f); err != nil {
+	if err := traverse(ri, f); err != nil {
 		return nil, err
 	}
 
 	return values, nil
 }
 
-func traverse[T any](ri any, f func(field reflect.StructField, value reflect.Value)) error {
+func traverse(ri any, f func(field reflect.StructField, value reflect.Value)) error {
 	t := reflect.TypeOf(ri)
 	rk := t.Kind()
 	if rk == reflect.Pointer {
@@ -59,7 +59,7 @@ func traverse[T any](ri any, f func(field reflect.StructField, value reflect.Val
 	for i := 0; i < size; i++ {
 		field := t.Field(i)
 		if field.Type.Kind() == reflect.Struct {
-			_ = traverse[T](v.Field(i).Interface(), f)
+			_ = traverse(v.Field(i).Interface(), f)
 			continue
 		}
 		f(field, v.Field(i))
