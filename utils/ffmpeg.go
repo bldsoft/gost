@@ -8,6 +8,8 @@ import (
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
+const defaultTimeOut = 30 * time.Second
+
 func Probe(path string) (*FFMpegProbe, error) {
 	probeRaw, err := ffmpeg.Probe(path)
 	if err != nil {
@@ -37,20 +39,7 @@ func ProbeWithArgs(path string, args map[string]interface{}) (*FFMpegProbe, erro
 }
 
 func ProbeInto(path string, res interface{}, args map[string]interface{}) error {
-	jsonFormat := ffmpeg.KwArgs{
-		"of": "json",
-	}
-
-	probeRaw, err := ffmpeg.ProbeWithTimeoutExec(
-		path,
-		30*time.Second,
-		ffmpeg.MergeKwArgs([]ffmpeg.KwArgs{jsonFormat, ffmpeg.KwArgs(args)}),
-	)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal([]byte(probeRaw), &res)
+	return ProbeIntoWithTimeout(path, res, args, defaultTimeOut)
 }
 
 func ProbeIntoWithTimeout(path string, res interface{}, args map[string]interface{}, timeout time.Duration) error {
