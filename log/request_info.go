@@ -1,7 +1,7 @@
 package log
 
 type (
-	RequestMethodType byte
+	RequestMethodType int8
 	ResponseCodeType  uint16
 )
 
@@ -15,7 +15,7 @@ const (
 	PATCH
 	ORIGIN_GET
 
-	ERROR
+	ERROR = -1
 )
 
 type RequestInfoPtr[T any] interface {
