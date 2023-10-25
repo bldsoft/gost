@@ -209,7 +209,9 @@ func (t *Transport) StreamCh() <-chan net.Conn {
 func (t *Transport) Shutdown() error {
 	t.shutdown.Store(1)
 
-	t.udpListener.Close()
+	if t.udpListener != nil {
+		t.udpListener.Close()
+	}
 
 	// Block until the listener has died.
 	t.wg.Wait()
