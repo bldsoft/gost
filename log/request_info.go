@@ -61,6 +61,8 @@ func GetRequestMethodType(type_str string) RequestMethodType {
 		return HEAD
 	case "PATCH":
 		return PATCH
+	case "ORIGIN_GET":
+		return ORIGIN_GET
 	default:
 		return ERROR
 	}
