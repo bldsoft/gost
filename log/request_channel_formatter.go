@@ -43,15 +43,19 @@ func (f *ChannelFormatter[T, P]) NewLogEntry(r *http.Request) (middleware.LogEnt
 	var requestInfo T
 	requestInfoPtr := (P)(&requestInfo)
 	baseRequestInfo := requestInfoPtr.BaseRequestInfo()
+	ua := r.UserAgent()
 
 	reqID := middleware.GetReqID(r.Context())
 	baseRequestInfo.RequestTime = time.Now().Unix()
 	baseRequestInfo.Instance = f.instanceName
 	baseRequestInfo.RequestMethod = GetRequestMethodType(r.Method)
+	if baseRequestInfo.RequestMethod == ERROR {
+		Logger.ErrorWithFields(Fields{"method": r.Method, "url": r.URL.Path, "requestID": reqID, "userAgent": ua}, "Request info: bad request method")
+	}
 	baseRequestInfo.Path = r.URL.Path
 	baseRequestInfo.Query = r.URL.RawQuery
 	baseRequestInfo.ClientIp = r.RemoteAddr
-	baseRequestInfo.UserAgent = r.UserAgent()
+	baseRequestInfo.UserAgent = ua
 	baseRequestInfo.RequestId = reqID
 	if baseRequestInfo.RequestMethod == POST && r.ContentLength > 0 {
 		baseRequestInfo.Size = uint32(r.ContentLength)
