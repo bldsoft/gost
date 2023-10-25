@@ -52,7 +52,7 @@ func NewDiscovery(serviceCfg server.Config, cfg Config) *Discovery {
 
 	if d.cfg.Embedded {
 		var err error
-		d.transport, err = NewTransport(serviceCfg.ServiceAddress)
+		d.transport, err = NewTransport(serviceCfg.ServiceBindAddress)
 		if err != nil {
 			panic(err)
 		}
