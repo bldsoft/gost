@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bldsoft/gost/log"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/sessions"
 )
@@ -92,7 +93,6 @@ func (s *RedisSessionStore) Get(r *http.Request, name string) (*sessions.Session
 
 // New returns a session for the given name without adding it to the registry.
 func (s *RedisSessionStore) New(r *http.Request, name string) (*sessions.Session, error) {
-
 	session := sessions.NewSession(s, name)
 	opts := s.options
 	session.Options = &opts
@@ -175,12 +175,10 @@ func (s *RedisSessionStore) save(session *sessions.Session) error {
 		return s.client.Set(s.keyPrefix+session.ID, b, time.Duration(session.Options.MaxAge)*time.Second).Err()
 	}
 	return s.client.SetXX(s.keyPrefix+session.ID, b, time.Duration(session.Options.MaxAge)*time.Second).Err()
-
 }
 
 // load reads session from Redis
 func (s *RedisSessionStore) load(session *sessions.Session) error {
-
 	cmd := s.client.Get(s.keyPrefix + session.ID)
 	if cmd.Err() != nil {
 		return cmd.Err()
@@ -204,6 +202,11 @@ func (s *RedisSessionStore) KillSessions(ctx context.Context, sessionIDs ...stri
 		sessionIDs[i] = s.keyPrefix + id
 	}
 	return s.client.Del(sessionIDs...).Err()
+}
+
+func (s *RedisSessionStore) KillUserSessions(_ context.Context, _ string) error {
+	log.Error("kill user sessions is not implemented for redis")
+	return nil
 }
 
 // SessionSerializer provides an interface for serialize/deserialize a session

@@ -29,7 +29,6 @@ type MongoDBStore struct {
 
 // MongoDBStoreConfig is a configuration options for MongoDBStore
 type MongoDBStoreConfig struct {
-
 	// whether to create TTL index(https://docs.mongodb.com/manual/core/index-ttl/)
 	// for the session document
 	IndexTTL bool
@@ -42,6 +41,7 @@ type sessionDoc struct {
 	gost_mongo.EntityID `bson:",inline"`
 	Data                string    `bson:"data"`
 	Modified            time.Time `bson:"modified"`
+	UserID              string    `bson:"user_id"`
 }
 
 var defaultConfig = MongoDBStoreConfig{
@@ -280,4 +280,8 @@ func (mstore *MongoDBStore) KillSessions(ctx context.Context, ids ...string) err
 	rawIDs := repository.StringsToRawIDs[sessionDoc, *sessionDoc](ids)
 	filter := bson.M{"_id": bson.M{"$in": rawIDs}}
 	return mstore.rep.DeleteMany(ctx, filter, &repository.QueryOptions{Archived: false})
+}
+
+func (mstore *MongoDBStore) KillUserSessions(ctx context.Context, userID string) error {
+	return mstore.rep.DeleteMany(ctx, bson.M{"userID": userID}, &repository.QueryOptions{Archived: false})
 }
