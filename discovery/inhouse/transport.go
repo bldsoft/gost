@@ -11,9 +11,9 @@ import (
 
 	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/memberlist"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
-	"github.com/hashicorp/memberlist"
 )
 
 const (
@@ -187,7 +187,6 @@ func (t *Transport) DialTimeout(addr string, timeout time.Duration) (net.Conn, e
 	u := url.URL{Scheme: "ws", Host: addr, Path: t.endpointPath}
 	c, _, err := dialer.Dial(u.String(), nil)
 	if err != nil {
-		log.ErrorfWithFields(log.Fields{"err": err, "url": u.String()}, "Discovery: ws dial")
 		return nil, err
 	}
 	return c.UnderlyingConn(), nil

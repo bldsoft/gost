@@ -13,13 +13,10 @@ import (
 	"github.com/bldsoft/gost/discovery"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
-	"github.com/bldsoft/gost/utils"
+	"github.com/bldsoft/memberlist"
 	"github.com/go-chi/chi/v5"
-	"github.com/hashicorp/memberlist"
 	"golang.org/x/exp/slices"
 )
-
-var NotFound = utils.ErrObjectNotFound
 
 type instanceKey struct {
 	serviceName string
@@ -62,7 +59,7 @@ func NewDiscovery(serviceCfg server.Config, cfg Config) *Discovery {
 }
 
 func (d *Discovery) memberlistConfig() (*memberlist.Config, error) {
-	memberlistCfg := memberlist.DefaultLocalConfig()
+	memberlistCfg := memberlist.DefaultLANConfig()
 	memberlistCfg.LogOutput = logOutput{}
 	memberlistCfg.Name = d.ServiceInfo.ID
 	memberlistCfg.BindAddr = d.cfg.BindAddress.Host()
@@ -93,7 +90,7 @@ func (d *Discovery) run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create memberlist: %w", err)
 	}
-	d.join(ctx, d.cfg.ClusterMembers...)
+	d.join(ctx, true, d.cfg.ClusterMembers...)
 
 	checkExpiredInterval := min(d.cfg.DeregisterServiceAfter/2, 5*time.Minute)
 	t := time.NewTicker(checkExpiredInterval)
@@ -108,7 +105,7 @@ func (d *Discovery) run(ctx context.Context) error {
 	}
 }
 
-func (d *Discovery) join(ctx context.Context, members ...string) {
+func (d *Discovery) join(ctx context.Context, logError bool, members ...string) {
 	if len(members) == 0 {
 		return
 	}
@@ -118,7 +115,7 @@ func (d *Discovery) join(ctx context.Context, members ...string) {
 	for {
 		// Join an existing cluster by specifying at least one known member.
 		if _, err := d.list.Join(members); err != nil {
-			log.Errorf("Discovery: failed to join cluster: %s", strings.TrimSpace(err.Error()))
+			d.traceOrErrorf(logError, "Discovery: failed to join cluster: %s", strings.TrimSpace(err.Error()))
 		} else {
 			break
 		}
@@ -130,6 +127,14 @@ func (d *Discovery) join(ctx context.Context, members ...string) {
 
 	}
 	log.Logger.InfoWithFields(log.Fields{"members": members}, "Discovery: joined")
+}
+
+func (d *Discovery) traceOrErrorf(logErr bool, format string, v ...interface{}) {
+	if logErr {
+		log.Errorf(format, v...)
+	} else {
+		log.Tracef(format, v...)
+	}
 }
 
 func (d *Discovery) instanceKey(si *discovery.ServiceInstanceInfo) instanceKey {
@@ -218,11 +223,9 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 
 func (d *Discovery) Stop(ctx context.Context) error {
 	if deadline, ok := ctx.Deadline(); ok {
-		if timeout := time.Since(deadline); timeout > 0 {
+		if timeout := time.Until(deadline); timeout > 0 {
 			err := d.list.Leave(timeout)
-			if err != nil {
-				log.Logger.InfoOrError(err, "Discovery: leaving from the cluster")
-			}
+			log.Logger.InfoOrError(err, "Discovery: leaving from the cluster")
 		}
 	}
 	return d.list.Shutdown()
@@ -276,8 +279,7 @@ func (d *Discovery) NodeMeta(limit int) []byte {
 func (d *Discovery) parseMeta(node *memberlist.Node) (*discovery.ServiceInstanceInfo, error) {
 	var meta discovery.ServiceInstanceInfo
 	decoder := gob.NewDecoder(bytes.NewReader(node.Meta))
-	err := decoder.Decode(&meta)
-	if err != nil {
+	if err := decoder.Decode(&meta); err != nil {
 		return nil, fmt.Errorf("Discovery: failed to decode service info: %w", err)
 	}
 	return &meta, nil
@@ -331,7 +333,6 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 		log.Errorf(err.Error())
 		return
 	}
-	log.Logger.InfoWithFields(log.Fields{"service": serviceInfo}, "Discovery: service is down")
 
 	d.servicesMtx.RLock()
 	defer d.servicesMtx.RUnlock()
@@ -342,8 +343,18 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 			break
 		}
 	}
+
+	gracefullyStopped := node.State == memberlist.StateLeft
+	if gracefullyStopped {
+		log.InfoWithFields(log.Fields{"service": serviceInfo}, "Discovery: service is gracefully stopped")
+	} else {
+		log.ErrorWithFields(log.Fields{"service": serviceInfo}, "Discovery: service is down")
+	}
+
+	// an attempt to include the service in the cluster again,
+	// in case it has empty ClusterMembers
 	if addr := serviceInfo.Address.String(); slices.Contains(d.cfg.ClusterMembers, addr) {
-		go d.join(context.Background(), addr)
+		go d.join(context.Background(), !gracefullyStopped, addr)
 	}
 
 	d.TriggerEvent(discovery.EventTypeDown, *serviceInfo)
