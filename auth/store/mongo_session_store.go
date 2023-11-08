@@ -41,7 +41,7 @@ type sessionDoc struct {
 	gost_mongo.EntityID `bson:",inline"`
 	Data                string    `bson:"data"`
 	Modified            time.Time `bson:"modified"`
-	UserID              string    `bson:"user_id"`
+	UserID              string    `bson:"userID"`
 }
 
 var defaultConfig = MongoDBStoreConfig{
@@ -154,7 +154,9 @@ func (mstore *MongoDBStore) Save(r *http.Request, w http.ResponseWriter, session
 	sessDoc := &sessionDoc{
 		Modified: time.Now(),
 		Data:     encoded,
+		UserID:   session.Values["user"].(repository.IIDProvider).StringID(),
 	}
+
 	sessDoc.SetIDFromString(session.ID)
 	if val, ok := session.Values["modified"]; ok {
 		modified, ok := val.(time.Time)

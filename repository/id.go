@@ -1,11 +1,15 @@
 package repository
 
-type IEntityID interface {
+type IIDProvider interface {
 	RawID() interface{}
 	StringID() string
+	IsZeroID() bool
+}
+
+type IEntityID interface {
+	IIDProvider
 	SetIDFromString(string) error
 	GenerateID()
-	IsZeroID() bool
 }
 type IEntityIDPtr[T any] interface {
 	*T
