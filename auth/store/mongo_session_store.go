@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bldsoft/gost/auth"
 	gost_mongo "github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
 	"github.com/bldsoft/gost/utils"
@@ -154,7 +155,7 @@ func (mstore *MongoDBStore) Save(r *http.Request, w http.ResponseWriter, session
 	sessDoc := &sessionDoc{
 		Modified: time.Now(),
 		Data:     encoded,
-		UserID:   session.Values["user"].(repository.IIDProvider).StringID(),
+		UserID:   session.Values[auth.SessionUserKey].(repository.IIDProvider).StringID(),
 	}
 
 	sessDoc.SetIDFromString(session.ID)
