@@ -18,6 +18,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+const joinRetryInterval = 10 * time.Second
+
 type instanceKey struct {
 	serviceName string
 	instanceID  string
@@ -109,16 +111,20 @@ func (d *Discovery) join(ctx context.Context, logError bool, members ...string) 
 	if len(members) == 0 {
 		return
 	}
+
 	log.Logger.InfoWithFields(log.Fields{"members": members}, "Discovery: joining")
-	t := time.NewTicker(10 * time.Second)
+
+	t := time.NewTicker(joinRetryInterval)
 	defer t.Stop()
 	for {
-		// Join an existing cluster by specifying at least one known member.
-		if _, err := d.list.Join(members); err != nil {
-			d.traceOrErrorf(logError, "Discovery: failed to join cluster: %s", strings.TrimSpace(err.Error()))
-		} else {
+		_, err := d.list.Join(members)
+		if err == nil {
 			break
 		}
+		if logError {
+			log.Errorf("Discovery: failed to join cluster: %s", strings.TrimSpace(err.Error()))
+		}
+
 		select {
 		case <-t.C:
 		case <-ctx.Done():
@@ -127,14 +133,6 @@ func (d *Discovery) join(ctx context.Context, logError bool, members ...string) 
 
 	}
 	log.Logger.InfoWithFields(log.Fields{"members": members}, "Discovery: joined")
-}
-
-func (d *Discovery) traceOrErrorf(logErr bool, format string, v ...interface{}) {
-	if logErr {
-		log.Errorf(format, v...)
-	} else {
-		log.Tracef(format, v...)
-	}
 }
 
 func (d *Discovery) instanceKey(si *discovery.ServiceInstanceInfo) instanceKey {
@@ -354,7 +352,11 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 	// an attempt to include the service in the cluster again,
 	// in case it has empty ClusterMembers
 	if addr := serviceInfo.Address.String(); slices.Contains(d.cfg.ClusterMembers, addr) {
-		go d.join(context.Background(), !gracefullyStopped, addr)
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), d.cfg.DeregisterServiceAfter)
+			defer cancel()
+			d.join(ctx, !gracefullyStopped, addr)
+		}()
 	}
 
 	d.TriggerEvent(discovery.EventTypeDown, *serviceInfo)
