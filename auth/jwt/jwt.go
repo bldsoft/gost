@@ -13,9 +13,9 @@ import (
 )
 
 type JwtConfig struct {
+	key     jwk.Key
 	Alg     string `mapstructure:"JWT_ALG" description:"Algorithm used to sign JWT"`
 	PemPath string `mapstructure:"JWT_KEY_PATH" description:"Path to PEM encoded ASN.1 DER format key"`
-	key     jwk.Key
 }
 
 func (c *JwtConfig) PrivateKey() jwk.Key {

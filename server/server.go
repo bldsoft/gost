@@ -36,10 +36,10 @@ type IMicroservice interface {
 type Server struct {
 	srv               *http.Server
 	router            *chi.Mux
-	microservices     []IMicroservice
-	commonMiddlewares chi.Middlewares
 	runnerManager     *AsyncJobManager
 	routerWrapper     func(http.Handler) http.Handler
+	microservices     []IMicroservice
+	commonMiddlewares chi.Middlewares
 }
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {

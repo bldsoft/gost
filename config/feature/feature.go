@@ -6,12 +6,12 @@ import (
 )
 
 type Feature[T comparable] struct {
-	ID    IdType
 	value T
 
 	parse            func(string) (T, error)
 	validator        func(T) error
 	onchangeHandlers []func(T)
+	ID               IdType
 }
 
 func (f *Feature[T]) GetID() IdType {

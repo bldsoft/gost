@@ -10,10 +10,10 @@ import (
 )
 
 type Discovery struct {
-	discovery.BaseDiscovery
 	server.AsyncJob
 
-	services    map[string]*discovery.ServiceInfo
+	services map[string]*discovery.ServiceInfo
+	discovery.BaseDiscovery
 	servicesMtx sync.RWMutex
 }
 

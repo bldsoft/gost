@@ -14,8 +14,8 @@ type Formatter interface {
 }
 
 type paramEntry struct {
-	Description []string
 	Value       string
+	Description []string
 }
 
 type paramList struct {

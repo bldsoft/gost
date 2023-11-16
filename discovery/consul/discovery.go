@@ -24,10 +24,10 @@ const (
 )
 
 type Discovery struct {
+	server.AsyncRunner
+	consulClient *api.Client
 	base         discovery.BaseDiscovery
 	cfg          Config
-	consulClient *api.Client
-	server.AsyncRunner
 }
 
 func (d *Discovery) ApiClient() *api.Client {

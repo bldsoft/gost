@@ -10,10 +10,10 @@ import (
 )
 
 type Group struct {
-	wg  sync.WaitGroup
 	err error
-	mut sync.Mutex
 	pnc atomic.Pointer[panicWrapper]
+	wg  sync.WaitGroup
+	mut sync.Mutex
 }
 
 func (g *Group) Go(f func() error) {

@@ -12,8 +12,8 @@ import (
 
 // state struct
 type state struct {
-	Code int
 	Body bytes.Buffer
+	Code int
 }
 
 // ResponseWriter wrapper to allows middleware to set headers without worrying about the response header being written already.

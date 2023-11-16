@@ -8,8 +8,8 @@ import (
 )
 
 type Config struct {
-	Dsn     gost.ConnectionString `mapstructure:"DSN" description:"Clickhouse DSN"`
 	options *clickhouse.Options
+	Dsn     gost.ConnectionString `mapstructure:"DSN" description:"Clickhouse DSN"`
 }
 
 // SetDefaults ...

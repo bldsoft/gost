@@ -30,19 +30,19 @@ type MongoDBStore struct {
 
 // MongoDBStoreConfig is a configuration options for MongoDBStore
 type MongoDBStoreConfig struct {
-	// whether to create TTL index(https://docs.mongodb.com/manual/core/index-ttl/)
-	// for the session document
-	IndexTTL bool
 
 	// gorilla-sessions options
 	SessionOptions sessions.Options
+	// whether to create TTL index(https://docs.mongodb.com/manual/core/index-ttl/)
+	// for the session document
+	IndexTTL bool
 }
 
 type sessionDoc struct {
-	gost_mongo.EntityID `bson:",inline"`
-	Data                string    `bson:"data"`
 	Modified            time.Time `bson:"modified"`
+	Data                string    `bson:"data"`
 	UserID              string    `bson:"userID"`
+	gost_mongo.EntityID `bson:",inline"`
 }
 
 var defaultConfig = MongoDBStoreConfig{

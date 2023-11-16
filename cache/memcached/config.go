@@ -1,10 +1,10 @@
 package memcached
 
 type Config struct {
+	KeyPrefix       string   `mapstructure:"KEY_PREFIX" description:"required for mcrouter to prevent prefix routing"`
 	Servers         []string `mapstructure:"SERVERS"`
 	ReadOnlyServers []string `mapstructure:"READONLY_SERVERS" description:"alternate memcached instace for GET operations"`
 	TimeoutMs       int      `mapstructure:"TIMEOUT_MS"`
-	KeyPrefix       string   `mapstructure:"KEY_PREFIX" description:"required for mcrouter to prevent prefix routing"`
 	MaxIdleConns    int      `mapstructure:"MAX_IDLE_CONNS" description:"maximum number of idle connections to the memcached server"`
 }
 

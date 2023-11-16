@@ -27,14 +27,14 @@ const (
 )
 
 type Filter struct {
+	Details    IFilter
+	Search     *string     `json:"search,omitempty" schema:"search,omitempty"`
+	From       *int        `json:"from,omitempty" schema:"from,omitempty"`
+	To         *int        `json:"to,omitempty" schema:"to,omitempty"`
 	EntityID   string      `json:"entityID,omitempty" schema:"entityID,omitempty"`
 	Entities   []string    `json:"entities,omitempty" schema:"entities,omitempty"`
 	UserIDs    []string    `json:"userIDs,omitempty" schema:"userIDs,omitempty"`
 	Operations []Operation `json:"actions,omitempty" schema:"actions,omitempty"`
-	Search     *string     `json:"search,omitempty" schema:"search,omitempty"`
-	From       *int        `json:"from,omitempty" schema:"from,omitempty"`
-	To         *int        `json:"to,omitempty" schema:"to,omitempty"`
-	Details    IFilter
 }
 
 type Sort struct {
@@ -43,10 +43,10 @@ type Sort struct {
 }
 
 type RecordsParams struct {
-	Offset  int64 `json:"offset,omitempty" schema:"offset,omitempty"`
-	Limit   int64 `json:"limit,omitempty" schema:"limit,omitempty"`
 	*Filter `json:"filter,omitempty" schema:",omitempty"`
 	Sort    `json:"sort,omitempty" schema:",omitempty"`
+	Offset  int64 `json:"offset,omitempty" schema:"offset,omitempty"`
+	Limit   int64 `json:"limit,omitempty" schema:"limit,omitempty"`
 }
 
 type Records struct {

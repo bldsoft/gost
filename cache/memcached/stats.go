@@ -3,10 +3,7 @@ package memcached
 type Stats struct {
 	Instance string `json:"instance" mapstructure:"instance"`
 
-	Uptime       uint32 `json:"uptime" mapstructure:"uptime"`
 	Version      string `json:"version" mapstructure:"version"`
-	CurrentItems uint32 `json:"currentItems" mapstructure:"curr_items"`
-	TotalItems   uint32 `json:"totalItems" mapstructure:"total_items"`
 	CurrentBytes uint64 `json:"currentBytes" mapstructure:"bytes"`
 	MaxBytes     uint64 `json:"maxBytes" mapstructure:"limit_maxbytes"`
 
@@ -36,4 +33,8 @@ type Stats struct {
 
 	DeleteHits   uint64 `json:"deleteHits" mapstructure:"delete_hits"`
 	DeleteMisses uint64 `json:"deleteMisses" mapstructure:"delete_misses"`
+
+	Uptime       uint32 `json:"uptime" mapstructure:"uptime"`
+	CurrentItems uint32 `json:"currentItems" mapstructure:"curr_items"`
+	TotalItems   uint32 `json:"totalItems" mapstructure:"total_items"`
 }

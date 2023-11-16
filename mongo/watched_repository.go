@@ -20,8 +20,8 @@ type WatchedRepositoryOptions struct {
 type WatchedRepository[T any, U repository.IEntityIDPtr[T]] struct {
 	Repository[T, U]
 	mongoWatcher *Watcher
-	handlers     []repository.Watcher[T, U]
 	handlerC     chan repository.Watcher[T, U]
+	handlers     []repository.Watcher[T, U]
 }
 
 func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, watchers ...repository.Watcher[T, U]) *WatchedRepository[T, U] {

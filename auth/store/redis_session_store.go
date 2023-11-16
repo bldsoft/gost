@@ -18,15 +18,15 @@ import (
 )
 
 type RedisSessionStore struct {
-	options sessions.Options
-	// key prefix with which the session will be stored
-	keyPrefix string
-	// key generator
-	keyGen KeyGenFunc
 	// session serializer
 	serializer SessionSerializer
 
 	client redis.UniversalClient
+	// key generator
+	keyGen KeyGenFunc
+	// key prefix with which the session will be stored
+	keyPrefix string
+	options   sessions.Options
 }
 
 // KeyGenFunc defines a function used by store to generate a key

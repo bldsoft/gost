@@ -78,19 +78,20 @@ func (c *Counts) clear() {
 
 // CircuitBreaker is a state machine to prevent sending requests that are likely to fail.
 type CircuitBreaker struct {
-	name          string
-	maxRequests   uint32
-	interval      time.Duration
-	timeout       time.Duration
+	expiry        time.Time
 	readyToTrip   func(counts Counts) bool
 	isSuccessful  func(result any, err error) error
 	onStateChange func(name string, from State, to State)
 
-	mutex      sync.Mutex
+	name       string
+	interval   time.Duration
+	timeout    time.Duration
 	state      State
 	generation uint64
 	counts     Counts
-	expiry     time.Time
+
+	mutex       sync.Mutex
+	maxRequests uint32
 }
 
 // NewCircuitBreaker returns a new CircuitBreaker configured with the given Settings.

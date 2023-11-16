@@ -12,10 +12,10 @@ import (
 // DistrMutex - implementation of distributed lock
 type DistrMutex struct {
 	cache           IDistrCacheRepository
-	lockKey         string
-	uniqueID        []byte
 	ticker          *time.Ticker
 	quit            chan struct{}
+	lockKey         string
+	uniqueID        []byte
 	unlockTime      time.Duration
 	TryLockInterval time.Duration
 }

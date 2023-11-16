@@ -32,10 +32,10 @@ type LogExporter interface {
 }
 
 type LogsParams struct {
-	Offset  int `json:"offset,omitempty" schema:"offset,omitempty"`
-	Limit   int `json:"limit,omitempty" schema:"limit,omitempty"`
 	*Filter `json:"filter,omitempty" schema:",omitempty"`
 	Sort    `json:"sort,omitempty" schema:",omitempty"`
+	Offset  int `json:"offset,omitempty" schema:"offset,omitempty"`
+	Limit   int `json:"limit,omitempty" schema:"limit,omitempty"`
 }
 
 type Filter struct {

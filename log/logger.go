@@ -7,20 +7,19 @@ import (
 )
 
 type ServiceLogger struct {
+	exportWriter    *ExportLogWriter
 	logger          zerolog.Logger
 	LogFuncDuration bool
-
-	exportWriter *ExportLogWriter
 }
 
 func (l *ServiceLogger) AddExporter(exporter LogExporter, isOn *feature.Bool) {
 	l.exportWriter.Append(exporter, isOn)
 }
 
-//Fields struct
+// Fields struct
 type Fields = map[string]interface{}
 
-//WithFields creates a new logger with given fields
+// WithFields creates a new logger with given fields
 func (l *ServiceLogger) WithFields(fields Fields) *ServiceLogger {
 	return &ServiceLogger{logger: l.logger.With().Fields(fields).Logger(), LogFuncDuration: l.LogFuncDuration}
 }
@@ -29,7 +28,7 @@ func (l *ServiceLogger) WithPanic(fields Fields) *ServiceLogger {
 	return &ServiceLogger{logger: l.logger.Level(zerolog.PanicLevel).With().Fields(fields).Logger(), LogFuncDuration: l.LogFuncDuration}
 }
 
-//WithFields creates a new logger with given fields
+// WithFields creates a new logger with given fields
 func (l *ServiceLogger) WithLevel(lvl zerolog.Level) *ServiceLogger {
 	return &ServiceLogger{logger: l.logger.Level(lvl), LogFuncDuration: l.LogFuncDuration}
 }

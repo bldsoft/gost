@@ -11,11 +11,11 @@ import (
 type EventType int
 
 type EventHandler struct {
-	eventTypes []EventType
-	handler    func(ctx context.Context, instance ServiceInstanceInfo)
-	filters    []func(ctx context.Context, instance ServiceInstanceInfo) bool
+	handler func(ctx context.Context, instance ServiceInstanceInfo)
 
-	once *sync.Once
+	once       *sync.Once
+	eventTypes []EventType
+	filters    []func(ctx context.Context, instance ServiceInstanceInfo) bool
 }
 
 func NewEventHandler(handler func(ctx context.Context, instance ServiceInstanceInfo)) *EventHandler {

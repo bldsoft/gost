@@ -22,11 +22,12 @@ type Auth = clickhouse.Auth
 type Storage struct {
 	cfg Config
 
-	Db      *sql.DB
-	isReady int32
-	doOnce  sync.Once
+	Db *sql.DB
 
 	migrations *source.Migrations
+	doOnce     sync.Once
+
+	isReady int32
 }
 
 func NewStorage(config Config) *Storage {

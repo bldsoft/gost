@@ -8,8 +8,8 @@ import (
 )
 
 type Record struct {
-	mongo.EntityID    `bson:",inline"`
 	*changelog.Record `bson:",inline"`
+	mongo.EntityID    `bson:",inline"`
 }
 
 func NewRecord(ctx context.Context, collectionName string, op changelog.Operation) (*Record, error) {

@@ -17,9 +17,9 @@ var RequestInfoCtxKey = &utils.ContextKey{Name: "RequestInfo"}
 // Channel formatter puts request info to the context and you can set custom fields after.
 // The fields of RequestInfo are filled by ChannelFormatter.
 type ChannelFormatter[T any, P RequestInfoPtr[T]] struct {
+	requestInfoCtxKey interface{}
 	requestC          chan<- P
 	instanceName      string
-	requestInfoCtxKey interface{}
 }
 
 func NewChannelFormatter[T any, P RequestInfoPtr[T]](ch chan<- P, instanceName string) *ChannelFormatter[T, P] {

@@ -35,10 +35,11 @@ type Transport struct {
 	packetCh chan *memberlist.Packet
 	streamCh chan net.Conn
 
+	udpListener *net.UDPConn
+
 	endpointPath string
 
-	wg          sync.WaitGroup
-	udpListener *net.UDPConn
+	wg sync.WaitGroup
 
 	shutdown atomic.Int32
 }

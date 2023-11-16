@@ -114,10 +114,10 @@ func (h cacheWatcher[T, U]) CacheGet(id string) (U, error) {
 }
 
 type CachedRepositoryOptions struct {
-	CacheKeyPrefix string
-	WarmUp         bool
 	Marshal        func(any) ([]byte, error)      // gob if nil
 	Unmarshal      func(data []byte, v any) error // gob if nil
+	CacheKeyPrefix string
+	WarmUp         bool
 }
 
 // CachedRepository is a wrapper for Repository, that keeps the entire collection in cache, updating it with Watcher.

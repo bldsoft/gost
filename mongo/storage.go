@@ -21,14 +21,14 @@ import (
 type EventHandler = func()
 
 type Storage struct {
-	config Config
-
 	Client *mongo.Client
 	Db     *mongo.Database
 
-	doOnce          sync.Once
 	migrations      *source.Migrations
 	migrationReadyC chan struct{}
+	config          Config
+
+	doOnce sync.Once
 }
 
 // NewStorage ...

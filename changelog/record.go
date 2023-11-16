@@ -43,14 +43,14 @@ func (op Operation) String() string {
 }
 
 type Record struct {
+	Details   map[string]interface{} `json:"details,omitempty" bson:"details,omitempty"`
 	UserID    string                 `json:"userID,omitempty" bson:"userID,omitempty"`
-	Timestamp int64                  `json:"timestamp" bson:"timestamp"`
-	Operation Operation              `json:"operation" bson:"operation"`
 	Entity    string                 `json:"entity" bson:"entity"`
 	EntityID  string                 `json:"entityID" bson:"entityID"`
 	RequestID string                 `json:"requestID" bson:"requestID"`
 	Data      string                 `json:"data" bson:"data"`
-	Details   map[string]interface{} `json:"details,omitempty" bson:"details,omitempty"`
+	Timestamp int64                  `json:"timestamp" bson:"timestamp"`
+	Operation Operation              `json:"operation" bson:"operation"`
 }
 
 func NewRecord(ctx context.Context, collectionName string, op Operation, entity repository.IEntityID) (*Record, error) {

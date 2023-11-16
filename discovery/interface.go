@@ -28,6 +28,7 @@ type ServiceInfo struct {
 }
 
 type ServiceInstanceInfo struct {
+	Meta        map[string]string `json:"-"`
 	ServiceName string            `json:"serviceName"`
 	ID          string            `json:"id"`
 	Address     config.Address    `json:"address"`
@@ -36,5 +37,4 @@ type ServiceInstanceInfo struct {
 	Commit      string            `json:"commit"`
 	Branch      string            `json:"branch"`
 	Healthy     bool              `json:"healthy"`
-	Meta        map[string]string `json:"-"`
 }

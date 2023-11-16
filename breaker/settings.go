@@ -32,13 +32,13 @@ import (
 // Otherwise the error is counted as a failure.
 // If IsSuccessful is nil, default IsSuccessful is used, which returns error from a request
 type Settings struct {
-	Name          string
-	MaxRequests   uint32
-	Interval      time.Duration
-	Timeout       time.Duration
 	ReadyToTrip   func(counts Counts) bool
 	OnStateChange func(name string, from State, to State)
 	IsSuccessful  func(result any, err error) error
+	Name          string
+	Interval      time.Duration
+	Timeout       time.Duration
+	MaxRequests   uint32
 }
 
 const defaultInterval = time.Duration(0) * time.Second

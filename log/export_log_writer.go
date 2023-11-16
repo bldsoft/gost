@@ -18,11 +18,11 @@ type LogRecord struct {
 	Service        string        `json:"service,omitempty"`
 	ServiceVersion string        `json:"serviceVersion,omitempty"`
 	Instance       string        `json:"instance,omitempty"`
-	Timestamp      int64         `json:"timestamp,omitempty"`
-	Level          zerolog.Level `json:"level,string,omitempty"`
 	ReqID          string        `json:"reqID,omitempty"`
 	Msg            string        `json:"msg,omitempty"`
 	Fields         []byte        `json:"fields,omitempty"` // json
+	Timestamp      int64         `json:"timestamp,omitempty"`
+	Level          zerolog.Level `json:"level,string,omitempty"`
 }
 
 // for level parsing
@@ -31,11 +31,11 @@ func (r *LogRecord) UnmarshalJSON(data []byte) error {
 		Service        string        `json:"service,omitempty"`
 		ServiceVersion string        `json:"serviceVersion,omitempty"`
 		Instance       string        `json:"instance,omitempty"`
-		Timestamp      int64         `json:"timestamp,omitempty"`
-		Level          zerolog.Level `json:"level,omitempty"`
 		ReqID          string        `json:"reqID,omitempty"`
 		Msg            string        `json:"msg,omitempty"`
 		Fields         []byte        `json:"fields,omitempty"` // json
+		Timestamp      int64         `json:"timestamp,omitempty"`
+		Level          zerolog.Level `json:"level,omitempty"`
 	}
 	return json.Unmarshal(data, (*Record)(r))
 }

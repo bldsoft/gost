@@ -1,10 +1,10 @@
 package repository
 
 type QueryOptions struct {
-	Archived bool
+	Filter   interface{}
 	Fields   []string // option for read operations, empty slice means all
 	Sort     SortOpt
-	Filter   interface{}
+	Archived bool
 }
 
 type SortField struct {

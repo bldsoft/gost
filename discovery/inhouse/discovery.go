@@ -26,17 +26,18 @@ type instanceKey struct {
 }
 
 type Discovery struct {
-	discovery.BaseDiscovery
 	server.AsyncRunner
 
-	cfg  Config
 	list *memberlist.Memberlist
 
 	services                  map[string]*discovery.ServiceInfo
 	instanceIDToDownTimestamp map[instanceKey]time.Time
-	servicesMtx               sync.RWMutex
 
 	transport *Transport
+	discovery.BaseDiscovery
+
+	cfg         Config
+	servicesMtx sync.RWMutex
 }
 
 func NewDiscovery(serviceCfg server.Config, cfg Config) *Discovery {

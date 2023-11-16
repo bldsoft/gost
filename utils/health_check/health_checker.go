@@ -23,10 +23,10 @@ type healthCheck struct {
 }
 
 type HealthChecker struct {
+	httpClient                              HttpClient
 	cachedHealthChecks                      sync.Map // url -> healthCheck
 	urlToMtx                                sync.Map
 	healthCheckTimeout, healthCheckInterval time.Duration
-	httpClient                              HttpClient
 }
 
 func NewHealthChecker(healthCheckTimeout, healthCheckInterval time.Duration) *HealthChecker {
