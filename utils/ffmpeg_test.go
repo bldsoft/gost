@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"reflect"
 	"testing"
 )
@@ -11,6 +12,7 @@ func TestProbe(t *testing.T) {
 	}
 	type args struct {
 		path string
+		args map[string]interface{}
 	}
 	tests := []struct {
 		name    string
@@ -22,6 +24,9 @@ func TestProbe(t *testing.T) {
 			name: "",
 			args: args{
 				path: "test_files/media_test.ts",
+				args: map[string]interface{}{
+					"show_entries": "format=duration",
+				},
 			},
 			want: tmp{
 				Duration: 6.013333,
@@ -31,7 +36,7 @@ func TestProbe(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Probe(tt.args.path)
+			got, err := Probe(context.TODO(), tt.args.path, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Probe() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -83,7 +88,7 @@ func TestProbeInto(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ProbeInto(tt.args.path, tt.args.res, tt.args.args); (err != nil) != tt.wantErr {
+			if err := ProbeInto(context.TODO(), tt.args.path, tt.args.res, tt.args.args); (err != nil) != tt.wantErr {
 				t.Errorf("ProbeInto() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(tt.args.res, tt.want) {
