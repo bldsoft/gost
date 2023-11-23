@@ -97,14 +97,17 @@ func (hc *HealthChecker) runHealthCheck(ctx context.Context, url string, healthC
 			check.err = hc.checkWithRetries(ctx, url, 1)
 		}
 		hc.cachedHealthChecks.Store(url, check)
-		log.FromContext(ctx).DebugOrErrorWithFields(check.err, log.Fields{"URL": url}, "Health checker")
+		// log.FromContext(ctx).DebugOrErrorWithFields(check.err, log.Fields{"URL": url}, "Health checker")
 	}
 }
 
 func (hc *HealthChecker) checkWithRetries(ctx context.Context, url string, retry int) error {
 	var err error
 	for i := 0; i < hc.errRetry(); i++ {
-		if err = hc.check(ctx, url); err == nil {
+		log.Logger.WithFuncDuration(func() {
+			err = hc.check(ctx, url)
+		}).DebugWithFields(log.Fields{"URL": url}, "Health checker: ping")
+		if err == nil {
 			break
 		}
 	}
