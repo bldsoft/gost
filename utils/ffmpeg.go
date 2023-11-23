@@ -1,17 +1,33 @@
 package utils
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
+	"os/exec"
+	"sort"
 	"strconv"
-	"time"
-
-	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
-const defaultTimeOut = 30 * time.Second
+// const defaultTimeOut = 30 * time.Second
 
-func Probe(path string) (*FFMpegProbe, error) {
-	probeRaw, err := ffmpeg.Probe(path)
+func probeCall(ctx context.Context, filename string, args args) (string, error) {
+	args["of"] = "json"
+	cmdArgs := args.toCmdArgs()
+	cmdArgs = append(cmdArgs, filename)
+	cmd := exec.CommandContext(ctx, "ffprobe", cmdArgs...)
+	buf := bytes.NewBuffer(nil)
+	cmd.Stdout = buf
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func Probe(ctx context.Context, path string, args map[string]interface{}) (*FFMpegProbe, error) {
+	probeRaw, err := probeCall(ctx, path, args)
 	if err != nil {
 		return nil, err
 	}
@@ -20,38 +36,8 @@ func Probe(path string) (*FFMpegProbe, error) {
 	return &res, err
 }
 
-func ProbeWithArgs(path string, args map[string]interface{}) (*FFMpegProbe, error) {
-	jsonFormat := ffmpeg.KwArgs{
-		"of": "json",
-	}
-
-	probeRaw, err := ffmpeg.ProbeWithTimeoutExec(
-		path,
-		30*time.Second,
-		ffmpeg.MergeKwArgs([]ffmpeg.KwArgs{jsonFormat, ffmpeg.KwArgs(args)}),
-	)
-	if err != nil {
-		return nil, err
-	}
-	var res FFMpegProbe
-	err = json.Unmarshal([]byte(probeRaw), &res)
-	return &res, err
-}
-
-func ProbeInto(path string, res interface{}, args map[string]interface{}) error {
-	return ProbeIntoWithTimeout(path, res, args, defaultTimeOut)
-}
-
-func ProbeIntoWithTimeout(path string, res interface{}, args map[string]interface{}, timeout time.Duration) error {
-	jsonFormat := ffmpeg.KwArgs{
-		"of": "json",
-	}
-
-	probeRaw, err := ffmpeg.ProbeWithTimeoutExec(
-		path,
-		timeout,
-		ffmpeg.MergeKwArgs([]ffmpeg.KwArgs{jsonFormat, ffmpeg.KwArgs(args)}),
-	)
+func ProbeInto(ctx context.Context, path string, res interface{}, args map[string]interface{}) error {
+	probeRaw, err := probeCall(ctx, path, args)
 	if err != nil {
 		return err
 	}
@@ -76,4 +62,44 @@ type FFMpegProbe struct {
 
 func (p FFMpegProbe) Duration() (float64, error) {
 	return strconv.ParseFloat(p.Format.Duration, 64)
+}
+
+type args map[string]interface{}
+
+func (a args) toCmdArgs() []string {
+	var keys, args []string
+	for k := range a {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		v := a[k]
+		switch a := v.(type) {
+		case string:
+			args = append(args, fmt.Sprintf("-%s", k))
+			if a != "" {
+				args = append(args, a)
+			}
+		case []string:
+			for _, r := range a {
+				args = append(args, fmt.Sprintf("-%s", k))
+				if r != "" {
+					args = append(args, r)
+				}
+			}
+		case []int:
+			for _, r := range a {
+				args = append(args, fmt.Sprintf("-%s", k))
+				args = append(args, strconv.Itoa(r))
+			}
+		case int:
+			args = append(args, fmt.Sprintf("-%s", k))
+			args = append(args, strconv.Itoa(a))
+		default:
+			args = append(args, fmt.Sprintf("-%s", k))
+			args = append(args, fmt.Sprintf("%v", a))
+		}
+	}
+	return args
 }
