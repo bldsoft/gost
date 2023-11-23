@@ -106,7 +106,7 @@ func (hc *HealthChecker) checkWithRetries(ctx context.Context, url string, retry
 	for i := 0; i < hc.errRetry(); i++ {
 		log.Logger.WithFuncDuration(func() {
 			err = hc.check(ctx, url)
-		}).DebugWithFields(log.Fields{"URL": url}, "Health checker: ping")
+		}).DebugOrErrorfWithFields(err, log.Fields{"URL": url}, "Health checker: ping (%d)", i+1)
 		if err == nil {
 			break
 		}
