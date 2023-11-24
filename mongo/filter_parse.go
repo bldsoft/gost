@@ -29,6 +29,8 @@ func RecursiveParse(filter bson.M, t interface{}, prefix string) {
 		case reflect.Pointer:
 			tag = prefix + tag
 			filter[tag] = v.Elem().Interface()
+		case reflect.Array, reflect.Slice:
+			filter[tag] = bson.M{"$in": v.Interface()}
 		default:
 			continue
 		}
