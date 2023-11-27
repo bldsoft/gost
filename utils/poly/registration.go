@@ -1,6 +1,7 @@
 package poly
 
 import (
+	"encoding/gob"
 	"fmt"
 	"reflect"
 	"sync"
@@ -19,6 +20,7 @@ func Register[Iface comparable]() Registrator[Iface] {
 
 func (r Registrator[I]) Type(name string, value I) Registrator[I] {
 	register[I](name, value)
+	gob.Register(value) // for local caching
 	return r
 }
 
