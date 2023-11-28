@@ -1,17 +1,17 @@
 package errgroup
 
 import (
-	"errors"
 	"fmt"
 	"runtime"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"sync/atomic"
 )
 
 type Group struct {
 	wg  sync.WaitGroup
-	err error
+	err uniqErr
 	mut sync.Mutex
 	pnc atomic.Pointer[panicWrapper]
 }
@@ -24,7 +24,7 @@ func (g *Group) Go(f func() error) {
 
 		if _err := f(); _err != nil {
 			g.mut.Lock()
-			g.err = errors.Join(g.err, _err)
+			g.err.add(_err)
 			g.mut.Unlock()
 		}
 	}()
@@ -65,4 +65,19 @@ func NewPanic(skip int, value any) panicWrapper {
 		Callers: callers[:n],
 		Stack:   debug.Stack(),
 	}
+}
+
+type uniqErr map[string]struct{}
+
+func (ue uniqErr) add(err error) {
+	ue[err.Error()] = struct{}{}
+}
+
+func (ue uniqErr) Error() string {
+	var sb strings.Builder
+	for err := range ue {
+		sb.WriteString(err)
+		sb.WriteByte(' ')
+	}
+	return sb.String()
 }
