@@ -39,7 +39,9 @@ func (g *Group) Wait() error {
 	if pnc := g.pnc.Load(); pnc != nil {
 		panic(pnc)
 	}
-
+	if g.err == nil {
+		return nil
+	}
 	return g.err
 }
 

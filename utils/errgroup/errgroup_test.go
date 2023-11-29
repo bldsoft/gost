@@ -2,6 +2,8 @@ package errgroup
 
 import (
 	"errors"
+	"slices"
+	"strings"
 	"testing"
 )
 
@@ -17,9 +19,46 @@ func TestGroup(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "ok",
+			args: args{
+				data: []func() error{
+					func() error {
+						return nil
+					},
+					func() error {
+						return nil
+					},
+					func() error {
+						return nil
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
 			name: "errors",
 			args: args{
 				data: []func() error{
+					func() error {
+						return err1
+					},
+					func() error {
+						return err2
+					},
+					func() error {
+						return err1
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "mixed",
+			args: args{
+				data: []func() error{
+					func() error {
+						return nil
+					},
 					func() error {
 						return err1
 					},
@@ -46,6 +85,13 @@ func TestGroup(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("errgroup() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if err == nil {
+				return
+			}
+			errArr := strings.Split(err.Error(), "\n")
+			if uniqErr := slices.Compact(errArr); len(errArr) != len(uniqErr) {
+				t.Errorf("non unique errors: %v, %v", errArr, uniqErr)
 			}
 		})
 	}
