@@ -166,3 +166,11 @@ func (db *Storage) Stats(ctx context.Context) (map[string]interface{}, error) {
 
 	return metrics, nil
 }
+
+func (db *Storage) PrepareBatch(q string) (driver.Batch, error) {
+	return db.native.PrepareBatch(context.Background(), q)
+}
+
+func (db *Storage) PrepareStaticBatch(q string) (*Batch, error) {
+	return NewBatch(db.native, q)
+}

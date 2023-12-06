@@ -55,16 +55,19 @@ func (c *LogExporterConfig) Validate() error {
 type ClickHouseLogExporter struct {
 	config LogExporterConfig
 
-	storage *Storage
-	recordC chan *log.LogRecord
-	records []*log.LogRecord
+	storage     *Storage
+	recordC     chan *log.LogRecord
+	records     []*log.LogRecord
+	batchInsert *Batch
 
 	stop    chan struct{}
 	stopped chan struct{}
 }
 
 func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExporter {
-	return &ClickHouseLogExporter{storage: storage, config: cfg, recordC: make(chan *log.LogRecord, cfg.ChanBufSize), records: make([]*log.LogRecord, 0, cfg.MaxBatchSize)}
+	ch := &ClickHouseLogExporter{storage: storage, config: cfg, recordC: make(chan *log.LogRecord, cfg.ChanBufSize), records: make([]*log.LogRecord, 0, cfg.MaxBatchSize)}
+	ch.initBatch()
+	return ch
 }
 
 func (e *ClickHouseLogExporter) WriteLogRecord(rec *log.LogRecord) error {
@@ -158,46 +161,13 @@ func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 		return ErrLogDbNotReady
 	}
 
-	batch, err := e.storage.native.PrepareBatch(context.TODO(), "INSERT INTO "+e.config.TableName)
-	if err != nil {
-		return err
-	}
-
 	for _, r := range records {
-		if err := batch.Append(
-			r.Service,
-			r.ServiceVersion,
-			r.Instance,
-			r.Timestamp,
-			r.Level,
-			r.ReqID,
-			r.Msg,
-			r.Fields,
-		); err != nil {
+		if err := e.batchInsert.Append(formLogRecord(r)); err != nil {
 			return err
 		}
 	}
-	return batch.Send()
 
-	// tx, err := e.storage.Db.Begin()
-	// if err != nil {
-	// 	return err
-	// }
-	// defer tx.Rollback()
-	// stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (%s,%s,%s,%s,%s,%s,%s,%s) VALUES (?,?,?,?,?,?,?,?)",
-	// 	e.config.TableName, ServiceColumnName, ServiceVersionColumnName, InstanseColumnName, TimestampColumnName, LevelColumName, ReqIDColumnName, MsgColumnName, FieldsColumnName))
-	// if err != nil {
-	// 	return err
-	// }
-	// defer stmt.Close()
-
-	// for _, r := range records {
-	// 	if _, err := stmt.Exec(r.Service, r.ServiceVersion, r.Instance, time.UnixMicro(r.Timestamp), int8(r.Level), r.ReqID, r.Msg, r.Fields); err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	// return tx.Commit()
+	return e.batchInsert.Send()
 }
 
 func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
@@ -423,4 +393,39 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 		"toDateTime(" + TimestampColumnName + ")",
 	}, ",")+`)`, e.config.TableName, engine))
 	return err
+}
+
+type chLogRecord struct {
+	Service        string    `json:"service,omitempty" ch:"service"`
+	ServiceVersion string    `json:"serviceVersion,omitempty" ch:"service_version"`
+	Instance       string    `json:"instance,omitempty" ch:"instanse"`
+	Timestamp      time.Time `json:"timestamp,omitempty" ch:"timestamp"`
+	Level          int8      `json:"level,string,omitempty" ch:"level"`
+	ReqID          string    `json:"reqID,omitempty" ch:"req_id"`
+	Msg            string    `json:"msg,omitempty" ch:"msg"`
+	Fields         []byte    `json:"fields,omitempty" ch:"fields"` // json
+}
+
+func formLogRecord(r *log.LogRecord) *chLogRecord {
+	return &chLogRecord{
+		Service:        r.Service,
+		ServiceVersion: r.ServiceVersion,
+		Instance:       r.Instance,
+		Timestamp:      time.UnixMicro(r.Timestamp).UTC(),
+		Level:          int8(r.Level),
+		ReqID:          r.ReqID,
+		Msg:            r.Msg,
+		Fields:         r.Fields,
+	}
+}
+
+func (e *ClickHouseLogExporter) initBatch() {
+	insert := fmt.Sprintf("INSERT INTO %s", e.config.TableName)
+
+	batch, err := e.storage.PrepareStaticBatch(insert)
+	if err != nil {
+		panic(err)
+	}
+
+	e.batchInsert = batch
 }
