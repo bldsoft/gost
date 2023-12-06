@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/storage"
 	"github.com/golang-migrate/migrate/v4"
@@ -23,6 +24,7 @@ type Storage struct {
 	cfg Config
 
 	Db      *sql.DB
+	native  driver.Conn
 	isReady int32
 	doOnce  sync.Once
 
@@ -50,6 +52,11 @@ func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string)
 
 func (db *Storage) Connect() {
 	connect := clickhouse.OpenDB(db.cfg.options)
+	native, err := clickhouse.Open(db.cfg.options)
+	if err != nil {
+		db.LogError(err)
+		return
+	}
 
 	if err := connect.Ping(); err != nil {
 		db.LogError(err)
@@ -64,6 +71,7 @@ func (db *Storage) Connect() {
 	}
 
 	db.Db = connect
+	db.native = native
 
 	atomic.StoreInt32(&db.isReady, 1)
 
@@ -95,7 +103,8 @@ func (db *Storage) LogError(err error) {
 		log.ErrorWithFields(log.Fields{
 			"exception.Code":       exception.Code,
 			"exception.Message":    exception.Message,
-			"exception.StackTrace": exception.StackTrace}, "Failed to execute clickhouse request:")
+			"exception.StackTrace": exception.StackTrace,
+		}, "Failed to execute clickhouse request:")
 	} else {
 		log.ErrorWithFields(log.Fields{"error": err}, "Failed to execute clickhouse request:")
 	}

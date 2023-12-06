@@ -12,9 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var (
-	ErrLogDbNotReady = errors.New("log record db isn't ready")
-)
+var ErrLogDbNotReady = errors.New("log record db isn't ready")
 
 const (
 	LevelColumName           = "level"
@@ -160,25 +158,46 @@ func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
 		return ErrLogDbNotReady
 	}
 
-	tx, err := e.storage.Db.Begin()
+	batch, err := e.storage.native.PrepareBatch(context.TODO(), "INSERT INTO "+e.config.TableName)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
-	stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (%s,%s,%s,%s,%s,%s,%s,%s) VALUES (?,?,?,?,?,?,?,?)",
-		e.config.TableName, ServiceColumnName, ServiceVersionColumnName, InstanseColumnName, TimestampColumnName, LevelColumName, ReqIDColumnName, MsgColumnName, FieldsColumnName))
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
 
 	for _, r := range records {
-		if _, err := stmt.Exec(r.Service, r.ServiceVersion, r.Instance, time.UnixMicro(r.Timestamp), int8(r.Level), r.ReqID, r.Msg, r.Fields); err != nil {
+		if err := batch.Append(
+			r.Service,
+			r.ServiceVersion,
+			r.Instance,
+			r.Timestamp,
+			r.Level,
+			r.ReqID,
+			r.Msg,
+			r.Fields,
+		); err != nil {
 			return err
 		}
 	}
+	return batch.Send()
 
-	return tx.Commit()
+	// tx, err := e.storage.Db.Begin()
+	// if err != nil {
+	// 	return err
+	// }
+	// defer tx.Rollback()
+	// stmt, err := tx.Prepare(fmt.Sprintf("INSERT INTO %s (%s,%s,%s,%s,%s,%s,%s,%s) VALUES (?,?,?,?,?,?,?,?)",
+	// 	e.config.TableName, ServiceColumnName, ServiceVersionColumnName, InstanseColumnName, TimestampColumnName, LevelColumName, ReqIDColumnName, MsgColumnName, FieldsColumnName))
+	// if err != nil {
+	// 	return err
+	// }
+	// defer stmt.Close()
+
+	// for _, r := range records {
+	// 	if _, err := stmt.Exec(r.Service, r.ServiceVersion, r.Instance, time.UnixMicro(r.Timestamp), int8(r.Level), r.ReqID, r.Msg, r.Fields); err != nil {
+	// 		return err
+	// 	}
+	// }
+
+	// return tx.Commit()
 }
 
 func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
