@@ -12,9 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var (
-	ErrLogDbNotReady = errors.New("log record db isn't ready")
-)
+var ErrLogDbNotReady = errors.New("log record db isn't ready")
 
 const (
 	LevelColumName           = "level"
@@ -111,7 +109,9 @@ func (e *ClickHouseLogExporter) Run() error {
 			log.Logger.ErrorWithFields(log.Fields{"err": err, "current batch": len(e.records), "queued": len(e.recordC)}, "failed to export log records")
 			return false
 		}
-		// log.Logger.TraceWithFields(log.Fields{"record count": len(e.records)}, "log exported")
+		if len(e.records) > 1 {
+			log.Logger.TraceWithFields(log.Fields{"record count": len(e.records)}, "log exported")
+		}
 		e.records = e.records[:0]
 		last_flush = time.Now()
 		return true
