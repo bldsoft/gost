@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
@@ -52,13 +53,15 @@ func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string)
 
 func (db *Storage) Connect() {
 	connect := clickhouse.OpenDB(db.cfg.options)
-	native, err := clickhouse.Open(db.cfg.options)
-	if err != nil {
+	if err := connect.Ping(); err != nil {
 		db.LogError(err)
 		return
 	}
 
-	if err := connect.Ping(); err != nil {
+	db.cfg.options.ConnMaxLifetime = 1 * time.Minute
+
+	native, err := clickhouse.Open(db.cfg.options)
+	if err != nil {
 		db.LogError(err)
 		return
 	}
