@@ -59,6 +59,7 @@ func (db *Storage) Connect() {
 	}
 
 	db.cfg.options.ConnMaxLifetime = 1 * time.Minute
+	db.cfg.options.ConnOpenStrategy = clickhouse.ConnOpenRoundRobin
 
 	native, err := clickhouse.Open(db.cfg.options)
 	if err != nil {
