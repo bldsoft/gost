@@ -16,7 +16,7 @@ type Batch struct {
 }
 
 func NewBatch(conn driver.Conn, insertStatement string) (*Batch, error) {
-	batch, err := conn.PrepareBatch(context.Background(), insertStatement, driver.WithReleaseConnection())
+	batch, err := conn.PrepareBatch(context.Background(), insertStatement)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (b *Batch) Send() error {
 }
 
 func (b *Batch) reset() error {
-	batch, err := b.conn.PrepareBatch(b.ctx, b.insert, driver.WithReleaseConnection())
+	batch, err := b.conn.PrepareBatch(b.ctx, b.insert)
 	if err != nil {
 		return err
 	}
