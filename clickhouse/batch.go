@@ -2,7 +2,9 @@ package clickhouse
 
 import (
 	"context"
+	"errors"
 
+	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
 
@@ -30,7 +32,19 @@ func NewBatch(conn driver.Conn, insertStatement string) (*Batch, error) {
 }
 
 func (b *Batch) Append(val any) error {
-	return b.batch.AppendStruct(val)
+	err := b.batch.AppendStruct(val)
+	if err != nil {
+		return nil
+	}
+	if !errors.Is(err, clickhouse.ErrBatchAlreadySent) {
+		return err
+	}
+
+	if err := b.reset(); err != nil {
+		return err
+	}
+
+	return b.batch.Append(val)
 }
 
 func (b *Batch) Send() error {
