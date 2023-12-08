@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
@@ -57,9 +56,6 @@ func (db *Storage) Connect() {
 		db.LogError(err)
 		return
 	}
-
-	db.cfg.options.ConnMaxLifetime = 1 * time.Minute
-	db.cfg.options.ConnOpenStrategy = clickhouse.ConnOpenRoundRobin
 
 	native, err := clickhouse.Open(db.cfg.options)
 	if err != nil {

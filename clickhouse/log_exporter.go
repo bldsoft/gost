@@ -53,8 +53,7 @@ func (c *LogExporterConfig) Validate() error {
 }
 
 type ClickHouseLogExporter struct {
-	config LogExporterConfig
-
+	config      LogExporterConfig
 	storage     *Storage
 	recordC     chan *log.LogRecord
 	records     []*log.LogRecord
