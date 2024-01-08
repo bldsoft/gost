@@ -187,8 +187,10 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 		where = append(where, sq.Eq{LevelColumName: int8Levels})
 	}
 	if filter.Search != nil && len(*filter.Search) > 0 {
-		search := fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0 OR positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName, FieldsColumnName)
-		where = append(where, sq.Expr(search, *filter.Search, *filter.Search))
+		where = append(where, sq.Or{
+			sq.Expr(fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName), *filter.Search),
+			sq.Expr(fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName), *filter.Search),
+		})
 	}
 
 	switch len(filter.RequestIDs) {
