@@ -118,7 +118,7 @@ func (e *ClickHouseLogExporter) Run() error {
 	}
 
 	mustFlush := func() {
-		for !tryFlush() {
+		if !tryFlush() {
 			<-ticker.C
 		}
 	}
