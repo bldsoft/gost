@@ -38,10 +38,6 @@ func (b *Batch) Append(val any) error {
 	return b.batch.AppendStruct(val)
 }
 
-func (b *Batch) Batch() driver.Batch {
-	return b.batch
-}
-
 func (b *Batch) Send() error {
 	defer b.reset()
 
