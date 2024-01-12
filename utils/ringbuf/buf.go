@@ -56,6 +56,7 @@ func (b *RingBuf[T]) Len() int {
 
 func (b *RingBuf[T]) Clear() {
 	b.data = make([]T, b.capacity)
+	b.length = 0
 }
 
 func (b *RingBuf[T]) IsFull() bool {

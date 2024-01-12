@@ -129,7 +129,7 @@ func (e *ClickHouseLogExporter) Run() error {
 		select {
 		case record := <-e.recordC:
 			e.records.Enqueue(record)
-			if e.records.IsFull() {
+			if e.records.Len() > int(e.config.MaxBatchSize) {
 				mustFlush()
 			}
 		case <-ticker.C:
