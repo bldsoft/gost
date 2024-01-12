@@ -90,7 +90,7 @@ func TestRingBuf_ToSlice(t *testing.T) {
 	}
 }
 
-func TestRingBuf_ToSliceAfterClean(t *testing.T) {
+func TestRingBuf_ToSliceAfterClear(t *testing.T) {
 	type args struct {
 		from []int
 		size int
