@@ -6,7 +6,6 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.16.0
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/allegro/bigcache v1.2.1
-	github.com/bdreece/gollections/errors v0.0.0-20220509031705-6b6c0a25e159
 	github.com/bldsoft/memberlist v0.0.0-20231108153136-87acdac036f5
 	github.com/bradfitz/gomemcache v0.0.0-20220106215444-fb4bf637b56d
 	github.com/dgraph-io/ristretto v0.1.0
@@ -43,7 +42,6 @@ require (
 require (
 	github.com/ClickHouse/ch-go v0.61.0 // indirect
 	github.com/andybalholm/brotli v1.0.6 // indirect
-	github.com/bdreece/gollections v0.0.0-20220509031705-6b6c0a25e159 // indirect
 	github.com/chigopher/pathlib v0.15.0 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.0 // indirect
@@ -74,7 +72,6 @@ require (
 require (
 	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
-	github.com/bdreece/gollections/iterator v0.0.0-20220511214128-80cf31cd7449
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect

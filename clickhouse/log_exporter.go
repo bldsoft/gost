@@ -54,11 +54,11 @@ func (c *LogExporterConfig) Validate() error {
 }
 
 type ClickHouseLogExporter struct {
-	config  LogExporterConfig
-	storage *Storage
-	recordC chan *log.LogRecord
-	// records     []*log.LogRecord
+	config      LogExporterConfig
+	storage     *Storage
+	recordC     chan *log.LogRecord
 	records     *ringbuf.RingBuf[*log.LogRecord]
+	bufSize     int
 	batchInsert *Batch
 
 	stop    chan struct{}

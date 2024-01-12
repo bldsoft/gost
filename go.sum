@@ -154,12 +154,6 @@ github.com/aws/aws-sdk-go-v2/service/sts v1.6.1/go.mod h1:hLZ/AnkIKHLuPGjEiyghNE
 github.com/aws/aws-sdk-go-v2/service/sts v1.7.2/go.mod h1:8EzeIqfWt2wWT4rJVu3f21TfrhJ8AEMzVybRNSb/b4g=
 github.com/aws/smithy-go v1.7.0/go.mod h1:SObp3lf9smib00L/v3U2eAKG8FyQ7iLrJnQiAmR5n+E=
 github.com/aws/smithy-go v1.8.0/go.mod h1:SObp3lf9smib00L/v3U2eAKG8FyQ7iLrJnQiAmR5n+E=
-github.com/bdreece/gollections v0.0.0-20220509031705-6b6c0a25e159 h1:wAn7tI3vsf8C0TGQQJ2RKjicbuiVZGB5H2j78AFKc3I=
-github.com/bdreece/gollections v0.0.0-20220509031705-6b6c0a25e159/go.mod h1:x7PiVH0YYvxXNNEQfvp272GfYTfjVqC71JtBlV90Gvg=
-github.com/bdreece/gollections/errors v0.0.0-20220509031705-6b6c0a25e159 h1:hMX6eKl18Znumws1ZdEvkX9/A7l9jfrXkjGrfnBzgxI=
-github.com/bdreece/gollections/errors v0.0.0-20220509031705-6b6c0a25e159/go.mod h1:VkiDOkAt9c0c+WJuaOoJED/UYJ5xWBbeE+6mW4PX/9o=
-github.com/bdreece/gollections/iterator v0.0.0-20220511214128-80cf31cd7449 h1:ywHRMWE3t2MRDFTpbIr2L+koQ94lkZkJ9Brs6XLrNCc=
-github.com/bdreece/gollections/iterator v0.0.0-20220511214128-80cf31cd7449/go.mod h1:lRLcelNEVlUyt192sSYND26pRF9/f3+J5/mICFuvLsk=
 github.com/beorn7/perks v0.0.0-20160804104726-4c0e84591b9a/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=

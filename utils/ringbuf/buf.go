@@ -44,7 +44,10 @@ func (b *RingBuf[T]) Enqueue(item T) {
 }
 
 func (b *RingBuf[T]) ToSlice() []T {
-	return b.data
+	if b.IsFull() {
+		return b.data
+	}
+	return b.data[b.head:b.tail]
 }
 
 func (b *RingBuf[T]) Len() int {
