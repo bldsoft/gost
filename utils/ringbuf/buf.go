@@ -45,6 +45,8 @@ func (b *RingBuf[T]) Enqueue(item T) {
 func (b *RingBuf[T]) ToSlice() []T {
 	if b.IsFull() {
 		return b.data
+	} else if b.tail < b.head {
+		return append(b.data[:b.tail], b.data[b.head:]...)
 	}
 	return b.data[b.head:b.tail]
 }
