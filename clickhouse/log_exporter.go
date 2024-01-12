@@ -9,6 +9,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/utils/ringbuf"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -28,7 +29,7 @@ const (
 type LogExporterConfig struct {
 	FlushTimeMs  int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_FLUSH_TIME_MS" description:"Max time between log exporting"`
 	MaxBatchSize int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_MAX_BATCH_SIZE" description:"Max batch size for log insert query"`
-	ChanBufSize  int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_CHAN_BUF_SIZE" description:"-"`
+	ChanBufSize  int   `mapstructure:"CLICKHOUSE_LOG_EXPORT_CHAN_BUF_SIZE" description:"-"`
 
 	TableName string `mapstructure:"CLICKHOUSE_LOG_EXPORT_TABLE" description:"Table name for log exporting"`
 }
@@ -53,10 +54,11 @@ func (c *LogExporterConfig) Validate() error {
 }
 
 type ClickHouseLogExporter struct {
-	config      LogExporterConfig
-	storage     *Storage
-	recordC     chan *log.LogRecord
-	records     []*log.LogRecord
+	config  LogExporterConfig
+	storage *Storage
+	recordC chan *log.LogRecord
+	// records     []*log.LogRecord
+	records     *ringbuf.RingBuf[*log.LogRecord]
 	batchInsert *Batch
 
 	stop    chan struct{}
@@ -64,7 +66,7 @@ type ClickHouseLogExporter struct {
 }
 
 func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExporter {
-	ch := &ClickHouseLogExporter{storage: storage, config: cfg, recordC: make(chan *log.LogRecord, cfg.ChanBufSize), records: make([]*log.LogRecord, 0, cfg.MaxBatchSize)}
+	ch := &ClickHouseLogExporter{storage: storage, config: cfg, recordC: make(chan *log.LogRecord, cfg.ChanBufSize), records: ringbuf.New[*log.LogRecord](cfg.ChanBufSize)}
 	ch.initBatch()
 	return ch
 }
@@ -103,16 +105,16 @@ func (e *ClickHouseLogExporter) Run() error {
 	last_flush := time.Now()
 
 	tryFlush := func() bool {
-		if len(e.records) == 0 {
+		if e.records.Len() == 0 {
 			return true
 		}
 
-		if err := e.insertMany(e.records); err != nil {
-			log.Logger.ErrorWithFields(log.Fields{"err": err, "current batch": len(e.records), "queued": len(e.recordC)}, "failed to export log records")
+		if err := e.insertMany(e.records.ToSlice()); err != nil {
+			log.Logger.ErrorWithFields(log.Fields{"err": err, "current batch": e.records.Len(), "queued": len(e.recordC)}, "failed to export log records")
 			return false
 		}
 		// log.Logger.TraceWithFields(log.Fields{"record count": len(e.records)}, "log exported")
-		e.records = e.records[:0]
+		e.records.Clear()
 		last_flush = time.Now()
 		return true
 	}
@@ -126,8 +128,8 @@ func (e *ClickHouseLogExporter) Run() error {
 	for {
 		select {
 		case record := <-e.recordC:
-			e.records = append(e.records, record)
-			if len(e.records) == cap(e.records) {
+			e.records.Enqueue(record)
+			if e.records.IsFull() {
 				mustFlush()
 			}
 		case <-ticker.C:
@@ -137,7 +139,7 @@ func (e *ClickHouseLogExporter) Run() error {
 		case <-e.stop:
 			close(e.recordC)
 			for record := range e.recordC {
-				e.records = append(e.records, record)
+				e.records.Enqueue(record)
 			}
 			tryFlush()
 			return nil
