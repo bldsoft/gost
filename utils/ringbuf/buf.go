@@ -40,6 +40,9 @@ func (b *RingBuf[T]) Enqueue(item T) {
 	if b.length < b.capacity {
 		b.length += 1
 	}
+	if b.tail == b.head {
+		b.head = (b.head + 1) % b.capacity
+	}
 }
 
 func (b *RingBuf[T]) Len() int {

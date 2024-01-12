@@ -54,13 +54,26 @@ func TestRingBuf_TMP(t *testing.T) {
 		b.Enqueue(i)
 	} // [0 1 2 3 4]
 	v, _ := b.Dequeue() // [1 2 3 4]
-	assert.Equal(t, 1, *v)
+	assert.Equal(t, 0, *v)
 	v, _ = b.Dequeue() // [2 3 4]
-	assert.Equal(t, 2, *v)
+	assert.Equal(t, 1, *v)
 
-	for _, v := range [2]int{1111, 2222} {
+	for _, v := range []int{11, 22, 33, 44} {
 		b.Enqueue(v)
-	}
+	} // [11, 22, 33, 44, 4]
+	v, _ = b.Dequeue()
+	assert.Equal(t, 4, *v) // [11, 22, 33, 44]
+	v, _ = b.Dequeue()
+	assert.Equal(t, 11, *v) // [22, 33, 44]
+	v, _ = b.Dequeue()
+	assert.Equal(t, 22, *v) // [33, 44]
+	v, _ = b.Dequeue()
+	assert.Equal(t, 33, *v) // [44]
+	v, _ = b.Dequeue()
+	assert.Equal(t, 44, *v) // []
+	v, err := b.Dequeue()
+	assert.Nil(t, v)
+	assert.NotNil(t, err)
 
 	// assert.Equal(t, []int{2222, 3, 4, 5, 1111}, b.ToSlice())
 }
