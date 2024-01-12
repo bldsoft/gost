@@ -50,6 +50,7 @@ func WrapResponseWriter(w http.ResponseWriter) *ResponseWriter {
 		},
 		Write: func(_ httpsnoop.WriteFunc) httpsnoop.WriteFunc {
 			return func(p []byte) (int, error) {
+				state.Body.Grow(len(p))
 				return state.Body.Write(p)
 			}
 		},
