@@ -4,14 +4,13 @@ import "errors"
 
 var ErrEmpty = errors.New("ring buffer is empty")
 
-// RingBuf is the ring buffer data structure
+// NOTE: RingBuf is not thread safe.
 type RingBuf[T any] struct {
 	data             []T
 	capacity, length int
 	head, tail       int
 }
 
-// New constructs a new RingBuf with capacity
 func New[T any](capacity int) *RingBuf[T] {
 	return &RingBuf[T]{
 		data:     make([]T, capacity),
@@ -57,6 +56,8 @@ func (b *RingBuf[T]) Len() int {
 func (b *RingBuf[T]) Clear() {
 	b.data = make([]T, b.capacity)
 	b.length = 0
+	b.head = 0
+	b.tail = 0
 }
 
 func (b *RingBuf[T]) IsFull() bool {
