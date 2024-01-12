@@ -109,12 +109,11 @@ func (e *ClickHouseLogExporter) Run() error {
 			return true
 		}
 
-		if err := e.insertMany(e.records.ToSlice()); err != nil {
+		if err := e.insertMany(e.records); err != nil {
 			log.Logger.ErrorWithFields(log.Fields{"err": err, "current batch": e.records.Len(), "queued": len(e.recordC)}, "failed to export log records")
 			return false
 		}
 		// log.Logger.TraceWithFields(log.Fields{"record count": len(e.records)}, "log exported")
-		e.records.Clear()
 		last_flush = time.Now()
 		return true
 	}
@@ -157,13 +156,17 @@ func (s *ClickHouseLogExporter) Stop(ctx context.Context) error {
 	}
 }
 
-func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
+func (e *ClickHouseLogExporter) insertMany(records *ringbuf.RingBuf[*log.LogRecord]) error {
 	if !e.storage.IsReady() {
 		return ErrLogDbNotReady
 	}
 
-	for _, r := range records {
-		if err := e.batchInsert.Append(formLogRecord(r)); err != nil {
+	for {
+		r, err := records.Dequeue()
+		if err != nil {
+			break
+		}
+		if err := e.batchInsert.Append(formLogRecord(*r)); err != nil {
 			return err
 		}
 	}
