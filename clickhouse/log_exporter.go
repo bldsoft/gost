@@ -9,7 +9,6 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/bldsoft/gost/log"
-	"github.com/bldsoft/gost/utils/ringbuf"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -27,9 +26,9 @@ const (
 )
 
 type LogExporterConfig struct {
-	FlushTimeMs  int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_FLUSH_TIME_MS" description:"Max time between log exporting"`
+	FlushTimeMs  int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_FLUSH_TIME_MS"  description:"Max time between log exporting"`
 	MaxBatchSize int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_MAX_BATCH_SIZE" description:"Max batch size for log insert query"`
-	ChanBufSize  int   `mapstructure:"CLICKHOUSE_LOG_EXPORT_CHAN_BUF_SIZE" description:"-"`
+	ChanBufSize  int   `mapstructure:"CLICKHOUSE_LOG_EXPORT_CHAN_BUF_SIZE"  description:"-"`
 
 	TableName string `mapstructure:"CLICKHOUSE_LOG_EXPORT_TABLE" description:"Table name for log exporting"`
 }
@@ -54,124 +53,61 @@ func (c *LogExporterConfig) Validate() error {
 }
 
 type ClickHouseLogExporter struct {
-	config      LogExporterConfig
-	storage     *Storage
-	recordC     chan *log.LogRecord
-	records     *ringbuf.RingBuf[*log.LogRecord]
-	bufSize     int
-	batchInsert *Batch
+	config  LogExporterConfig
+	storage *Storage
 
-	stop    chan struct{}
-	stopped chan struct{}
+	bufExporter *BufferedExporter[*chLogRecord]
+	batchInsert *Batch[*chLogRecord]
 }
 
 func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExporter {
-	ch := &ClickHouseLogExporter{storage: storage, config: cfg, recordC: make(chan *log.LogRecord, cfg.ChanBufSize), records: ringbuf.New[*log.LogRecord](cfg.ChanBufSize)}
+	ch := &ClickHouseLogExporter{
+		config:  cfg,
+		storage: storage,
+
+		bufExporter: NewBufferedExporter[*chLogRecord](nil, BufferedExporterConfig{
+			MaxFlushInterval: time.Duration(cfg.FlushTimeMs) * time.Millisecond,
+			MaxBatchSize:     int(cfg.MaxBatchSize),
+			ChanBufSize:      cfg.ChanBufSize,
+			PreserveOld:      false,
+		}).WithName("Log Records"),
+	}
 	ch.initBatch()
 	return ch
 }
 
-func (e *ClickHouseLogExporter) WriteLogRecord(rec *log.LogRecord) error {
-	select {
-	case <-e.stop:
-		// do nothing
-	default:
-		e.writeToChan(rec)
+func (e *ClickHouseLogExporter) Export(records ...*log.LogRecord) (int, error) {
+	exportRecords := make([]*chLogRecord, 0, len(records))
+	for _, rec := range records {
+		exportRecords = append(exportRecords, e.formLogRecord(rec))
 	}
-	return nil
+	return e.bufExporter.Export(exportRecords...)
 }
 
-func (e *ClickHouseLogExporter) writeToChan(rec *log.LogRecord) {
-	select {
-	case e.recordC <- rec:
-	default:
-		// channel is full
+func (e *ClickHouseLogExporter) export(records ...*chLogRecord) (int, error) {
+	if !e.storage.IsReady() {
+		return 0, ErrLogDbNotReady
 	}
+
+	for _, rec := range records {
+		if err := e.batchInsert.Append(rec); err != nil {
+			return 0, err
+		}
+	}
+
+	if err := e.batchInsert.Send(); err != nil {
+		return 0, err
+	}
+
+	return len(records), nil
 }
 
 func (e *ClickHouseLogExporter) Run() error {
-	e.stop = make(chan struct{})
-	e.stopped = make(chan struct{})
-	defer close(e.stopped)
-
-	if err := e.createTableIfNotExitst(); err != nil {
-		log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to create log table")
-	}
-
-	flushInterval := time.Duration(e.config.FlushTimeMs) * time.Millisecond
-	ticker := time.NewTicker(flushInterval)
-	defer ticker.Stop()
-
-	last_flush := time.Now()
-
-	tryFlush := func() bool {
-		if e.records.Len() == 0 {
-			return true
-		}
-
-		if err := e.insertMany(e.records); err != nil {
-			log.Logger.ErrorWithFields(log.Fields{"err": err, "current batch": e.records.Len(), "queued": len(e.recordC)}, "failed to export log records")
-			return false
-		}
-		// log.Logger.TraceWithFields(log.Fields{"record count": len(e.records)}, "log exported")
-		last_flush = time.Now()
-		return true
-	}
-
-	mustFlush := func() {
-		if !tryFlush() {
-			<-ticker.C
-		}
-	}
-
-	for {
-		select {
-		case record := <-e.recordC:
-			e.records.Enqueue(record)
-			if e.records.Len() > int(e.config.MaxBatchSize) {
-				mustFlush()
-			}
-		case <-ticker.C:
-			if time.Since(last_flush) >= flushInterval {
-				mustFlush()
-			}
-		case <-e.stop:
-			close(e.recordC)
-			for record := range e.recordC {
-				e.records.Enqueue(record)
-			}
-			tryFlush()
-			return nil
-		}
-	}
+	return e.bufExporter.Run()
 }
 
-func (s *ClickHouseLogExporter) Stop(ctx context.Context) error {
-	close(s.stop)
-	select {
-	case <-s.stopped:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-}
-
-func (e *ClickHouseLogExporter) insertMany(records *ringbuf.RingBuf[*log.LogRecord]) error {
-	if !e.storage.IsReady() {
-		return ErrLogDbNotReady
-	}
-
-	for {
-		r, err := records.Dequeue()
-		if err != nil {
-			break
-		}
-		if err := e.batchInsert.Append(formLogRecord(*r)); err != nil {
-			return err
-		}
-	}
-
-	return e.batchInsert.Send()
+func (e *ClickHouseLogExporter) Stop(ctx context.Context) error {
+	return e.Stop(ctx)
 }
 
 func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
@@ -400,17 +336,17 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 }
 
 type chLogRecord struct {
-	Service        string    `json:"service,omitempty" ch:"service"`
+	Service        string    `json:"service,omitempty"        ch:"service"`
 	ServiceVersion string    `json:"serviceVersion,omitempty" ch:"service_version"`
-	Instance       string    `json:"instance,omitempty" ch:"instanse"`
-	Timestamp      time.Time `json:"timestamp,omitempty" ch:"timestamp"`
-	Level          int8      `json:"level,string,omitempty" ch:"level"`
-	ReqID          string    `json:"reqID,omitempty" ch:"req_id"`
-	Msg            string    `json:"msg,omitempty" ch:"msg"`
-	Fields         []byte    `json:"fields,omitempty" ch:"fields"` // json
+	Instance       string    `json:"instance,omitempty"       ch:"instanse"`
+	Timestamp      time.Time `json:"timestamp,omitempty"      ch:"timestamp"`
+	Level          int8      `json:"level,string,omitempty"   ch:"level"`
+	ReqID          string    `json:"reqID,omitempty"          ch:"req_id"`
+	Msg            string    `json:"msg,omitempty"            ch:"msg"`
+	Fields         []byte    `json:"fields,omitempty"         ch:"fields"` // json
 }
 
-func formLogRecord(r *log.LogRecord) *chLogRecord {
+func (e *ClickHouseLogExporter) formLogRecord(r *log.LogRecord) *chLogRecord {
 	return &chLogRecord{
 		Service:        r.Service,
 		ServiceVersion: r.ServiceVersion,
