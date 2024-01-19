@@ -73,13 +73,19 @@ func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExpor
 		},
 	})
 
-	return &ClickHouseLogExporter{
+	logExporter := &ClickHouseLogExporter{
 		Exporter:    exporter.Transform(bufExporter, formLogRecord),
 		AsyncRunner: bufExporter,
 
 		config:  cfg,
 		storage: storage,
 	}
+
+	if err := logExporter.createTableIfNotExitst(); err != nil {
+		log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to create log table")
+	}
+
+	return logExporter
 }
 
 func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
