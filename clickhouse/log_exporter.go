@@ -9,6 +9,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/utils/exporter"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -53,10 +54,12 @@ func (c *LogExporterConfig) Validate() error {
 }
 
 type ClickHouseLogExporter struct {
+	exporter.Exporter[*log.LogRecord]
+
 	config  LogExporterConfig
 	storage *Storage
 
-	bufExporter *BufferedExporter[*chLogRecord]
+	bufExporter *exporter.BufferedExporter[*chLogRecord]
 	batchInsert *Batch[*chLogRecord]
 }
 
@@ -64,24 +67,21 @@ func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExpor
 	ch := &ClickHouseLogExporter{
 		config:  cfg,
 		storage: storage,
+	}
+	ch.initBatch()
 
-		bufExporter: NewBufferedExporter[*chLogRecord](nil, BufferedExporterConfig{
+	nestedExporter := exporter.NewBuffered[*chLogRecord](
+		exporter.Func(ch.export),
+		exporter.BufferedExporterConfig{
 			MaxFlushInterval: time.Duration(cfg.FlushTimeMs) * time.Millisecond,
 			MaxBatchSize:     int(cfg.MaxBatchSize),
 			ChanBufSize:      cfg.ChanBufSize,
 			PreserveOld:      false,
-		}).WithName("Log Records"),
-	}
-	ch.initBatch()
-	return ch
-}
+		},
+	).WithName("Log Records")
+	ch.Exporter = exporter.Transform(nestedExporter, formLogRecord)
 
-func (e *ClickHouseLogExporter) Export(records ...*log.LogRecord) (int, error) {
-	exportRecords := make([]*chLogRecord, 0, len(records))
-	for _, rec := range records {
-		exportRecords = append(exportRecords, e.formLogRecord(rec))
-	}
-	return e.bufExporter.Export(exportRecords...)
+	return ch
 }
 
 func (e *ClickHouseLogExporter) export(records ...*chLogRecord) (int, error) {
@@ -129,8 +129,14 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 	}
 	if filter.Search != nil && len(*filter.Search) > 0 {
 		where = append(where, sq.Or{
-			sq.Expr(fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName), *filter.Search),
-			sq.Expr(fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName), *filter.Search),
+			sq.Expr(
+				fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName),
+				*filter.Search,
+			),
+			sq.Expr(
+				fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName),
+				*filter.Search,
+			),
 		})
 	}
 
@@ -170,7 +176,10 @@ func (e *ClickHouseLogExporter) sort(sort log.Sort) string {
 	return fmt.Sprintf("%s %s", field, sort.Order.String())
 }
 
-func (e *ClickHouseLogExporter) countLogs(ctx context.Context, params log.LogsParams) (int64, error) {
+func (e *ClickHouseLogExporter) countLogs(
+	ctx context.Context,
+	params log.LogsParams,
+) (int64, error) {
 	query := sq.Select("count(*)").
 		From(e.config.TableName).
 		Where(e.filter(params.Filter))
@@ -183,7 +192,10 @@ func (e *ClickHouseLogExporter) countLogs(ctx context.Context, params log.LogsPa
 	return count, nil
 }
 
-func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams) (*log.Logs, error) {
+func (e *ClickHouseLogExporter) Logs(
+	ctx context.Context,
+	params log.LogsParams,
+) (*log.Logs, error) {
 	query := sq.Select().
 		Column(ServiceColumnName).
 		Column(ServiceVersionColumnName).
@@ -219,7 +231,10 @@ func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams)
 	return &logs, err
 }
 
-func (e *ClickHouseLogExporter) Instances(ctx context.Context, filter log.Filter) ([]string, error) {
+func (e *ClickHouseLogExporter) Instances(
+	ctx context.Context,
+	filter log.Filter,
+) ([]string, error) {
 	return e.distinctValues(ctx, InstanseColumnName, filter)
 }
 
@@ -227,11 +242,18 @@ func (e *ClickHouseLogExporter) Services(ctx context.Context, filter log.Filter)
 	return e.distinctValues(ctx, ServiceColumnName, filter)
 }
 
-func (e *ClickHouseLogExporter) ServiceVersions(ctx context.Context, filter log.Filter) ([]string, error) {
+func (e *ClickHouseLogExporter) ServiceVersions(
+	ctx context.Context,
+	filter log.Filter,
+) ([]string, error) {
 	return e.distinctValues(ctx, ServiceVersionColumnName, filter)
 }
 
-func (e *ClickHouseLogExporter) distinctValues(ctx context.Context, column string, filter log.Filter) ([]string, error) {
+func (e *ClickHouseLogExporter) distinctValues(
+	ctx context.Context,
+	column string,
+	filter log.Filter,
+) ([]string, error) {
 	query := sq.Select("distinct " + column).
 		From(e.config.TableName).
 		Where(e.filter(&filter))
@@ -252,7 +274,11 @@ func (e *ClickHouseLogExporter) distinctValues(ctx context.Context, column strin
 	return instances, nil
 }
 
-func (e *ClickHouseLogExporter) RequestIDs(ctx context.Context, filter log.Filter, limit *int) ([]string, int64, error) {
+func (e *ClickHouseLogExporter) RequestIDs(
+	ctx context.Context,
+	filter log.Filter,
+	limit *int,
+) ([]string, int64, error) {
 	g := new(errgroup.Group)
 	var requestIDs []string
 	var count int64
@@ -302,7 +328,14 @@ func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
 	if !e.storage.IsReady() {
 		return ErrLogDbNotReady
 	}
-	_, err := e.storage.Db.Exec(fmt.Sprintf("ALTER TABLE %s MODIFY TTL %s + INTERVAL %d HOUR", e.config.TableName, TimestampColumnName, hours))
+	_, err := e.storage.Db.Exec(
+		fmt.Sprintf(
+			"ALTER TABLE %s MODIFY TTL %s + INTERVAL %d HOUR",
+			e.config.TableName,
+			TimestampColumnName,
+			hours,
+		),
+	)
 	return err
 }
 
@@ -346,7 +379,7 @@ type chLogRecord struct {
 	Fields         []byte    `json:"fields,omitempty"         ch:"fields"` // json
 }
 
-func (e *ClickHouseLogExporter) formLogRecord(r *log.LogRecord) *chLogRecord {
+func formLogRecord(r *log.LogRecord) *chLogRecord {
 	return &chLogRecord{
 		Service:        r.Service,
 		ServiceVersion: r.ServiceVersion,

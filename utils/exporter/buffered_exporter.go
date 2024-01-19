@@ -1,4 +1,4 @@
-package clickhouse
+package exporter
 
 import (
 	"context"
@@ -14,10 +14,6 @@ const (
 	DefaultMaxFlushInterval = time.Second
 	DefaultChanBufSize      = 16384
 )
-
-type Exporter[T any] interface {
-	Export(item ...T) (n int, err error)
-}
 
 type BufferedExporterConfig struct {
 	MaxFlushInterval time.Duration
@@ -39,7 +35,7 @@ type BufferedExporter[T any] struct {
 	stopped chan struct{}
 }
 
-func NewBufferedExporter[T any](
+func NewBuffered[T any](
 	exporter Exporter[T],
 	cfg BufferedExporterConfig,
 ) *BufferedExporter[T] {

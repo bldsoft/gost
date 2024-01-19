@@ -1,4 +1,4 @@
-package clickhouse
+package exporter
 
 type TransformExporter[T any, U any] struct {
 	exporter Exporter[U]
