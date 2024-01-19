@@ -123,7 +123,7 @@ func (w *ExportLogWriter) export(rec *LogRecord) error {
 		if t := w.exportersToggles[i]; t != nil && !t.Get() {
 			continue
 		}
-		if err := exporter.WriteLogRecord(rec); err != nil {
+		if _, err := exporter.Export(rec); err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		}
 	}
