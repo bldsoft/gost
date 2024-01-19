@@ -9,6 +9,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/gost/utils/exporter"
 	"golang.org/x/sync/errgroup"
 )
@@ -55,59 +56,30 @@ func (c *LogExporterConfig) Validate() error {
 
 type ClickHouseLogExporter struct {
 	exporter.Exporter[*log.LogRecord]
+	server.AsyncRunner
 
 	config  LogExporterConfig
 	storage *Storage
-
-	bufExporter *exporter.BufferedExporter[*chLogRecord]
-	batchInsert *Batch[*chLogRecord]
 }
 
 func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExporter {
-	ch := &ClickHouseLogExporter{
-		config:  cfg,
-		storage: storage,
-	}
-	ch.initBatch()
-
-	nestedExporter := exporter.NewBuffered[*chLogRecord](
-		exporter.Func(ch.export),
+	bufExporter := NewExporter[*chLogRecord](storage, ExporterConfig{
+		cfg.TableName,
 		exporter.BufferedExporterConfig{
 			MaxFlushInterval: time.Duration(cfg.FlushTimeMs) * time.Millisecond,
 			MaxBatchSize:     int(cfg.MaxBatchSize),
 			ChanBufSize:      cfg.ChanBufSize,
 			PreserveOld:      false,
 		},
-	).WithName("Log Records")
-	ch.Exporter = exporter.Transform(nestedExporter, formLogRecord)
+	})
 
-	return ch
-}
+	return &ClickHouseLogExporter{
+		Exporter:    exporter.Transform(bufExporter, formLogRecord),
+		AsyncRunner: bufExporter,
 
-func (e *ClickHouseLogExporter) export(records ...*chLogRecord) (int, error) {
-	if !e.storage.IsReady() {
-		return 0, ErrLogDbNotReady
+		config:  cfg,
+		storage: storage,
 	}
-
-	for _, rec := range records {
-		if err := e.batchInsert.Append(rec); err != nil {
-			return 0, err
-		}
-	}
-
-	if err := e.batchInsert.Send(); err != nil {
-		return 0, err
-	}
-
-	return len(records), nil
-}
-
-func (e *ClickHouseLogExporter) Run() error {
-	return e.bufExporter.Run()
-}
-
-func (e *ClickHouseLogExporter) Stop(ctx context.Context) error {
-	return e.Stop(ctx)
 }
 
 func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
@@ -390,15 +362,4 @@ func formLogRecord(r *log.LogRecord) *chLogRecord {
 		Msg:            r.Msg,
 		Fields:         r.Fields,
 	}
-}
-
-func (e *ClickHouseLogExporter) initBatch() {
-	insert := fmt.Sprintf("INSERT INTO %s", e.config.TableName)
-
-	batch, err := e.storage.PrepareStaticBatch(insert)
-	if err != nil {
-		panic(err)
-	}
-
-	e.batchInsert = batch
 }

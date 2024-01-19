@@ -6,7 +6,7 @@ import (
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
 
-type Batch[T any] struct {
+type Batch struct {
 	ctx context.Context
 
 	insert string
@@ -15,13 +15,17 @@ type Batch[T any] struct {
 	batch driver.Batch
 }
 
-func NewBatch[T any](conn driver.Conn, insertStatement string) (*Batch[T], error) {
-	batch, err := conn.PrepareBatch(context.Background(), insertStatement, driver.WithReleaseConnection())
+func NewBatch(conn driver.Conn, insertStatement string) (*Batch, error) {
+	batch, err := conn.PrepareBatch(
+		context.Background(),
+		insertStatement,
+		driver.WithReleaseConnection(),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Batch[T]{
+	return &Batch{
 		insert: insertStatement,
 		conn:   conn,
 		batch:  batch,
@@ -29,7 +33,7 @@ func NewBatch[T any](conn driver.Conn, insertStatement string) (*Batch[T], error
 	}, nil
 }
 
-func (b *Batch[T]) Append(val T) error {
+func (b *Batch) Append(val interface{}) error {
 	if b.batch.IsSent() {
 		if err := b.reset(); err != nil {
 			return err
@@ -38,13 +42,13 @@ func (b *Batch[T]) Append(val T) error {
 	return b.batch.AppendStruct(val)
 }
 
-func (b *Batch[T]) Send() error {
+func (b *Batch) Send() error {
 	defer b.reset()
 
 	return b.batch.Send()
 }
 
-func (b *Batch[T]) reset() error {
+func (b *Batch) reset() error {
 	batch, err := b.conn.PrepareBatch(b.ctx, b.insert, driver.WithReleaseConnection())
 	if err != nil {
 		return err

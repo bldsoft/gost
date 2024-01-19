@@ -16,6 +16,8 @@ const (
 )
 
 type BufferedExporterConfig struct {
+	Name string
+
 	MaxFlushInterval time.Duration
 	MaxBatchSize     int
 	ChanBufSize      int  // buffer between writer and the goroutine that actually exports data
@@ -43,6 +45,7 @@ func NewBuffered[T any](
 		cfg.ChanBufSize = DefaultChanBufSize
 	}
 	return &BufferedExporter[T]{
+		name:     cfg.Name,
 		exporter: exporter,
 		cfg:      cfg,
 		writeC:   make(chan T, cfg.ChanBufSize),
