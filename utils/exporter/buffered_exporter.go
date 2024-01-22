@@ -134,11 +134,14 @@ func (be *BufferedExporter[T]) Run() error {
 	ticker := time.NewTicker(be.MaxFlushInterval())
 	defer ticker.Stop()
 
-	lastFlushTime := time.Now()
+	lastFlushStartTime := time.Now()
+	lastFlushDuration := be.MaxFlushInterval()
 
 	flush := func() {
+		lastFlushStartTime = time.Now()
+
 		defer func() {
-			lastFlushTime = time.Now()
+			lastFlushDuration = time.Since(lastFlushStartTime)
 		}()
 		logFields := Fields{
 			"current batch": be.ringBuf.Len(),
@@ -161,7 +164,7 @@ func (be *BufferedExporter[T]) Run() error {
 				flush()
 			}
 		case <-ticker.C:
-			if !be.ringBuf.Empty() && time.Since(lastFlushTime) >= be.MaxFlushInterval() {
+			if !be.ringBuf.Empty() && time.Since(lastFlushStartTime)-lastFlushDuration >= be.MaxFlushInterval() {
 				flush()
 			}
 		case <-be.stop:
