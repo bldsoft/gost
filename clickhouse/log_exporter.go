@@ -70,6 +70,7 @@ func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExpor
 			MaxBatchSize:     int(cfg.MaxBatchSize),
 			ChanBufSize:      cfg.ChanBufSize,
 			PreserveOld:      false,
+			Logger:           log.Logger.WithFields(log.Fields{"exporter": "LOG_RECORDS"}),
 		},
 	})
 

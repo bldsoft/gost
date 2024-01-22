@@ -14,17 +14,27 @@ const (
 	DefaultChanBufSize      = 16384
 )
 
-type BufferedExporterConfig struct {
-	Name string
+type Fields = map[string]interface{}
+type Logger interface {
+	ErrorfWithFields(fields Fields, format string, v ...interface{})
+	TracefWithFields(fields Fields, format string, v ...interface{})
+}
 
+type nullLogger struct{}
+
+func (nullLogger) ErrorfWithFields(fields Fields, format string, v ...interface{}) {}
+func (nullLogger) TracefWithFields(fields Fields, format string, v ...interface{}) {}
+
+type BufferedExporterConfig struct {
 	MaxFlushInterval time.Duration
 	MaxBatchSize     int
 	ChanBufSize      int  // buffer between writer and the goroutine that actually exports data
 	PreserveOld      bool // false - discard old data in case of overflow, true - discard new
+
+	Logger Logger
 }
 
 type BufferedExporter[T any] struct {
-	name     string
 	exporter Exporter[T]
 	cfg      BufferedExporterConfig
 
@@ -43,8 +53,10 @@ func NewBuffered[T any](
 	if cfg.ChanBufSize <= 0 {
 		cfg.ChanBufSize = DefaultChanBufSize
 	}
+	if cfg.Logger == nil {
+		cfg.Logger = nullLogger{}
+	}
 	return &BufferedExporter[T]{
-		name:     cfg.Name,
 		exporter: exporter,
 		cfg:      cfg,
 		writeC:   make(chan T, cfg.ChanBufSize),
@@ -53,8 +65,8 @@ func NewBuffered[T any](
 	}
 }
 
-func (be *BufferedExporter[T]) WithName(name string) *BufferedExporter[T] {
-	be.name = name
+func (be *BufferedExporter[T]) WithLogger(logger Logger) *BufferedExporter[T] {
+	be.cfg.Logger = logger
 	return be
 }
 
@@ -128,17 +140,16 @@ func (be *BufferedExporter[T]) Run() error {
 		defer func() {
 			lastFlushTime = time.Now()
 		}()
-		if err := be.flush(); err != nil {
-			// log.Logger.ErrorWithFields(
-			// 	log.Fields{
-			// 		"name":          be.name,
-			// 		"err":           err,
-			// 		"current batch": be.ringBuf.Len(),
-			// 		"queued":        len(be.writeC),
-			// 	},
-			// 	"buffered exporter error",
-			// )
+		logFields := Fields{
+			"current batch": be.ringBuf.Len(),
+			"queued":        len(be.writeC),
 		}
+		if err := be.flush(); err != nil {
+			logFields["err"] = err
+			be.cfg.Logger.ErrorfWithFields(logFields, "buffered exporter")
+			return
+		}
+		be.cfg.Logger.TracefWithFields(logFields, "buffered exporter")
 	}
 
 	for {
@@ -150,7 +161,7 @@ func (be *BufferedExporter[T]) Run() error {
 				flush()
 			}
 		case <-ticker.C:
-			if time.Since(lastFlushTime) >= be.MaxFlushInterval() {
+			if !be.ringBuf.Empty() && time.Since(lastFlushTime) >= be.MaxFlushInterval() {
 				flush()
 			}
 		case <-be.stop:
