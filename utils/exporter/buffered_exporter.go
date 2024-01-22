@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/utils/ringbuf"
 )
 
@@ -130,15 +129,15 @@ func (be *BufferedExporter[T]) Run() error {
 			lastFlushTime = time.Now()
 		}()
 		if err := be.flush(); err != nil {
-			log.Logger.ErrorWithFields(
-				log.Fields{
-					"name":          be.name,
-					"err":           err,
-					"current batch": be.ringBuf.Len(),
-					"queued":        len(be.writeC),
-				},
-				"buffered exporter error",
-			)
+			// log.Logger.ErrorWithFields(
+			// 	log.Fields{
+			// 		"name":          be.name,
+			// 		"err":           err,
+			// 		"current batch": be.ringBuf.Len(),
+			// 		"queued":        len(be.writeC),
+			// 	},
+			// 	"buffered exporter error",
+			// )
 		}
 	}
 
