@@ -107,6 +107,9 @@ func (be *BufferedExporter[T]) writeToChan(items ...T) (n int) {
 }
 
 func (be *BufferedExporter[T]) flush() (err error) {
+	if be.ringBuf.Empty() {
+		return nil
+	}
 	defer func() {
 		if e := recover(); e != nil {
 			switch x := e.(type) {
@@ -139,7 +142,6 @@ func (be *BufferedExporter[T]) Run() error {
 
 	flush := func() {
 		lastFlushStartTime = time.Now()
-
 		defer func() {
 			lastFlushDuration = time.Since(lastFlushStartTime)
 		}()

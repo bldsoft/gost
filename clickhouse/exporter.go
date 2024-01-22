@@ -43,6 +43,10 @@ func (e *Exporter[T]) initBatch(table string) *Exporter[T] {
 }
 
 func (e *Exporter[T]) export(items ...T) (int, error) {
+	if len(items) == 0 {
+		return 0, nil
+	}
+
 	if !e.storage.IsReady() {
 		return 0, ErrLogDbNotReady
 	}
