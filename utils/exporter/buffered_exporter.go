@@ -14,16 +14,18 @@ const (
 	DefaultChanBufSize      = 16384
 )
 
-type Fields = map[string]interface{}
-type Logger interface {
-	ErrorfWithFields(fields Fields, format string, v ...interface{})
-	TracefWithFields(fields Fields, format string, v ...interface{})
-}
+type (
+	Fields = map[string]interface{}
+	Logger interface {
+		TraceOrErrorfWithFields(err error, fields Fields, format string, v ...interface{})
+	}
+)
 
 type nullLogger struct{}
 
-func (nullLogger) ErrorfWithFields(fields Fields, format string, v ...interface{}) {}
-func (nullLogger) TracefWithFields(fields Fields, format string, v ...interface{}) {}
+func (nullLogger) TraceOrErrorfWithFields(err error, fields Fields, format string, v ...interface{}) {
+	// do nothing
+}
 
 type BufferedExporterConfig struct {
 	MaxFlushInterval time.Duration
@@ -35,19 +37,18 @@ type BufferedExporterConfig struct {
 }
 
 type BufferedExporter[T any] struct {
-	exporter Exporter[T]
-	cfg      BufferedExporterConfig
+	cfg BufferedExporterConfig
 
-	writeC   chan T
-	ringBuf  *ringbuf.RingBuf[T]
-	flushBuf []T
+	exportedData Data[T]
+	writeC       chan T
+	ringBuf      *ringbuf.RingBuf[T]
 
 	stop    chan struct{}
 	stopped chan struct{}
 }
 
 func NewBuffered[T any](
-	exporter Exporter[T],
+	data Data[T],
 	cfg BufferedExporterConfig,
 ) *BufferedExporter[T] {
 	if cfg.ChanBufSize <= 0 {
@@ -57,12 +58,16 @@ func NewBuffered[T any](
 		cfg.Logger = nullLogger{}
 	}
 	return &BufferedExporter[T]{
-		exporter: exporter,
-		cfg:      cfg,
-		writeC:   make(chan T, cfg.ChanBufSize),
-		stop:     make(chan struct{}),
-		stopped:  make(chan struct{}),
+		exportedData: data,
+		cfg:          cfg,
+		writeC:       make(chan T, cfg.ChanBufSize),
+		stop:         make(chan struct{}),
+		stopped:      make(chan struct{}),
 	}
+}
+
+func NewBufferedFromExporter[T any](exporter Exporter[T], cfg BufferedExporterConfig) *BufferedExporter[T] {
+	return NewBuffered(NewSlice[T](exporter), cfg)
 }
 
 func (be *BufferedExporter[T]) WithLogger(logger Logger) *BufferedExporter[T] {
@@ -106,9 +111,9 @@ func (be *BufferedExporter[T]) writeToChan(items ...T) (n int) {
 	return len(items)
 }
 
-func (be *BufferedExporter[T]) flush() (err error) {
-	if be.ringBuf.Empty() {
-		return nil
+func (be *BufferedExporter[T]) flush() (n int, err error) {
+	if be.ringBuf.Empty() && be.exportedData.Len() == 0 {
+		return 0, nil
 	}
 	defer func() {
 		if e := recover(); e != nil {
@@ -120,19 +125,35 @@ func (be *BufferedExporter[T]) flush() (err error) {
 			}
 		}
 	}()
-	n := be.ringBuf.Copy(be.flushBuf)
-	if _, err := be.exporter.Export(be.flushBuf[:n]...); err != nil {
-		return err
+
+	if err := be.fillExportedData(); err != nil {
+		return 0, err
 	}
-	be.ringBuf.Clear()
+
+	exported := be.exportedData.Len()
+	err = be.exportedData.Send()
+	if err != nil {
+		return 0, err
+	}
+	return exported, be.exportedData.Reset()
+}
+
+func (be *BufferedExporter[T]) fillExportedData() error {
+	pullN := min(be.ringBuf.Len(), be.MaxBatchSize()-be.exportedData.Len())
+	for i := 0; i < pullN; i++ {
+		item, _ := be.ringBuf.Top()
+		if _, err := be.exportedData.Add(item); err != nil {
+			return err
+		}
+		be.ringBuf.Remove(1)
+	}
 	return nil
 }
 
 func (be *BufferedExporter[T]) Run() error {
 	defer close(be.stopped)
 
-	be.ringBuf = ringbuf.New[T](be.MaxBatchSize()).WithOverwrite(!be.cfg.PreserveOld)
-	be.flushBuf = make([]T, be.MaxBatchSize())
+	be.ringBuf = ringbuf.New[T](be.cfg.ChanBufSize).WithOverwrite(!be.cfg.PreserveOld)
 
 	ticker := time.NewTicker(be.MaxFlushInterval())
 	defer ticker.Stop()
@@ -140,47 +161,54 @@ func (be *BufferedExporter[T]) Run() error {
 	lastFlushStartTime := time.Now()
 	lastFlushDuration := be.MaxFlushInterval()
 
-	flush := func() {
+	flush := func() error {
 		lastFlushStartTime = time.Now()
 		defer func() {
 			lastFlushDuration = time.Since(lastFlushStartTime)
 		}()
-		logFields := Fields{
-			"current batch": be.ringBuf.Len(),
-			"queued":        len(be.writeC),
+		n, err := be.flush()
+		be.cfg.Logger.TraceOrErrorfWithFields(err, Fields{
+			"queued":         len(be.writeC),
+			"ring buf":       be.ringBuf.Len(),
+			"exported batch": n,
+		}, "buffered exporter")
+		return err
+	}
+
+	flushAll := func() error {
+		for !be.ringBuf.Empty() || be.exportedData.Len() > 0 {
+			if err := flush(); err != nil {
+				return err
+			}
 		}
-		if err := be.flush(); err != nil {
-			logFields["err"] = err
-			be.cfg.Logger.ErrorfWithFields(logFields, "buffered exporter")
-			return
-		}
-		be.cfg.Logger.TracefWithFields(logFields, "buffered exporter")
+		return nil
 	}
 
 	for {
 		select {
 		case item := <-be.writeC:
-			fullBefore := be.ringBuf.Full()
 			_ = be.ringBuf.Push(item)
-			if becameFull := !fullBefore && be.ringBuf.Full(); becameFull {
-				flush()
+
+			if be.ringBuf.Len() == be.MaxBatchSize() {
+				_ = flush()
 			}
 		case <-ticker.C:
-			if !be.ringBuf.Empty() && time.Since(lastFlushStartTime)-lastFlushDuration >= be.MaxFlushInterval() {
-				flush()
+			if time.Since(lastFlushStartTime)-lastFlushDuration >= be.MaxFlushInterval() {
+				_ = flushAll()
 			}
 		case <-be.stop:
 			close(be.writeC)
 
 			for item := range be.writeC {
-				if be.ringBuf.Full() {
-					if err := be.flush(); err != nil {
-						return err
-					}
+				if !be.ringBuf.Full() {
+					_ = be.ringBuf.Push(item)
+					continue
 				}
-				_ = be.ringBuf.Push(item)
+				if err := flushAll(); err != nil {
+					return err
+				}
 			}
-			return be.flush()
+			return flushAll()
 		}
 	}
 }

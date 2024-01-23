@@ -2,7 +2,6 @@ package clickhouse
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bldsoft/gost/utils/exporter"
 )
@@ -15,53 +14,17 @@ type ExporterConfig struct {
 type Exporter[T any] struct {
 	storage     *Storage
 	bufExporter *exporter.BufferedExporter[T]
-	batchInsert *Batch
 }
 
 func NewExporter[T any](storage *Storage, cfg ExporterConfig) *Exporter[T] {
 	e := &Exporter[T]{
 		storage: storage,
 	}
-	e.initBatch(cfg.TableName)
 	e.bufExporter = exporter.NewBuffered[T](
-		exporter.Func(e.export),
+		newExporterBatch[T](storage, cfg.TableName),
 		cfg.BufferedExporterConfig,
 	)
 	return e
-}
-
-func (e *Exporter[T]) initBatch(table string) *Exporter[T] {
-	insert := fmt.Sprintf("INSERT INTO %s", table)
-
-	batch, err := e.storage.PrepareStaticBatch(insert)
-	if err != nil {
-		panic(err)
-	}
-
-	e.batchInsert = batch
-	return e
-}
-
-func (e *Exporter[T]) export(items ...T) (int, error) {
-	if len(items) == 0 {
-		return 0, nil
-	}
-
-	if !e.storage.IsReady() {
-		return 0, ErrLogDbNotReady
-	}
-
-	for _, item := range items {
-		if err := e.batchInsert.Append(item); err != nil {
-			return 0, err
-		}
-	}
-
-	if err := e.batchInsert.Send(); err != nil {
-		return 0, err
-	}
-
-	return len(items), nil
 }
 
 func (e *Exporter[T]) Export(items ...T) (n int, err error) {

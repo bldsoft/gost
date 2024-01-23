@@ -81,16 +81,20 @@ func (b *RingBuf[T]) push(item T) (ok bool) {
 	return true
 }
 
-func (b *RingBuf[T]) Get() (T, bool) {
-	if b.Empty() {
+func (b *RingBuf[T]) Top() (T, bool) {
+	return b.Get(0)
+}
+
+func (b *RingBuf[T]) Get(index int) (T, bool) {
+	if index >= b.Len() {
 		var zero T
 		return zero, false
 	}
-	return b.data[b.readIdx], true
+	return b.data[(b.readIdx+index)%b.Cap()], true
 }
 
 func (b *RingBuf[T]) Pull() (T, bool) {
-	val, ok := b.Get()
+	val, ok := b.Top()
 	if ok {
 		b.readIdx = (b.readIdx + 1) % b.Cap()
 		b.isFull = false
@@ -114,6 +118,23 @@ func (b *RingBuf[T]) Copy(dst []T) int {
 	n := copy(dst, b.data[b.readIdx:])
 	n += copy(dst[n:], b.data[0:b.writeIdx])
 	return n
+}
+
+func (b *RingBuf[T]) Remove(n int) (removed int) {
+	if n <= 0 {
+		return 0
+	}
+
+	n = min(n, b.Len())
+	b.readIdx = (b.readIdx + n) % b.Cap()
+	b.isFull = false
+	return n
+}
+
+// same as copy, but remove copied data from ring
+func (b *RingBuf[T]) Read(dst []T) int {
+	n := b.Copy(dst)
+	return b.Remove(n)
 }
 
 func (b *RingBuf[T]) ToSlice() []T {
