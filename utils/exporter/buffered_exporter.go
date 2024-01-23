@@ -158,14 +158,7 @@ func (be *BufferedExporter[T]) Run() error {
 	ticker := time.NewTicker(be.MaxFlushInterval())
 	defer ticker.Stop()
 
-	lastFlushStartTime := time.Now()
-	lastFlushDuration := be.MaxFlushInterval()
-
 	flush := func() error {
-		lastFlushStartTime = time.Now()
-		defer func() {
-			lastFlushDuration = time.Since(lastFlushStartTime)
-		}()
 		n, err := be.flush()
 		be.cfg.Logger.TraceOrErrorfWithFields(err, Fields{
 			"queued":         len(be.writeC),
@@ -184,6 +177,7 @@ func (be *BufferedExporter[T]) Run() error {
 		return nil
 	}
 
+	lastFlushTriggeredBySize := time.Now()
 	for {
 		select {
 		case item := <-be.writeC:
@@ -191,9 +185,10 @@ func (be *BufferedExporter[T]) Run() error {
 
 			if be.ringBuf.Len() == be.MaxBatchSize() {
 				_ = flush()
+				lastFlushTriggeredBySize = time.Now()
 			}
 		case <-ticker.C:
-			if time.Since(lastFlushStartTime)-lastFlushDuration >= be.MaxFlushInterval() {
+			if time.Since(lastFlushTriggeredBySize) >= be.MaxFlushInterval() {
 				_ = flushAll()
 			}
 		case <-be.stop:
