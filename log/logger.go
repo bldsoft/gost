@@ -17,10 +17,10 @@ func (l *ServiceLogger) AddExporter(exporter LogExporter, isOn *feature.Bool) {
 	l.exportWriter.Append(exporter, isOn)
 }
 
-//Fields struct
+// Fields struct
 type Fields = map[string]interface{}
 
-//WithFields creates a new logger with given fields
+// WithFields creates a new logger with given fields
 func (l *ServiceLogger) WithFields(fields Fields) *ServiceLogger {
 	return &ServiceLogger{logger: l.logger.With().Fields(fields).Logger(), LogFuncDuration: l.LogFuncDuration}
 }
@@ -29,7 +29,7 @@ func (l *ServiceLogger) WithPanic(fields Fields) *ServiceLogger {
 	return &ServiceLogger{logger: l.logger.Level(zerolog.PanicLevel).With().Fields(fields).Logger(), LogFuncDuration: l.LogFuncDuration}
 }
 
-//WithFields creates a new logger with given fields
+// WithFields creates a new logger with given fields
 func (l *ServiceLogger) WithLevel(lvl zerolog.Level) *ServiceLogger {
 	return &ServiceLogger{logger: l.logger.Level(lvl), LogFuncDuration: l.LogFuncDuration}
 }
@@ -52,6 +52,15 @@ func (l *ServiceLogger) TraceWithFields(fields Fields, msg string) {
 // TracefWithFields logs a message at level Trace on the default logger.
 func (l *ServiceLogger) TracefWithFields(fields Fields, format string, v ...interface{}) {
 	l.logger.Trace().Fields(fields).Msgf(format, v...)
+}
+
+// TraceOrErrorfWithFields logs a message at level Error if err is not nil or Debug otherwise on the default logger.
+func (l *ServiceLogger) TraceOrErrorfWithFields(err error, fields Fields, format string, v ...interface{}) {
+	if err == nil {
+		l.logger.Trace().Fields(fields).Msgf(format, v...)
+	} else {
+		l.logger.Err(err).Fields(fields).Msgf(format, v...)
+	}
 }
 
 // Debug logs a message at level Debug on the default logger.

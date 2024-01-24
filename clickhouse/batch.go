@@ -16,7 +16,11 @@ type Batch struct {
 }
 
 func NewBatch(conn driver.Conn, insertStatement string) (*Batch, error) {
-	batch, err := conn.PrepareBatch(context.Background(), insertStatement, driver.WithReleaseConnection())
+	batch, err := conn.PrepareBatch(
+		context.Background(),
+		insertStatement,
+		driver.WithReleaseConnection(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +33,12 @@ func NewBatch(conn driver.Conn, insertStatement string) (*Batch, error) {
 	}, nil
 }
 
-func (b *Batch) Append(val any) error {
+func (b *Batch) Append(val interface{}) error {
+	if b.batch.IsSent() {
+		if err := b.reset(); err != nil {
+			return err
+		}
+	}
 	return b.batch.AppendStruct(val)
 }
 

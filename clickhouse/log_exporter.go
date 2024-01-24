@@ -9,6 +9,8 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/server"
+	"github.com/bldsoft/gost/utils/exporter"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -26,9 +28,9 @@ const (
 )
 
 type LogExporterConfig struct {
-	FlushTimeMs  int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_FLUSH_TIME_MS" description:"Max time between log exporting"`
+	FlushTimeMs  int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_FLUSH_TIME_MS"  description:"Max time between log exporting"`
 	MaxBatchSize int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_MAX_BATCH_SIZE" description:"Max batch size for log insert query"`
-	ChanBufSize  int64 `mapstructure:"CLICKHOUSE_LOG_EXPORT_CHAN_BUF_SIZE" description:"-"`
+	ChanBufSize  int   `mapstructure:"CLICKHOUSE_LOG_EXPORT_CHAN_BUF_SIZE"  description:"-"`
 
 	TableName string `mapstructure:"CLICKHOUSE_LOG_EXPORT_TABLE" description:"Table name for log exporting"`
 }
@@ -53,120 +55,38 @@ func (c *LogExporterConfig) Validate() error {
 }
 
 type ClickHouseLogExporter struct {
-	config      LogExporterConfig
-	storage     *Storage
-	recordC     chan *log.LogRecord
-	records     []*log.LogRecord
-	batchInsert *Batch
+	exporter.Exporter[*log.LogRecord]
+	server.AsyncRunner
 
-	stop    chan struct{}
-	stopped chan struct{}
+	config  LogExporterConfig
+	storage *Storage
 }
 
 func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExporter {
-	ch := &ClickHouseLogExporter{storage: storage, config: cfg, recordC: make(chan *log.LogRecord, cfg.ChanBufSize), records: make([]*log.LogRecord, 0, cfg.MaxBatchSize)}
-	ch.initBatch()
-	return ch
-}
+	bufExporter := NewExporter[*chLogRecord](storage, ExporterConfig{
+		cfg.TableName,
+		exporter.BufferedExporterConfig{
+			MaxFlushInterval: time.Duration(cfg.FlushTimeMs) * time.Millisecond,
+			MaxBatchSize:     int(cfg.MaxBatchSize),
+			ChanBufSize:      cfg.ChanBufSize,
+			PreserveOld:      false,
+			Logger:           log.Logger.WithFields(log.Fields{"exporter": "LOG_RECORDS"}),
+		},
+	})
 
-func (e *ClickHouseLogExporter) WriteLogRecord(rec *log.LogRecord) error {
-	select {
-	case <-e.stop:
-		// do nothing
-	default:
-		e.writeToChan(rec)
+	logExporter := &ClickHouseLogExporter{
+		Exporter:    exporter.Transform(bufExporter, formLogRecord),
+		AsyncRunner: bufExporter,
+
+		config:  cfg,
+		storage: storage,
 	}
-	return nil
-}
 
-func (e *ClickHouseLogExporter) writeToChan(rec *log.LogRecord) {
-	select {
-	case e.recordC <- rec:
-	default:
-		// channel is full
-	}
-}
-
-func (e *ClickHouseLogExporter) Run() error {
-	e.stop = make(chan struct{})
-	e.stopped = make(chan struct{})
-	defer close(e.stopped)
-
-	if err := e.createTableIfNotExitst(); err != nil {
+	if err := logExporter.createTableIfNotExitst(); err != nil {
 		log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to create log table")
 	}
 
-	flushInterval := time.Duration(e.config.FlushTimeMs) * time.Millisecond
-	ticker := time.NewTicker(flushInterval)
-	defer ticker.Stop()
-
-	last_flush := time.Now()
-
-	tryFlush := func() bool {
-		if len(e.records) == 0 {
-			return true
-		}
-
-		if err := e.insertMany(e.records); err != nil {
-			log.Logger.ErrorWithFields(log.Fields{"err": err, "current batch": len(e.records), "queued": len(e.recordC)}, "failed to export log records")
-			return false
-		}
-		// log.Logger.TraceWithFields(log.Fields{"record count": len(e.records)}, "log exported")
-		e.records = e.records[:0]
-		last_flush = time.Now()
-		return true
-	}
-
-	mustFlush := func() {
-		for !tryFlush() {
-			<-ticker.C
-		}
-	}
-
-	for {
-		select {
-		case record := <-e.recordC:
-			e.records = append(e.records, record)
-			if len(e.records) == cap(e.records) {
-				mustFlush()
-			}
-		case <-ticker.C:
-			if time.Since(last_flush) >= flushInterval {
-				mustFlush()
-			}
-		case <-e.stop:
-			close(e.recordC)
-			for record := range e.recordC {
-				e.records = append(e.records, record)
-			}
-			tryFlush()
-			return nil
-		}
-	}
-}
-
-func (s *ClickHouseLogExporter) Stop(ctx context.Context) error {
-	close(s.stop)
-	select {
-	case <-s.stopped:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-}
-
-func (e *ClickHouseLogExporter) insertMany(records []*log.LogRecord) error {
-	if !e.storage.IsReady() {
-		return ErrLogDbNotReady
-	}
-
-	for _, r := range records {
-		if err := e.batchInsert.Append(formLogRecord(r)); err != nil {
-			return err
-		}
-	}
-
-	return e.batchInsert.Send()
+	return logExporter
 }
 
 func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
@@ -188,8 +108,14 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 	}
 	if filter.Search != nil && len(*filter.Search) > 0 {
 		where = append(where, sq.Or{
-			sq.Expr(fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName), *filter.Search),
-			sq.Expr(fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName), *filter.Search),
+			sq.Expr(
+				fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName),
+				*filter.Search,
+			),
+			sq.Expr(
+				fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName),
+				*filter.Search,
+			),
 		})
 	}
 
@@ -229,7 +155,10 @@ func (e *ClickHouseLogExporter) sort(sort log.Sort) string {
 	return fmt.Sprintf("%s %s", field, sort.Order.String())
 }
 
-func (e *ClickHouseLogExporter) countLogs(ctx context.Context, params log.LogsParams) (int64, error) {
+func (e *ClickHouseLogExporter) countLogs(
+	ctx context.Context,
+	params log.LogsParams,
+) (int64, error) {
 	query := sq.Select("count(*)").
 		From(e.config.TableName).
 		Where(e.filter(params.Filter))
@@ -242,7 +171,10 @@ func (e *ClickHouseLogExporter) countLogs(ctx context.Context, params log.LogsPa
 	return count, nil
 }
 
-func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams) (*log.Logs, error) {
+func (e *ClickHouseLogExporter) Logs(
+	ctx context.Context,
+	params log.LogsParams,
+) (*log.Logs, error) {
 	query := sq.Select().
 		Column(ServiceColumnName).
 		Column(ServiceVersionColumnName).
@@ -278,7 +210,10 @@ func (e *ClickHouseLogExporter) Logs(ctx context.Context, params log.LogsParams)
 	return &logs, err
 }
 
-func (e *ClickHouseLogExporter) Instances(ctx context.Context, filter log.Filter) ([]string, error) {
+func (e *ClickHouseLogExporter) Instances(
+	ctx context.Context,
+	filter log.Filter,
+) ([]string, error) {
 	return e.distinctValues(ctx, InstanseColumnName, filter)
 }
 
@@ -286,11 +221,18 @@ func (e *ClickHouseLogExporter) Services(ctx context.Context, filter log.Filter)
 	return e.distinctValues(ctx, ServiceColumnName, filter)
 }
 
-func (e *ClickHouseLogExporter) ServiceVersions(ctx context.Context, filter log.Filter) ([]string, error) {
+func (e *ClickHouseLogExporter) ServiceVersions(
+	ctx context.Context,
+	filter log.Filter,
+) ([]string, error) {
 	return e.distinctValues(ctx, ServiceVersionColumnName, filter)
 }
 
-func (e *ClickHouseLogExporter) distinctValues(ctx context.Context, column string, filter log.Filter) ([]string, error) {
+func (e *ClickHouseLogExporter) distinctValues(
+	ctx context.Context,
+	column string,
+	filter log.Filter,
+) ([]string, error) {
 	query := sq.Select("distinct " + column).
 		From(e.config.TableName).
 		Where(e.filter(&filter))
@@ -311,7 +253,11 @@ func (e *ClickHouseLogExporter) distinctValues(ctx context.Context, column strin
 	return instances, nil
 }
 
-func (e *ClickHouseLogExporter) RequestIDs(ctx context.Context, filter log.Filter, limit *int) ([]string, int64, error) {
+func (e *ClickHouseLogExporter) RequestIDs(
+	ctx context.Context,
+	filter log.Filter,
+	limit *int,
+) ([]string, int64, error) {
 	g := new(errgroup.Group)
 	var requestIDs []string
 	var count int64
@@ -361,7 +307,14 @@ func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
 	if !e.storage.IsReady() {
 		return ErrLogDbNotReady
 	}
-	_, err := e.storage.Db.Exec(fmt.Sprintf("ALTER TABLE %s MODIFY TTL %s + INTERVAL %d HOUR", e.config.TableName, TimestampColumnName, hours))
+	_, err := e.storage.Db.Exec(
+		fmt.Sprintf(
+			"ALTER TABLE %s MODIFY TTL %s + INTERVAL %d HOUR",
+			e.config.TableName,
+			TimestampColumnName,
+			hours,
+		),
+	)
 	return err
 }
 
@@ -395,14 +348,14 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 }
 
 type chLogRecord struct {
-	Service        string    `json:"service,omitempty" ch:"service"`
+	Service        string    `json:"service,omitempty"        ch:"service"`
 	ServiceVersion string    `json:"serviceVersion,omitempty" ch:"service_version"`
-	Instance       string    `json:"instance,omitempty" ch:"instanse"`
-	Timestamp      time.Time `json:"timestamp,omitempty" ch:"timestamp"`
-	Level          int8      `json:"level,string,omitempty" ch:"level"`
-	ReqID          string    `json:"reqID,omitempty" ch:"req_id"`
-	Msg            string    `json:"msg,omitempty" ch:"msg"`
-	Fields         []byte    `json:"fields,omitempty" ch:"fields"` // json
+	Instance       string    `json:"instance,omitempty"       ch:"instanse"`
+	Timestamp      time.Time `json:"timestamp,omitempty"      ch:"timestamp"`
+	Level          int8      `json:"level,string,omitempty"   ch:"level"`
+	ReqID          string    `json:"reqID,omitempty"          ch:"req_id"`
+	Msg            string    `json:"msg,omitempty"            ch:"msg"`
+	Fields         []byte    `json:"fields,omitempty"         ch:"fields"` // json
 }
 
 func formLogRecord(r *log.LogRecord) *chLogRecord {
@@ -416,15 +369,4 @@ func formLogRecord(r *log.LogRecord) *chLogRecord {
 		Msg:            r.Msg,
 		Fields:         r.Fields,
 	}
-}
-
-func (e *ClickHouseLogExporter) initBatch() {
-	insert := fmt.Sprintf("INSERT INTO %s", e.config.TableName)
-
-	batch, err := e.storage.PrepareStaticBatch(insert)
-	if err != nil {
-		panic(err)
-	}
-
-	e.batchInsert = batch
 }
