@@ -63,6 +63,15 @@ type ClickHouseLogExporter struct {
 }
 
 func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExporter {
+	logExporter := &ClickHouseLogExporter{
+		config:  cfg,
+		storage: storage,
+	}
+
+	if err := logExporter.createTableIfNotExitst(); err != nil {
+		log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to create log table")
+	}
+
 	bufExporter := NewExporter[*chLogRecord](storage, ExporterConfig{
 		cfg.TableName,
 		exporter.BufferedExporterConfig{
@@ -74,17 +83,8 @@ func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExpor
 		},
 	})
 
-	logExporter := &ClickHouseLogExporter{
-		Exporter:    exporter.Transform(bufExporter, formLogRecord),
-		AsyncRunner: bufExporter,
-
-		config:  cfg,
-		storage: storage,
-	}
-
-	if err := logExporter.createTableIfNotExitst(); err != nil {
-		log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to create log table")
-	}
+	logExporter.Exporter = exporter.Transform(bufExporter, formLogRecord)
+	logExporter.AsyncRunner = bufExporter
 
 	return logExporter
 }
