@@ -39,9 +39,9 @@ type BufferedExporterConfig struct {
 type BufferedExporter[T any] struct {
 	cfg BufferedExporterConfig
 
-	exportedData Data[T]
-	writeC       chan T
-	ringBuf      *ringbuf.RingBuf[T]
+	batch   Data[T]
+	writeC  chan T
+	ringBuf *ringbuf.RingBuf[T]
 
 	stop    chan struct{}
 	stopped chan struct{}
@@ -58,11 +58,11 @@ func NewBuffered[T any](
 		cfg.Logger = nullLogger{}
 	}
 	return &BufferedExporter[T]{
-		exportedData: data,
-		cfg:          cfg,
-		writeC:       make(chan T, cfg.ChanBufSize),
-		stop:         make(chan struct{}),
-		stopped:      make(chan struct{}),
+		batch:   data,
+		cfg:     cfg,
+		writeC:  make(chan T, cfg.ChanBufSize),
+		stop:    make(chan struct{}),
+		stopped: make(chan struct{}),
 	}
 }
 
@@ -112,7 +112,7 @@ func (be *BufferedExporter[T]) writeToChan(items ...T) (n int) {
 }
 
 func (be *BufferedExporter[T]) flush() (n int, err error) {
-	if be.ringBuf.Empty() && be.exportedData.Len() == 0 {
+	if be.ringBuf.Empty() && be.batch.Len() == 0 {
 		return 0, nil
 	}
 	defer func() {
@@ -130,19 +130,19 @@ func (be *BufferedExporter[T]) flush() (n int, err error) {
 		return 0, err
 	}
 
-	exported := be.exportedData.Len()
-	err = be.exportedData.Send()
+	exported := be.batch.Len()
+	err = be.batch.Send()
 	if err != nil {
 		return 0, err
 	}
-	return exported, be.exportedData.Reset()
+	return exported, be.batch.Reset()
 }
 
 func (be *BufferedExporter[T]) fillExportedData() error {
-	pullN := min(be.ringBuf.Len(), be.MaxBatchSize()-be.exportedData.Len())
+	pullN := min(be.ringBuf.Len(), be.MaxBatchSize()-be.batch.Len())
 	for i := 0; i < pullN; i++ {
 		item, _ := be.ringBuf.Top()
-		if _, err := be.exportedData.Add(item); err != nil {
+		if _, err := be.batch.Add(item); err != nil {
 			return err
 		}
 		be.ringBuf.Remove(1)
@@ -161,15 +161,16 @@ func (be *BufferedExporter[T]) Run() error {
 	flush := func() error {
 		n, err := be.flush()
 		be.cfg.Logger.TraceOrErrorfWithFields(err, Fields{
-			"queued":         len(be.writeC),
-			"ring buf":       be.ringBuf.Len(),
-			"exported batch": n,
+			"queued":   len(be.writeC),
+			"ring buf": be.ringBuf.Len(),
+			"batch":    be.batch.Len(),
+			"exported": n,
 		}, "buffered exporter")
 		return err
 	}
 
 	flushAll := func() error {
-		for !be.ringBuf.Empty() || be.exportedData.Len() > 0 {
+		for !be.ringBuf.Empty() || be.batch.Len() > 0 {
 			if err := flush(); err != nil {
 				return err
 			}
