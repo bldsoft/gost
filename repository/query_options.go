@@ -5,6 +5,8 @@ type QueryOptions struct {
 	Fields   []string // option for read operations, empty slice means all
 	Sort     SortOpt
 	Filter   interface{}
+	Limit    int64
+	Offset   int64
 }
 
 type SortField struct {
