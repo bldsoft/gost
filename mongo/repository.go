@@ -123,10 +123,12 @@ func (r *BaseRepository[T, U]) Find(ctx context.Context, filter interface{}, opt
 		if len(opt.Sort) != 0 {
 			findOpt = findOpt.SetSort(r.sort(opt.Sort))
 		}
-		if opt.Limit != 0 {
+		if opt.Limit > 0 {
 			findOpt = findOpt.SetLimit(opt.Limit)
 		}
-		findOpt = findOpt.SetSkip(opt.Offset)
+		if opt.Offset > 0 {
+			findOpt = findOpt.SetSkip(opt.Offset)
+		}
 	}
 
 	cur, err := r.Collection().Find(ctx, r.where(filter, opt...), findOpt)
