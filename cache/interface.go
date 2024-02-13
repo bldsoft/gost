@@ -5,7 +5,10 @@ import (
 	"time"
 )
 
-var ErrCacheMiss = errors.New("cache miss")
+var (
+	ErrCacheMiss = errors.New("cache miss")
+	ErrExists    = errors.New("already exists")
+)
 
 //go:generate go run github.com/vektra/mockery/v2 --all --with-expecter
 
@@ -31,6 +34,8 @@ type IDistrCacheRepository interface {
 	Exist(key string) bool
 	Add(key string, value []byte) error
 	AddFor(key string, value []byte, ttl time.Duration) error
+	AddWithFlags(key string, value []byte, flags uint32) error
+	AddForWithFlags(key string, value []byte, flags uint32, ttl time.Duration) error
 	SetWithFlags(key string, value []byte, flags uint32) error
 	SetForWithFlags(key string, value []byte, flags uint32, ttl time.Duration) error
 	CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error

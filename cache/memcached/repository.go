@@ -101,10 +101,32 @@ func (r *MemcacheRepository) Add(key string, value []byte) error {
 }
 
 // AddFor writes the given item, if no value already exists for its
-// key. ErrNotStored is returned if that condition is not met.
+// key. ErrExists is returned if that condition is not met.
 func (r *MemcacheRepository) AddFor(key string, value []byte, expiration time.Duration) error {
 	key = r.cache.PrepareKey(key)
-	return r.cache.Add(&memcache.Item{Key: key, Value: value, Expiration: r.truncExpiration(expiration)})
+	err := r.cache.Add(&memcache.Item{Key: key, Value: value, Expiration: r.truncExpiration(expiration)})
+	if errors.Is(err, memcache.ErrNotStored) {
+		return cache.ErrExists
+	}
+	return err
+}
+
+func (r *MemcacheRepository) AddWithFlags(key string, value []byte, flags uint32) error {
+	key = r.cache.PrepareKey(key)
+	err := r.cache.Add(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: int32(r.liveTime.Seconds())})
+	if errors.Is(err, memcache.ErrNotStored) {
+		return cache.ErrExists
+	}
+	return err
+}
+
+func (r *MemcacheRepository) AddForWithFlags(key string, value []byte, flags uint32, expiration time.Duration) error {
+	key = r.cache.PrepareKey(key)
+	err := r.cache.Add(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: r.truncExpiration(expiration)})
+	if errors.Is(err, memcache.ErrNotStored) {
+		return cache.ErrExists
+	}
+	return err
 }
 
 // Delete deletes the item with the provided key.
