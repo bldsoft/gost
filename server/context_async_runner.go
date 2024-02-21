@@ -5,12 +5,8 @@ import (
 )
 
 func NewContextAsyncRunner(run func(context.Context) error) AsyncRunner {
-	ctx, cancel := context.WithCancel(context.Background())
 	return &contextAsyncRunner{
-		run:     run,
-		ctx:     ctx,
-		stop:    cancel,
-		stopped: make(chan struct{}),
+		run: run,
 	}
 }
 
@@ -22,6 +18,8 @@ type contextAsyncRunner struct {
 }
 
 func (r *contextAsyncRunner) Run() error {
+	r.ctx, r.stop = context.WithCancel(context.Background())
+	r.stopped = make(chan struct{})
 	defer close(r.stopped)
 	return r.run(r.ctx)
 }
