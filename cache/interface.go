@@ -41,6 +41,21 @@ type IDistrCacheRepository interface {
 	CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error
 }
 
+type DistrCacheRepository interface {
+	Get(key string) ([]byte, uint32, error)
+	Exist(key string) bool
+	Set(key string, opts *Options) error
+	Add(key string, opts *Options) error
+	Delete(key string) error
+	CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error
+}
+
+type Options struct {
+	Value []byte
+	TTL   *time.Duration
+	Flags *uint32
+}
+
 type Repository[T any] interface {
 	Get(key string) (T, error)
 	Set(key string, value T) error

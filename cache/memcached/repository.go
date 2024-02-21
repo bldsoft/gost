@@ -26,16 +26,7 @@ func NewMemcacheRepository(storage *Storage, liveTime time.Duration) *MemcacheRe
 
 // Get gets the item valut for the given key. ErrCacheMiss is returned for a
 // memcache cache miss. The key must be at most 250 bytes in length.
-func (r *MemcacheRepository) Get(key string) ([]byte, error) {
-	key = r.cache.PrepareKey(key)
-	item, err := r.cache.Get(key)
-	if err != nil || item == nil {
-		return nil, r.mapError(err)
-	}
-	return item.Value, err
-}
-
-func (r *MemcacheRepository) GetWithFlags(key string) (data []byte, flags uint32, err error) {
+func (r *MemcacheRepository) Get(key string) ([]byte, uint32, error) {
 	key = r.cache.PrepareKey(key)
 	item, err := r.cache.Get(key)
 	if err != nil || item == nil {
@@ -44,14 +35,9 @@ func (r *MemcacheRepository) GetWithFlags(key string) (data []byte, flags uint32
 	return item.Value, item.Flags, err
 }
 
-func (r *MemcacheRepository) GetMulti(keys []string) (map[string][]byte, error) {
-	keys = r.cache.PrepareKeys(keys)
-	items, err := r.cache.GetMulti(keys)
-	m := make(map[string][]byte, len(items))
-	for key, item := range items {
-		m[key] = item.Value
-	}
-	return m, err
+func (r *MemcacheRepository) Exist(key string) bool {
+	key = r.cache.PrepareKey(key)
+	return r.cache.Touch(key, int32(r.liveTime.Seconds())) == nil
 }
 
 // SetLiveTimeMin ...
@@ -60,72 +46,16 @@ func (r *MemcacheRepository) SetLiveTimeMin(liveTime time.Duration) {
 }
 
 // Set writes the given item, unconditionally.
-func (r *MemcacheRepository) Set(key string, value []byte) error {
-	return r.SetFor(key, value, r.liveTime)
+func (r *MemcacheRepository) Set(key string, opts *cache.Options) error {
+	return r.cache.Set(r.item(key, opts))
 }
 
-func (r *MemcacheRepository) truncExpiration(d time.Duration) int32 {
-	const maxDuration = 30 * 24 * time.Hour
-	if d > maxDuration {
-		return int32(maxDuration.Seconds())
-	}
-	return int32(d.Seconds())
-}
-
-// SetFor writes the given item, unconditionally.
-func (r *MemcacheRepository) SetFor(key string, value []byte, expiration time.Duration) error {
-	key = r.cache.PrepareKey(key)
-	return r.cache.Set(&memcache.Item{Key: key, Value: value, Expiration: r.truncExpiration(expiration)})
-}
-
-func (r *MemcacheRepository) SetWithFlags(key string, value []byte, flags uint32) error {
-	key = r.cache.PrepareKey(key)
-	return r.cache.Set(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: int32(r.liveTime.Seconds())})
-}
-
-func (r *MemcacheRepository) SetForWithFlags(key string, value []byte, flags uint32, expiration time.Duration) error {
-	key = r.cache.PrepareKey(key)
-	return r.cache.Set(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: r.truncExpiration(expiration)})
-}
-
-// Exist checks if the key exists
-func (r *MemcacheRepository) Exist(key string) bool {
-	key = r.cache.PrepareKey(key)
-	return r.cache.Touch(key, int32(r.liveTime.Seconds())) == nil
-}
-
-// Add writes the given item, if no value already exists for its
-// key. ErrNotStored is returned if that condition is not met.
-func (r *MemcacheRepository) Add(key string, value []byte) error {
-	return r.AddFor(key, value, r.liveTime)
-}
-
-// AddFor writes the given item, if no value already exists for its
-// key. ErrExists is returned if that condition is not met.
-func (r *MemcacheRepository) AddFor(key string, value []byte, expiration time.Duration) error {
-	key = r.cache.PrepareKey(key)
-	err := r.cache.Add(&memcache.Item{Key: key, Value: value, Expiration: r.truncExpiration(expiration)})
+func (r *MemcacheRepository) Add(key string, opts *cache.Options) error {
+	err := r.cache.Add(r.item(key, opts))
 	if errors.Is(err, memcache.ErrNotStored) {
 		return cache.ErrExists
 	}
-	return err
-}
 
-func (r *MemcacheRepository) AddWithFlags(key string, value []byte, flags uint32) error {
-	key = r.cache.PrepareKey(key)
-	err := r.cache.Add(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: int32(r.liveTime.Seconds())})
-	if errors.Is(err, memcache.ErrNotStored) {
-		return cache.ErrExists
-	}
-	return err
-}
-
-func (r *MemcacheRepository) AddForWithFlags(key string, value []byte, flags uint32, expiration time.Duration) error {
-	key = r.cache.PrepareKey(key)
-	err := r.cache.Add(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: r.truncExpiration(expiration)})
-	if errors.Is(err, memcache.ErrNotStored) {
-		return cache.ErrExists
-	}
 	return err
 }
 
@@ -181,3 +111,32 @@ func (r *MemcacheRepository) mapError(err error) error {
 		return err
 	}
 }
+
+func (r *MemcacheRepository) item(key string, opts *cache.Options) *memcache.Item {
+	it := memcache.Item{
+		Key:        r.cache.PrepareKey(key),
+		Expiration: truncExpiration(r.liveTime),
+	}
+
+	if opts != nil {
+		it.Value = opts.Value
+		if opts.TTL != nil {
+			it.Expiration = truncExpiration(*opts.TTL)
+		}
+		if opts.Flags != nil {
+			it.Flags = *opts.Flags
+		}
+	}
+
+	return &it
+}
+
+func truncExpiration(d time.Duration) int32 {
+	const maxDuration = 30 * 24 * time.Hour
+	if d > maxDuration {
+		return int32(maxDuration.Seconds())
+	}
+	return int32(d.Seconds())
+}
+
+var _ (cache.DistrCacheRepository) = NewMemcacheRepository(nil, time.Second)
