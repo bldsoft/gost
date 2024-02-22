@@ -163,7 +163,8 @@ func (e *ClickHouseLogExporter) countLogs(
 		From(e.config.TableName).
 		Where(e.filter(params.Filter))
 
-	row := query.RunWith(e.storage.Db).QueryRowContext(ctx)
+	q, args, _ := query.ToSql()
+	row := e.storage.Native.QueryRow(ctx, q, args...)
 	var count int64
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -190,7 +191,8 @@ func (e *ClickHouseLogExporter) Logs(
 		Offset(uint64(params.Offset)).
 		Limit(uint64(params.Limit))
 
-	rows, err := query.RunWith(e.storage.Db).Query()
+	q, args, _ := query.ToSql()
+	rows, err := e.storage.Native.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +238,8 @@ func (e *ClickHouseLogExporter) distinctValues(
 	query := sq.Select("distinct " + column).
 		From(e.config.TableName).
 		Where(e.filter(&filter))
-	rows, err := query.RunWith(e.storage.Db).Query()
+	q, args, _ := query.ToSql()
+	rows, err := e.storage.Native.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +273,9 @@ func (e *ClickHouseLogExporter) RequestIDs(
 		if limit != nil {
 			query = query.Limit(uint64(*limit))
 		}
-		rows, err := query.RunWith(e.storage.Db).Query()
+
+		q, args, _ := query.ToSql()
+		rows, err := e.storage.Native.Query(ctx, q, args)
 		if err != nil {
 			return err
 		}
@@ -291,7 +296,8 @@ func (e *ClickHouseLogExporter) RequestIDs(
 			Where(e.filter(&filter)).
 			Where(sq.NotEq{ReqIDColumnName: ""})
 
-		row := query.RunWith(e.storage.Db).QueryRowContext(ctx)
+		q, args, _ := query.ToSql()
+		row := e.storage.Native.QueryRow(ctx, q, args...)
 		if err := row.Scan(&count); err != nil {
 			return err
 		}

@@ -24,7 +24,7 @@ type Storage struct {
 	cfg Config
 
 	Db      *sql.DB
-	native  driver.Conn
+	Native  driver.Conn
 	isReady int32
 	doOnce  sync.Once
 
@@ -71,7 +71,7 @@ func (db *Storage) Connect() {
 	}
 
 	db.Db = connect
-	db.native = native
+	db.Native = native
 
 	atomic.StoreInt32(&db.isReady, 1)
 
@@ -168,9 +168,9 @@ func (db *Storage) Stats(ctx context.Context) (map[string]interface{}, error) {
 }
 
 func (db *Storage) PrepareBatch(q string) (driver.Batch, error) {
-	return db.native.PrepareBatch(context.Background(), q)
+	return db.Native.PrepareBatch(context.Background(), q)
 }
 
 func (db *Storage) PrepareStaticBatch(q string) (*Batch, error) {
-	return NewBatch(db.native, q)
+	return NewBatch(db.Native, q)
 }
