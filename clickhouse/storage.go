@@ -107,7 +107,7 @@ func (db *Storage) LogError(err error) {
 func (db *Storage) runMigrations(dbname string) bool {
 	log.Debug("Checking clickhouse DB schema...")
 	cfg := &mm.Config{DatabaseName: dbname, MultiStatementEnabled: true}
-	sql, err := db.db()
+	sql, err := db.Db()
 	if err != nil {
 		return false
 	}
@@ -176,7 +176,7 @@ func (db *Storage) PrepareStaticBatch(q string) (*Batch, error) {
 	return NewBatch(db.Native, q)
 }
 
-func (db *Storage) db() (*sql.DB, error) {
+func (db *Storage) Db() (*sql.DB, error) {
 	connect := clickhouse.OpenDB(db.cfg.options)
 	if err := connect.Ping(); err != nil {
 		db.LogError(err)
