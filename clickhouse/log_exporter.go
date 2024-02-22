@@ -313,14 +313,13 @@ func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
 	if !e.storage.IsReady() {
 		return ErrLogDbNotReady
 	}
-	_, err := e.storage.Db.Exec(
-		fmt.Sprintf(
-			"ALTER TABLE %s MODIFY TTL %s + INTERVAL %d HOUR",
-			e.config.TableName,
-			TimestampColumnName,
-			hours,
-		),
-	)
+
+	err := e.storage.Native.Exec(context.Background(), fmt.Sprintf(
+		"ALTER TABLE %s MODIFY TTL %s + INTERVAL %d HOUR",
+		e.config.TableName,
+		TimestampColumnName,
+		hours,
+	))
 	return err
 }
 
@@ -330,7 +329,7 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 		engine = "ReplicatedMergeTree"
 	}
 
-	_, err := e.storage.Db.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
+	err := e.storage.Native.Exec(context.Background(), fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 			`+ServiceColumnName+` LowCardinality(String),
 			`+ServiceVersionColumnName+` LowCardinality(String),
 			`+InstanseColumnName+` LowCardinality(String),
