@@ -23,7 +23,7 @@ type Auth = clickhouse.Auth
 type Storage struct {
 	cfg Config
 
-	Db      *sql.DB
+	// Db      *sql.DB
 	Native  driver.Conn
 	isReady int32
 	doOnce  sync.Once
@@ -51,12 +51,6 @@ func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string)
 }
 
 func (db *Storage) Connect() {
-	connect := clickhouse.OpenDB(db.cfg.options)
-	if err := connect.Ping(); err != nil {
-		db.LogError(err)
-		return
-	}
-
 	native, err := clickhouse.Open(db.cfg.options)
 	if err != nil {
 		db.LogError(err)
@@ -66,11 +60,11 @@ func (db *Storage) Connect() {
 	dbname := db.cfg.options.Auth.Database
 
 	use_db := "USE " + dbname + ";"
-	if _, err := connect.Exec(use_db); err != nil {
+	if err := native.Exec(context.Background(), use_db); err != nil {
 		db.LogError(err)
 	}
 
-	db.Db = connect
+	// db.Db = connect
 	db.Native = native
 
 	atomic.StoreInt32(&db.isReady, 1)
@@ -86,7 +80,7 @@ func (db *Storage) RunMigrations() {
 }
 
 func (db *Storage) Disconnect(ctx context.Context) error {
-	err := db.Db.Close()
+	err := db.Native.Close()
 	if err != nil {
 		return errors.Wrap(err, "Clickhouse disconnect failed")
 	}
@@ -113,8 +107,15 @@ func (db *Storage) LogError(err error) {
 func (db *Storage) runMigrations(dbname string) bool {
 	log.Debug("Checking clickhouse DB schema...")
 	cfg := &mm.Config{DatabaseName: dbname, MultiStatementEnabled: true}
+	sql, err := db.db()
+	if err != nil {
+		return false
+	}
+	defer func() {
+		sql.Close()
+	}()
 
-	driver, err := mm.WithInstance(db.Db, cfg)
+	driver, err := mm.WithInstance(sql, cfg)
 	if err != nil {
 		log.ErrorWithFields(log.Fields{"error": err}, "Migrations: driver failed")
 
@@ -173,4 +174,14 @@ func (db *Storage) PrepareBatch(q string) (driver.Batch, error) {
 
 func (db *Storage) PrepareStaticBatch(q string) (*Batch, error) {
 	return NewBatch(db.Native, q)
+}
+
+func (db *Storage) db() (*sql.DB, error) {
+	connect := clickhouse.OpenDB(db.cfg.options)
+	if err := connect.Ping(); err != nil {
+		db.LogError(err)
+		return nil, err
+	}
+
+	return connect, nil
 }
