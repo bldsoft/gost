@@ -40,7 +40,7 @@ func (s *Storage) Auth() Auth {
 }
 
 func (s *Storage) IsReplicationEnabled() bool {
-	_, err := s.Db.Exec("SELECT * FROM system.zookeeper WHERE path = '/' LIMIT 0")
+	err := s.Native.Exec(context.Background(), "SELECT * FROM system.zookeeper WHERE path = '/' LIMIT 0")
 	return err == nil
 }
 
@@ -149,7 +149,7 @@ func (db *Storage) Stats(ctx context.Context) (map[string]interface{}, error) {
 		"SELECT metric, value FROM system.asynchronous_metrics",
 		"SELECT metric, value FROM system.metrics",
 	} {
-		rows, err := db.Db.QueryContext(ctx, query)
+		rows, err := db.Native.Query(ctx, query)
 		if err != nil {
 			return nil, err
 		}
