@@ -26,9 +26,10 @@ func TestFromQuery(t *testing.T) {
 		query url.Values
 	}
 	tests := []struct {
-		name string
-		args args
-		want *TestStruct
+		name    string
+		args    args
+		want    *TestStruct
+		wantErr bool
 	}{
 		{
 			name: "empty",
@@ -73,10 +74,32 @@ func TestFromQuery(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "with Error",
+			args: args{
+				query: url.Values{
+					"string":         []string{"string"},
+					"int":            []string{"xxxxx"},
+					"bool":           []string{"xxxxxx"},
+					"pstring":        []string{"string"},
+					"pint":           []string{"xxxxxxxxxx"},
+					"Nested.nstring": []string{"nested"},
+				},
+			},
+			want:    &TestStruct{},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := FromQuery[TestStruct](tt.args.query); !reflect.DeepEqual(got, tt.want) {
+			got, err := FromQuery[TestStruct](tt.args.query)
+			if err != nil {
+				if !tt.wantErr {
+					t.Errorf("FromQuery() unexpected error")
+				}
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FromQuery() = %v, want %v", got, tt.want)
 			}
 		})

@@ -25,7 +25,12 @@ func NewControllerByService(changeLogService IChangeLogService) *Controller {
 }
 
 func (c *Controller) GetHandler(w http.ResponseWriter, r *http.Request) {
-	records, err := c.changeLogService.GetRecords(r.Context(), utils.FromRequest[RecordsParams](r))
+	params, err := utils.FromRequest[RecordsParams](r)
+	if err != nil {
+		c.ResponseError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	records, err := c.changeLogService.GetRecords(r.Context(), params)
 	switch {
 	case err == nil:
 		c.ResponseJson(w, r, records)

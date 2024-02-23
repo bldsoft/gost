@@ -10,8 +10,10 @@ import (
 	"github.com/gorilla/schema"
 )
 
-var decoder = schema.NewDecoder()
-var encoder = schema.NewEncoder()
+var (
+	decoder = schema.NewDecoder()
+	encoder = schema.NewEncoder()
+)
 
 func init() {
 	decoder.IgnoreUnknownKeys(true)
@@ -33,16 +35,13 @@ func init() {
 	})
 }
 
-func FromRequest[T any](r *http.Request) *T {
+func FromRequest[T any](r *http.Request) (*T, error) {
 	return FromQuery[T](r.URL.Query())
 }
 
-func FromQuery[T any](query url.Values) *T {
+func FromQuery[T any](query url.Values) (*T, error) {
 	var obj T
-	if err := decoder.Decode(&obj, query); err != nil {
-		panic(err)
-	}
-	return &obj
+	return &obj, decoder.Decode(&obj, query)
 }
 
 func Query[T any](obj T) url.Values {
