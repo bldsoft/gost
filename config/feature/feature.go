@@ -2,17 +2,13 @@ package feature
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 )
-
-var ErrDisabled = errors.New("feature is depricated")
 
 type Feature[T comparable] struct {
 	ID    IdType
 	value T
 
-	depricated       bool
 	parse            func(string) (T, error)
 	validators       []func(T) error
 	onchangeHandlers []func(T)
@@ -41,9 +37,6 @@ func (f *Feature[T]) SetValidator(validate func(T) error) *Feature[T] {
 
 // Get returns feature value
 func (f *Feature[T]) Get() T {
-	if f.depricated {
-		panic(ErrDisabled)
-	}
 	return f.value
 }
 
