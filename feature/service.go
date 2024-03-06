@@ -2,6 +2,7 @@ package feature
 
 import (
 	"context"
+	"slices"
 
 	"github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/log"
@@ -29,7 +30,16 @@ func (srv *Service) Get(ctx context.Context, id feature.IdType) (*Feature, error
 }
 
 func (srv *Service) GetAll(ctx context.Context) ([]*Feature, error) {
-	return srv.featureRep.GetAll(ctx)
+	features, err := srv.featureRep.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	features = slices.DeleteFunc(features, func(el *Feature) bool {
+		return feature.Features.Get(el.ID) == nil
+	})
+
+	return features, nil
 }
 
 func (srv *Service) validate(f *Feature) error {
