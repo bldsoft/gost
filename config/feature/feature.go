@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-var ErrDisabled = errors.New("feature is disabled; read-only")
+var ErrDisabled = errors.New("feature is depricated")
 
 type Feature[T comparable] struct {
 	ID    IdType
