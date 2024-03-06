@@ -50,9 +50,11 @@ func NewCustomFeature[T comparable](id IdType, value T, parse func(string) (T, e
 	feature := &Feature[T]{ID: id, value: value, parse: parse}
 	if len(depricated) > 0 {
 		feature.depricated = depricated[0]
-		feature.SetValidator(func(T) error {
-			return ErrDisabled
-		})
+		if depricated[0] {
+			feature.SetValidator(func(T) error {
+				return ErrDisabled
+			})
+		}
 	}
 	Features.features[id] = feature
 	return feature
