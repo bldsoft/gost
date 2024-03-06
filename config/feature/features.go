@@ -7,10 +7,12 @@ import (
 	"github.com/bldsoft/gost/utils"
 )
 
-type Bool = Feature[bool]
-type Int = Feature[int]
-type String = Feature[string]
-type Duration = Feature[time.Duration]
+type (
+	Bool     = Feature[bool]
+	Int      = Feature[int]
+	String   = Feature[string]
+	Duration = Feature[time.Duration]
+)
 
 type IdType = int
 
@@ -44,19 +46,23 @@ func (fc *featureConfig) Get(featureID IdType) IFeature {
 
 // NewCustomFeature create a new feature from any comparable type.
 // For basic types you can use NewFeature function.
-func NewCustomFeature[T comparable](id IdType, value T, parse func(string) (T, error)) *Feature[T] {
+func NewCustomFeature[T comparable](id IdType, value T, parse func(string) (T, error), disabled ...bool) *Feature[T] {
 	feature := &Feature[T]{ID: id, value: value, parse: parse}
-	Features.features[id] = feature
+	if len(disabled) > 0 && disabled[0] {
+		feature.SetValidator(func(T) error { return ErrDisabled })
+	} else {
+		Features.features[id] = feature
+	}
 	return feature
 }
 
 // NewFeature creates a new feature and put it to feature.Features
-func NewFeature[T utils.Parsed](id IdType, value T) *Feature[T] {
-	return NewCustomFeature(id, value, utils.Parse[T])
+func NewFeature[T utils.Parsed](id IdType, value T, disabled ...bool) *Feature[T] {
+	return NewCustomFeature(id, value, utils.Parse[T], disabled...)
 }
 
 // NewDuration creates a new feature for time.Duration type.
 // time.ParseDuration is used for value parsing, so you can set value such as "300ms" or "2h45m".
-func NewDuration(id IdType, dur time.Duration) *Duration {
-	return NewCustomFeature(id, dur, time.ParseDuration)
+func NewDuration(id IdType, dur time.Duration, disabled ...bool) *Duration {
+	return NewCustomFeature(id, dur, time.ParseDuration, disabled...)
 }

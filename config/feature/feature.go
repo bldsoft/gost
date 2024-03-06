@@ -2,15 +2,18 @@ package feature
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 )
+
+var ErrDisabled = errors.New("feature is disabled; read-only")
 
 type Feature[T comparable] struct {
 	ID    IdType
 	value T
 
 	parse            func(string) (T, error)
-	validator        func(T) error
+	validators       []func(T) error
 	onchangeHandlers []func(T)
 }
 
@@ -31,7 +34,7 @@ func (f *Feature[T]) AddOnChangeHandler(handler func(T), handlers ...func(T)) *F
 }
 
 func (f *Feature[T]) SetValidator(validate func(T) error) *Feature[T] {
-	f.validator = validate
+	f.validators = append(f.validators, validate)
 	return f
 }
 
@@ -41,10 +44,15 @@ func (f *Feature[T]) Get() T {
 }
 
 func (f *Feature[T]) validate(value T) error {
-	if f.validator == nil {
+	if len(f.validators) == 0 {
 		return nil
 	}
-	return f.validator(value)
+	for _, v := range f.validators {
+		if err := v(value); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (f *Feature[T]) Validate(value string) error {
