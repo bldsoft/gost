@@ -96,32 +96,3 @@ func DeleteFeatureMigration(db *mongo.Storage, version uint, featureIDs ...featu
 		}]
 	}]`, IDs, mongo.BsonFieldNameArchived))
 }
-
-// func ModifyFeatureMigration(db *mongo.Storage, version uint, featureID feature.IdType, name string, description string) {
-// 	if len(name) == 0 && len(description) == 0 {
-// 		return
-// 	}
-
-//     f, err := db.Db.Collection(name string, opts ...*options.CollectionOptions)
-
-// 	up := fmt.Sprintf(`[{
-// 	"insert": "feature",
-// 	"documents": %s
-// 	},
-// 	{
-// 	"update": "feature",
-// 	"updates": [{
-// 		"q": {
-// 			"_id": %s,
-// 		},
-// 		"u": {
-// 			"$currentDate": {
-// 				"%s": true,
-// 				"%s": true
-// 			}
-// 		},
-// 		"multi": false
-// 	}]
-// 	}
-// ]`, fmt.Sprintf("%d", featureID), IDs, mongo.BsonFieldNameCreateTime, mongo.BsonFieldNameUpdateTime)
-// }
