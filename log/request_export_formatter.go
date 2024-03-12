@@ -41,19 +41,19 @@ func (f *ExportFormatter[T, P]) NewLogEntry(r *http.Request) (middleware.LogEntr
 	var requestInfo T
 	requestInfoPtr := (P)(&requestInfo)
 	baseRequestInfo := requestInfoPtr.BaseRequestInfo()
-	ua := r.UserAgent()
 
 	reqID := middleware.GetReqID(r.Context())
 	baseRequestInfo.RequestTime = time.Now().Unix()
 	baseRequestInfo.Instance = f.instanceName
 	baseRequestInfo.RequestMethod = GetRequestMethodType(r.Method)
 	if baseRequestInfo.RequestMethod == ERROR {
-		Logger.ErrorWithFields(Fields{"method": r.Method, "url": r.URL.Path, "requestID": reqID, "userAgent": ua}, "Request info: bad request method")
+		Logger.ErrorWithFields(Fields{"method": r.Method, "url": r.URL.Path, "requestID": reqID}, "Request info: bad request method")
 	}
 	baseRequestInfo.Path = r.URL.Path
 	baseRequestInfo.Query = r.URL.RawQuery
 	baseRequestInfo.ClientIp = r.RemoteAddr
-	baseRequestInfo.UserAgent = ua
+	// ua := r.UserAgent()
+	// baseRequestInfo.UserAgent = ua
 	baseRequestInfo.RequestId = reqID
 	if utils.IsIn(baseRequestInfo.RequestMethod, POST, PUT) && r.ContentLength > 0 {
 		baseRequestInfo.Size = uint32(r.ContentLength)
@@ -65,6 +65,7 @@ func (f *ExportFormatter[T, P]) NewLogEntry(r *http.Request) (middleware.LogEntr
 		requestExporter: f.requestExporter,
 		errBuf:          LogRequestErrBufferFromContext(r.Context()),
 		requestInfo:     requestInfoPtr,
+		req:             r,
 	}, r
 }
 
@@ -72,6 +73,7 @@ type ContextExportFormatterLoggerEntry[T any, P RequestInfoPtr[T]] struct {
 	requestInfo     P
 	errBuf          *bytes.Buffer
 	requestExporter exporter.Exporter[P]
+	req             *http.Request
 }
 
 func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
@@ -88,6 +90,8 @@ func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, heade
 		if l.errBuf != nil {
 			baseRequestInfo.Error = l.errBuf.String()
 		}
+
+		baseRequestInfo.UserAgent = l.req.UserAgent()
 
 		l.requestExporter.Export(l.requestInfo)
 	}
