@@ -46,12 +46,12 @@ func (r *MemcacheRepository) SetLiveTimeMin(liveTime time.Duration) {
 }
 
 // Set writes the given item, unconditionally.
-func (r *MemcacheRepository) Set(key string, opts *cache.Options) error {
-	return r.cache.Set(r.item(key, opts))
+func (r *MemcacheRepository) Set(key string, item *cache.Item) error {
+	return r.cache.Set(r.item(key, item))
 }
 
-func (r *MemcacheRepository) Add(key string, opts *cache.Options) error {
-	err := r.cache.Add(r.item(key, opts))
+func (r *MemcacheRepository) Add(key string, item *cache.Item) error {
+	err := r.cache.Add(r.item(key, item))
 	if errors.Is(err, memcache.ErrNotStored) {
 		return cache.ErrExists
 	}
@@ -112,19 +112,19 @@ func (r *MemcacheRepository) mapError(err error) error {
 	}
 }
 
-func (r *MemcacheRepository) item(key string, opts *cache.Options) *memcache.Item {
+func (r *MemcacheRepository) item(key string, item *cache.Item) *memcache.Item {
 	it := memcache.Item{
 		Key:        r.cache.PrepareKey(key),
 		Expiration: truncExpiration(r.liveTime),
 	}
 
-	if opts != nil {
-		it.Value = opts.Value
-		if opts.TTL != nil {
-			it.Expiration = truncExpiration(*opts.TTL)
+	if item != nil {
+		it.Value = item.Value
+		if item.TTL != nil {
+			it.Expiration = truncExpiration(*item.TTL)
 		}
-		if opts.Flags != nil {
-			it.Flags = *opts.Flags
+		if item.Flags != nil {
+			it.Flags = *item.Flags
 		}
 	}
 

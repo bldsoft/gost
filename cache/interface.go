@@ -44,13 +44,13 @@ type IDistrCacheRepository interface {
 type DistrCacheRepository interface {
 	Get(key string) ([]byte, uint32, error)
 	Exist(key string) bool
-	Set(key string, opts *Options) error
-	Add(key string, opts *Options) error
+	Set(key string, opts *Item) error
+	Add(key string, opts *Item) error
 	Delete(key string) error
 	CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error
 }
 
-type Options struct {
+type Item struct {
 	Value []byte
 	TTL   *time.Duration
 	Flags *uint32
