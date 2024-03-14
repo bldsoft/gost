@@ -26,22 +26,22 @@ type IExpiringCacheRepository interface {
 }
 
 // IDistrCacheRepository ...
+// type IDistrCacheRepository interface {
+// 	IExpiringCacheRepository
+
+// 	// TODO: add it to ILocalCacheRepository
+// 	GetWithFlags(key string) (data []byte, flags uint32, err error)
+// 	Exist(key string) bool
+// 	Add(key string, value []byte) error
+// 	AddFor(key string, value []byte, ttl time.Duration) error
+// 	AddWithFlags(key string, value []byte, flags uint32) error
+// 	AddForWithFlags(key string, value []byte, flags uint32, ttl time.Duration) error
+// 	SetWithFlags(key string, value []byte, flags uint32) error
+// 	SetForWithFlags(key string, value []byte, flags uint32, ttl time.Duration) error
+// 	CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error
+// }
+
 type IDistrCacheRepository interface {
-	IExpiringCacheRepository
-
-	// TODO: add it to ILocalCacheRepository
-	GetWithFlags(key string) (data []byte, flags uint32, err error)
-	Exist(key string) bool
-	Add(key string, value []byte) error
-	AddFor(key string, value []byte, ttl time.Duration) error
-	AddWithFlags(key string, value []byte, flags uint32) error
-	AddForWithFlags(key string, value []byte, flags uint32, ttl time.Duration) error
-	SetWithFlags(key string, value []byte, flags uint32) error
-	SetForWithFlags(key string, value []byte, flags uint32, ttl time.Duration) error
-	CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error
-}
-
-type DistrCacheRepository interface {
 	Get(key string) ([]byte, uint32, error)
 	Exist(key string) bool
 	Set(key string, opts *Item) error

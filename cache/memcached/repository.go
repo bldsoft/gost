@@ -139,4 +139,4 @@ func truncExpiration(d time.Duration) int32 {
 	return int32(d.Seconds())
 }
 
-var _ (cache.DistrCacheRepository) = NewMemcacheRepository(nil, time.Second)
+var _ (cache.IDistrCacheRepository) = NewMemcacheRepository(nil, time.Second)
