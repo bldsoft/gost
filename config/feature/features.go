@@ -7,10 +7,12 @@ import (
 	"github.com/bldsoft/gost/utils"
 )
 
-type Bool = Feature[bool]
-type Int = Feature[int]
-type String = Feature[string]
-type Duration = Feature[time.Duration]
+type (
+	Bool     = Feature[bool]
+	Int      = Feature[int]
+	String   = Feature[string]
+	Duration = Feature[time.Duration]
+)
 
 type IdType = int
 

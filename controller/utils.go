@@ -71,8 +71,11 @@ func ParseQueryOptionSlice[T utils.Parsed](r *http.Request, w http.ResponseWrite
 
 func QueryOptionFromRequest[F any](r *http.Request, archived bool) (*repository.QueryOptions, error) {
 	opt := &repository.QueryOptions{}
-
-	opt.Filter = utils.FromRequest[F](r)
+	var err error
+	opt.Filter, err = utils.FromRequest[F](r)
+	if err != nil {
+		return nil, err
+	}
 	opt.Archived = archived
 
 	fields, err := GetQueryOptionSlice[string](r, "fields")

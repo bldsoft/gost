@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bldsoft/gost/utils"
 	"github.com/bldsoft/gost/utils/exporter"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -40,21 +41,21 @@ func (f *ExportFormatter[T, P]) NewLogEntry(r *http.Request) (middleware.LogEntr
 	var requestInfo T
 	requestInfoPtr := (P)(&requestInfo)
 	baseRequestInfo := requestInfoPtr.BaseRequestInfo()
-	ua := r.UserAgent()
 
 	reqID := middleware.GetReqID(r.Context())
 	baseRequestInfo.RequestTime = time.Now().Unix()
 	baseRequestInfo.Instance = f.instanceName
 	baseRequestInfo.RequestMethod = GetRequestMethodType(r.Method)
 	if baseRequestInfo.RequestMethod == ERROR {
-		Logger.ErrorWithFields(Fields{"method": r.Method, "url": r.URL.Path, "requestID": reqID, "userAgent": ua}, "Request info: bad request method")
+		Logger.ErrorWithFields(Fields{"method": r.Method, "url": r.URL.Path, "requestID": reqID}, "Request info: bad request method")
 	}
 	baseRequestInfo.Path = r.URL.Path
 	baseRequestInfo.Query = r.URL.RawQuery
 	baseRequestInfo.ClientIp = r.RemoteAddr
-	baseRequestInfo.UserAgent = ua
+	// ua := r.UserAgent()
+	// baseRequestInfo.UserAgent = ua
 	baseRequestInfo.RequestId = reqID
-	if baseRequestInfo.RequestMethod == POST && r.ContentLength > 0 {
+	if utils.IsIn(baseRequestInfo.RequestMethod, POST, PUT) && r.ContentLength > 0 {
 		baseRequestInfo.Size = uint32(r.ContentLength)
 	}
 
@@ -63,13 +64,16 @@ func (f *ExportFormatter[T, P]) NewLogEntry(r *http.Request) (middleware.LogEntr
 	return &ContextExportFormatterLoggerEntry[T, P]{
 		requestExporter: f.requestExporter,
 		errBuf:          LogRequestErrBufferFromContext(r.Context()),
-		requestInfo:     requestInfoPtr}, r
+		requestInfo:     requestInfoPtr,
+		req:             r,
+	}, r
 }
 
 type ContextExportFormatterLoggerEntry[T any, P RequestInfoPtr[T]] struct {
 	requestInfo     P
 	errBuf          *bytes.Buffer
 	requestExporter exporter.Exporter[P]
+	req             *http.Request
 }
 
 func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
@@ -78,7 +82,7 @@ func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, heade
 	if l.requestInfo != nil {
 		baseRequestInfo := l.requestInfo.BaseRequestInfo()
 		baseRequestInfo.ResponseCode = ResponseCodeType(status)
-		if baseRequestInfo.RequestMethod != POST {
+		if !utils.IsIn(baseRequestInfo.RequestMethod, POST, PUT) {
 			baseRequestInfo.Size = uint32(bytes)
 		}
 		baseRequestInfo.HandleTime = uint32(duration)
@@ -86,6 +90,8 @@ func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, heade
 		if l.errBuf != nil {
 			baseRequestInfo.Error = l.errBuf.String()
 		}
+
+		baseRequestInfo.UserAgent = l.req.UserAgent()
 
 		l.requestExporter.Export(l.requestInfo)
 	}
