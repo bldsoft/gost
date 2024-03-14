@@ -46,7 +46,8 @@ func NewDistrMutex(cache IDistrCacheRepository, lockKey string, unlockTime time.
 		uniqueID:        uniqueID,
 		quit:            make(chan struct{}),
 		unlockTime:      unlockTime,
-		TryLockInterval: unlockTime}
+		TryLockInterval: unlockTime,
+	}
 }
 
 // Lock locks m. If the lock is already in use, the calling goroutine blocks until the mutex is available.
@@ -72,7 +73,11 @@ func (m *DistrMutex) Lock(ctx context.Context) {
 
 // TryLock tries to lock m. It returns true in case of success, false otherwise.
 func (m *DistrMutex) TryLock() bool {
-	err := m.cache.AddFor(m.lockKey, m.uniqueID, m.unlockTime)
+	// err := m.cache.AddFor(m.lockKey, m.uniqueID, m.unlockTime)
+	err := m.cache.Add(m.lockKey, &Item{
+		Value: m.uniqueID,
+		TTL:   &m.unlockTime,
+	})
 	if err != nil {
 		log.DebugWithFields(log.Fields{"error": err}, "Failed to lock memcached mutex")
 		return false
@@ -83,7 +88,7 @@ func (m *DistrMutex) TryLock() bool {
 }
 
 func (m *DistrMutex) getOwner() lockOwner {
-	lockOwner, err := m.cache.Get(m.lockKey)
+	lockOwner, _, err := m.cache.Get(m.lockKey)
 	if err != nil {
 		return nobody
 	}
@@ -98,7 +103,10 @@ func (m *DistrMutex) updateLock() {
 		lockOwner := m.getOwner()
 		switch lockOwner {
 		case me:
-			err := m.cache.SetFor(m.lockKey, m.uniqueID, m.unlockTime)
+			err := m.cache.Set(m.lockKey, &Item{
+				Value: m.uniqueID,
+				TTL:   &m.unlockTime,
+			})
 			if err != nil {
 				log.ErrorfWithFields(log.Fields{"error": err}, "failed to update memcached lock %s", m.lockKey)
 			}
