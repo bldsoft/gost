@@ -28,17 +28,17 @@ func WithUserContext[T any](r *http.Request, user T) *http.Request {
 	return requestContextAdd(r, UserEntryCtxKey, user)
 }
 
-func WithSessionRequest(r *http.Request, s *sessions.Session) *http.Request {
-	return requestContextAdd(r, SessionEntryCtxKey, s)
+func withSessionRequest(r *http.Request, s *sessions.Session) *http.Request {
+	return requestContextAdd(r, SessionEntryCtxKey, wrapSession(s))
 }
 
-func WithSessionContext(ctx context.Context, s *sessions.Session) context.Context {
-	return context.WithValue(ctx, SessionEntryCtxKey, s)
+func withSessionContext(ctx context.Context, s *sessions.Session) context.Context {
+	return context.WithValue(ctx, SessionEntryCtxKey, wrapSession(s))
 }
 
 // UserFromContext returns User session
-func SessionFromContext(ctx context.Context) *sessions.Session {
-	s, _ := ctx.Value(SessionEntryCtxKey).(*sessions.Session)
+func SessionFromContext(ctx context.Context) *Session {
+	s, _ := ctx.Value(SessionEntryCtxKey).(*Session)
 	return s
 }
 
@@ -106,7 +106,7 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 				next.ServeHTTP(w, r)
 				return
 			}
-			next.ServeHTTP(w, WithUserContext(WithSessionRequest(r, session), &user))
+			next.ServeHTTP(w, WithUserContext(withSessionRequest(r, session), &user))
 			c.saveSession(w, r, session)
 		})
 	}
@@ -122,7 +122,7 @@ func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	ctx := WithSessionContext(r.Context(), session)
+	ctx := withSessionContext(r.Context(), session)
 
 	user, err := c.authService.Login(ctx, PT(&creds).Login(), PT(&creds).Password())
 	switch {
