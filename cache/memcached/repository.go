@@ -70,7 +70,7 @@ func (r *MemcacheRepository) Reset() {
 	r.cache.FlushAll()
 }
 
-func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error {
+func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value *cache.Item) (*cache.Item, error), sleepDur ...time.Duration) error {
 	var err error
 	key = r.cache.PrepareKey(key)
 
@@ -81,13 +81,19 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value []byt
 			return err
 		}
 
-		data, err := handler(item.Value)
+		data, err := handler(&cache.Item{
+			Value: item.Value,
+			Flags: &item.Flags,
+		})
 
 		if err != nil || data == nil {
 			return err
 		}
 
-		item.Value = data
+		item.Value = data.Value
+		if data.Flags != nil {
+			item.Flags = *data.Flags
+		}
 		err = r.cache.CompareAndSwap(item)
 
 		switch err {
