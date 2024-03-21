@@ -66,7 +66,7 @@ func (_c *IDistrCacheRepository_Add_Call) RunAndReturn(run func(string, *cache.I
 }
 
 // CompareAndSwap provides a mock function with given fields: key, handler, sleepDur
-func (_m *IDistrCacheRepository) CompareAndSwap(key string, handler func([]*cache.Item) ([]*cache.Item, error), sleepDur ...time.Duration) error {
+func (_m *IDistrCacheRepository) CompareAndSwap(key string, handler func(cache.Item) (cache.Item, error), sleepDur ...time.Duration) error {
 	_va := make([]interface{}, len(sleepDur))
 	for _i := range sleepDur {
 		_va[_i] = sleepDur[_i]
@@ -77,7 +77,7 @@ func (_m *IDistrCacheRepository) CompareAndSwap(key string, handler func([]*cach
 	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, func([]*cache.Item) ([]*cache.Item, error), ...time.Duration) error); ok {
+	if rf, ok := ret.Get(0).(func(string, func(cache.Item) (cache.Item, error), ...time.Duration) error); ok {
 		r0 = rf(key, handler, sleepDur...)
 	} else {
 		r0 = ret.Error(0)
@@ -93,14 +93,14 @@ type IDistrCacheRepository_CompareAndSwap_Call struct {
 
 // CompareAndSwap is a helper method to define mock.On call
 //   - key string
-//   - handler func([]*cache.Item)([]*cache.Item , error)
+//   - handler func(cache.Item)(cache.Item , error)
 //   - sleepDur ...time.Duration
 func (_e *IDistrCacheRepository_Expecter) CompareAndSwap(key interface{}, handler interface{}, sleepDur ...interface{}) *IDistrCacheRepository_CompareAndSwap_Call {
 	return &IDistrCacheRepository_CompareAndSwap_Call{Call: _e.mock.On("CompareAndSwap",
 		append([]interface{}{key, handler}, sleepDur...)...)}
 }
 
-func (_c *IDistrCacheRepository_CompareAndSwap_Call) Run(run func(key string, handler func([]*cache.Item) ([]*cache.Item, error), sleepDur ...time.Duration)) *IDistrCacheRepository_CompareAndSwap_Call {
+func (_c *IDistrCacheRepository_CompareAndSwap_Call) Run(run func(key string, handler func(cache.Item) (cache.Item, error), sleepDur ...time.Duration)) *IDistrCacheRepository_CompareAndSwap_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]time.Duration, len(args)-2)
 		for i, a := range args[2:] {
@@ -108,7 +108,7 @@ func (_c *IDistrCacheRepository_CompareAndSwap_Call) Run(run func(key string, ha
 				variadicArgs[i] = a.(time.Duration)
 			}
 		}
-		run(args[0].(string), args[1].(func([]*cache.Item) ([]*cache.Item, error)), variadicArgs...)
+		run(args[0].(string), args[1].(func(cache.Item) (cache.Item, error)), variadicArgs...)
 	})
 	return _c
 }
@@ -118,7 +118,7 @@ func (_c *IDistrCacheRepository_CompareAndSwap_Call) Return(_a0 error) *IDistrCa
 	return _c
 }
 
-func (_c *IDistrCacheRepository_CompareAndSwap_Call) RunAndReturn(run func(string, func([]*cache.Item) ([]*cache.Item, error), ...time.Duration) error) *IDistrCacheRepository_CompareAndSwap_Call {
+func (_c *IDistrCacheRepository_CompareAndSwap_Call) RunAndReturn(run func(string, func(cache.Item) (cache.Item, error), ...time.Duration) error) *IDistrCacheRepository_CompareAndSwap_Call {
 	_c.Call.Return(run)
 	return _c
 }
