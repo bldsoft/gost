@@ -47,7 +47,7 @@ type IDistrCacheRepository interface {
 	Set(key string, opts *Item) error
 	Add(key string, opts *Item) error
 	Delete(key string) error
-	CompareAndSwap(key string, handler func(value Item) (Item, error), sleepDur ...time.Duration) error
+	CompareAndSwap(key string, handler func(value *Item) (*Item, error), sleepDur ...time.Duration) error
 }
 
 type Item struct {
