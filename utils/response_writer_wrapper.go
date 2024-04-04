@@ -24,6 +24,10 @@ type ResponseWriter struct {
 	original http.ResponseWriter
 }
 
+func (w *ResponseWriter) StatusCode() int {
+	return w.state.Code
+}
+
 // Flush the response
 func (rw *ResponseWriter) Flush() (int, error) {
 	if rw.state.Code > 0 {
