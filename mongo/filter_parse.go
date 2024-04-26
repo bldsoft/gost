@@ -11,6 +11,13 @@ func RecursiveParse(filter bson.M, t interface{}, prefix string) {
 		return
 	}
 
+	if b, ok := t.(bson.M); ok {
+		for k, v := range b {
+			filter[k] = v
+		}
+		return
+	}
+
 	fv := reflect.Indirect(reflect.ValueOf(t))
 	ft := fv.Type()
 	for i, limit := 0, fv.NumField(); i < limit; i++ {
