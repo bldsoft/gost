@@ -42,7 +42,7 @@ func (l *DefaultFormatter) NewLogEntry(r *http.Request) (middleware.LogEntry, *h
 	/*if log.Trace().Enabled() {
 		logFields["body"] =
 	}*/
-	entry.Logger.InfoWithFields(logFields, "REQUEST")
+	entry.Logger.InfofWithFields(logFields, "%s REQUEST", r.Method)
 
 	return entry, r
 }
