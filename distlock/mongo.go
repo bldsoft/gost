@@ -82,7 +82,7 @@ func (l *mongoDistLock) TryLock() bool {
 		Owner: l.uniqueID,
 	}, -1)
 	if err != nil {
-		log.WarnWithFields(log.Fields{"error": err, "lockID": l.lockID}, "Failed to lock memcached mutex")
+		log.WarnWithFields(log.Fields{"error": err, "lockID": l.lockID}, "mongoDistLock: failed to sloctk")
 		return false
 	}
 	l.ticker = time.NewTicker(l.ttl / 2)
