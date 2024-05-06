@@ -3,6 +3,7 @@ package distlock
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"time"
 
 	"github.com/bldsoft/gost/log"
@@ -82,7 +83,9 @@ func (l *mongoDistLock) TryLock() bool {
 		Owner: l.uniqueID,
 	}, -1)
 	if err != nil {
-		log.WarnWithFields(log.Fields{"error": err, "lockID": l.lockID}, "mongoDistLock: failed to sloctk")
+		if !errors.Is(err, lock.ErrAlreadyLocked) {
+			log.WarnWithFields(log.Fields{"error": err, "lockID": l.lockID}, "mongoDistLock: failed to slock")
+		}
 		return false
 	}
 	l.ticker = time.NewTicker(l.ttl / 2)
