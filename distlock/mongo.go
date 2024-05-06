@@ -47,10 +47,13 @@ func NewMongoDistLock(db *mongo.Storage, lockID string, ttl time.Duration) Distr
 	}
 
 	return &mongoDistLock{
-		c:      c,
-		lockID: lockID,
-		ctx:    ctx,
-		cancel: cancel,
+		c:        c,
+		lockID:   lockID,
+		uniqueID: string(uniqueID),
+		ctx:      ctx,
+		cancel:   cancel,
+		ttl:      ttl,
+		quit:     make(chan struct{}),
 	}
 }
 
@@ -82,6 +85,8 @@ func (l *mongoDistLock) TryLock() bool {
 		log.WarnWithFields(log.Fields{"error": err, "lockID": l.lockID}, "Failed to lock memcached mutex")
 		return false
 	}
+	l.ticker = time.NewTicker(l.ttl / 2)
+	go l.updateLock()
 
 	return true
 }
