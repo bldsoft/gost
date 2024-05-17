@@ -44,13 +44,3 @@ func (c *ConnectionString) MarshalJSON() ([]byte, error) {
 func (c ConnectionString) String() string {
 	return string(c)
 }
-
-type HiddenString string
-
-func (c *HiddenString) MarshalJSON() ([]byte, error) {
-	return json.Marshal(passReplacement)
-}
-
-func (c HiddenString) String() string {
-	return string(c)
-}

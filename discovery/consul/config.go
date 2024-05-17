@@ -4,13 +4,14 @@ import (
 	"time"
 
 	"github.com/bldsoft/gost/config"
+	"github.com/bldsoft/gost/utils"
 )
 
 type Config struct {
-	ConsulAddr     config.HttpAddress  `mapstructure:"ADDRESS" description:"Address of the Consul server"`
-	Token          config.HiddenString `mapstructure:"TOKEN" description:" Token is used to provide a per-request ACL token"`
-	HealthCheckTTL time.Duration       `mapstructure:"HEALTH_CHECK_TTL" description:"Check TTL"`
-	DeregisterTTL  time.Duration       `mapstructure:"DEREREGISTER_TTL" description:"If a check is in the critical state for more than this configured value,	then the service will automatically be deregistered"`
+	ConsulAddr     config.HttpAddress `mapstructure:"ADDRESS" description:"Address of the Consul server"`
+	Token          utils.FullyHidden  `mapstructure:"TOKEN" description:" Token is used to provide a per-request ACL token"`
+	HealthCheckTTL time.Duration      `mapstructure:"HEALTH_CHECK_TTL" description:"Check TTL"`
+	DeregisterTTL  time.Duration      `mapstructure:"DEREREGISTER_TTL" description:"If a check is in the critical state for more than this configured value,	then the service will automatically be deregistered"`
 }
 
 func (c *Config) SetDefaults() {
