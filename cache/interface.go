@@ -26,7 +26,7 @@ type IExpiringCacheRepository interface {
 }
 
 type IDistrCacheRepository interface {
-	Get(key string) ([]byte, uint32, error)
+	Get(key string) (*Item, error)
 	Exist(key string) bool
 	Set(key string, opts *Item) error
 	Add(key string, opts *Item) error
@@ -36,8 +36,8 @@ type IDistrCacheRepository interface {
 
 type Item struct {
 	Value []byte
-	TTL   *time.Duration
-	Flags *uint32
+	TTL   time.Duration
+	Flags uint32
 }
 
 type Repository[T any] interface {
