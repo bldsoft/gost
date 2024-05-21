@@ -26,13 +26,17 @@ func NewMemcacheRepository(storage *Storage, liveTime time.Duration) *MemcacheRe
 
 // Get gets the item valut for the given key. ErrCacheMiss is returned for a
 // memcache cache miss. The key must be at most 250 bytes in length.
-func (r *MemcacheRepository) Get(key string) ([]byte, uint32, error) {
+func (r *MemcacheRepository) Get(key string) (*cache.Item, error) {
 	key = r.cache.PrepareKey(key)
 	item, err := r.cache.Get(key)
 	if err != nil || item == nil {
-		return nil, 0, r.mapError(err)
+		return nil, r.mapError(err)
 	}
-	return item.Value, item.Flags, err
+	return &cache.Item{
+		Value: item.Value,
+		// TTL:   time.Duration(item.Expiration) * time.Second,
+		Flags: item.Flags,
+	}, err
 }
 
 func (r *MemcacheRepository) Exist(key string) bool {
@@ -83,7 +87,7 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value *cach
 
 		data, err := handler(&cache.Item{
 			Value: item.Value,
-			Flags: &item.Flags,
+			Flags: item.Flags,
 		})
 
 		if err != nil || data == nil {
@@ -91,8 +95,8 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value *cach
 		}
 
 		item.Value = data.Value
-		if data.Flags != nil {
-			item.Flags = *data.Flags
+		if data.Flags != 0 {
+			item.Flags = data.Flags
 		}
 		err = r.cache.CompareAndSwap(item)
 
@@ -126,11 +130,11 @@ func (r *MemcacheRepository) item(key string, item *cache.Item) *memcache.Item {
 
 	if item != nil {
 		it.Value = item.Value
-		if item.TTL != nil {
-			it.Expiration = truncExpiration(*item.TTL)
+		if item.TTL != 0 {
+			it.Expiration = truncExpiration(item.TTL)
 		}
-		if item.Flags != nil {
-			it.Flags = *item.Flags
+		if item.Flags != 0 {
+			it.Flags = item.Flags
 		}
 	}
 
