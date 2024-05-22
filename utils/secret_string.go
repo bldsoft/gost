@@ -12,9 +12,9 @@ func (starHider) Hide(string) string {
 	return "****"
 }
 
-type last4Hider struct{}
+type partialHider struct{}
 
-func (last4Hider) Hide(s string) string {
+func (partialHider) Hide(s string) string {
 	const visibleCnt = 4
 	if len(s) < visibleCnt {
 		return "****"
@@ -35,4 +35,4 @@ func (c HiddenString[T]) String() string {
 }
 
 type FullyHidden = HiddenString[starHider]
-type PartiallyHidden = HiddenString[last4Hider]
+type PartiallyHidden = HiddenString[partialHider]
