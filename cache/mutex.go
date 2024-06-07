@@ -73,7 +73,6 @@ func (m *DistrMutex) Lock(ctx context.Context) {
 
 // TryLock tries to lock m. It returns true in case of success, false otherwise.
 func (m *DistrMutex) TryLock() bool {
-	// err := m.cache.AddFor(m.lockKey, m.uniqueID, m.unlockTime)
 	err := m.cache.Add(m.lockKey, &Item{
 		Value: m.uniqueID,
 		TTL:   m.unlockTime,
