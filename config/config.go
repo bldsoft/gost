@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/bldsoft/gost/utils"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/viper"
 )
@@ -166,3 +167,5 @@ func iterateFields(config interface{}, prefix string, startSructCb structCallbac
 	}
 	return nil
 }
+
+type HiddenString = utils.FullyHidden
