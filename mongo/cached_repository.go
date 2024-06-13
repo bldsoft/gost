@@ -147,11 +147,13 @@ func (r *CachedRepository[T, U]) cacheFindByID(ctx context.Context, id string, o
 		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.Name(), "id": strID}, "failed to get entity from cache")
 		return nil
 	}
-	withArchived, ok := any(e).(IEntityArchived)
-	if !ok || len(options) == 0 {
+	if len(options) == 0 || options[0].Archived {
 		return e
 	}
-	if options[0].Archived != withArchived.IsArchived() {
+
+	if withArchived, ok := any(e).(IEntityArchived); !ok {
+		return e
+	} else if !options[0].Archived && options[0].Archived != withArchived.IsArchived() {
 		return nil
 	}
 	return e
