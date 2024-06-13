@@ -153,7 +153,7 @@ func (r *CachedRepository[T, U]) cacheFindByID(ctx context.Context, id string, o
 
 	if withArchived, ok := any(e).(IEntityArchived); !ok {
 		return e
-	} else if !options[0].Archived && options[0].Archived != withArchived.IsArchived() {
+	} else if options[0].Archived != withArchived.IsArchived() {
 		return nil
 	}
 	return e
