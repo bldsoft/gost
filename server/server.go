@@ -44,15 +44,19 @@ type Server struct {
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
 	srv := Server{srv: &http.Server{
-		Addr:         config.ServiceBindAddress.HostPort(),
-		WriteTimeout: 2 * time.Minute,
-		Handler:      nil},
+		Addr:    config.ServiceBindAddress.HostPort(),
+		Handler: nil},
 		router:            chi.NewRouter(),
 		microservices:     microservices,
 		commonMiddlewares: nil,
 		runnerManager:     NewAsyncJobManager()}
 	middleware.DefaultLogger = DefaultLogger
 	return &srv
+}
+
+func (s *Server) WithWriteTimeout(t time.Duration) *Server {
+	s.srv.WriteTimeout = t
+	return s
 }
 
 func (s *Server) UseDefaultMiddlewares() *Server {
