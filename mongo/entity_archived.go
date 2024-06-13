@@ -4,7 +4,7 @@ const (
 	BsonFieldNameArchived = "archived"
 )
 
-type WithEntityArchived interface {
+type IEntityArchived interface {
 	IsArchived() bool
 }
 type EntityArchived struct {
