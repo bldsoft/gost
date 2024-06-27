@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
-
-	"github.com/bldsoft/gost/log"
 )
 
 // must contain all concrete types for all interfaces so that polymorphic fields can be unmarshaled
@@ -34,5 +32,5 @@ func register[Iface comparable](name string, value Iface) {
 	if err := typesMap.Add(value, name); err != nil {
 		panic(fmt.Sprintf("polymoprh marshaller: register %s", err))
 	}
-	log.Logger.TraceWithFields(log.Fields{"name": name, "type": reflect.TypeOf(value).String()}, "poly: polymorphic object registered")
+	// log.Logger.TraceWithFields(log.Fields{"name": name, "type": reflect.TypeOf(value).String()}, "poly: polymorphic object registered")
 }
