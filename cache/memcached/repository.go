@@ -30,7 +30,7 @@ func (r *MemcacheRepository) Get(key string) (*cache.Item, error) {
 	key = r.cache.PrepareKey(key)
 	item, err := r.cache.Get(key)
 	if err != nil || item == nil {
-		return nil, r.mapError(err)
+		return &cache.Item{}, r.mapError(err)
 	}
 	return &cache.Item{
 		Value: item.Value,
