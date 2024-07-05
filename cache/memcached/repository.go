@@ -111,6 +111,22 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value *cach
 	return err
 }
 
+func (r *MemcacheRepository) AddOrGet(key string, item *cache.Item) (*cache.Item, error) {
+	i, err := r.Get(key)
+	if err == nil {
+		return &cache.Item{
+			Value: i.Value,
+			Flags: i.Flags,
+		}, nil
+	}
+
+	if err := r.Add(key, item); err == nil || errors.Is(err, cache.ErrExists) {
+		return item, nil
+	}
+
+	return item, err
+}
+
 func (r *MemcacheRepository) mapError(err error) error {
 	switch {
 	case err == nil:
