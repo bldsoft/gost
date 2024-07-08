@@ -17,43 +17,43 @@ func (_m *Authenticable) EXPECT() *Authenticable_Expecter {
 	return &Authenticable_Expecter{mock: &_m.Mock}
 }
 
-// ChangePasswordRequired provides a mock function with given fields:
-func (_m *Authenticable) ChangePasswordRequired() bool {
+// Active provides a mock function with given fields:
+func (_m *Authenticable) Active() error {
 	ret := _m.Called()
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Error(0)
 	}
 
 	return r0
 }
 
-// Authenticable_ChangePasswordRequired_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ChangePasswordRequired'
-type Authenticable_ChangePasswordRequired_Call struct {
+// Authenticable_Active_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Active'
+type Authenticable_Active_Call struct {
 	*mock.Call
 }
 
-// ChangePasswordRequired is a helper method to define mock.On call
-func (_e *Authenticable_Expecter) ChangePasswordRequired() *Authenticable_ChangePasswordRequired_Call {
-	return &Authenticable_ChangePasswordRequired_Call{Call: _e.mock.On("ChangePasswordRequired")}
+// Active is a helper method to define mock.On call
+func (_e *Authenticable_Expecter) Active() *Authenticable_Active_Call {
+	return &Authenticable_Active_Call{Call: _e.mock.On("Active")}
 }
 
-func (_c *Authenticable_ChangePasswordRequired_Call) Run(run func()) *Authenticable_ChangePasswordRequired_Call {
+func (_c *Authenticable_Active_Call) Run(run func()) *Authenticable_Active_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Authenticable_ChangePasswordRequired_Call) Return(_a0 bool) *Authenticable_ChangePasswordRequired_Call {
+func (_c *Authenticable_Active_Call) Return(_a0 error) *Authenticable_Active_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Authenticable_ChangePasswordRequired_Call) RunAndReturn(run func() bool) *Authenticable_ChangePasswordRequired_Call {
+func (_c *Authenticable_Active_Call) RunAndReturn(run func() error) *Authenticable_Active_Call {
 	_c.Call.Return(run)
 	return _c
 }

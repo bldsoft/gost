@@ -303,13 +303,20 @@ func (_c *IUserRepository_InsertOrRecover_Call[PT]) RunAndReturn(run func(contex
 	return _c
 }
 
-// Update provides a mock function with given fields: ctx, user
-func (_m *IUserRepository[PT]) Update(ctx context.Context, user PT) error {
-	ret := _m.Called(ctx, user)
+// Update provides a mock function with given fields: ctx, user, options
+func (_m *IUserRepository[PT]) Update(ctx context.Context, user PT, options ...*repository.QueryOptions) error {
+	_va := make([]interface{}, len(options))
+	for _i := range options {
+		_va[_i] = options[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, user)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, PT) error); ok {
-		r0 = rf(ctx, user)
+	if rf, ok := ret.Get(0).(func(context.Context, PT, ...*repository.QueryOptions) error); ok {
+		r0 = rf(ctx, user, options...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -325,13 +332,21 @@ type IUserRepository_Update_Call[PT interface{}] struct {
 // Update is a helper method to define mock.On call
 //   - ctx context.Context
 //   - user PT
-func (_e *IUserRepository_Expecter[PT]) Update(ctx interface{}, user interface{}) *IUserRepository_Update_Call[PT] {
-	return &IUserRepository_Update_Call[PT]{Call: _e.mock.On("Update", ctx, user)}
+//   - options ...*repository.QueryOptions
+func (_e *IUserRepository_Expecter[PT]) Update(ctx interface{}, user interface{}, options ...interface{}) *IUserRepository_Update_Call[PT] {
+	return &IUserRepository_Update_Call[PT]{Call: _e.mock.On("Update",
+		append([]interface{}{ctx, user}, options...)...)}
 }
 
-func (_c *IUserRepository_Update_Call[PT]) Run(run func(ctx context.Context, user PT)) *IUserRepository_Update_Call[PT] {
+func (_c *IUserRepository_Update_Call[PT]) Run(run func(ctx context.Context, user PT, options ...*repository.QueryOptions)) *IUserRepository_Update_Call[PT] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(PT))
+		variadicArgs := make([]*repository.QueryOptions, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(*repository.QueryOptions)
+			}
+		}
+		run(args[0].(context.Context), args[1].(PT), variadicArgs...)
 	})
 	return _c
 }
@@ -341,7 +356,7 @@ func (_c *IUserRepository_Update_Call[PT]) Return(_a0 error) *IUserRepository_Up
 	return _c
 }
 
-func (_c *IUserRepository_Update_Call[PT]) RunAndReturn(run func(context.Context, PT) error) *IUserRepository_Update_Call[PT] {
+func (_c *IUserRepository_Update_Call[PT]) RunAndReturn(run func(context.Context, PT, ...*repository.QueryOptions) error) *IUserRepository_Update_Call[PT] {
 	_c.Call.Return(run)
 	return _c
 }

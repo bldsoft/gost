@@ -17,43 +17,43 @@ func (_m *IUserPtr[T]) EXPECT() *IUserPtr_Expecter[T] {
 	return &IUserPtr_Expecter[T]{mock: &_m.Mock}
 }
 
-// ChangePasswordRequired provides a mock function with given fields:
-func (_m *IUserPtr[T]) ChangePasswordRequired() bool {
+// Active provides a mock function with given fields:
+func (_m *IUserPtr[T]) Active() error {
 	ret := _m.Called()
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Error(0)
 	}
 
 	return r0
 }
 
-// IUserPtr_ChangePasswordRequired_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ChangePasswordRequired'
-type IUserPtr_ChangePasswordRequired_Call[T interface{}] struct {
+// IUserPtr_Active_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Active'
+type IUserPtr_Active_Call[T interface{}] struct {
 	*mock.Call
 }
 
-// ChangePasswordRequired is a helper method to define mock.On call
-func (_e *IUserPtr_Expecter[T]) ChangePasswordRequired() *IUserPtr_ChangePasswordRequired_Call[T] {
-	return &IUserPtr_ChangePasswordRequired_Call[T]{Call: _e.mock.On("ChangePasswordRequired")}
+// Active is a helper method to define mock.On call
+func (_e *IUserPtr_Expecter[T]) Active() *IUserPtr_Active_Call[T] {
+	return &IUserPtr_Active_Call[T]{Call: _e.mock.On("Active")}
 }
 
-func (_c *IUserPtr_ChangePasswordRequired_Call[T]) Run(run func()) *IUserPtr_ChangePasswordRequired_Call[T] {
+func (_c *IUserPtr_Active_Call[T]) Run(run func()) *IUserPtr_Active_Call[T] {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *IUserPtr_ChangePasswordRequired_Call[T]) Return(_a0 bool) *IUserPtr_ChangePasswordRequired_Call[T] {
+func (_c *IUserPtr_Active_Call[T]) Return(_a0 error) *IUserPtr_Active_Call[T] {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *IUserPtr_ChangePasswordRequired_Call[T]) RunAndReturn(run func() bool) *IUserPtr_ChangePasswordRequired_Call[T] {
+func (_c *IUserPtr_Active_Call[T]) RunAndReturn(run func() error) *IUserPtr_Active_Call[T] {
 	_c.Call.Return(run)
 	return _c
 }
