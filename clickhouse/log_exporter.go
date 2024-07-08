@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -107,16 +108,19 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 		where = append(where, sq.Eq{LevelColumName: int8Levels})
 	}
 	if filter.Search != nil && len(*filter.Search) > 0 {
-		where = append(where, sq.Or{
-			sq.Expr(
-				fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName),
-				*filter.Search,
-			),
-			sq.Expr(
-				fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName),
-				*filter.Search,
-			),
-		})
+		where = append(where, e.parseExpr(*filter.Search, func(search string) sq.Sqlizer {
+			search = strings.TrimSpace(search)
+			return sq.Or{
+				sq.Expr(
+					fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName),
+					search,
+				),
+				sq.Expr(
+					fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName),
+					search,
+				),
+			}
+		}))
 	}
 
 	switch len(filter.RequestIDs) {
@@ -138,6 +142,55 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 		where = append(where, sq.Eq{ServiceVersionColumnName: filter.ServiceVersions})
 	}
 	return where
+}
+
+func (e *ClickHouseLogExporter) parseExpr(search string, makeRawExpr func(string) sq.Sqlizer) sq.Sqlizer {
+	return parseHelper[sq.Or](search, "|", func(s string) sq.Sqlizer {
+		return parseHelper[sq.And](s, "&", makeRawExpr)
+	})
+}
+
+func parseHelper[T sq.Or | sq.And](search, op string, makeRawExpr func(string) sq.Sqlizer) sq.Sqlizer {
+	exprs := split(search, op)
+	exprs = slices.DeleteFunc(exprs, func(s string) bool { return len(s) == 0 })
+
+	if len(exprs) == 1 {
+		return makeRawExpr(exprs[0])
+	}
+
+	var res T
+	for _, expr := range exprs {
+		res = append(res, makeRawExpr(expr))
+	}
+	return sq.Sqlizer(res)
+}
+
+func split(search, op string) []string {
+	if op == "" {
+		return []string{search}
+	}
+
+	var res []string
+	appendStr := func(s string) {
+		res = append(res, strings.ReplaceAll(s, "\\"+op, op))
+	}
+	startIdx := 0
+	for {
+		i := strings.Index(search[startIdx:], op)
+		if i < 0 {
+			break
+		}
+		i += startIdx
+		if i > 0 && search[i-1] == '\\' {
+			startIdx = i + 1
+			continue
+		}
+		appendStr(search[:i])
+		search = search[i+len(op):]
+		startIdx = 0
+	}
+	appendStr(search)
+	return res
 }
 
 func (e *ClickHouseLogExporter) sort(sort log.Sort) string {
