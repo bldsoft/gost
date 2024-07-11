@@ -31,6 +31,10 @@ func WithLogger(r *http.Request, logger *ServiceLogger) *http.Request {
 	return r
 }
 
+func WithLoggerCtx(ctx context.Context, logger *ServiceLogger) context.Context {
+	return context.WithValue(ctx, LoggerCtxKey, logger)
+}
+
 // FromContext extracts Logger from context if exists or return global Logger
 func FromContext(ctx context.Context) *ServiceLogger {
 	if ctx != nil {
