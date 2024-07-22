@@ -30,7 +30,7 @@ type IDistrCacheRepository interface {
 	Exist(key string) bool
 	Set(key string, opts *Item) error
 	Add(key string, opts *Item) error
-	AddOrGet(key string, opts *Item) (*Item, error)
+	AddOrGet(key string, opts *Item) (i *Item, added bool, err error)
 	Delete(key string) error
 	CompareAndSwap(key string, handler func(value *Item) (*Item, error), sleepDur ...time.Duration) error
 }
