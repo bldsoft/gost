@@ -28,7 +28,8 @@ type Storage struct {
 	isReady int32
 	doOnce  sync.Once
 
-	migrations *source.Migrations
+	migrations  *source.Migrations
+	clusterName string
 }
 
 func NewStorage(config Config) *Storage {
@@ -39,7 +40,19 @@ func (s *Storage) Auth() Auth {
 	return s.cfg.options.Auth
 }
 
+func (s *Storage) InCluster(clusterName string) *Storage {
+	s.clusterName = clusterName
+	return s
+}
+
+func (s *Storage) ClusterName() string {
+	return s.clusterName
+}
+
 func (s *Storage) IsReplicationEnabled() bool {
+	if len(s.clusterName) > 0 {
+		return true
+	}
 	_, err := s.Db.Exec("SELECT * FROM system.zookeeper WHERE path = '/' LIMIT 0")
 	return err == nil
 }
