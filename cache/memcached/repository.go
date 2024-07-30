@@ -50,12 +50,12 @@ func (r *MemcacheRepository) SetLiveTimeMin(liveTime time.Duration) {
 }
 
 // Set writes the given item, unconditionally.
-func (r *MemcacheRepository) Set(key string, item *cache.Item) error {
-	return r.cache.Set(r.item(key, item))
+func (r *MemcacheRepository) Set(key string, val []byte, item ...cache.ItemF) error {
+	return r.cache.Set(r.item(key, val, item...))
 }
 
-func (r *MemcacheRepository) Add(key string, item *cache.Item) error {
-	err := r.cache.Add(r.item(key, item))
+func (r *MemcacheRepository) Add(key string, val []byte, item ...cache.ItemF) error {
+	err := r.cache.Add(r.item(key, val, item...))
 	if errors.Is(err, memcache.ErrNotStored) {
 		return cache.ErrExists
 	}
@@ -113,7 +113,7 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value *cach
 
 // retry on failed get
 // return bool for set
-func (r *MemcacheRepository) AddOrGet(key string, item *cache.Item) (*cache.Item, bool, error) {
+func (r *MemcacheRepository) AddOrGet(key string, val []byte, opts ...cache.ItemF) (*cache.Item, bool, error) {
 	i, err := r.Get(key)
 	if err == nil {
 		return &cache.Item{
@@ -122,12 +122,12 @@ func (r *MemcacheRepository) AddOrGet(key string, item *cache.Item) (*cache.Item
 		}, false, nil
 	}
 
-	if err := r.Add(key, item); err == nil || errors.Is(err, cache.ErrExists) {
+	if err := r.Add(key, val, opts...); err == nil || errors.Is(err, cache.ErrExists) {
 		i, err := r.Get(key)
 		return i, false, err
 	}
 
-	return item, true, err
+	return nil, true, err
 }
 
 func (r *MemcacheRepository) mapError(err error) error {
@@ -141,24 +141,48 @@ func (r *MemcacheRepository) mapError(err error) error {
 	}
 }
 
-func (r *MemcacheRepository) item(key string, item *cache.Item) *memcache.Item {
+func (r *MemcacheRepository) item(key string, val []byte, itemFs ...cache.ItemF) *memcache.Item {
 	it := memcache.Item{
 		Key:        r.cache.PrepareKey(key),
+		Value:      val,
 		Expiration: truncExpiration(r.liveTime),
 	}
 
-	if item != nil {
-		it.Value = item.Value
-		if item.TTL != 0 {
-			it.Expiration = truncExpiration(item.TTL)
-		}
-		if item.Flags != 0 {
-			it.Flags = item.Flags
-		}
+	if len(itemFs) == 0 {
+		return &it
 	}
 
+	cIt := &cache.Item{}
+	for _, f := range itemFs {
+		f(cIt)
+	}
+	if cIt.Flags != 0 {
+		it.Flags = cIt.Flags
+	}
+	if cIt.TTL != 0 {
+		it.Expiration = truncExpiration(cIt.TTL)
+	}
 	return &it
 }
+
+// func (r *MemcacheRepository) item(key string, item *cache.Item) *memcache.Item {
+// 	it := memcache.Item{
+// 		Key:        r.cache.PrepareKey(key),
+// 		Expiration: truncExpiration(r.liveTime),
+// 	}
+
+// 	if item != nil {
+// 		it.Value = item.Value
+// 		if item.TTL != 0 {
+// 			it.Expiration = truncExpiration(item.TTL)
+// 		}
+// 		if item.Flags != 0 {
+// 			it.Flags = item.Flags
+// 		}
+// 	}
+
+// 	return &it
+// }
 
 func truncExpiration(d time.Duration) int32 {
 	const maxDuration = 30 * 24 * time.Hour
