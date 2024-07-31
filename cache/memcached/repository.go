@@ -122,7 +122,7 @@ func (r *MemcacheRepository) AddOrGet(key string, val []byte, opts ...cache.Item
 		}, false, nil
 	}
 
-	if err := r.Add(key, val, opts...); err == nil || errors.Is(err, cache.ErrExists) {
+	if err := r.Add(key, val, opts...); errors.Is(err, cache.ErrExists) {
 		i, err := r.Get(key)
 		return i, false, err
 	}
