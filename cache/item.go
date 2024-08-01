@@ -3,10 +3,9 @@ package cache
 import "time"
 
 type Item struct {
-	Value    []byte
-	TTL      time.Duration
-	Flags    uint32
-	Deadline time.Time
+	Value []byte
+	TTL   time.Duration
+	Flags uint32
 }
 
 type ItemF func(*Item)
