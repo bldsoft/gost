@@ -19,8 +19,8 @@ type Group struct {
 func (g *Group) Go(f func() error) {
 	g.wg.Add(1)
 	go func() {
-		defer g.recover()
 		defer g.wg.Done()
+		defer g.recover()
 
 		if _err := f(); _err != nil {
 			g.mut.Lock()
