@@ -14,6 +14,7 @@ const (
 	HEAD
 	PATCH
 	ORIGIN_GET
+	OUT_POST
 
 	ERROR = -1
 )
@@ -63,6 +64,8 @@ func GetRequestMethodType(type_str string) RequestMethodType {
 		return PATCH
 	case "ORIGIN_GET":
 		return ORIGIN_GET
+	case "OUT_POST":
+		return OUT_POST
 	default:
 		return ERROR
 	}
