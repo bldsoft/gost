@@ -251,7 +251,7 @@ func (e *ClickHouseLogExporter) Logs(
 		Offset(uint64(params.Offset)).
 		Limit(uint64(params.Limit))
 
-	rows, err := query.RunWith(e.storage.Db).Query()
+	rows, err := e.runSelect(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +353,7 @@ func (e *ClickHouseLogExporter) distinctValues(
 	query := sq.Select("distinct " + column).
 		From(e.config.TableName).
 		Where(e.filter(&filter))
-	rows, err := query.RunWith(e.storage.Db).Query()
+	rows, err := e.runSelect(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -387,7 +387,7 @@ func (e *ClickHouseLogExporter) RequestIDs(
 		if limit != nil {
 			query = query.Limit(uint64(*limit))
 		}
-		rows, err := query.RunWith(e.storage.Db).Query()
+		rows, err := e.runSelect(ctx, query)
 		if err != nil {
 			return err
 		}
