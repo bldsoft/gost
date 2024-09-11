@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/bldsoft/gost/chart"
+	"github.com/bldsoft/gost/entity/chart"
 	"github.com/bldsoft/gost/repository"
 )
 

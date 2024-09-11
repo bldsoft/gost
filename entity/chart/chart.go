@@ -27,20 +27,6 @@ type SeriesValue struct {
 	Value *float64 `json:"value"`
 }
 
-func BuildChartValues(start, end time.Time, step int64, times []time.Time, values []float64) []*SeriesValue {
-	start = time.Unix(start.Unix()-start.Unix()%step, 0)
-	res := make([]*SeriesValue, 0, (end.Unix()-start.Unix())/step)
-	for t := start.Unix(); t < end.Unix(); t += step {
-		v := &SeriesValue{Time: t}
-		res = append(res, v)
-		if len(times) > 0 && times[0].Unix() == t {
-			v.Value = &values[0]
-			times, values = times[1:], values[1:]
-		}
-	}
-	return res
-}
-
 func NewSeriesData(from, to time.Time, step time.Duration) (*SeriesData, error) {
 	var sd SeriesData
 	if step <= 0 {

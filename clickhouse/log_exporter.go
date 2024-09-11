@@ -10,7 +10,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/bldsoft/gost/chart"
+	"github.com/bldsoft/gost/entity/chart"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/gost/utils/exporter"
@@ -67,14 +67,16 @@ type ClickHouseLogExporter struct {
 	exporter.Exporter[*log.LogRecord]
 	server.AsyncRunner
 
+	BaseRepository
 	config  LogExporterConfig
 	storage *Storage
 }
 
 func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExporter {
 	logExporter := &ClickHouseLogExporter{
-		config:  cfg,
-		storage: storage,
+		config:         cfg,
+		storage:        storage,
+		BaseRepository: NewBaseRepository(storage),
 	}
 
 	if err := logExporter.createTableIfNotExitst(); err != nil {
@@ -271,7 +273,7 @@ func (e *ClickHouseLogExporter) Logs(
 	return &logs, err
 }
 
-func (e *ClickHouseLogExporter) logsMetricSubQuery(params *log.LogsMetricsParams) sq.SelectBuilder {
+func (e *ClickHouseLogExporter) logsMetricsSubQuery(params *log.LogsMetricsParams) sq.SelectBuilder {
 	query := sq.Select().
 		Column(LevelColumName+" "+labelColumn).
 		Column("toStartOfInterval("+TimestampColumnName+", INTERVAL (?) second) "+timeColumn, params.StepSec).
@@ -290,41 +292,43 @@ func (e *ClickHouseLogExporter) runSelect(ctx context.Context, query sq.SelectBu
 }
 
 func (e *ClickHouseLogExporter) LogsMetrics(ctx context.Context, params *log.LogsMetricsParams) (*chart.SeriesData, error) {
-	query := sq.Select().
-		Column(labelColumn).
-		Column("groupArray("+timeColumn+") "+timesColumn).
-		Column("groupArray(toFloat64("+valueColumn+")) "+valuesColumn).
-		Column("min(toFloat64("+valueColumn+")) min").
-		Column("max(toFloat64("+valueColumn+")) max").
-		Column("avg(toFloat64("+valueColumn+")) avg").
-		Column("sum(toFloat64("+valueColumn+")) sum").
-		FromSelect(e.logsMetricSubQuery(params), "interval_data").
-		GroupBy(labelColumn)
+	// query := sq.Select().
+	// 	Column(labelColumn).
+	// 	Column("groupArray("+timeColumn+") "+timesColumn).
+	// 	Column("groupArray(toFloat64("+valueColumn+")) "+valuesColumn).
+	// 	Column("min(toFloat64("+valueColumn+")) min").
+	// 	Column("max(toFloat64("+valueColumn+")) max").
+	// 	Column("avg(toFloat64("+valueColumn+")) avg").
+	// 	Column("sum(toFloat64("+valueColumn+")) sum").
+	// 	FromSelect(e.logsMetricsSubQuery(params), "interval_data").
+	// 	GroupBy(labelColumn)
 
-	logsData, err := chart.NewSeriesData(params.From, params.To, time.Duration(params.StepSec)*time.Second)
-	if err != nil {
-		return nil, err
-	}
+	// logsData, err := stat.NewSeriesData(params.From, params.To, time.Duration(params.StepSec)*time.Second)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	rows, err := e.runSelect(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+	// rows, err := e.runSelect(ctx, query)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer rows.Close()
 
-	for rows.Next() {
-		var (
-			lv     chart.SeriesValues
-			times  []time.Time
-			values []float64
-		)
-		if err := rows.Scan(&lv.Label, &times, &values, &lv.Min, &lv.Max, &lv.Avg, &lv.Sum); err != nil {
-			return nil, err
-		}
-		lv.Data = chart.BuildChartValues(params.From, params.To, int64(params.StepSec), times, values)
-		logsData.Values = append(logsData.Values, &lv)
-	}
-	return logsData, nil
+	// for rows.Next() {
+	// 	var (
+	// 		lv     stat.SeriesValues
+	// 		times  []time.Time
+	// 		values []float64
+	// 	)
+	// 	if err := rows.Scan(&lv.Label, &times, &values, &lv.Min, &lv.Max, &lv.Avg, &lv.Sum); err != nil {
+	// 		return nil, err
+	// 	}
+	// 	lv.Data = stat.BuildChartValues(params.From, params.To, int64(params.StepSec), times, values)
+	// 	logsData.Values = append(logsData.Values, &lv)
+	// }
+	// return logsData, nil
+
+	return e.GetChartValues(ctx, e.logsMetricsSubQuery(params), params.From, params.To, time.Duration(params.StepSec)*time.Second)
 }
 
 func (e *ClickHouseLogExporter) Instances(
