@@ -9,18 +9,6 @@ import (
 )
 
 func (r *BaseRepository) buildChartValues(start, end time.Time, step time.Duration, times []time.Time, values []float64) []*chart.SeriesValue {
-	// start = time.Unix(start.Unix()-start.Unix()%step, 0)
-	// res := make([]*chart.SeriesValue, 0, (end.Unix()-start.Unix())/step)
-	// for t := start.Unix(); t < end.Unix(); t += step {
-	// 	v := &chart.SeriesValue{Time: t}
-	// 	res = append(res, v)
-	// 	if len(times) > 0 && times[0].Unix() == t {
-	// 		v.Value = &values[0]
-	// 		times, values = times[1:], values[1:]
-	// 	}
-	// }
-	// return res
-
 	start = start.Add(-time.Duration(start.UnixNano()) % step)
 	res := make([]*chart.SeriesValue, 0, int(end.Sub(start)/step))
 	for t := start; t.Before(end); t = t.Add(step) {

@@ -292,42 +292,6 @@ func (e *ClickHouseLogExporter) runSelect(ctx context.Context, query sq.SelectBu
 }
 
 func (e *ClickHouseLogExporter) LogsMetrics(ctx context.Context, params *log.LogsMetricsParams) (*chart.SeriesData, error) {
-	// query := sq.Select().
-	// 	Column(labelColumn).
-	// 	Column("groupArray("+timeColumn+") "+timesColumn).
-	// 	Column("groupArray(toFloat64("+valueColumn+")) "+valuesColumn).
-	// 	Column("min(toFloat64("+valueColumn+")) min").
-	// 	Column("max(toFloat64("+valueColumn+")) max").
-	// 	Column("avg(toFloat64("+valueColumn+")) avg").
-	// 	Column("sum(toFloat64("+valueColumn+")) sum").
-	// 	FromSelect(e.logsMetricsSubQuery(params), "interval_data").
-	// 	GroupBy(labelColumn)
-
-	// logsData, err := stat.NewSeriesData(params.From, params.To, time.Duration(params.StepSec)*time.Second)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// rows, err := e.runSelect(ctx, query)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// defer rows.Close()
-
-	// for rows.Next() {
-	// 	var (
-	// 		lv     stat.SeriesValues
-	// 		times  []time.Time
-	// 		values []float64
-	// 	)
-	// 	if err := rows.Scan(&lv.Label, &times, &values, &lv.Min, &lv.Max, &lv.Avg, &lv.Sum); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	lv.Data = stat.BuildChartValues(params.From, params.To, int64(params.StepSec), times, values)
-	// 	logsData.Values = append(logsData.Values, &lv)
-	// }
-	// return logsData, nil
-
 	return e.GetChartValues(ctx, e.logsMetricsSubQuery(params), params.From, params.To, time.Duration(params.StepSec)*time.Second)
 }
 
