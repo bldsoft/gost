@@ -5,14 +5,14 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/bldsoft/gost/entity/chart"
+	"github.com/bldsoft/gost/entity/stat"
 )
 
-func (r *BaseRepository) buildChartValues(start, end time.Time, step time.Duration, times []time.Time, values []float64) []*chart.SeriesValue {
+func (r *BaseRepository) buildChartValues(start, end time.Time, step time.Duration, times []time.Time, values []float64) []*stat.SeriesValue {
 	start = start.Add(-time.Duration(start.UnixNano()) % step)
-	res := make([]*chart.SeriesValue, 0, int(end.Sub(start)/step))
+	res := make([]*stat.SeriesValue, 0, int(end.Sub(start)/step))
 	for t := start; t.Before(end); t = t.Add(step) {
-		v := &chart.SeriesValue{Time: t.Unix()}
+		v := &stat.SeriesValue{Time: t.Unix()}
 		res = append(res, v)
 		if len(times) > 0 && times[0].Equal(t) {
 			v.Value = &values[0]
@@ -22,7 +22,7 @@ func (r *BaseRepository) buildChartValues(start, end time.Time, step time.Durati
 	return res
 }
 
-func (r *BaseRepository) GetChartValues(ctx context.Context, subQuery sq.SelectBuilder, from, to time.Time, step time.Duration) (*chart.SeriesData, error) {
+func (r *BaseRepository) GetChartValues(ctx context.Context, subQuery sq.SelectBuilder, from, to time.Time, step time.Duration) (*stat.SeriesData, error) {
 	query := sq.Select().
 		Column(labelColumn).
 		Column("groupArray("+timeColumn+") "+timesColumn).
@@ -34,7 +34,7 @@ func (r *BaseRepository) GetChartValues(ctx context.Context, subQuery sq.SelectB
 		FromSelect(subQuery, "interval_data").
 		GroupBy(labelColumn)
 
-	data, err := chart.NewSeriesData(from, to, step)
+	data, err := stat.NewSeriesData(from, to, step)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (r *BaseRepository) GetChartValues(ctx context.Context, subQuery sq.SelectB
 
 	for rows.Next() {
 		var (
-			lv     chart.SeriesValues
+			lv     stat.SeriesValues
 			times  []time.Time
 			values []float64
 		)

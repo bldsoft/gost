@@ -9,7 +9,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/bldsoft/gost/entity/chart"
+	"github.com/bldsoft/gost/entity/stat"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/gost/utils/exporter"
@@ -286,7 +286,7 @@ func (e *ClickHouseLogExporter) logsMetricsSubQuery(params *log.LogsMetricsParam
 	return query
 }
 
-func (e *ClickHouseLogExporter) LogsMetrics(ctx context.Context, params *log.LogsMetricsParams) (*chart.SeriesData, error) {
+func (e *ClickHouseLogExporter) LogsMetrics(ctx context.Context, params *log.LogsMetricsParams) (*stat.SeriesData, error) {
 	return e.GetChartValues(ctx, e.logsMetricsSubQuery(params), params.From, params.To, time.Duration(params.StepSec)*time.Second)
 }
 

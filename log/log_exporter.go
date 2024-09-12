@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/bldsoft/gost/entity/chart"
+	"github.com/bldsoft/gost/entity/stat"
 	"github.com/bldsoft/gost/repository"
 )
 
@@ -26,7 +26,7 @@ type LogExporterConfig struct {
 type LogExporter interface {
 	Export(r ...*LogRecord) (n int, err error)
 	Logs(ctx context.Context, params LogsParams) (*Logs, error)
-	LogsMetrics(ctx context.Context, params *LogsMetricsParams) (*chart.SeriesData, error)
+	LogsMetrics(ctx context.Context, params *LogsMetricsParams) (*stat.SeriesData, error)
 	Instances(ctx context.Context, filter Filter) ([]string, error)
 	Services(ctx context.Context, filter Filter) ([]string, error)
 	ServiceVersions(ctx context.Context, filter Filter) ([]string, error)
