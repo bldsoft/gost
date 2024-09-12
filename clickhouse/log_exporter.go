@@ -2,7 +2,6 @@ package clickhouse
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"slices"
@@ -253,7 +252,7 @@ func (e *ClickHouseLogExporter) Logs(
 		Offset(uint64(params.Offset)).
 		Limit(uint64(params.Limit))
 
-	rows, err := e.runSelect(ctx, query)
+	rows, err := e.RunSelect(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -287,10 +286,6 @@ func (e *ClickHouseLogExporter) logsMetricsSubQuery(params *log.LogsMetricsParam
 	return query
 }
 
-func (e *ClickHouseLogExporter) runSelect(ctx context.Context, query sq.SelectBuilder) (*sql.Rows, error) {
-	return query.RunWith(e.storage.Db).QueryContext(ctx)
-}
-
 func (e *ClickHouseLogExporter) LogsMetrics(ctx context.Context, params *log.LogsMetricsParams) (*chart.SeriesData, error) {
 	return e.GetChartValues(ctx, e.logsMetricsSubQuery(params), params.From, params.To, time.Duration(params.StepSec)*time.Second)
 }
@@ -321,7 +316,7 @@ func (e *ClickHouseLogExporter) distinctValues(
 	query := sq.Select("distinct " + column).
 		From(e.config.TableName).
 		Where(e.filter(&filter))
-	rows, err := e.runSelect(ctx, query)
+	rows, err := e.RunSelect(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +350,7 @@ func (e *ClickHouseLogExporter) RequestIDs(
 		if limit != nil {
 			query = query.Limit(uint64(*limit))
 		}
-		rows, err := e.runSelect(ctx, query)
+		rows, err := e.RunSelect(ctx, query)
 		if err != nil {
 			return err
 		}
