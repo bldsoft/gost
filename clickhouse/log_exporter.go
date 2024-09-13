@@ -67,14 +67,12 @@ type ClickHouseLogExporter struct {
 	server.AsyncRunner
 
 	BaseRepository
-	config  LogExporterConfig
-	storage *Storage
+	config LogExporterConfig
 }
 
 func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExporter {
 	logExporter := &ClickHouseLogExporter{
 		config:         cfg,
-		storage:        storage,
 		BaseRepository: NewBaseRepository(storage),
 	}
 
@@ -225,7 +223,7 @@ func (e *ClickHouseLogExporter) countLogs(
 		From(e.config.TableName).
 		Where(e.filter(params.Filter))
 
-	row := query.RunWith(e.storage.Db).QueryRowContext(ctx)
+	row := query.RunWith(e.Storage().Db).QueryRowContext(ctx)
 	var count int64
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -371,7 +369,7 @@ func (e *ClickHouseLogExporter) RequestIDs(
 			Where(e.filter(&filter)).
 			Where(sq.NotEq{ReqIDColumnName: ""})
 
-		row := query.RunWith(e.storage.Db).QueryRowContext(ctx)
+		row := query.RunWith(e.Storage().Db).QueryRowContext(ctx)
 		if err := row.Scan(&count); err != nil {
 			return err
 		}
@@ -384,10 +382,10 @@ func (e *ClickHouseLogExporter) RequestIDs(
 }
 
 func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
-	if !e.storage.IsReady() {
+	if !e.Storage().IsReady() {
 		return ErrLogDbNotReady
 	}
-	_, err := e.storage.Db.Exec(
+	_, err := e.Storage().Db.Exec(
 		fmt.Sprintf(
 			"ALTER TABLE %s MODIFY TTL %s + INTERVAL %d HOUR",
 			e.config.TableName,
@@ -400,11 +398,11 @@ func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
 
 func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 	engine := "MergeTree"
-	if e.storage.IsReplicationEnabled() {
+	if e.Storage().IsReplicationEnabled() {
 		engine = "ReplicatedMergeTree"
 	}
 
-	_, err := e.storage.Db.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
+	_, err := e.Storage().Db.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 			`+ServiceColumnName+` LowCardinality(String),
 			`+ServiceVersionColumnName+` LowCardinality(String),
 			`+InstanseColumnName+` LowCardinality(String),

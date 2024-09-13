@@ -9,16 +9,20 @@ import (
 )
 
 type BaseRepository struct {
-	DB *Storage
+	db *Storage
 }
 
 func NewBaseRepository(storage *Storage) BaseRepository {
-	return BaseRepository{DB: storage}
+	return BaseRepository{db: storage}
+}
+
+func (r *BaseRepository) Storage() *Storage {
+	return r.db
 }
 
 func (r *BaseRepository) RunSelect(ctx context.Context, query sq.SelectBuilder) (*sql.Rows, error) {
 	r.LogQuery(ctx, query)
-	return query.RunWith(r.DB.Db).QueryContext(ctx)
+	return query.RunWith(r.Storage().Db).QueryContext(ctx)
 }
 
 func (r *BaseRepository) LogQuery(ctx context.Context, query sq.SelectBuilder) {
