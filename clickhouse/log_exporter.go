@@ -284,8 +284,8 @@ func (e *ClickHouseLogExporter) logsMetricsSubQuery(params *log.LogsMetricsParam
 	return query
 }
 
-func (e *ClickHouseLogExporter) LogsMetrics(ctx context.Context, params *log.LogsMetricsParams) (*stat.SeriesData, error) {
-	return e.GetChartValues(ctx, e.logsMetricsSubQuery(params), params.From, params.To, time.Duration(params.StepSec)*time.Second)
+func (e *ClickHouseLogExporter) LogsMetrics(ctx context.Context, params log.LogsMetricsParams) (*stat.SeriesData, error) {
+	return e.GetChartValues(ctx, e.logsMetricsSubQuery(&params), params.From, params.To, time.Duration(params.StepSec)*time.Second)
 }
 
 func (e *ClickHouseLogExporter) Instances(
