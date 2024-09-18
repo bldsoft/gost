@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/bldsoft/gost/entity/stat"
 	"github.com/bldsoft/gost/repository"
 )
 
@@ -25,10 +26,16 @@ type LogExporterConfig struct {
 type LogExporter interface {
 	Export(r ...*LogRecord) (n int, err error)
 	Logs(ctx context.Context, params LogsParams) (*Logs, error)
+	LogsMetrics(ctx context.Context, params LogsMetricsParams) (*stat.SeriesData, error)
 	Instances(ctx context.Context, filter Filter) ([]string, error)
 	Services(ctx context.Context, filter Filter) ([]string, error)
 	ServiceVersions(ctx context.Context, filter Filter) ([]string, error)
 	RequestIDs(ctx context.Context, filter Filter, limit *int) ([]string, int64, error)
+}
+
+type LogsMetricsParams struct {
+	*Filter
+	StepSec float64 `json:"stepSec,omitempty" schema:"stepSec,omitempty"`
 }
 
 type LogsParams struct {
