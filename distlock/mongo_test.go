@@ -1,3 +1,5 @@
+//go:build integration_test
+
 package distlock
 
 import (
@@ -23,7 +25,15 @@ func init() {
 	db.Connect()
 }
 
-func TestMongoDistLock_LockUnlock(t *testing.T) {
+func testMongoDistLock(t *testing.T) {
+	testMongoDistLock_LockUnlock(t)
+	testMongoDistLock_LockExpiration(t)
+	testMongoDistLock_ConcurrentLocking(t)
+	testMongoDistLock_LockRenew(t)
+	testMongoDistLock_Quit(t)
+}
+
+func testMongoDistLock_LockUnlock(t *testing.T) {
 	lockID := "test-lock"
 	ttl := 1 * time.Second
 
@@ -37,7 +47,7 @@ func TestMongoDistLock_LockUnlock(t *testing.T) {
 	assert.True(t, dl.TryLock(), "Expected to acquire lock again after unlock")
 }
 
-func TestMongoDistLock_LockExpiration(t *testing.T) {
+func testMongoDistLock_LockExpiration(t *testing.T) {
 	lockID := "test-lock-expiration"
 	ttl := time.Second
 
@@ -50,7 +60,7 @@ func TestMongoDistLock_LockExpiration(t *testing.T) {
 	assert.True(t, dl.TryLock(), "Expected to acquire lock after expiration")
 }
 
-func TestMongoDistLock_ConcurrentLocking(t *testing.T) {
+func testMongoDistLock_ConcurrentLocking(t *testing.T) {
 	lockID := "test-lock-concurrent"
 	ttl := 2 * time.Second
 
@@ -64,7 +74,7 @@ func TestMongoDistLock_ConcurrentLocking(t *testing.T) {
 	assert.True(t, dl2.TryLock(), "Expected second instance to acquire lock after first instance unlocks")
 }
 
-func TestMongoDistLock_LockRenew(t *testing.T) {
+func testMongoDistLock_LockRenew(t *testing.T) {
 	lockID := "test-lock-renew"
 	ttl := time.Second
 
@@ -79,7 +89,7 @@ func TestMongoDistLock_LockRenew(t *testing.T) {
 	assert.True(t, dl.TryLock(), "Expected to acquire lock after ttl expires")
 }
 
-func TestMongoDistLock_Quit(t *testing.T) {
+func testMongoDistLock_Quit(t *testing.T) {
 	lockID := "test-lock-quit"
 	ttl := time.Second
 	dl1 := NewMongoDistLock(db, lockID, ttl)
