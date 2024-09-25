@@ -91,6 +91,9 @@ func (l *mongoDistLock) TryLock() bool {
 }
 
 func (l *mongoDistLock) Unlock() {
+	if l.renewStop == nil {
+		return
+	}
 	l.renewStop()
 	_, err := l.client.Unlock(context.Background(), l.lockID)
 	if err != nil {
