@@ -25,7 +25,7 @@ func init() {
 	db.Connect()
 }
 
-func testMongoDistLock(t *testing.T) {
+func TestMongoDistLock(t *testing.T) {
 	testMongoDistLock_LockUnlock(t)
 	testMongoDistLock_LockExpiration(t)
 	testMongoDistLock_ConcurrentLocking(t)
