@@ -32,6 +32,10 @@ type mongoDistLock struct {
 }
 
 func NewMongoDistLock(db *mongo.Storage, lockID string, ttl time.Duration) DistrMutex {
+	if ttl < time.Second {
+		panic("distlock ttl must be at least 1 second")
+	}
+
 	col := db.Db.Collection(collName)
 
 	client := lock.NewClient(col)

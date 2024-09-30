@@ -1,5 +1,3 @@
-//go:build integration_test
-
 package distlock
 
 import (
@@ -26,11 +24,19 @@ func init() {
 }
 
 func TestMongoDistLock(t *testing.T) {
+	// testMongoDistLock_InvalidTTL(t)
 	testMongoDistLock_LockUnlock(t)
 	testMongoDistLock_LockExpiration(t)
 	testMongoDistLock_ConcurrentLocking(t)
 	testMongoDistLock_LockRenew(t)
 	testMongoDistLock_Quit(t)
+}
+
+func TestMongoDistLock_InvalidTTL(t *testing.T) {
+	lockID := "test-ttl"
+	ttl := 500 * time.Millisecond
+
+	assert.Panics(t, func() { NewMongoDistLock(db, lockID, ttl) })
 }
 
 func testMongoDistLock_LockUnlock(t *testing.T) {
