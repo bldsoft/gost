@@ -9,6 +9,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/bldsoft/gost/entity/stat"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/gost/utils/exporter"
@@ -26,6 +27,12 @@ const (
 	TimestampColumnName      = "timestamp"
 	ReqIDColumnName          = "req_id"
 	FieldsColumnName         = "fields"
+
+	labelColumn  = "label"
+	timeColumn   = "time"
+	valuesColumn = "values"
+	timesColumn  = "times"
+	valueColumn  = "value"
 )
 
 type LogExporterConfig struct {
@@ -59,14 +66,14 @@ type ClickHouseLogExporter struct {
 	exporter.Exporter[*log.LogRecord]
 	server.AsyncRunner
 
-	config  LogExporterConfig
-	storage *Storage
+	BaseRepository
+	config LogExporterConfig
 }
 
 func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExporter {
 	logExporter := &ClickHouseLogExporter{
-		config:  cfg,
-		storage: storage,
+		config:         cfg,
+		BaseRepository: NewBaseRepository(storage),
 	}
 
 	if err := logExporter.createTableIfNotExitst(); err != nil {
@@ -216,7 +223,7 @@ func (e *ClickHouseLogExporter) countLogs(
 		From(e.config.TableName).
 		Where(e.filter(params.Filter))
 
-	row := query.RunWith(e.storage.Db).QueryRowContext(ctx)
+	row := query.RunWith(e.Storage().Db).QueryRowContext(ctx)
 	var count int64
 	if err := row.Scan(&count); err != nil {
 		return 0, err
@@ -243,7 +250,7 @@ func (e *ClickHouseLogExporter) Logs(
 		Offset(uint64(params.Offset)).
 		Limit(uint64(params.Limit))
 
-	rows, err := query.RunWith(e.storage.Db).Query()
+	rows, err := e.RunSelect(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -261,6 +268,24 @@ func (e *ClickHouseLogExporter) Logs(
 	logs.TotalCount, err = e.countLogs(ctx, params)
 
 	return &logs, err
+}
+
+func (e *ClickHouseLogExporter) logsMetricsSubQuery(params *log.LogsMetricsParams) sq.SelectBuilder {
+	query := sq.Select().
+		Column(LevelColumName+" "+labelColumn).
+		Column("toStartOfInterval("+TimestampColumnName+", INTERVAL (?) second) "+timeColumn, params.StepSec).
+		Column("COUNT(*) " + "value")
+
+	query = query.From(e.config.TableName).
+		Where(e.filter(params.Filter)).
+		GroupBy(labelColumn, timeColumn).
+		OrderBy(timeColumn)
+
+	return query
+}
+
+func (e *ClickHouseLogExporter) LogsMetrics(ctx context.Context, params log.LogsMetricsParams) (*stat.SeriesData, error) {
+	return e.GetChartValues(ctx, e.logsMetricsSubQuery(&params), params.From, params.To, time.Duration(params.StepSec)*time.Second)
 }
 
 func (e *ClickHouseLogExporter) Instances(
@@ -289,7 +314,7 @@ func (e *ClickHouseLogExporter) distinctValues(
 	query := sq.Select("distinct " + column).
 		From(e.config.TableName).
 		Where(e.filter(&filter))
-	rows, err := query.RunWith(e.storage.Db).Query()
+	rows, err := e.RunSelect(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +348,7 @@ func (e *ClickHouseLogExporter) RequestIDs(
 		if limit != nil {
 			query = query.Limit(uint64(*limit))
 		}
-		rows, err := query.RunWith(e.storage.Db).Query()
+		rows, err := e.RunSelect(ctx, query)
 		if err != nil {
 			return err
 		}
@@ -344,7 +369,7 @@ func (e *ClickHouseLogExporter) RequestIDs(
 			Where(e.filter(&filter)).
 			Where(sq.NotEq{ReqIDColumnName: ""})
 
-		row := query.RunWith(e.storage.Db).QueryRowContext(ctx)
+		row := query.RunWith(e.Storage().Db).QueryRowContext(ctx)
 		if err := row.Scan(&count); err != nil {
 			return err
 		}
@@ -357,10 +382,10 @@ func (e *ClickHouseLogExporter) RequestIDs(
 }
 
 func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
-	if !e.storage.IsReady() {
+	if !e.Storage().IsReady() {
 		return ErrLogDbNotReady
 	}
-	_, err := e.storage.Db.Exec(
+	_, err := e.Storage().Db.Exec(
 		fmt.Sprintf(
 			"ALTER TABLE %s MODIFY TTL %s + INTERVAL %d HOUR",
 			e.config.TableName,
@@ -373,11 +398,11 @@ func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
 
 func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 	engine := "MergeTree"
-	if e.storage.IsReplicationEnabled() {
+	if e.Storage().IsReplicationEnabled() {
 		engine = "ReplicatedMergeTree"
 	}
 
-	_, err := e.storage.Db.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
+	_, err := e.Storage().Db.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 			`+ServiceColumnName+` LowCardinality(String),
 			`+ServiceVersionColumnName+` LowCardinality(String),
 			`+InstanseColumnName+` LowCardinality(String),
