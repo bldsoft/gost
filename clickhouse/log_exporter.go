@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -136,6 +137,9 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 		where = append(where, sq.Like{ReqIDColumnName: fmt.Sprintf("%%%s%%", filter.RequestIDs[0])})
 	default:
 		match := fmt.Sprintf("match(%s, (?))", ReqIDColumnName)
+		for i := range filter.RequestIDs {
+			filter.RequestIDs[i] = regexp.QuoteMeta(filter.RequestIDs[i])
+		}
 		where = append(where, sq.Expr(match, strings.Join(filter.RequestIDs, "|")))
 	}
 
