@@ -165,25 +165,6 @@ func (r *MemcacheRepository) item(key string, val []byte, itemFs ...cache.ItemF)
 	return &it
 }
 
-// func (r *MemcacheRepository) item(key string, item *cache.Item) *memcache.Item {
-// 	it := memcache.Item{
-// 		Key:        r.cache.PrepareKey(key),
-// 		Expiration: truncExpiration(r.liveTime),
-// 	}
-
-// 	if item != nil {
-// 		it.Value = item.Value
-// 		if item.TTL != 0 {
-// 			it.Expiration = truncExpiration(item.TTL)
-// 		}
-// 		if item.Flags != 0 {
-// 			it.Flags = item.Flags
-// 		}
-// 	}
-
-// 	return &it
-// }
-
 func truncExpiration(d time.Duration) int32 {
 	const maxDuration = 30 * 24 * time.Hour
 	if d > maxDuration {
