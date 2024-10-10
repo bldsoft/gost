@@ -56,9 +56,6 @@ func (r *BaseRepository) getCustomChartValues(ctx context.Context, query sq.Sele
 		return nil, errors.New("step must be a positive number")
 	}
 
-	bob := to.Sub(from) / step
-	_ = bob
-
 	if to.Sub(from)/step > maxChartIntervalCount {
 		return nil, errors.New("too many intervals")
 	}
