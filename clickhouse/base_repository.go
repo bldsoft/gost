@@ -51,28 +51,19 @@ func (r *BaseRepository) buildChartValues(start, end time.Time, step time.Durati
 	return res
 }
 
-func (r *BaseRepository) GetChartValues(ctx context.Context, subQuery sq.SelectBuilder, from, to time.Time, step time.Duration) (*stat.SeriesData, error) {
+func (r *BaseRepository) getCustomChartValues(ctx context.Context, query sq.SelectBuilder, from, to time.Time, step time.Duration) (*stat.SeriesData, error) {
 	if step <= 0 {
 		return nil, errors.New("step must be a positive number")
 	}
+
+	bob := to.Sub(from) / step
+	_ = bob
 
 	if to.Sub(from)/step > maxChartIntervalCount {
 		return nil, errors.New("too many intervals")
 	}
 
-	query := sq.Select().
-		Column(labelColumn).
-		Column("groupArray("+timeColumn+") "+timesColumn).
-		Column("groupArray(toFloat64("+valueColumn+")) "+valuesColumn).
-		Column("min(toFloat64("+valueColumn+")) min").
-		Column("max(toFloat64("+valueColumn+")) max").
-		Column("avg(toFloat64("+valueColumn+")) avg").
-		Column("sum(toFloat64("+valueColumn+")) sum").
-		FromSelect(subQuery, "interval_data").
-		GroupBy(labelColumn)
-
 	data := &stat.SeriesData{}
-
 	rows, err := r.RunSelect(ctx, query)
 	if err != nil {
 		return nil, err
@@ -92,4 +83,19 @@ func (r *BaseRepository) GetChartValues(ctx context.Context, subQuery sq.SelectB
 		data.Values = append(data.Values, &lv)
 	}
 	return data, nil
+}
+
+func (r *BaseRepository) GetChartValues(ctx context.Context, subQuery sq.SelectBuilder, from, to time.Time, step time.Duration) (*stat.SeriesData, error) {
+	query := sq.Select().
+		Column(labelColumn).
+		Column("groupArray("+timeColumn+") "+timesColumn).
+		Column("groupArray(toFloat64("+valueColumn+")) "+valuesColumn).
+		Column("min(toFloat64("+valueColumn+")) min").
+		Column("max(toFloat64("+valueColumn+")) max").
+		Column("avg(toFloat64("+valueColumn+")) avg").
+		Column("sum(toFloat64("+valueColumn+")) sum").
+		FromSelect(subQuery, "interval_data").
+		GroupBy(labelColumn)
+
+	return r.getCustomChartValues(ctx, query, from, to, step)
 }
