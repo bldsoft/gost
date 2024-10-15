@@ -291,7 +291,7 @@ func (e *ClickHouseLogExporter) logsMetricsQuery(params *log.LogsMetricsParams) 
 		Column("min("+valueColumn+") min").
 		Column("max("+valueColumn+") max").
 		Column("avg("+valueColumn+") avg").
-		Column("round(sum("+valueColumn+"))*(?) sum", params.StepSec).
+		Column("round(sum("+valueColumn+")*(?)) sum", params.StepSec).
 		FromSelect(subQuery, "interval_data").
 		GroupBy(labelColumn)
 
@@ -299,6 +299,9 @@ func (e *ClickHouseLogExporter) logsMetricsQuery(params *log.LogsMetricsParams) 
 }
 
 func (e *ClickHouseLogExporter) LogsMetrics(ctx context.Context, params log.LogsMetricsParams) (*stat.SeriesData, error) {
+	if params.To.IsZero() {
+		params.To = time.Now()
+	}
 	return e.getCustomChartValues(ctx, e.logsMetricsQuery(&params), params.From, params.To, time.Duration(params.StepSec)*time.Second)
 }
 
