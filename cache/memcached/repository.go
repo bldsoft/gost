@@ -11,6 +11,8 @@ import (
 const (
 	casRetryLimit = 5
 	casSleepTime  = 10
+
+	secondsInMonth = 30 * 24 * 60 * 60
 )
 
 type MemcacheRepository struct {
@@ -34,7 +36,7 @@ func (r *MemcacheRepository) Get(key string) (*cache.Item, error) {
 	}
 	return &cache.Item{
 		Value: item.Value,
-		// TTL:   time.Duration(item.Expiration) * time.Second,
+		TTL:   r.itemExpirationToDuration(item.Expiration),
 		Flags: item.Flags,
 	}, err
 }
@@ -163,6 +165,17 @@ func (r *MemcacheRepository) item(key string, val []byte, itemFs ...cache.ItemF)
 		it.Expiration = truncExpiration(cIt.TTL)
 	}
 	return &it
+}
+
+// NOTE: As per memcache lib documentation, the Expiration field contains either
+// a relative time from now (up to 1 month), or an absolute UNix epoch time
+func (r *MemcacheRepository) itemExpirationToDuration(exp int32) time.Duration {
+	now := time.Now().UTC()
+	if exp > secondsInMonth {
+		return time.Unix(int64(exp), 0).Sub(now)
+	}
+
+	return time.Duration(exp)
 }
 
 func truncExpiration(d time.Duration) int32 {
