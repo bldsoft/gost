@@ -1,4 +1,4 @@
-package cache
+package cache2
 
 import (
 	"errors"
@@ -25,18 +25,14 @@ type IExpiringCacheRepository interface {
 	SetFor(key string, value []byte, ttl time.Duration) error
 }
 
-// IDistrCacheRepository ...
 type IDistrCacheRepository interface {
-	IExpiringCacheRepository
-
-	// TODO: add it to ILocalCacheRepository
-	GetWithFlags(key string) (data []byte, flags uint32, err error)
+	Get(key string) (*Item, error)
 	Exist(key string) bool
-	Add(key string, value []byte) error
-	AddFor(key string, value []byte, ttl time.Duration) error
-	SetWithFlags(key string, value []byte, flags uint32) error
-	SetForWithFlags(key string, value []byte, flags uint32, ttl time.Duration) error
-	CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error
+	Set(key string, val []byte, opts ...ItemF) error
+	Add(key string, val []byte, opts ...ItemF) error
+	AddOrGet(key string, val []byte, opts ...ItemF) (i *Item, added bool, err error)
+	Delete(key string) error
+	CompareAndSwap(key string, handler func(value *Item) (*Item, error), sleepDur ...time.Duration) error
 }
 
 type Repository[T any] interface {
