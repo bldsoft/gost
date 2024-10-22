@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	cache "github.com/bldsoft/gost/cacheV2"
+	"github.com/bldsoft/gost/cache/v2"
 	"github.com/bradfitz/gomemcache/memcache"
 )
 

@@ -1,4 +1,4 @@
-package cache2
+package cache
 
 import (
 	"errors"
@@ -11,19 +11,6 @@ var (
 )
 
 //go:generate go run github.com/vektra/mockery/v2 --all --with-expecter
-
-// ILocalCacheRepository ...
-type ILocalCacheRepository interface {
-	Get(key string) ([]byte, error)
-	Set(key string, value []byte) error
-	Delete(key string) error
-	Reset()
-}
-
-type IExpiringCacheRepository interface {
-	ILocalCacheRepository
-	SetFor(key string, value []byte, ttl time.Duration) error
-}
 
 type IDistrCacheRepository interface {
 	Get(key string) (*Item, error)
