@@ -10,6 +10,7 @@ type Repository[T any, U IEntityIDPtr[T]] interface {
 	FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*QueryOptions) ([]U, error)
 	FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*QueryOptions) ([]U, error)
 	Find(ctx context.Context, filter interface{}, opt ...*QueryOptions) ([]U, error)
+	Count(ctx context.Context, filter interface{}, opt ...*QueryOptions) (int64, error)
 	GetAll(ctx context.Context, options ...*QueryOptions) ([]U, error)
 
 	Insert(ctx context.Context, entity U) error
