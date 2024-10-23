@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	cache "github.com/bldsoft/gost/cache"
+	cache "github.com/bldsoft/gost/cache/v2"
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"
@@ -22,13 +22,20 @@ func (_m *IDistrCacheRepository) EXPECT() *IDistrCacheRepository_Expecter {
 	return &IDistrCacheRepository_Expecter{mock: &_m.Mock}
 }
 
-// Add provides a mock function with given fields: key, opts
-func (_m *IDistrCacheRepository) Add(key string, opts *cache.Item) error {
-	ret := _m.Called(key, opts)
+// Add provides a mock function with given fields: key, val, opts
+func (_m *IDistrCacheRepository) Add(key string, val []byte, opts ...cache.ItemF) error {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key, val)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *cache.Item) error); ok {
-		r0 = rf(key, opts)
+	if rf, ok := ret.Get(0).(func(string, []byte, ...cache.ItemF) error); ok {
+		r0 = rf(key, val, opts...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -43,14 +50,22 @@ type IDistrCacheRepository_Add_Call struct {
 
 // Add is a helper method to define mock.On call
 //   - key string
-//   - opts *cache.Item
-func (_e *IDistrCacheRepository_Expecter) Add(key interface{}, opts interface{}) *IDistrCacheRepository_Add_Call {
-	return &IDistrCacheRepository_Add_Call{Call: _e.mock.On("Add", key, opts)}
+//   - val []byte
+//   - opts ...cache.ItemF
+func (_e *IDistrCacheRepository_Expecter) Add(key interface{}, val interface{}, opts ...interface{}) *IDistrCacheRepository_Add_Call {
+	return &IDistrCacheRepository_Add_Call{Call: _e.mock.On("Add",
+		append([]interface{}{key, val}, opts...)...)}
 }
 
-func (_c *IDistrCacheRepository_Add_Call) Run(run func(key string, opts *cache.Item)) *IDistrCacheRepository_Add_Call {
+func (_c *IDistrCacheRepository_Add_Call) Run(run func(key string, val []byte, opts ...cache.ItemF)) *IDistrCacheRepository_Add_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(*cache.Item))
+		variadicArgs := make([]cache.ItemF, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(cache.ItemF)
+			}
+		}
+		run(args[0].(string), args[1].([]byte), variadicArgs...)
 	})
 	return _c
 }
@@ -60,13 +75,90 @@ func (_c *IDistrCacheRepository_Add_Call) Return(_a0 error) *IDistrCacheReposito
 	return _c
 }
 
-func (_c *IDistrCacheRepository_Add_Call) RunAndReturn(run func(string, *cache.Item) error) *IDistrCacheRepository_Add_Call {
+func (_c *IDistrCacheRepository_Add_Call) RunAndReturn(run func(string, []byte, ...cache.ItemF) error) *IDistrCacheRepository_Add_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AddOrGet provides a mock function with given fields: key, val, opts
+func (_m *IDistrCacheRepository) AddOrGet(key string, val []byte, opts ...cache.ItemF) (*cache.Item, bool, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key, val)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 *cache.Item
+	var r1 bool
+	var r2 error
+	if rf, ok := ret.Get(0).(func(string, []byte, ...cache.ItemF) (*cache.Item, bool, error)); ok {
+		return rf(key, val, opts...)
+	}
+	if rf, ok := ret.Get(0).(func(string, []byte, ...cache.ItemF) *cache.Item); ok {
+		r0 = rf(key, val, opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*cache.Item)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, []byte, ...cache.ItemF) bool); ok {
+		r1 = rf(key, val, opts...)
+	} else {
+		r1 = ret.Get(1).(bool)
+	}
+
+	if rf, ok := ret.Get(2).(func(string, []byte, ...cache.ItemF) error); ok {
+		r2 = rf(key, val, opts...)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// IDistrCacheRepository_AddOrGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddOrGet'
+type IDistrCacheRepository_AddOrGet_Call struct {
+	*mock.Call
+}
+
+// AddOrGet is a helper method to define mock.On call
+//   - key string
+//   - val []byte
+//   - opts ...cache.ItemF
+func (_e *IDistrCacheRepository_Expecter) AddOrGet(key interface{}, val interface{}, opts ...interface{}) *IDistrCacheRepository_AddOrGet_Call {
+	return &IDistrCacheRepository_AddOrGet_Call{Call: _e.mock.On("AddOrGet",
+		append([]interface{}{key, val}, opts...)...)}
+}
+
+func (_c *IDistrCacheRepository_AddOrGet_Call) Run(run func(key string, val []byte, opts ...cache.ItemF)) *IDistrCacheRepository_AddOrGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]cache.ItemF, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(cache.ItemF)
+			}
+		}
+		run(args[0].(string), args[1].([]byte), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *IDistrCacheRepository_AddOrGet_Call) Return(i *cache.Item, added bool, err error) *IDistrCacheRepository_AddOrGet_Call {
+	_c.Call.Return(i, added, err)
+	return _c
+}
+
+func (_c *IDistrCacheRepository_AddOrGet_Call) RunAndReturn(run func(string, []byte, ...cache.ItemF) (*cache.Item, bool, error)) *IDistrCacheRepository_AddOrGet_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // CompareAndSwap provides a mock function with given fields: key, handler, sleepDur
-func (_m *IDistrCacheRepository) CompareAndSwap(key string, handler func(cache.Item) (cache.Item, error), sleepDur ...time.Duration) error {
+func (_m *IDistrCacheRepository) CompareAndSwap(key string, handler func(*cache.Item) (*cache.Item, error), sleepDur ...time.Duration) error {
 	_va := make([]interface{}, len(sleepDur))
 	for _i := range sleepDur {
 		_va[_i] = sleepDur[_i]
@@ -77,7 +169,7 @@ func (_m *IDistrCacheRepository) CompareAndSwap(key string, handler func(cache.I
 	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, func(cache.Item) (cache.Item, error), ...time.Duration) error); ok {
+	if rf, ok := ret.Get(0).(func(string, func(*cache.Item) (*cache.Item, error), ...time.Duration) error); ok {
 		r0 = rf(key, handler, sleepDur...)
 	} else {
 		r0 = ret.Error(0)
@@ -93,14 +185,14 @@ type IDistrCacheRepository_CompareAndSwap_Call struct {
 
 // CompareAndSwap is a helper method to define mock.On call
 //   - key string
-//   - handler func(cache.Item)(cache.Item , error)
+//   - handler func(*cache.Item)(*cache.Item , error)
 //   - sleepDur ...time.Duration
 func (_e *IDistrCacheRepository_Expecter) CompareAndSwap(key interface{}, handler interface{}, sleepDur ...interface{}) *IDistrCacheRepository_CompareAndSwap_Call {
 	return &IDistrCacheRepository_CompareAndSwap_Call{Call: _e.mock.On("CompareAndSwap",
 		append([]interface{}{key, handler}, sleepDur...)...)}
 }
 
-func (_c *IDistrCacheRepository_CompareAndSwap_Call) Run(run func(key string, handler func(cache.Item) (cache.Item, error), sleepDur ...time.Duration)) *IDistrCacheRepository_CompareAndSwap_Call {
+func (_c *IDistrCacheRepository_CompareAndSwap_Call) Run(run func(key string, handler func(*cache.Item) (*cache.Item, error), sleepDur ...time.Duration)) *IDistrCacheRepository_CompareAndSwap_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]time.Duration, len(args)-2)
 		for i, a := range args[2:] {
@@ -108,7 +200,7 @@ func (_c *IDistrCacheRepository_CompareAndSwap_Call) Run(run func(key string, ha
 				variadicArgs[i] = a.(time.Duration)
 			}
 		}
-		run(args[0].(string), args[1].(func(cache.Item) (cache.Item, error)), variadicArgs...)
+		run(args[0].(string), args[1].(func(*cache.Item) (*cache.Item, error)), variadicArgs...)
 	})
 	return _c
 }
@@ -118,7 +210,7 @@ func (_c *IDistrCacheRepository_CompareAndSwap_Call) Return(_a0 error) *IDistrCa
 	return _c
 }
 
-func (_c *IDistrCacheRepository_CompareAndSwap_Call) RunAndReturn(run func(string, func(cache.Item) (cache.Item, error), ...time.Duration) error) *IDistrCacheRepository_CompareAndSwap_Call {
+func (_c *IDistrCacheRepository_CompareAndSwap_Call) RunAndReturn(run func(string, func(*cache.Item) (*cache.Item, error), ...time.Duration) error) *IDistrCacheRepository_CompareAndSwap_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -208,36 +300,29 @@ func (_c *IDistrCacheRepository_Exist_Call) RunAndReturn(run func(string) bool) 
 }
 
 // Get provides a mock function with given fields: key
-func (_m *IDistrCacheRepository) Get(key string) ([]byte, uint32, error) {
+func (_m *IDistrCacheRepository) Get(key string) (*cache.Item, error) {
 	ret := _m.Called(key)
 
-	var r0 []byte
-	var r1 uint32
-	var r2 error
-	if rf, ok := ret.Get(0).(func(string) ([]byte, uint32, error)); ok {
+	var r0 *cache.Item
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (*cache.Item, error)); ok {
 		return rf(key)
 	}
-	if rf, ok := ret.Get(0).(func(string) []byte); ok {
+	if rf, ok := ret.Get(0).(func(string) *cache.Item); ok {
 		r0 = rf(key)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]byte)
+			r0 = ret.Get(0).(*cache.Item)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) uint32); ok {
+	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(key)
 	} else {
-		r1 = ret.Get(1).(uint32)
+		r1 = ret.Error(1)
 	}
 
-	if rf, ok := ret.Get(2).(func(string) error); ok {
-		r2 = rf(key)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
 
 // IDistrCacheRepository_Get_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Get'
@@ -258,23 +343,30 @@ func (_c *IDistrCacheRepository_Get_Call) Run(run func(key string)) *IDistrCache
 	return _c
 }
 
-func (_c *IDistrCacheRepository_Get_Call) Return(_a0 []byte, _a1 uint32, _a2 error) *IDistrCacheRepository_Get_Call {
-	_c.Call.Return(_a0, _a1, _a2)
+func (_c *IDistrCacheRepository_Get_Call) Return(_a0 *cache.Item, _a1 error) *IDistrCacheRepository_Get_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *IDistrCacheRepository_Get_Call) RunAndReturn(run func(string) ([]byte, uint32, error)) *IDistrCacheRepository_Get_Call {
+func (_c *IDistrCacheRepository_Get_Call) RunAndReturn(run func(string) (*cache.Item, error)) *IDistrCacheRepository_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Set provides a mock function with given fields: key, opts
-func (_m *IDistrCacheRepository) Set(key string, opts *cache.Item) error {
-	ret := _m.Called(key, opts)
+// Set provides a mock function with given fields: key, val, opts
+func (_m *IDistrCacheRepository) Set(key string, val []byte, opts ...cache.ItemF) error {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key, val)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *cache.Item) error); ok {
-		r0 = rf(key, opts)
+	if rf, ok := ret.Get(0).(func(string, []byte, ...cache.ItemF) error); ok {
+		r0 = rf(key, val, opts...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -289,14 +381,22 @@ type IDistrCacheRepository_Set_Call struct {
 
 // Set is a helper method to define mock.On call
 //   - key string
-//   - opts *cache.Item
-func (_e *IDistrCacheRepository_Expecter) Set(key interface{}, opts interface{}) *IDistrCacheRepository_Set_Call {
-	return &IDistrCacheRepository_Set_Call{Call: _e.mock.On("Set", key, opts)}
+//   - val []byte
+//   - opts ...cache.ItemF
+func (_e *IDistrCacheRepository_Expecter) Set(key interface{}, val interface{}, opts ...interface{}) *IDistrCacheRepository_Set_Call {
+	return &IDistrCacheRepository_Set_Call{Call: _e.mock.On("Set",
+		append([]interface{}{key, val}, opts...)...)}
 }
 
-func (_c *IDistrCacheRepository_Set_Call) Run(run func(key string, opts *cache.Item)) *IDistrCacheRepository_Set_Call {
+func (_c *IDistrCacheRepository_Set_Call) Run(run func(key string, val []byte, opts ...cache.ItemF)) *IDistrCacheRepository_Set_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(*cache.Item))
+		variadicArgs := make([]cache.ItemF, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(cache.ItemF)
+			}
+		}
+		run(args[0].(string), args[1].([]byte), variadicArgs...)
 	})
 	return _c
 }
@@ -306,7 +406,7 @@ func (_c *IDistrCacheRepository_Set_Call) Return(_a0 error) *IDistrCacheReposito
 	return _c
 }
 
-func (_c *IDistrCacheRepository_Set_Call) RunAndReturn(run func(string, *cache.Item) error) *IDistrCacheRepository_Set_Call {
+func (_c *IDistrCacheRepository_Set_Call) RunAndReturn(run func(string, []byte, ...cache.ItemF) error) *IDistrCacheRepository_Set_Call {
 	_c.Call.Return(run)
 	return _c
 }
