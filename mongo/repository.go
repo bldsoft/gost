@@ -142,6 +142,10 @@ func (r *BaseRepository[T, U]) Find(ctx context.Context, filter interface{}, opt
 	return results, nil
 }
 
+func (r *BaseRepository[T, U]) Count(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (int64, error) {
+	return r.Collection().CountDocuments(ctx, r.where(filter, opt...))
+}
+
 func (r *BaseRepository[T, U]) sort(opt repository.SortOpt) bson.D {
 	var res bson.D
 	for _, sortParam := range opt {
