@@ -54,6 +54,7 @@ type Filter struct {
 	To              time.Time `json:"to"                        schema:"to,omitempty"`
 	RequestIDs      []string  `json:"requestIDs,omitempty"      schema:"reqID,omitempty"`
 	Levels          []Level   `json:"levels,omitempty"          schema:"levels,omitempty"`
+	TrackRequest    bool      `json:"trackRequest,omitempty" 		schema:"trackRequest,omitempty"`
 }
 
 type Sort struct {
