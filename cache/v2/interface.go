@@ -21,11 +21,3 @@ type IDistrCacheRepository interface {
 	Delete(key string) error
 	CompareAndSwap(key string, handler func(value *Item) (*Item, error), sleepDur ...time.Duration) error
 }
-
-type Repository[T any] interface {
-	Get(key string) (T, error)
-	Set(key string, value T) error
-	SetFor(key string, value T, ttl time.Duration) error
-	Delete(key string) error
-	Reset()
-}
