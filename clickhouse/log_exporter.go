@@ -115,21 +115,6 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 		}
 		where = append(where, sq.Eq{LevelColumName: int8Levels})
 	}
-	if filter.Search != nil && len(*filter.Search) > 0 {
-		where = append(where, e.parseExpr(*filter.Search, func(search string) sq.Sqlizer {
-			search = strings.TrimSpace(search)
-			return sq.Or{
-				sq.Expr(
-					fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName),
-					search,
-				),
-				sq.Expr(
-					fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName),
-					search,
-				),
-			}
-		}))
-	}
 
 	switch len(filter.RequestIDs) {
 	case 0:
@@ -152,6 +137,38 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 	if len(filter.ServiceVersions) > 0 {
 		where = append(where, sq.Eq{ServiceVersionColumnName: filter.ServiceVersions})
 	}
+
+	if filter.Search != nil && len(*filter.Search) > 0 {
+		var searchFilter sq.Sqlizer
+		searchFilter = e.parseExpr(*filter.Search, func(search string) sq.Sqlizer {
+			search = strings.TrimSpace(search)
+			return sq.Or{
+				sq.Expr(
+					fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName),
+					search,
+				),
+				sq.Expr(
+					fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName),
+					search,
+				),
+			}
+		})
+
+		if filter.TrackRequest {
+			var sqWhere sq.And
+			sqWhere = append(sqWhere, append([]sq.Sqlizer{searchFilter}, where...)...)
+
+			subQuery := sq.
+				Select(ReqIDColumnName).
+				From(e.config.TableName).
+				Where(sqWhere)
+
+			searchFilter = sq.Expr(fmt.Sprintf("%s IN (?)", ReqIDColumnName), subQuery)
+		}
+
+		where = append(where, searchFilter)
+	}
+
 	return where
 }
 
