@@ -295,7 +295,7 @@ func (e *ClickHouseLogExporter) logsMetricsQuery(params *log.LogsMetricsParams) 
 	subQuery := sq.Select().
 		Column(LevelColumName+" "+labelColumn).
 		Column("toStartOfInterval("+TimestampColumnName+", INTERVAL (?) second) "+timeColumn, params.StepSec).
-		Column("toFloat64(COUNT(*)) / (?) "+"value", params.StepSec).
+		Column("toFloat64(COUNT(*)) "+"value").
 		From(e.config.TableName).
 		Where(e.filter(params.Filter)).
 		GroupBy(labelColumn, timeColumn).
@@ -308,7 +308,7 @@ func (e *ClickHouseLogExporter) logsMetricsQuery(params *log.LogsMetricsParams) 
 		Column("min("+valueColumn+") min").
 		Column("max("+valueColumn+") max").
 		Column("avg("+valueColumn+") avg").
-		Column("round(sum("+valueColumn+")*(?)) sum", params.StepSec).
+		Column("round(sum("+valueColumn+")) sum").
 		FromSelect(subQuery, "interval_data").
 		GroupBy(labelColumn)
 
