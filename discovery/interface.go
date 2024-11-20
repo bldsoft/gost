@@ -36,5 +36,5 @@ type ServiceInstanceInfo struct {
 	Commit      string            `json:"commit"`
 	Branch      string            `json:"branch"`
 	Healthy     bool              `json:"healthy"`
-	Meta        map[string]string `json:"-"`
+	Meta        map[string]string `json:"meta"`
 }
