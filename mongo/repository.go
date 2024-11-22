@@ -324,29 +324,32 @@ func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.I
 }
 
 func (r *BaseRepository[T, U]) where(filter interface{}, options ...*repository.QueryOptions) interface{} {
-	if options != nil {
-		switch filter := filter.(type) {
-		case bson.M:
-			var cond interface{}
-			var field string
-
-			if !options[0].Archived {
-				field = "$or"
-				cond = []interface{}{
-					bson.M{BsonFieldNameArchived: bson.M{"$exists": false}},
-					bson.M{BsonFieldNameArchived: false},
-				}
-			}
-
-			if _, ok := filter[field]; !ok {
-				filter[field] = cond
-			}
-
-			RecursiveParse(filter, options[0].Filter, "")
-		default:
-		}
+	if len(options) == 0 {
+		return filter
 	}
+	switch filter := filter.(type) {
+	case bson.M:
 
+		if !options[0].Archived {
+			nonArchivedCond := bson.A{
+				bson.M{BsonFieldNameArchived: bson.M{"$exists": false}},
+				bson.M{BsonFieldNameArchived: false},
+			}
+
+			if cond, ok := filter["$or"]; ok {
+				filter["$and"] = bson.A{
+					bson.M{"$or": nonArchivedCond},
+					bson.M{"$or": cond},
+				}
+				delete(filter, "$or")
+			} else {
+				filter["$or"] = nonArchivedCond
+			}
+		}
+
+		RecursiveParse(filter, options[0].Filter, "")
+	default:
+	}
 	return filter
 }
 
