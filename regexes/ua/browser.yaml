@@ -1,0 +1,3301 @@
+# 2024-04-22T12:31:03+03:00
+
+# Omit browser for Tizen
+# Mozilla/5.0 (SMART-TV; LINUX; Tizen 6.0) AppleWebKit/537.36 (KHTML, like Gecko) 76.0.3809.146/6.0 TV Safari/537.36
+- regex: 'Tizen'
+  browser: ""
+
+- regex: 'Seamonkey/\d+'
+  browser: "Seamonkey"
+
+- regex: 'Firefox/\d+'
+  browser: "Firefox"
+
+- regex: 'Chromium/\d+'
+  browser: "Chromium"
+
+- regex: Edg.*/\d+
+  browser: "Edge"
+
+- regex: 'Chrome/\d+'
+  browser: "Chrome"
+
+- regex: 'Safari/\d+'
+  browser: "Safari"
+
+- regex: '(?:OPR|Opera)/\d+'
+  browser: "Opera"
+
+
+# 7305F/Lenovo TB-7305F(LENOVO,mt8321_GO,Lenovo,TABLET) Android/28(REL) Thundernet TV GO 2.10.254.885 ExoPlayerLib/2.16.1
+# 8505F/Lenovo TB-8505F(LENOVO,akita_row_wifi,Lenovo,MOBILE) Android/29(REL) Thundernet TV GO 2.10.254.885 ExoPlayerLib/2.16.1
+- regex: \([^,]+,[^,]+,[^,]+,([^,]+)\) Android/\d+
+  device_type: $1
+
+- regex: ^(Roku)/DVP-(\d+)\.(\d+)
+  os: $1
+  os_v1: $2
+  os_v2: $3
+  browser: ""
+  device_type: STB
+
+# Fire OS/7.0 stagefright/1.2 (Linux;Android 9)
+- regex: '^Fire OS/(\d+).(\d+)'
+  os: "Fire OS"
+  os_v1: "$1"
+  os_v2: "$2"
+  browser: ""
+  device_type: STB
+
+
+- regex: '^FetchTV'
+  os: "Linux"
+  browser: ""
+  device_type: STB
+
+- regex: '(Smart|SMART|smart)-?\s*(?:TV|tv)'
+  device_type: TV
+
+# Lavf/60.3.100
+- regex: '^Lavf/\d+,\d+,\d+$'
+  device_type: DESKTOP
+
+# VLC/3.0.17.3 LibVLC/3.0.17.3
+- regex: "^VLC"
+  device_type: DESKTOP
+
+# curl/7.81.0
+- regex: "^curl"
+  device_type: DESKTOP
+
+- regex: \([^,]+,[^,]+,([^,]+),([^,]+)\) Android/\d+
+  brand: $1
+  device_type: $2
+  os: Android
+  versions: # https://apilevels.com/ TODO: generate via script
+    - regex: Android/(?:1|2|3|4)\D
+      os_v1: 1
+    - regex: Android/(?:5|6|7|8|9|10)\D
+      os_v1: 2
+    - regex: Android/(?:5|6|7|8|9|10)\D
+      os_v1: 3
+    - regex: Android/(?:14|15|16|17|18|19|20)\D
+      os_v1: 4
+    - regex: Android/(?:21|22)\D
+      os_v1: 5
+    - regex: Android/(?:23)\D
+      os_v1: 6
+    - regex: Android/(?:24|25)\D
+      os_v1: 7
+    - regex: Android/(?:26|27)\D
+      os_v1: 8
+    - regex: Android/(?:28)\D
+      os_v1: 9
+    - regex: Android/(?:29)\D
+      os_v1: 10
+    - regex: Android/(?:30)\D
+      os_v1: 11
+    - regex: Android/(?:31|32)\D
+      os_v1: 12
+    - regex: Android/(?:33)\D
+      os_v1: 13
+    - regex: Android/(?:34)\D
+      os_v1: 14
+
+- regex: ^(\w+)\s+CDN$
+  os: $1
+
+# Amazon fire tv defices 
+# https://developer.amazon.com/docs/fire-tv/identify-amazon-fire-tv-devices.html
+- brand: Amazon
+  device_type: TV
+  models:
+    - browser: ""
+      device: Redmi 108cm (43 inches) 4K Ultra HD smart LED Fire TV (2023)
+      device_type: TV
+      model: Redmi 108cm (43 inches) 4K Ultra HD smart LED Fire TV (2023)
+      os_v1: "7"
+      regex: AFTBTX4
+    - browser: ""
+      device: TCL Class S3 1080p LED Smart TV with Fire TV (2023)
+      device_type: TV
+      model: TCL Class S3 1080p LED Smart TV with Fire TV (2023)
+      os_v1: "7"
+      regex: AFTMD002
+    - browser: ""
+      device: Fire TV Stick 4K Max - 2nd Gen (2023) - 16 GB
+      device_type: STB
+      model: Fire TV Stick 4K Max - 2nd Gen (2023) - 16 GB
+      os_v1: "8"
+      regex: AFTKRT
+    - browser: ""
+      device: Fire TV Stick 4K - 2nd Gen (2023) - 8 GB
+      device_type: STB
+      model: Fire TV Stick 4K - 2nd Gen (2023) - 8 GB
+      os_v1: "8"
+      regex: AFTKM
+    - browser: ""
+      device: TCL 32" FHD, 40" FHD Fire TV (2023)
+      device_type: TV
+      model: TCL 32" FHD, 40" FHD Fire TV (2023)
+      os_v1: "7"
+      regex: AFTSHN02
+    - browser: ""
+      device: Fire TV - TCL S4 Series 4K UHD HDR LED (2023)
+      device_type: TV
+      model: Fire TV - TCL S4 Series 4K UHD HDR LED (2023)
+      os_v1: "7"
+      regex: AFTMD001
+    - browser: ""
+      device: Fire TV - TCL Q6 4K QLED HDR (2023)
+      device_type: TV
+      model: Fire TV - TCL Q6 4K QLED HDR (2023)
+      os_v1: "7"
+      regex: AFTMD001
+    - browser: ""
+      device: Fire TV 2-Series (2023)
+      device_type: TV
+      model: Fire TV 2-Series (2023)
+      os_v1: "7"
+      regex: AFTKA002 / AFTKAUK002
+    - browser: ""
+      device: Toshiba 4K UHD - Fire TV (2022)
+      device_type: TV
+      model: Toshiba 4K UHD - Fire TV (2022)
+      os_v1: "7"
+      regex: AFTHA004
+    - browser: ""
+      device: BMW (2022)
+      device_type: TV
+      model: BMW (2022)
+      os_v1: "7"
+      regex: AFTLBT962E2
+    - browser: ""
+      device: Echo Show 15 (2021)
+      device_type: TV
+      model: Echo Show 15 (2021)
+      os_v1: "7"
+      regex: AEOHY
+    - browser: ""
+      device: Fire TV Omni QLED Series (2022)
+      device_type: TV
+      model: Fire TV Omni QLED Series (2022)
+      os_v1: "7"
+      regex: AFTTIFF43
+    - browser: ""
+      device: Fire TV Cube - 3rd Gen (2022)
+      device_type: STB
+      model: Fire TV Cube - 3rd Gen (2022)
+      os_v1: "7"
+      regex: AFTGAZL
+    - browser: ""
+      device: Xiaomi F2 4K - Fire TV (2022)
+      device_type: TV
+      model: Xiaomi F2 4K - Fire TV (2022)
+      os_v1: "7"
+      regex: AFTANNA0
+    - browser: ""
+      device: Hisense U6 4K UHD - Fire TV (2022)
+      device_type: TV
+      model: Hisense U6 4K UHD - Fire TV (2022)
+      os_v1: "7"
+      regex: AFTHA001
+    - browser: ""
+      device: Funai 4K - Fire TV (2022)
+      device_type: TV
+      model: Funai 4K - Fire TV (2022)
+      os_v1: "7"
+      regex: AFTMON001, AFTMON002
+    - browser: ""
+      device: JVC 4K - Fire TV with Freeview Play (2021)
+      device_type: TV
+      model: JVC 4K - Fire TV with Freeview Play (2021)
+      os_v1: "7"
+      regex: AFTJULI1
+    - browser: ""
+      device: ok 4K - Fire TV (2021)
+      device_type: TV
+      model: ok 4K - Fire TV (2021)
+      os_v1: "7"
+      regex: AFTANNA0
+    - browser: ""
+      device: Toshiba 4K Far-field UHD - Fire TV (2021)
+      device_type: TV
+      model: Toshiba 4K Far-field UHD - Fire TV (2021)
+      os_v1: "7"
+      regex: AFTHA003
+    - browser: ""
+      device: Fire TV Stick 4K Max - 1st Gen (2021)
+      device_type: STB
+      model: Fire TV Stick 4K Max - 1st Gen (2021)
+      os_v1: "7"
+      regex: AFTKA
+    - browser: ""
+      device: Stellantis (Jeep) - Wagoneer/Grand Wagoneer
+      device_type: TV
+      model: Stellantis (Jeep) - Wagoneer/Grand Wagoneer
+      os_v1: "7"
+      regex: AFTLFT962X3
+    - browser: ""
+      device: Fire TV Omni Series (2021)
+      device_type: TV
+      model: Fire TV Omni Series (2021)
+      os_v1: "7"
+      regex: AFTTIFF43
+    - browser: ""
+      device: Fire TV 4-Series (2021)
+      device_type: TV
+      model: Fire TV 4-Series (2021)
+      os_v1: "7"
+      regex: AFTTI43
+    - browser: ""
+      device: Toshiba 4K UHD - Fire TV (2021)
+      device_type: TV
+      model: Toshiba 4K UHD - Fire TV (2021)
+      os_v1: "7"
+      regex: AFTHA001
+    - browser: ""
+      device: AmazonBasics 4K - Fire TV (2020)
+      device_type: TV
+      model: AmazonBasics 4K - Fire TV (2020)
+      os_v1: "7"
+      regex: AFTPR001
+    - browser: ""
+      device: AmazonBasics HD/FHD - Fire TV (2020)
+      device_type: TV
+      model: AmazonBasics HD/FHD - Fire TV (2020)
+      os_v1: "6"
+      regex: AFTBU001
+    - browser: ""
+      device: JVC 2K - Fire TV (2020)
+      device_type: TV
+      model: JVC 2K - Fire TV (2020)
+      os_v1: "7"
+      regex: AFTWMST22
+    - browser: ""
+      device: Onida HD/FHD - Fire TV (2020) [Available in two sizes]
+      device_type: TV
+      model: Onida HD/FHD - Fire TV (2020) [Available in two sizes]
+      os_v1: "6"
+      regex: AFTTIFF55
+    - browser: ""
+      device: ok 4K - Fire TV (2020)
+      device_type: TV
+      model: ok 4K - Fire TV (2020)
+      os_v1: "7"
+      regex: AFTWI001
+    - browser: ""
+      device: Fire TV Stick - 3rd Gen (2020)
+      device_type: STB
+      model: Fire TV Stick - 3rd Gen (2020)
+      os_v1: "7"
+      regex: AFTSSS
+    - browser: ""
+      device: Fire TV Stick Lite - 1st Gen (2020)
+      device_type: STB
+      model: Fire TV Stick Lite - 1st Gen (2020)
+      os_v1: "7"
+      regex: AFTSS
+    - browser: ""
+      device: Toshiba 4K UHD - Fire TV (2020)
+      device_type: TV
+      model: Toshiba 4K UHD - Fire TV (2020)
+      os_v1: "7"
+      regex: AFTDCT31
+    - browser: ""
+      device: Insignia 4K UHD - Fire TV (2020)
+      device_type: TV
+      model: Insignia 4K UHD - Fire TV (2020)
+      os_v1: "7"
+      regex: AFTDCT31
+    - browser: ""
+      device: Fire TV Stick - 2nd Gen (2016-2019)
+      device_type: STB
+      model: Fire TV Stick - 2nd Gen (2016-2019)
+      os_v1: "5"
+      regex: AFTT
+    - browser: ""
+      device: Toshiba HD - Fire TV (2018-2020)
+      device_type: TV
+      model: Toshiba HD - Fire TV (2018-2020)
+      os_v1: "6"
+      regex: AFTBAMR311
+    - browser: ""
+      device: Insignia HD - Fire TV (2018-2020)
+      device_type: TV
+      model: Insignia HD - Fire TV (2018-2020)
+      os_v1: "6"
+      regex: AFTEAMR311
+    - browser: ""
+      device: Toshiba 4K - Fire TV (2018-2019)
+      device_type: TV
+      model: Toshiba 4K - Fire TV (2018-2019)
+      os_v1: "6"
+      regex: AFTKMST12
+    - browser: ""
+      device: Onida HD - Fire TV (2019)
+      device_type: TV
+      model: Onida HD - Fire TV (2019)
+      os_v1: "6"
+      regex: AFTLE
+    - browser: ""
+      device: Fire TV Cube - 2nd Gen (2019)
+      device_type: STB
+      model: Fire TV Cube - 2nd Gen (2019)
+      os_v1: "7"
+      regex: AFTR
+    - browser: ""
+      device: Grundig OLED 4K - Fire TV (2019)
+      device_type: TV
+      model: Grundig OLED 4K - Fire TV (2019)
+      os_v1: "7"
+      regex: AFTEUFF014
+    - browser: ""
+      device: Grundig Vision 7, 4K - Fire TV (2019)
+      device_type: TV
+      model: Grundig Vision 7, 4K - Fire TV (2019)
+      os_v1: "7"
+      regex: AFTEU014
+    - browser: ""
+      device: JVC 4K - Fire TV (2019)
+      device_type: TV
+      model: JVC 4K - Fire TV (2019)
+      os_v1: "7"
+      regex: AFTSO001
+    - browser: ""
+      device: Nebula Soundbar - Fire TV Edition (2019)
+      device_type: STB
+      model: Nebula Soundbar - Fire TV Edition (2019)
+      os_v1: "6"
+      regex: AFTMM
+    - browser: ""
+      device: Grundig Vision 6 HD - Fire TV (2019)
+      device_type: TV
+      model: Grundig Vision 6 HD - Fire TV (2019)
+      os_v1: "7"
+      regex: AFTEU011
+    - browser: ""
+      device: Insignia 4K - Fire TV (2018)
+      device_type: TV
+      model: Insignia 4K - Fire TV (2018)
+      os_v1: "6"
+      regex: AFTJMST12
+    - browser: ""
+      device: Fire TV Cube - 1st Gen (2018)
+      device_type: STB
+      model: Fire TV Cube - 1st Gen (2018)
+      os_v1: "6"
+      regex: AFTA
+    - browser: ""
+      device: Fire TV Stick 4K - 1st Gen (2018)
+      device_type: STB
+      model: Fire TV Stick 4K - 1st Gen (2018)
+      os_v1: "6"
+      regex: AFTMM
+    - browser: ""
+      device: Fire TV Stick - Basic Edition (2017)
+      device_type: STB
+      model: Fire TV Stick - Basic Edition (2017)
+      os_v1: "5"
+      regex: AFTT
+    - browser: ""
+      device: Element 4K - Fire TV (2017)
+      device_type: TV
+      model: Element 4K - Fire TV (2017)
+      os_v1: "5"
+      regex: AFTRS
+    - browser: ""
+      device: Fire TV - 3rd Gen (2017)
+      device_type: TV
+      model: Fire TV - 3rd Gen (2017)
+      os_v1: "6"
+      regex: AFTN
+    - browser: ""
+      device: Fire TV - 2nd Gen (2015)
+      device_type: TV
+      model: Fire TV - 2nd Gen (2015)
+      os_v1: "5"
+      regex: AFTS
+    - browser: ""
+      device: Fire TV Stick - 1st Gen (2014)
+      device_type: STB
+      model: Fire TV Stick - 1st Gen (2014)
+      os_v1: "5"
+      regex: AFTM
+    - browser: ""
+      device: Fire TV - 1st Gen (2014)
+      device_type: TV
+      model: Fire TV - 1st Gen (2014)
+      os_v1: "5"
+      regex: AFTB
+    - browser: ""
+      device: TCL Soundbar with Built-in Subwoofer - Fire TV Edition (2019)
+      device_type: STB
+      model: TCL Soundbar with Built-in Subwoofer - Fire TV Edition (2019)
+      os_v1: "6"
+      regex: AFTMM
+    - browser: ""
+      device: Toshiba V35 Series LED FHD/HD - Fire TV (2021)
+      device_type: TV
+      model: Toshiba V35 Series LED FHD/HD - Fire TV (2021)
+      os_v1: "7"
+      regex: AFTHA002
+  os: Fire OS
+  regex: AFT
+
+- browser: Arachne
+  name: Arachne
+  regex: xChaos_Arachne/5\.(\d+\.[\.\d]+)
+  version: $1
+- browser: Weltweitimnetz Browser
+  name: Weltweitimnetz Browser
+  regex: WeltweitimnetzBrowser/(\d+\.[\.\d]+)
+  version: $1
+- browser: Ladybird
+  engine:
+    default: LibWeb
+  name: Ladybird
+  regex: (?:Ladybird|LibWeb\+LibJS/.*Browser)/(\d+\.[\.\d]+)
+  version: $1
+- browser: Kitt
+  name: Kitt
+  regex: Kitt/(\d+\.[\.\d]+)
+  version: $1
+- browser: BizBrowser
+  name: BizBrowser
+  regex: sppm_bizbrowser
+  version: ""
+- browser: SkyLeap
+  name: SkyLeap
+  regex: SkyLeap/(\d+\.[\.\d]+)
+  version: $1
+- browser: MaxBrowser
+  name: MaxBrowser
+  regex: MaxBrowser/(\d+\.[\.\d]+)
+  version: $1
+- browser: YouBrowser
+  name: YouBrowser
+  regex: YouBrowser/(\d+\.[\.\d]+)
+  version: $1
+- browser: MixerBox AI
+  name: MixerBox AI
+  regex: MixerBox-Browser
+  version: ""
+- browser: EudoraWeb
+  name: EudoraWeb
+  regex: EudoraWeb (\d+[\.\d]+)
+  version: $1
+- browser: Eolie
+  name: Eolie
+  regex: Eolie
+  version: ""
+- browser: w3m
+  engine:
+    default: Text-based
+  name: w3m
+  regex: ^w3m/(\d+[\.\d]+)
+  version: $1
+- browser: Classilla
+  engine:
+    default: Clecko
+  name: Classilla
+  regex: Classilla/
+  version: $1
+- browser: Webian Shell
+  engine:
+    default: Gecko
+  name: Webian Shell
+  regex: WebianShell/(\d+[\.\d]+)
+  version: $1
+- browser: Vonkeror
+  engine:
+    default: Gecko
+  name: Vonkeror
+  regex: Vonkeror(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Wyzo
+  name: Wyzo
+  regex: Wyzo/(\d+\.[\.\d]+)
+  version: $1
+- browser: Liri Browser
+  name: Liri Browser
+  regex: Liri/(\d+\.[\.\d]+)
+  version: $1
+- browser: Columbus Browser
+  name: Columbus Browser
+  regex: Columbus/(\d+\.[\.\d]+)
+  version: $1
+- browser: GreenBrowser
+  engine:
+    default: Trident
+  name: GreenBrowser
+  regex: GreenBrowser
+  version: ""
+- browser: K-Ninja
+  name: K-Ninja
+  regex: K-Ninja/(\d+\.[\.\d]+)
+  version: $1
+- browser: PirateBrowser
+  name: PirateBrowser
+  regex: ^PB(\d+\.[\.\d]+)
+  version: $1
+- browser: East Browser
+  name: East Browser
+  regex: EastBrowser/(\d+\.[\.\d]+)
+  version: $1
+- browser: Qiyu
+  name: Qiyu
+  regex: Qiyu/(\d+\.[\.\d]+)
+  version: $1
+- browser: WebDiscover
+  name: WebDiscover
+  regex: WebDiscover/(\d+\.[\.\d]+)
+  version: $1
+- browser: Legan Browser
+  name: Legan Browser
+  regex: LeganBrowser/(\d+\.[\.\d]+)
+  version: $1
+- browser: Acoo Browser
+  engine:
+    default: Trident
+  name: Acoo Browser
+  regex: Acoo Browser
+  version: ""
+- browser: Aplix
+  name: Aplix
+  regex: Aplix_.*_browser/(\d+\.[\.\d]+)
+  version: $1
+- browser: Mogok Browser
+  name: Mogok Browser
+  regex: Mogok/(\d+\.[\.\d]+)
+  version: $1
+- browser: TrueLocation Browser
+  name: TrueLocation Browser
+  regex: (?:IOS)?TrueLocationBrowser/(\d+\.[\.\d]+)
+  version: $1
+- browser: Diigo Browser
+  name: Diigo Browser
+  regex: DiigoBrowser$
+  version: ""
+- browser: OnBrowser Lite
+  name: OnBrowser Lite
+  regex: .*OnBrowserLite(\d+\.[\.\d]+)
+  version: $1
+- browser: Bluefy
+  name: Bluefy
+  regex: Bluefy/(\d+\.[\.\d]+)
+  version: $1
+- browser: Vision Mobile Browser
+  name: Vision Mobile Browser
+  regex: (?:Novarra-Vision|Vision-Browser)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Surfy Browser
+  name: Surfy Browser
+  regex: SurfyBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: 18+ Privacy Browser
+  name: 18+ Privacy Browser
+  regex: 18\+/([\d\.]+)
+  version: $1
+- browser: GoKu
+  engine:
+    default: WebKit
+  name: GoKu
+  regex: GoKu-iOS/(\d+[\.\d]+)
+  version: $1
+- browser: Ask.com
+  name: Ask.com
+  regex: Ask\.com Mobile Browser
+  version: ""
+- browser: Bang
+  name: Bang
+  regex: Bang/(\d+[\.\d]+)
+  version: $1
+- browser: Intune Managed Browser
+  name: Intune Managed Browser
+  regex: ManagedBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Lotus
+  name: Lotus
+  regex: Lotus/(\d+[\.\d]+)
+  version: $1
+- browser: JUZI Browser
+  name: JUZI Browser
+  regex: JuziBrowser
+  version: ""
+- browser: Ninetails
+  name: Ninetails
+  regex: Ninetails(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Wexond
+  name: Wexond
+  regex: Wexond(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Catalyst
+  name: Catalyst
+  regex: catalyst(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Impervious Browser
+  engine:
+    default: Gecko
+  name: Impervious Browser
+  regex: Impervious(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Rakuten Browser
+  name: Rakuten Browser
+  regex: RakutenBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Rakuten Web Search
+  name: Rakuten Web Search
+  regex: RakutenWebSearch(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: VibeMate
+  name: VibeMate
+  regex: VibeMate(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Colom Browser
+  name: Colom Browser
+  regex: yixia\.browser/com\.donerbrowser\.app/
+  version: ""
+- browser: tararia
+  name: tararia
+  regex: tararia/(\d+\.[\.\d]+)
+  version: $1
+- browser: SberBrowser
+  engine:
+    default: Blink
+  name: SberBrowser
+  regex: SberBrowser/(\d+\.[\.\d]+)
+  version: $1
+- browser: Raspbian Chromium
+  name: Raspbian Chromium
+  regex: Raspbian Chromium/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Quick Search TV
+  name: Quick Search TV
+  regex: Quick Search TV(?:/(?:Wild Moon Edition )?(\d+[\.\d]+))?
+  version: $1
+- browser: Skye
+  engine:
+    default: Blink
+  name: Skye
+  regex: Skye/(\d+\.[\.\d]+)
+  version: $1
+- browser: VD Browser
+  engine:
+    default: Blink
+  name: VD Browser
+  regex: VD/\d+
+  version: ""
+- browser: SecureX
+  engine:
+    default: Blink
+  name: SecureX
+  regex: \[(?:HB/29|PB/(?:66|81))\]
+  version: ""
+- browser: HotBrowser
+  engine:
+    default: Blink
+  name: HotBrowser
+  regex: \[HS/\d+\]
+  version: ""
+- browser: Proxy Browser
+  engine:
+    default: Blink
+  name: Proxy Browser
+  regex: \[PB/\d+\]
+  version: ""
+- browser: Onion Browser
+  engine:
+    default: WebKit
+  name: Onion Browser
+  regex: ^Normalized (?:iPad|iPhone) \(iOS Safari\)
+  version: ""
+- browser: fGet
+  name: fGet
+  regex: fGet/
+  version: ""
+- browser: Nuviu
+  name: Nuviu
+  regex: Nuviu/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: DoCoMo
+  name: DoCoMo
+  regex: DoCoMo/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Airfind Secure Browser
+  engine:
+    default: Blink
+  name: Airfind Secure Browser
+  regex: com\.airfind\.browser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Arc
+  engine:
+    default: WebKit
+  name: Arc
+  regex: ArcMobile2(?:/(\d+\.[\.\d]+);)?
+  version: $1
+- browser: Nuanti Meta
+  engine:
+    default: WebKit
+  name: Nuanti Meta
+  regex: Nuanti(?:Meta)?/(\d+\.[\.\d]+)
+  version: $1
+- browser: Roku Browser
+  engine:
+    default: Blink
+  name: Roku Browser
+  regex: RokuBrowser/(\d+\.[\.\d]+)
+  version: $1
+- browser: PICO Browser
+  engine:
+    default: Blink
+  name: PICO Browser
+  regex: PicoBrowser/(\d+\.[\.\d]+)
+  version: $1
+- browser: ALVA
+  engine:
+    default: Blink
+  name: ALVA
+  regex: Alva/(\d+\.[\.\d]+)
+  version: $1
+- browser: Norton Private Browser
+  engine:
+    default: Blink
+  name: Norton Private Browser
+  regex: Norton/(\d+\.[\.\d]+)
+  version: $1
+- browser: Odd Browser
+  engine:
+    default: Blink
+  name: Odd Browser
+  regex: Odd/(\d+\.[\.\d]+)
+  version: $1
+- browser: APN Browser
+  engine:
+    default: Blink
+  name: APN Browser
+  regex: Safari/537\.36 (?:Browser|Navegador)
+  version: ""
+- browser: YAGI
+  engine:
+    default: Blink
+  name: YAGI
+  regex: YAGI/(\d+\.[\.\d]+)
+  version: $1
+- browser: Inspect Browser
+  name: Inspect Browser
+  regex: InspectBrowser
+  version: ""
+- browser: Keepsafe Browser
+  name: Keepsafe Browser
+  regex: Keepsafe Browser
+  version: ""
+- browser: Vast Browser
+  engine:
+    default: Blink
+  name: Vast Browser
+  regex: (.*)Vast Browser/(\d+\.[\.\d]+)
+  version: $2
+- browser: Bloket
+  engine:
+    default: Blink
+  name: Bloket
+  regex: bloket
+  version: ""
+- browser: U Browser
+  engine:
+    default: Blink
+  name: U Browser
+  regex: (.*)U Browser(\d+\.[\.\d]+)
+  version: $2
+- browser: Tesla Browser
+  engine:
+    default: Blink
+  name: Tesla Browser
+  regex: Chrome/(\d+\.[\.\d]+).+TeslaBrowser/
+  version: $1
+- browser: Viasat Browser
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: Viasat Browser
+  regex: Chrome/(\d+\.[\.\d]+).+Sparrow
+  version: $1
+- browser: Viasat Browser
+  engine:
+    default: WebKit
+  name: Viasat Browser
+  regex: Sparrow/.+CFNetwork
+  version: ""
+- browser: Lilo
+  engine:
+    default: Blink
+  name: Lilo
+  regex: Lilo/(\d+\.[\.\d]+)
+  version: $1
+- browser: Lilo
+  engine:
+    default: WebKit
+  name: Lilo
+  regex: Lilo/.+CFNetwork
+  version: ""
+- browser: Lexi Browser
+  engine:
+    default: Blink
+  name: Lexi Browser
+  regex: lexi/(\d+[\.\d]+)
+  version: $1
+- browser: Floorp
+  engine:
+    default: Gecko
+  name: Floorp
+  regex: Floorp/(\d+[\.\d]+)
+  version: $1
+- browser: Surf Browser
+  engine:
+    default: Blink
+  name: Surf Browser
+  regex: SurfBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: Decentr
+  engine:
+    default: Blink
+  name: Decentr
+  regex: Decentr
+  version: ""
+- browser: YouCare
+  engine:
+    default: Blink
+  name: YouCare
+  regex: youcare-android-app
+  version: ""
+- browser: YouCare
+  engine:
+    default: WebKit
+  name: YouCare
+  regex: youcare-ios-app
+  version: ""
+- browser: AdBlock Browser
+  engine:
+    default: Blink
+  name: AdBlock Browser
+  regex: ABB/(\d+[\.\d]+)
+  version: $1
+- browser: BrowseHere
+  name: BrowseHere
+  regex: \d+/tclwebkit(?:\d+[\.\d]*)
+  version: ""
+- browser: Hi Browser
+  engine:
+    default: Blink
+  name: Hi Browser
+  regex: HiBrowser/v?(\d+[\.\d]+)
+  version: $1
+- browser: CyBrowser
+  name: CyBrowser
+  regex: CYBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: SiteKiosk
+  engine:
+    default: Blink
+  name: SiteKiosk
+  regex: Chrome/.+ SiteKiosk (\d+[\.\d]+)
+  version: $1
+- browser: SiteKiosk
+  name: SiteKiosk
+  regex: SiteKiosk (\d+[\.\d]+)
+  version: $1
+- browser: Reqwireless WebViewer
+  name: Reqwireless WebViewer
+  regex: ReqwirelessWeb/(\d+[\.\d]+)
+  version: $1
+- browser: T+Browser
+  engine:
+    default: Blink
+  name: T+Browser
+  regex: T\+Browser/(\d+[\.\d]+)
+  version: $1
+- browser: Secure Private Browser
+  engine:
+    default: Blink
+  name: Secure Private Browser
+  regex: Private Browser/(\d+[\.\d]+) Chrome/
+  version: $1
+- browser: ChanjetCloud
+  engine:
+    default: Blink
+  name: ChanjetCloud
+  regex: ChanjetCloud/(\d+[\.\d]+)
+  version: $1
+- browser: Sushi Browser
+  engine:
+    default: Blink
+  name: Sushi Browser
+  regex: SushiBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: Peeps dBrowser
+  engine:
+    default: Blink
+  name: Peeps dBrowser
+  regex: dBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: LT Browser
+  engine:
+    default: Blink
+  name: LT Browser
+  regex: LTBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: Lagatos Browser
+  engine:
+    default: Blink
+  name: Lagatos Browser
+  regex: lagatos-browser/(\d+[\.\d]+)
+  version: $1
+- browser: PSI Secure Browser
+  engine:
+    default: Blink
+  name: PSI Secure Browser
+  regex: psi-secure-browser/(\d+[\.\d]+)
+  version: $1
+- browser: Harman Browser
+  engine:
+    default: Blink
+  name: Harman Browser
+  regex: Harman_Browser/(\d+[\.\d]+)
+  version: $1
+- browser: Bonsai
+  engine:
+    default: Blink
+  name: Bonsai
+  regex: bonsai-browser/(\d+[\.\d]+)
+  version: $1
+- browser: Spectre Browser
+  engine:
+    default: Blink
+  name: Spectre Browser
+  regex: spectre-browser/(\d+[\.\d]+)
+  version: $1
+- browser: Flash Browser
+  engine:
+    default: Blink
+  name: Flash Browser
+  regex: FlashBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: Secure Browser
+  engine:
+    default: Blink
+  name: Secure Browser
+  regex: Secure/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Arvin
+  engine:
+    default: Blink
+  name: Arvin
+  regex: Arvin/(\d+[\.\d]+)
+  version: $1
+- browser: Edge WebView
+  engine:
+    default: Blink
+  name: Edge WebView
+  regex: Version/.+Chrome/.+EdgW/(\d+[\.\d]+)
+  version: $1
+- browser: Mandarin
+  engine:
+    default: Blink
+  name: Mandarin
+  regex: Mandarin Browser/(\d+[\.\d]+)
+  version: $1
+- browser: Maelstrom
+  engine:
+    default: Blink
+  name: Maelstrom
+  regex: Torrent/(\d+[\.\d]+)
+  version: $1
+- browser: Helio
+  engine:
+    default: Blink
+  name: Helio
+  regex: Helio/(\d+[\.\d]+)
+  version: $1
+- browser: 7654 Browser
+  engine:
+    default: Blink
+  name: 7654 Browser
+  regex: 7654Browser/(\d+[\.\d]+)
+  version: $1
+- browser: Qazweb
+  engine:
+    default: Gecko
+  name: Qazweb
+  regex: Qazweb/(\d+[\.\d]+)
+  version: $1
+- browser: deg-degan
+  engine:
+    default: Blink
+  name: deg-degan
+  regex: Degdegan/(\d+[\.\d]+)
+  version: $1
+- browser: JavaFX
+  engine:
+    default: WebKit
+  name: JavaFX
+  regex: JavaFX/(\d+[\.\d]+)
+  version: $1
+- browser: Chedot
+  engine:
+    default: Blink
+  name: Chedot
+  regex: Chedot/(\d+[\.\d]+)
+  version: $1
+- browser: Chromium GOST
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: Chromium GOST
+  regex: Chrome/(\d+\.[\.\d]+) .*\(Chromium GOST\)
+  version: $1
+- browser: Deledao
+  engine:
+    default: Blink
+  name: Deledao
+  regex: (?:DeledaoPersonal|DeledaoFamily)/(\d+[\.\d]+)
+  version: $1
+- browser: HasBrowser
+  engine:
+    default: Blink
+  name: HasBrowser
+  regex: HasBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: Byffox
+  engine:
+    default: Gecko
+  name: Byffox
+  regex: Byffox/(\d+[\.\d]+)
+  version: $1
+- browser: CoolBrowser
+  engine:
+    default: Blink
+  name: CoolBrowser
+  regex: Chrome/(\d+\.[\.\d]+) .*AgentWeb.+UCBrowser
+  version: $1
+- browser: Dot Browser
+  engine:
+    default: Blink
+  name: Dot Browser
+  regex: DotBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: Craving Explorer
+  engine:
+    default: Blink
+  name: Craving Explorer
+  regex: CravingExplorer/(\d+[\.\d]+)
+  version: $1
+- browser: DeskBrowse
+  name: DeskBrowse
+  regex: DeskBrowse/(\d+[\.\d]+)
+  version: $1
+- browser: Lolifox
+  name: Lolifox
+  regex: Lolifox/(\d+[\.\d]+)
+  version: $1
+- browser: Pi Browser
+  engine:
+    default: Blink
+  name: Pi Browser
+  regex: PiBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: Qutebrowser
+  engine:
+    default: Blink
+  name: Qutebrowser
+  regex: qutebrowser/(\d+\.[\.\d]+) .*Chrome
+  version: $1
+- browser: Qutebrowser
+  name: Qutebrowser
+  regex: qutebrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Flast
+  engine:
+    default: Blink
+  name: Flast
+  regex: flast/(\d+[\.\d]+)
+  version: $1
+- browser: PolyBrowser
+  engine:
+    default: Gecko
+  name: PolyBrowser
+  regex: PolyBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: BriskBard
+  engine:
+    default: Blink
+  name: BriskBard
+  regex: Chrome.+BriskBard/(\d+[\.\d]+)
+  version: $1
+- browser: BriskBard
+  name: BriskBard
+  regex: BriskBard(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: GinxDroid Browser
+  engine:
+    default: Blink
+  name: GinxDroid Browser
+  regex: GinxDroid(?:Browser)?/(\d+[\.\d]+)
+  version: $1
+- browser: Avira Secure Browser
+  engine:
+    default: Blink
+  name: Avira Secure Browser
+  regex: Avira(?:Scout)?/(\d+[\.\d]+)
+  version: $1
+- browser: Venus Browser
+  engine:
+    default: Blink
+  name: Venus Browser
+  regex: VenusBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: Otter Browser
+  engine:
+    default: Blink
+  name: Otter Browser
+  regex: Chrome.+Otter(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Otter Browser
+  name: Otter Browser
+  regex: Otter(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Smooz
+  engine:
+    default: Blink
+  name: Smooz
+  regex: Chrome.+Smooz/(\d+[\.\d]+)
+  version: $1
+- browser: Smooz
+  name: Smooz
+  regex: Smooz/(\d+[\.\d]+)
+  version: $1
+- browser: Bangla Browser
+  engine:
+    default: Blink
+  name: Bangla Browser
+  regex: BanglaBrowser/(\d+\.[.\d]+)
+  version: $1
+- browser: Cornowser
+  engine:
+    default: Blink
+  name: Cornowser
+  regex: Cornowser/(\d+[\.\d]+)
+  version: $1
+- browser: Orca
+  name: Orca
+  regex: Orca/(\d+[\.\d]+)
+  version: $1
+- browser: Flow Browser
+  engine:
+    default: Blink
+  name: Flow Browser
+  regex: Android (?:[\d\.]+;) ?(?:[^;]+;)? Flow\) AppleWebKit/537.+Chrome/\d{3}
+  version: ""
+- browser: Flow
+  engine:
+    default: EkiohFlow
+  name: Flow
+  regex: Flow/(?:(\d+[\.\d]+))
+  version: $1
+- browser: Flow
+  engine:
+    default: EkiohFlow
+  name: Flow
+  regex: Ekioh/(?:(\d+[\.\d]+))
+  version: $1
+- browser: xStand
+  engine:
+    default: WebKit
+  name: xStand
+  regex: xStand/(\d+[\.\d]+)
+  version: $1
+- browser: Biyubi
+  name: Biyubi
+  regex: Biyubi/(\d+[\.\d]+)
+  version: $1
+- browser: Perfect Browser
+  engine:
+    default: WebKit
+  name: Perfect Browser
+  regex: (?:Perfect%20Browser(?:-iPad)?|Perfect(?:BrowserPro)?)/(\d+[\.\d]+)
+  version: $1
+- browser: Phantom Browser
+  name: Phantom Browser
+  regex: Browser/Phantom/V(\d+[\.\d]+)
+  version: $1
+- browser: AwoX
+  name: AwoX
+  regex: AwoX(?:/(\d+[\.\d]+))? Browser
+  version: $1
+- browser: Zetakey
+  engine:
+    default: WebKit
+  name: Zetakey
+  regex: Zetakey/(\d+[\.\d]+)
+  version: $1
+- browser: PlayFree Browser
+  name: PlayFree Browser
+  regex: PlayFreeBrowser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Chim Lac
+  engine:
+    default: Blink
+  name: Chim Lac
+  regex: (?:chimlac_browser|chimlac)/(?:(\d+[\.\d]+))
+  version: $1
+- browser: Odin
+  engine:
+    default: Blink
+  name: Odin
+  regex: Odin/(?:(\d+[\.\d]+))
+  version: $1
+- browser: T-Browser
+  engine:
+    default: Blink
+  name: T-Browser
+  regex: Tbrowser/(\d+[\.\d]+)
+  version: $1
+- browser: BrowseHere
+  engine:
+    default: Blink
+  name: BrowseHere
+  regex: com\.tcl\.browser
+  version: $1
+- browser: SFive
+  engine:
+    default: Blink
+  name: SFive
+  regex: SFive(?:_Android)?/.+ Chrome/(\d+[\.\d]+)
+  version: $1
+- browser: SFive
+  name: SFive
+  regex: SFive_IOS/(\d+[\.\d]+)
+  version: $1
+- browser: Navigateur Web
+  name: Navigateur Web
+  regex: Navigateur web/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Seraphic Sraf
+  engine:
+    default: Blink
+  name: Seraphic Sraf
+  regex: Sraf(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: Seewo Browser
+  engine:
+    default: Blink
+  name: Seewo Browser
+  regex: SeewoBrowser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Kode Browser
+  name: Kode Browser
+  regex: (?:Kode(?:iOS)?/(?:(\d+[\.\d]+))?|TansoDL)
+  version: $1
+- browser: UR Browser
+  engine:
+    default: Blink
+  name: UR Browser
+  regex: UR/(?:(\d+[\.\d]+))
+  version: $1
+- browser: OceanHero
+  engine:
+    default: Blink
+  name: OceanHero
+  regex: OceanHero/([\.\d]+)
+  version: $1
+- browser: Smart Lenovo Browser
+  engine:
+    default: Blink
+  name: Smart Lenovo Browser
+  regex: Chrome/.+ SLBrowser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Smart Lenovo Browser
+  name: Smart Lenovo Browser
+  regex: SLBrowser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Browzar
+  name: Browzar
+  regex: Browzar
+  version: ""
+- browser: Stargon
+  engine:
+    default: Blink
+  name: Stargon
+  regex: Stargon/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: NFS Browser
+  engine:
+    default: Blink
+  name: NFS Browser
+  regex: NFSBrowser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Borealis Navigator
+  name: Borealis Navigator
+  regex: Borealis/(\d+[\.\d]+)
+  version: $1
+- browser: Yolo Browser
+  engine:
+    default: Blink
+  name: Yolo Browser
+  regex: YoloBrowser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Phoenix Browser
+  engine:
+    default: Blink
+  name: Phoenix Browser
+  regex: PHX/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: PrivacyWall
+  name: PrivacyWall
+  regex: PrivacyWall/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Ghostery Privacy Browser
+  name: Ghostery Privacy Browser
+  regex: Ghostery:?(\d+[\.\d]+)?
+  version: $1
+- browser: Cliqz
+  name: Cliqz
+  regex: Cliqz
+  version: ""
+- browser: Yaani Browser
+  engine:
+    default: Gecko
+  name: Yaani Browser
+  regex: Firefox/.*(?:Turkcell-)?YaaniBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Yaani Browser
+  engine:
+    default: Blink
+  name: Yaani Browser
+  regex: (?:Turkcell-)?YaaniBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Safe Exam Browser
+  name: Safe Exam Browser
+  regex: SEB/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Colibri
+  name: Colibri
+  regex: Colibri/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Xvast
+  name: Xvast
+  regex: Xvast/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Tungsten
+  name: Tungsten
+  regex: TungstenBrowser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Lulumi
+  name: Lulumi
+  regex: Lulumi-browser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Yahoo! Japan Browser
+  name: Yahoo! Japan Browser
+  regex: ybrowser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Lunascape Lite
+  name: Lunascape Lite
+  regex: iLunascapeLite/(?:(\d+\.[.\d]+))?
+  version: $1
+- browser: Lunascape
+  engine:
+    default: Blink
+  name: Lunascape
+  regex: Chrome/.+ i?Lunascape(?:[/ ](\d+\.[.\d]+))?
+  version: $1
+- browser: Lunascape
+  engine:
+    default: ""
+  name: Lunascape
+  regex: i?Lunascape(?:[/ ](\d+\.[.\d]+))?
+  version: $1
+- browser: Polypane
+  name: Polypane
+  regex: Polypane/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: OhHai Browser
+  name: OhHai Browser
+  regex: OhHaiBrowser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Sizzy
+  name: Sizzy
+  regex: Sizzy/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Glass Browser
+  name: Glass Browser
+  regex: GlassBrowser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: ToGate
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: ToGate
+  regex: ToGate/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: VMware AirWatch
+  name: VMware AirWatch
+  regex: (?:AirWatch Browser v|AirWatchBrowser/)(?:(\d+[\.\d]+))?
+  version: $1
+- browser: AOL Explorer
+  engine:
+    default: Trident
+  name: AOL Explorer
+  regex: AOL (\d+[\.\d]+)
+  version: $1
+- browser: AOL Desktop
+  name: AOL Desktop
+  regex: ADG/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Elements Browser
+  name: Elements Browser
+  regex: Elements Browser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Light
+  name: Light
+  regex: Light/(\d+[\.\d]+)
+  version: $1
+- browser: Steam In-Game Overlay
+  name: Steam In-Game Overlay
+  regex: Valve Steam GameOverlay/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: 115 Browser
+  name: 115 Browser
+  regex: 115Browser/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Atom
+  engine:
+    default: Blink
+  name: Atom
+  regex: Atom/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Wolvic
+  engine:
+    default: Gecko
+  name: Wolvic
+  regex: Wolvic/(\d+\.[.\d]+)
+  version: $1
+- browser: Firefox Reality
+  name: Firefox Reality
+  regex: Mobile VR.+Firefox
+  version: ""
+- browser: AVG Secure Browser
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: AVG Secure Browser
+  regex: AVG(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: AVG Secure Browser
+  engine:
+    default: Blink
+  name: AVG Secure Browser
+  regex: AT/(\d+[\.\d]+)
+  version: $1
+- browser: START Internet Browser
+  name: START Internet Browser
+  regex: Start/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Lovense Browser
+  name: Lovense Browser
+  regex: Lovense(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Delta Browser
+  engine:
+    default: Blink
+  name: Delta Browser
+  regex: (?:com\.airfind\.deltabrowser|AirSearch)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Ordissimo
+  name: Ordissimo
+  regex: (?:Ordissimo|webissimo3)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: CCleaner
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: CCleaner
+  regex: CCleaner(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Aloha Browser Lite
+  engine:
+    default: Blink
+  name: Aloha Browser Lite
+  regex: AlohaLite(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Tao Browser
+  name: Tao Browser
+  regex: TaoBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Falkon
+  name: Falkon
+  regex: Falkon(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: mCent
+  name: mCent
+  regex: mCent(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: SalamWeb
+  name: SalamWeb
+  regex: SalamWeb(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: BlackHawk
+  name: BlackHawk
+  regex: BlackHawk(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Minimo
+  name: Minimo
+  regex: Minimo(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Wear Internet Browser
+  name: Wear Internet Browser
+  regex: WIB(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Origyn Web Browser
+  name: Origyn Web Browser
+  regex: Origyn Web Browser
+  version: ""
+- browser: Kinza
+  name: Kinza
+  regex: Kinza(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Beamrise
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: Beamrise
+  regex: Beamrise(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Faux Browser
+  name: Faux Browser
+  regex: Faux(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Splash
+  name: Splash
+  regex: splash Version(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Meizu Browser
+  name: Meizu Browser
+  regex: MZBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: COS Browser
+  name: COS Browser
+  regex: COSBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Crusta
+  name: Crusta
+  regex: Crusta(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Hawk Turbo Browser
+  engine:
+    default: Blink
+  name: Hawk Turbo Browser
+  regex: Hawk/TurboBrowser(?:/v?(\d+[\.\d]+))?
+  version: $1
+- browser: Hawk Quick Browser
+  engine:
+    default: Blink
+  name: Hawk Quick Browser
+  regex: Hawk/QuickBrowser(?:/v?(\d+[\.\d]+))?
+  version: $1
+- browser: FreeU
+  engine:
+    default: Blink
+  name: FreeU
+  regex: FreeU(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Nox Browser
+  engine:
+    default: Blink
+  name: Nox Browser
+  regex: NoxBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Basilisk
+  engine:
+    default: Goanna
+  name: Basilisk
+  regex: Basilisk(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Sputnik Browser
+  engine:
+    default: Blink
+  name: Sputnik Browser
+  regex: SputnikBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: K.Browser
+  engine:
+    default: Blink
+  name: K.Browser
+  regex: TNSBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Oculus Browser
+  engine:
+    default: Blink
+  name: Oculus Browser
+  regex: OculusBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: JioSphere
+  engine:
+    default: Blink
+  name: JioSphere
+  regex: Jio(?:Browser|Pages|Sphere)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Stampy Browser
+  engine:
+    default: Blink
+  name: Stampy Browser
+  regex: SY/(\d+[\.\d]+) Chrome/
+  version: $1
+- browser: hola! Browser
+  engine:
+    default: Blink
+  name: hola! Browser
+  regex: Chrome/.+ Hola(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: SlimBoat
+  engine:
+    default: Blink
+  name: SlimBoat
+  regex: SlimBoat/(?:(\d+[\.\d]+))
+  version: $1
+- browser: Slimjet
+  engine:
+    default: Blink
+  name: Slimjet
+  regex: Slimjet/(?:(\d+[\.\d]+))
+  version: $1
+- browser: 7Star
+  engine:
+    default: Blink
+  name: 7Star
+  regex: 7Star/(?:(\d+[\.\d]+))
+  version: $1
+- browser: MxNitro
+  engine:
+    default: Blink
+  name: MxNitro
+  regex: MxNitro/(?:(\d+[\.\d]+))
+  version: $1
+- browser: Huawei Browser Mobile
+  engine:
+    default: Blink
+  name: Huawei Browser Mobile
+  regex: HuaweiBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Huawei Browser
+  engine:
+    default: Blink
+  name: Huawei Browser
+  regex: HBPC/(\d+[\.\d]+)
+  version: $1
+- browser: vivo Browser
+  name: vivo Browser
+  regex: VivoBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Realme Browser
+  name: Realme Browser
+  regex: RealmeBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Beaker Browser
+  engine:
+    default: Blink
+  name: Beaker Browser
+  regex: Beaker ?Browser(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: Qwant Mobile
+  engine:
+    default: WebKit
+  name: Qwant Mobile
+  regex: QwantiOS/(\d+[\.\d]+)
+  version: $1
+- browser: Qwant Mobile
+  engine:
+    default: Blink
+  name: Qwant Mobile
+  regex: Chrome/.*QwantMobile(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Qwant Mobile
+  engine:
+    default: ""
+  name: Qwant Mobile
+  regex: QwantMobile(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Qwant Mobile
+  engine:
+    default: Gecko
+  name: Qwant Mobile
+  regex: Qwant/(\d+[\.\d]+)
+  version: $1
+- browser: TenFourFox
+  engine:
+    default: Gecko
+  name: TenFourFox
+  regex: TenFourFox(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: AOL Shield Pro
+  engine:
+    default: Blink
+  name: AOL Shield Pro
+  regex: Chrome/.+ AOLShield(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: AOL Shield
+  engine:
+    default: Gecko
+  name: AOL Shield
+  regex: AOLShield(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Microsoft Edge
+  engine:
+    default: Edge
+  name: Microsoft Edge
+  regex: (?<!motorola )Edge[ /](\d+[\.\d]+)
+  version: $1
+- browser: Microsoft Edge
+  engine:
+    default: WebKit
+  name: Microsoft Edge
+  regex: EdgiOS[ /](\d+[\.\d]+)
+  version: $1
+- browser: Microsoft Edge
+  engine:
+    default: Blink
+  name: Microsoft Edge
+  regex: EdgA[ /](\d+[\.\d]+)
+  version: $1
+- browser: Microsoft Edge
+  engine:
+    default: Blink
+  name: Microsoft Edge
+  regex: Edg[ /](\d+[\.\d]+)
+  version: $1
+- browser: 360 Secure Browser
+  name: 360 Secure Browser
+  regex: QIHU 360[ES]E|QihooBrowserHD/(\d+[.\d]+)
+  version: $1
+- browser: 360 Secure Browser
+  name: 360 Secure Browser
+  regex: Chrome.+Safari/537\.36/(\d+[.\d]+)$
+  version: $1
+- browser: 360 Phone Browser
+  name: 360 Phone Browser
+  regex: 360 Aphone Browser(?:[ /]?\(?(\d+[.\d]+)(?:beta)?\)?)?
+  version: $1
+- browser: Sailfish Browser
+  engine:
+    default: ""
+  name: Sailfish Browser
+  regex: SailfishBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: IceCat
+  engine:
+    default: Gecko
+  name: IceCat
+  regex: IceCat(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Mobicip
+  engine:
+    default: Gecko
+  name: Mobicip
+  regex: Mobicip
+  version: ""
+- browser: Camino
+  engine:
+    default: Gecko
+  name: Camino
+  regex: Camino(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Waterfox
+  engine:
+    default: Gecko
+  name: Waterfox
+  regex: Waterfox(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Vertex Surf
+  engine:
+    default: Blink
+  name: Vertex Surf
+  regex: VertexSurf/(\d+\.[.\d]+)
+  version: $1
+- browser: Aloha Browser
+  engine:
+    default: Blink
+  name: Aloha Browser
+  regex: Chrome/.+ AlohaBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Aloha Browser
+  name: Aloha Browser
+  regex: AlohaBrowser(?:App)?(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Aloha Browser
+  name: Aloha Browser
+  regex: Aloha/
+  version: ""
+- browser: Avast Secure Browser
+  engine:
+    default: Blink
+  name: Avast Secure Browser
+  regex: Chrome.+(?:Avast(?:SecureBrowser)?|ASW|Safer)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Avast Secure Browser
+  engine:
+    default: WebKit
+  name: Avast Secure Browser
+  regex: (?:Avast(?:SecureBrowser)?|ASW|Safer)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Epic
+  engine:
+    default: Gecko
+  name: Epic
+  regex: Epic(?:/(\d+[\.\d]+))
+  version: $1
+- browser: Fennec
+  engine:
+    default: Gecko
+  name: Fennec
+  regex: Fennec(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: MicroB
+  engine:
+    default: Gecko
+  name: MicroB
+  regex: Firefox.*Tablet browser (\d+[\.\d]+)
+  version: $1
+- browser: MicroB
+  engine:
+    default: Gecko
+  name: MicroB
+  regex: 'Maemo Browser(?: (\d+[\.\d]+))?'
+  version: $1
+- browser: Deepnet Explorer
+  name: Deepnet Explorer
+  regex: Deepnet Explorer (\d+[\.\d]+)?
+  version: $1
+- browser: Avant Browser
+  engine:
+    default: ""
+  name: Avant Browser
+  regex: Avant ?Browser
+  version: ""
+- browser: Oppo Browser
+  name: Oppo Browser
+  regex: OppoBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Amigo
+  engine:
+    default: WebKit
+    versions:
+        "28": Blink
+  name: Amigo
+  regex: Chrome/(\d+\.[\.\d]+) .*MRCHROME
+  version: $1
+- browser: Atomic Web Browser
+  name: Atomic Web Browser
+  regex: AtomicBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Bunjalloo
+  name: Bunjalloo
+  regex: Bunjalloo(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Brave
+  engine:
+    default: Blink
+  name: Brave
+  regex: Chrome/(\d+\.[\.\d]+).*Brave/
+  version: $1
+- browser: Brave
+  engine:
+    default: Blink
+  name: Brave
+  regex: Brave(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Iridium
+  engine:
+    default: WebKit
+    versions:
+        "28": Blink
+  name: Iridium
+  regex: Iridium(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Iceweasel
+  engine:
+    default: Gecko
+  name: Iceweasel
+  regex: Iceweasel(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: WebPositive
+  engine:
+    default: WebKit
+  name: WebPositive
+  regex: WebPositive
+  version: ""
+- browser: Pale Moon
+  engine:
+    default: Goanna
+  name: Pale Moon
+  regex: .*Goanna.*PaleMoon(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Pale Moon
+  engine:
+    default: Gecko
+  name: Pale Moon
+  regex: PaleMoon(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: CometBird
+  engine:
+    default: Gecko
+  name: CometBird
+  regex: CometBird(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: IceDragon
+  engine:
+    default: Gecko
+  name: IceDragon
+  regex: IceDragon(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Flock
+  engine:
+    default: Gecko
+    versions:
+        "3": WebKit
+  name: Flock
+  regex: Flock(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Jig Browser Plus
+  name: Jig Browser Plus
+  regex: JigBrowserPlus/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Jig Browser
+  name: Jig Browser
+  regex: 'jig browser(?: web;|9i?)?(?:[/ ](\d+[\.\d]+))?'
+  version: $1
+- browser: Kapiko
+  engine:
+    default: Gecko
+  name: Kapiko
+  regex: Kapiko(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Kylo
+  engine:
+    default: Gecko
+  name: Kylo
+  regex: Kylo(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Origin In-Game Overlay
+  name: Origin In-Game Overlay
+  regex: Origin/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Cunaguaro
+  name: Cunaguaro
+  regex: Cunaguaro(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: t-online.de Browser
+  name: t-online.de Browser
+  regex: (?:TO-Browser/TOB|DT-Browser/DTB)(\d+[\.\d]+)
+  version: $1
+- browser: Kazehakase
+  engine:
+    default: ""
+  name: Kazehakase
+  regex: Kazehakase(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Arctic Fox
+  engine:
+    default: Goanna
+  name: Arctic Fox
+  regex: ArcticFox(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Mypal
+  engine:
+    default: Goanna
+  name: Mypal
+  regex: Mypal(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Centaury
+  engine:
+    default: Goanna
+  name: Centaury
+  regex: Centaury(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Firefox Focus
+  name: Firefox Focus
+  regex: (?:Focus|Klar)(?:/(\d+[\.\d]+))
+  version: $1
+- browser: Cyberfox
+  engine:
+    default: Gecko
+  name: Cyberfox
+  regex: Cyberfox(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Swiftfox
+  engine:
+    default: Gecko
+  name: Swiftfox
+  regex: Firefox/(\d+\.[\.\d]+).*\(Swiftfox\)
+  version: $1
+- browser: UC Browser HD
+  name: UC Browser HD
+  regex: UCBrowserHD/(\d[\d\.]+)
+  version: $1
+- browser: UC Browser Mini
+  name: UC Browser Mini
+  regex: UCMini(?:[ /]?(\d+[\.\d]+))?
+  version: $1
+- browser: UC Browser Mini
+  name: UC Browser Mini
+  regex: UC[ ]?Browser.* \(UCMini\)
+  version: ""
+- browser: UC Browser Mini
+  engine:
+    default: Blink
+  name: UC Browser Mini
+  regex: Chrome.+uc mini browser(\d+[\.\d]+)?
+  version: $1
+- browser: UC Browser Turbo
+  name: UC Browser Turbo
+  regex: UCTurbo(?:[ /]?(\d+[\.\d]+))?
+  version: $1
+- browser: UC Browser Turbo
+  name: UC Browser Turbo
+  regex: UC[ ]?Browser.* \(UCTurbo\)
+  version: ""
+- browser: UC Browser
+  name: UC Browser
+  regex: UC[ ]?Browser(?:[ /]?(\d+[\.\d]+))?
+  version: $1
+- browser: UC Browser
+  name: UC Browser
+  regex: UCWEB(?:[ /]?(\d+[\.\d]+))?
+  version: $1
+- browser: UC Browser
+  name: UC Browser
+  regex: UC AppleWebKit
+  version: ""
+- browser: UC Browser
+  engine:
+    default: WebKit
+  name: UC Browser
+  regex: UC%20Browser/(\d+[\.\d]+)? CFNetwork/.+Darwin/.+(?!.*x86_64)
+  version: $1
+- browser: UC Browser
+  engine:
+    default: Blink
+  name: UC Browser
+  regex: Chrome.+UC Browser(\d+[\.\d]+)
+  version: $1
+- browser: UC Browser
+  engine:
+    default: Gecko
+  name: UC Browser
+  regex: Firefox.+UCKai/(\d+[\.\d]+)
+  version: $1
+- browser: Firefox Mobile
+  engine:
+    default: Servo
+  name: Firefox Mobile
+  regex: (?:Mobile|Tablet).*Servo.*Firefox(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Firefox Mobile
+  engine:
+    default: Gecko
+  name: Firefox Mobile
+  regex: (?:Mobile|Tablet).*Firefox(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Firefox Mobile iOS
+  engine:
+    default: WebKit
+  name: Firefox Mobile iOS
+  regex: FxiOS/(\d+[\.\d]+)
+  version: $1
+- browser: Firefox
+  engine:
+    default: Servo
+  name: Firefox
+  regex: .*Servo.*Firefox(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Firefox
+  engine:
+    default: Gecko
+  name: Firefox
+  regex: (?!.*Opera[ /])Firefox(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Firefox
+  engine:
+    default: Gecko
+  name: Firefox
+  regex: (?:BonEcho|GranParadiso|Lorentz|Minefield|Namoroka|Shiretoko)[ /](\d+[\.\d]+)
+  version: $1
+- browser: ANT Fresco
+  name: ANT Fresco
+  regex: ANTFresco(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: ANTGalio
+  name: ANTGalio
+  regex: ANTGalio(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Espial TV Browser
+  name: Espial TV Browser
+  regex: (?:Espial|Escape)(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: RockMelt
+  engine:
+    default: WebKit
+  name: RockMelt
+  regex: RockMelt(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Fireweb Navigator
+  name: Fireweb Navigator
+  regex: Fireweb Navigator(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Fireweb
+  name: Fireweb
+  regex: Fireweb(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Netscape
+  engine:
+    default: ""
+  name: Netscape
+  regex: (?:Navigator|Netscape6?)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Polarity
+  name: Polarity
+  regex: (?:Polarity)(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: QupZilla
+  name: QupZilla
+  regex: (?:QupZilla)(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: Dooble
+  name: Dooble
+  regex: (?:Dooble)(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: Whale Browser
+  engine:
+    default: Blink
+  name: Whale Browser
+  regex: Whale/(\d+[\.\d]+)
+  version: $1
+- browser: Obigo
+  name: Obigo
+  regex: Obigo[ ]?(?:InternetBrowser|Browser)?(?:[ /]([a-z0-9]*))?
+  version: $1
+- browser: Obigo
+  name: Obigo
+  regex: Obigo|Teleca
+  version: ""
+- browser: Opera GX
+  engine:
+    default: Blink
+  name: Opera GX
+  regex: Chrome/.+ OP(?:RG)?X(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Opera GX
+  engine:
+    default: WebKit
+  name: Opera GX
+  regex: OP(?:RG)?X(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Opera GX
+  engine:
+    default: WebKit
+  name: Opera GX
+  regex: Opera%20GX/.+CFNetwork/.+Darwin/
+  version: ""
+- browser: Opera Mobile
+  engine:
+    default: Presto
+    versions:
+        15: Blink
+  name: Opera Mobile
+  regex: (?:Opera Tablet.*Version|Opera/.+(?<!SymbOS; )Opera Mobi.+Version|Mobile.+OPR)/(\d+[\.\d]+)
+  version: $1
+- browser: Opera Neon
+  engine:
+    default: Blink
+  name: Opera Neon
+  regex: MMS/(\d+[\.\d]+)
+  version: $1
+- browser: Opera Devices
+  engine:
+    default: Blink
+  name: Opera Devices
+  regex: OMI/(\d+[\.\d]+)
+  version: $1
+- browser: Opera Touch
+  engine:
+    default: WebKit
+  name: Opera Touch
+  regex: Opera%20Touch/(\d+[\.\d]+)? CFNetwork/.+Darwin/.+(?!.*x86_64)
+  version: $1
+- browser: Opera Touch
+  engine:
+    default: WebKit
+  name: Opera Touch
+  regex: Opera%20Touch/.+CFNetwork/.+Darwin/.+(?!.*x86_64)
+  version: ""
+- browser: Opera Touch
+  name: Opera Touch
+  regex: OPT/(\d+[\.\d]+)
+  version: $1
+- browser: Opera Mobile
+  engine:
+    default: Presto
+    versions:
+        15: Blink
+  name: Opera Mobile
+  regex: Opera/(\d+\.[\.\d]+) .*(?<!SymbOS; )Opera Mobi
+  version: $1
+- browser: Opera Mini
+  engine:
+    default: Presto
+  name: Opera Mini
+  regex: Opera ?Mini/(?:att/)?(\d+[\.\d]+)
+  version: $1
+- browser: Opera Mini
+  engine:
+    default: Presto
+  name: Opera Mini
+  regex: Opera ?Mini.+Version/(\d+[\.\d]+)
+  version: $1
+- browser: Opera Mini iOS
+  engine:
+    default: WebKit
+  name: Opera Mini iOS
+  regex: OPiOS/(\d+[\.\d]+)
+  version: $1
+- browser: Opera Mini iOS
+  engine:
+    default: WebKit
+  name: Opera Mini iOS
+  regex: Opera%20Mini/(\d+[\.\d]+) CFNetwork
+  version: $1
+- browser: Opera Next
+  engine:
+    default: Presto
+    versions:
+        15: Blink
+  name: Opera Next
+  regex: Opera.+Edition Next.+Version/(\d+[\.\d]+)
+  version: $1
+- browser: Opera Next
+  engine:
+    default: Presto
+    versions:
+        15: Blink
+  name: Opera Next
+  regex: (?:Opera|OPR)[/ ](?:9\.80.*Version/)?(\d+\.[\.\d]+) .*Edition Next
+  version: $1
+- browser: Opera
+  engine:
+    default: ""
+    versions:
+        "3.5": Elektra
+        "7": Presto
+        "15": Blink
+  name: Opera
+  regex: (?:Opera[/ ]?|OPR[/ ])(?:9\.80.*Version/)?(\d+[\.\d]+)
+  version: $1
+- browser: Opera
+  engine:
+    default: WebKit
+  name: Opera
+  regex: Opera/.+CFNetwork
+  version: ""
+- browser: Opera
+  engine:
+    default: Blink
+  name: Opera
+  regex: Chrome.+Opera/
+  version: ""
+- browser: Rekonq
+  engine:
+    default: WebKit
+  name: Rekonq
+  regex: rekonq(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: CoolNovo
+  engine:
+    default: ""
+  name: CoolNovo
+  regex: CoolNovo(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Comodo Dragon
+  engine:
+    default: WebKit
+    versions:
+        "28": Blink
+  name: Comodo Dragon
+  regex: (?:Comodo[ _])?Dragon/(\d+[\.\d]+)
+  version: $1
+- browser: ChromePlus
+  engine:
+    default: ""
+  name: ChromePlus
+  regex: ChromePlus(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Conkeror
+  engine:
+    default: Gecko
+  name: Conkeror
+  regex: Conkeror(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Konqueror
+  engine:
+    default: KHTML
+    versions:
+        4: ""
+  name: Konqueror
+  regex: Konqueror(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Baidu Browser
+  name: Baidu Browser
+  regex: (?:baidubrowser|bdbrowser(?:(?:hd)?_i18n)?|FlyFlow|BaiduHD)(?:[/ ](\d+[\.\d]*))?
+  version: $1
+- browser: Baidu Spark
+  name: Baidu Spark
+  regex: (?:(?:BD)?Spark(?:Safe)?|BIDUBrowser)[/ ](\d+[\.\d]*)
+  version: $1
+- browser: Yandex Browser
+  engine:
+    default: WebKit
+  name: Yandex Browser
+  regex: YaBrowser(?:/(\d+[\.\d]*)) YaApp_iOS
+  version: $1
+- browser: Yandex Browser
+  engine:
+    default: WebKit
+  name: Yandex Browser
+  regex: iP(?:hone|ad);.+YaBrowser(?:/(\d+[\.\d]*)) Mobile
+  version: $1
+- browser: Yandex Browser Lite
+  engine:
+    default: Blink
+  name: Yandex Browser Lite
+  regex: YaBrowser(?:/(\d+[\.\d]*)) \(lite\)?
+  version: $1
+- browser: Yandex Browser
+  engine:
+    default: Blink
+  name: Yandex Browser
+  regex: 'YaBrowser(?:/(\d+[\.\d]*))(?: \((alpha|beta)\))?'
+  version: $1 $2
+- browser: Yandex Browser
+  engine:
+    default: Blink
+  name: Yandex Browser
+  regex: Ya(?:ndex)?SearchBrowser(?:/(\d+[\.\d]*))
+  version: $1
+- browser: Vivaldi
+  engine:
+    default: Blink
+  name: Vivaldi
+  regex: Viv(?:aldi)?/(\d+[\.\d]+)
+  version: $1
+- browser: TweakStyle
+  engine:
+    default: Blink
+  name: TweakStyle
+  regex: TweakStyle(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Midori
+  engine:
+    default: Blink
+  name: Midori
+  regex: Chrome.+Midori Browser/(\d+[\.\d]+)
+  version: $1
+- browser: Midori
+  engine:
+    default: WebKit
+  name: Midori
+  regex: Midori(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Mercury
+  name: Mercury
+  regex: Mercury/(?:(\d+[\.\d]+))?
+  version: $1
+- browser: Maxthon
+  engine:
+    default: Blink
+  name: Maxthon
+  regex: Chrome.+Maxthon/\d{4}
+  version: ""
+- browser: Maxthon
+  engine:
+    default: WebKit
+    versions:
+        "4.2": Blink
+  name: Maxthon
+  regex: Chrome.+(?:MxBrowser|Maxthon)(?:.+\(portable\))?/(\d+\.[\.\d]+)
+  version: $1
+- browser: Maxthon
+  engine:
+    default: ""
+    versions:
+        3: WebKit
+  name: Maxthon
+  regex: (?:Maxthon(?:%20Browser)?|MxBrowser(?:-inhouse|-iPhone)?|MXiOS)[ /](\d+[\.\d]+)?
+  version: $1
+- browser: Maxthon
+  engine:
+    default: ""
+  name: Maxthon
+  regex: (?:Maxthon|MyIE2)
+  version: ""
+- browser: Puffin
+  name: Puffin
+  regex: Puffin(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Iron Mobile
+  engine:
+    default: Blink
+  name: Iron Mobile
+  regex: MobileIron(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Iron
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: Iron
+  regex: Chrome(?:/(\d+\.[\.\d]+) )?.*Iron
+  version: $1
+- browser: Iron
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: Iron
+  regex: Iron/(\d+[\.\d]+)
+  version: $1
+- browser: GNOME Web
+  engine:
+    default: Gecko
+    versions:
+        2.9.16: ""
+        "2.28": WebKit
+  name: GNOME Web
+  regex: Epiphany(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: LieBaoFast
+  name: LieBaoFast
+  regex: LieBaoFast(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Cheetah Browser
+  name: Cheetah Browser
+  regex: LBBrowser(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Sogou Explorer
+  name: Sogou Explorer
+  regex: SE (\d+[\.\d]+)
+  version: $1
+- browser: QQ Browser Lite
+  name: QQ Browser Lite
+  regex: QQBrowserLite/([\d\.]+)
+  version: $1
+- browser: QQ Browser Mini
+  engine:
+    default: ""
+  name: QQ Browser Mini
+  regex: M?QQBrowser/Mini([\.\d]+)?
+  version: $1
+- browser: QQ Browser
+  engine:
+    default: ""
+  name: QQ Browser
+  regex: M?QQBrowser(?:/([\.\d]+))?
+  version: $1
+- browser: MIUI Browser
+  engine:
+    default: ""
+  name: MIUI Browser
+  regex: (?:MIUIBrowser|MiuiBrowser)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Coc Coc
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: Coc Coc
+  regex: (?:coc_coc_browser|coccocbrowser|CocCoc)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: DuckDuckGo Privacy Browser
+  engine:
+    default: Blink
+  name: DuckDuckGo Privacy Browser
+  regex: (?:DDG-Android-|DuckDuckGo/|ddg_android/)(\d+[\.\d]*)
+  version: $1
+- browser: Samsung Browser
+  name: Samsung Browser
+  regex: Samsung ?Browser(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: Super Fast Browser
+  name: Super Fast Browser
+  regex: (?:SFB(?:rowser)?)/(\d+[\.\d]+)
+  version: $1
+- browser: Super Fast Browser
+  name: Super Fast Browser
+  regex: com\.browser\.tssomas(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: EUI Browser
+  name: EUI Browser
+  regex: EUI Browser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: UBrowser
+  engine:
+    default: Blink
+  name: UBrowser
+  regex: UBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Streamy
+  engine:
+    default: ""
+  name: Streamy
+  regex: Streamy(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Isivioo
+  engine:
+    default: ""
+  name: Isivioo
+  regex: isivioo
+  version: ""
+- browser: Tenta Browser
+  engine:
+    default: Blink
+  name: Tenta Browser
+  regex: Chrome/.+Tenta/(\d+[\.\d]+)
+  version: $1
+- browser: Tenta Browser
+  engine:
+    default: WebKit
+  name: Tenta Browser
+  regex: Tenta/(\d+[\.\d]+)
+  version: $1
+- browser: Firefox Rocket
+  engine:
+    default: Blink
+  name: Firefox Rocket
+  regex: Rocket/(\d+[\.\d]+)
+  version: $1
+- browser: Web Explorer
+  engine:
+    default: Blink
+  name: Web Explorer
+  regex: Web Explorer/(\d+\.[\.\d]+) .*Chrome
+  version: $1
+- browser: Web Explorer
+  engine:
+    default: ""
+  name: Web Explorer
+  regex: webexplorer/(\d+)
+  version: $1
+- browser: Seznam Browser
+  engine:
+    default: Blink
+  name: Seznam Browser
+  regex: Chrome.+SznProhlizec/(\d+[\.\d]+)
+  version: $1
+- browser: Seznam Browser
+  engine:
+    default: WebKit
+  name: Seznam Browser
+  regex: SznProhlizec/(\d+[\.\d]+)
+  version: $1
+- browser: Sogou Mobile Browser
+  engine:
+    default: ""
+  name: Sogou Mobile Browser
+  regex: SogouMobileBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: Mint Browser
+  engine:
+    default: ""
+  name: Mint Browser
+  regex: Mint Browser/(\d+[\.\d]+)
+  version: $1
+- browser: Ecosia
+  engine:
+    default: ""
+    versions:
+        28: Blink
+  name: Ecosia
+  regex: Ecosia (?:android|ios)@(\d+[\.\d]+)
+  version: $1
+- browser: CM Browser
+  engine:
+    default: ""
+  name: CM Browser
+  regex: ACHEETAHI
+  version: ""
+- browser: Lenovo Browser
+  engine:
+    default: Blink
+  name: Lenovo Browser
+  regex: Chrome/.+ (?:LeBrowser|MobileLenovoBrowser)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Lenovo Browser
+  engine:
+    default: WebKit
+  name: Lenovo Browser
+  regex: LeBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Kiwi
+  engine:
+    default: ""
+  name: Kiwi
+  regex: Kiwi Chrome
+  version: ""
+- browser: 2345 Browser
+  engine:
+    default: ""
+  name: 2345 Browser
+  regex: Mb2345Browser/(\d+[\.\d]+)
+  version: $1
+- browser: Mobile Silk
+  engine:
+    default: Blink
+  name: Mobile Silk
+  regex: Silk/(\d+[\.\d]+) like Chrome
+  version: $1
+- browser: Mobile Silk
+  engine:
+    default: WebKit
+  name: Mobile Silk
+  regex: Silk(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: iBrowser Mini
+  name: iBrowser Mini
+  regex: iBrowser/Mini(\d+\.\d+)
+  version: $1
+- browser: iBrowser
+  name: iBrowser
+  regex: iBrowser/(\d+\.[.\d]+)?
+  version: $1
+- browser: IBrowse
+  name: IBrowse
+  regex: IBrowse(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Openwave Mobile Browser
+  name: Openwave Mobile Browser
+  regex: UP\.Browser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Openwave Mobile Browser
+  name: Openwave Mobile Browser
+  regex: Openwave(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: ONE Browser
+  engine:
+    default: WebKit
+  name: ONE Browser
+  regex: OneBrowser(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: GoBrowser
+  name: GoBrowser
+  regex: GoBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Nokia Browser
+  name: Nokia Browser
+  regex: (?:NokiaBrowser|BrowserNG|WicKed)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Nokia Browser
+  name: Nokia Browser
+  regex: Series60/5\.0
+  version: "7.0"
+- browser: Nokia OSS Browser
+  name: Nokia OSS Browser
+  regex: Series60/(\d+[\.\d]+)
+  version: $1
+- browser: Nokia Ovi Browser
+  name: Nokia Ovi Browser
+  regex: S40OviBrowser/(\d+[\.\d]+)
+  version: $1
+- browser: Nokia Browser
+  name: Nokia Browser
+  regex: ^Nokia|Nokia[EN]?\d+
+  version: ""
+- browser: Sleipnir
+  engine:
+    default: ""
+  name: Sleipnir
+  regex: Sleipnir(?:(?:%20Browser)?[ /](\d+[\.\d]+))?
+  version: $1
+- browser: NTENT Browser
+  name: NTENT Browser
+  regex: NTENTBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: TV Bro
+  name: TV Bro
+  regex: TV Bro/(\d+[\.\d]+)
+  version: $1
+- browser: Quark
+  name: Quark
+  regex: Quark(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Monument Browser
+  engine:
+    default: Blink
+  name: Monument Browser
+  regex: MonumentBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Blue Browser
+  engine:
+    default: Blink
+  name: Blue Browser
+  regex: BlueBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Japan Browser
+  engine:
+    default: Blink
+  name: Japan Browser
+  regex: JAPAN Browser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: OpenFin
+  engine:
+    default: Blink
+  name: OpenFin
+  regex: OpenFin/(?:(\d+[\.\d]+))
+  version: $1
+- browser: SuperBird
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: SuperBird
+  regex: SuperBird(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Soul Browser
+  engine:
+    default: Blink
+  name: Soul Browser
+  regex: Soul(?:Browser)?$|Soul/
+  version: ""
+- browser: LG Browser
+  name: LG Browser
+  regex: LG Browser(?:/(\d+[\.\d]+))
+  version: $1
+- browser: QtWebEngine
+  engine:
+    default: ""
+  name: QtWebEngine
+  regex: QtWebEngine/(\d+[\.\d]+)
+  version: $1
+- browser: Chrome Webview
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: Chrome Webview
+  regex: '(?: wv\)|Version/).* Chrome(?:/(\d+[\.\d]+))?'
+  version: $1
+- browser: Chrome Mobile
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: Chrome Mobile
+  regex: CrMo(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Chrome Mobile iOS
+  engine:
+    default: WebKit
+  name: Chrome Mobile iOS
+  regex: CriOS(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Chrome Mobile
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: Chrome Mobile
+  regex: Chrome(?:/(\d+[\.\d]+))? Mobile
+  version: $1
+- browser: Chrome Frame
+  engine:
+    default: WebKit
+  name: Chrome Frame
+  regex: chromeframe(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Chromium
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: Chromium
+  regex: Chromium(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Chromium
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: Chromium
+  regex: .*Chromium(?:_(\d+[\.\d]+))?
+  version: $1
+- browser: Headless Chrome
+  engine:
+    default: Blink
+  name: Headless Chrome
+  regex: HeadlessChrome(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Chrome
+  engine:
+    default: WebKit
+    versions:
+        28: Blink
+  name: Chrome
+  regex: Chrome(?!book)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: PocketBook Browser
+  engine:
+    default: WebKit
+  name: PocketBook Browser
+  regex: PocketBook/
+  version: ""
+- browser: Tizen Browser
+  name: Tizen Browser
+  regex: (?:Tizen|SLP) ?Browser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Tizen Browser
+  engine:
+    default: WebKit
+    versions:
+        "4": Blink
+  name: Tizen Browser
+  regex: Tizen (?:\d+\.[\.\d]+)[^\.\d].* Version/(\d+[\.\d]+) (?:TV|Mobile|like)
+  version: $1
+- browser: Palm Blazer
+  name: Palm Blazer
+  regex: Blazer(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Palm Pre
+  name: Palm Pre
+  regex: Pre/(\d+[\.\d]+)
+  version: $1
+- browser: wOSBrowser
+  name: wOSBrowser
+  regex: (?:hpw|web)OS/(\d+[\.\d]+)
+  version: $1
+- browser: Palm WebPro
+  name: Palm WebPro
+  regex: WebPro(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Palmscape
+  name: Palmscape
+  regex: Palmscape(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Jasmine
+  name: Jasmine
+  regex: Jasmine(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Lynx
+  engine:
+    default: Text-based
+  name: Lynx
+  regex: Lynx(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: NCSA Mosaic
+  name: NCSA Mosaic
+  regex: NCSA_Mosaic(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: ABrowse
+  name: ABrowse
+  regex: 'ABrowse(?: (\d+[\.\d]+))?'
+  version: $1
+- browser: Amaya
+  name: Amaya
+  regex: amaya(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Amiga Voyager
+  name: Amiga Voyager
+  regex: AmigaVoyager(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Amiga Aweb
+  name: Amiga Aweb
+  regex: Amiga-Aweb(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Arora
+  engine:
+    default: WebKit
+  name: Arora
+  regex: Arora(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Beonex
+  engine:
+    default: Gecko
+  name: Beonex
+  regex: Beonex(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: B-Line
+  engine:
+    default: WebKit
+  name: B-Line
+  regex: bline(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: BrowseX
+  name: BrowseX
+  regex: BrowseX \((\d+[\.\d]+)
+  version: $1
+- browser: Charon
+  name: Charon
+  regex: Charon(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: Cheshire
+  name: Cheshire
+  regex: Cheshire(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: dbrowser
+  engine:
+    default: WebKit
+  name: dbrowser
+  regex: dbrowser
+  version: ""
+- browser: Dillo
+  engine:
+    default: Dillo
+  name: Dillo
+  regex: Dillo(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Dolphin
+  engine:
+    default: WebKit
+  name: Dolphin
+  regex: Dolfin(?:/(\d+[\.\d]+))?|dolphin
+  version: $1
+- browser: Elinks
+  engine:
+    default: Text-based
+  name: Elinks
+  regex: Elinks(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Element Browser
+  name: Element Browser
+  regex: Element Browser(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: eZ Browser
+  name: eZ Browser
+  regex: eZBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Firebird
+  engine:
+    default: Gecko
+  name: Firebird
+  regex: Firebird(?! Build)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Fluid
+  engine:
+    default: WebKit
+  name: Fluid
+  regex: Fluid(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Galeon
+  engine:
+    default: Gecko
+  name: Galeon
+  regex: Galeon(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Google Earth Pro
+  engine:
+    default: WebKit
+  name: Google Earth Pro
+  regex: (?:Google Earth Pro|Google%20Earth%20Pro)(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Google Earth Pro
+  engine:
+    default: WebKit
+  name: Google Earth Pro
+  regex: GoogleEarth/(\d+\.[\.\d]+)[^\.\d].*client:(?:Plus|Pro)
+  version: $1
+- browser: Google Earth
+  engine:
+    default: WebKit
+  name: Google Earth
+  regex: Google ?Earth(?:/v?(\d+[\.\d]+))?
+  version: $1
+- browser: HotJava
+  name: HotJava
+  regex: HotJava(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: iCab Mobile
+  engine:
+    default: WebKit
+  name: iCab Mobile
+  regex: iCabMobile(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: iCab
+  engine:
+    default: iCab
+    versions:
+        4: WebKit
+  name: iCab
+  regex: iCab(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Crazy Browser
+  engine:
+    default: Trident
+  name: Crazy Browser
+  regex: Crazy Browser (\d+[\.\d]+)
+  version: $1
+- browser: IE Mobile
+  engine:
+    default: Trident
+  name: IE Mobile
+  regex: IEMobile[ /](\d+[\.\d]+)
+  version: $1
+- browser: IE Mobile
+  engine:
+    default: Trident
+  name: IE Mobile
+  regex: MSIE (\d+\.[\.\d]+)[^\.\d].*XBLWP7
+  version: $1
+- browser: Internet Explorer
+  engine:
+    default: Trident
+  name: Internet Explorer
+  regex: MSIE.*Trident/4\.0
+  version: "8.0"
+- browser: Internet Explorer
+  engine:
+    default: Trident
+  name: Internet Explorer
+  regex: MSIE.*Trident/5\.0
+  version: "9.0"
+- browser: Internet Explorer
+  engine:
+    default: Trident
+  name: Internet Explorer
+  regex: MSIE.*Trident/6\.0
+  version: "10.0"
+- browser: Internet Explorer
+  engine:
+    default: Trident
+  name: Internet Explorer
+  regex: Trident/[78]\.0
+  version: "11.0"
+- browser: Internet Explorer
+  engine:
+    default: Trident
+  name: Internet Explorer
+  regex: MSIE (\d+[\.\d]+)
+  version: $1
+- browser: Internet Explorer
+  engine:
+    default: Trident
+  name: Internet Explorer
+  regex: IE[ /](\d+[\.\d]+)
+  version: $1
+- browser: Kindle Browser
+  name: Kindle Browser
+  regex: Kindle/(\d+[\.\d]+)
+  version: $1
+- browser: K-meleon
+  engine:
+    default: Gecko
+  name: K-meleon
+  regex: K-meleon(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Links
+  engine:
+    default: Text-based
+  name: Links
+  regex: 'Links(?: \((\d+[\.\d]+))?'
+  version: $1
+- browser: LuaKit
+  name: LuaKit
+  regex: LuaKit(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: OmniWeb
+  engine:
+    default: WebKit
+  name: OmniWeb
+  regex: OmniWeb(?:/[v]?(\d+[\.\d]+))?
+  version: $1
+- browser: Phoenix
+  name: Phoenix
+  regex: Phoenix(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: NetFront Life
+  engine:
+    default: NetFront
+  name: NetFront Life
+  regex: NetFrontLifeBrowser(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: NetFront
+  engine:
+    default: NetFront
+  name: NetFront
+  regex: NetFront(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: NetFront
+  name: NetFront
+  regex: PLAYSTATION|NINTENDO 3|AppleWebKit.+ N[XF]/\d+\.\d+\.\d+
+  version: ""
+- browser: NetPositive
+  name: NetPositive
+  regex: NetPositive(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Odyssey Web Browser
+  name: Odyssey Web Browser
+  regex: Odyssey Web Browser(?:.*OWB/(\d+[\.\d]+))?
+  version: $1
+- browser: Off By One
+  name: Off By One
+  regex: OffByOne
+  version: ""
+- browser: Oregano
+  name: Oregano
+  regex: (?:Oregano|OreganMediaBrowser)(?:[ /](\d+[\.\d]+))?
+  version: $1
+- browser: Polaris
+  name: Polaris
+  regex: (?:Polaris|Embider)(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: SEMC-Browser
+  name: SEMC-Browser
+  regex: SEMC-Browser(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: Shiira
+  engine:
+    default: WebKit
+  name: Shiira
+  regex: Shiira(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: Skyfire
+  name: Skyfire
+  regex: Skyfire(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: Snowshoe
+  engine:
+    default: WebKit
+  name: Snowshoe
+  regex: Snowshoe(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Sunrise
+  name: Sunrise
+  regex: Sunrise(?:Browser)?(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: WeTab Browser
+  name: WeTab Browser
+  regex: WeTab-Browser
+  version: ""
+- browser: Xiino
+  name: Xiino
+  regex: Xiino(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: BlackBerry Browser
+  name: BlackBerry Browser
+  regex: BlackBerry|PlayBook|BB10
+  version: ""
+- browser: Browlser
+  name: Browlser
+  regex: Browlser/(\d+[\.\d]+)
+  version: $1
+- browser: Android Browser
+  engine:
+    default: WebKit
+  name: Android Browser
+  regex: (?<! like )Android
+  version: ""
+- browser: Coast
+  name: Coast
+  regex: Coast(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Coast
+  engine:
+    default: WebKit
+  name: Coast
+  regex: Opera%20Coast/(\d+[\.\d]+)? CFNetwork/.+Darwin/.+(?!.*x86_64)
+  version: $1
+- browser: surf
+  engine:
+    default: WebKit
+  name: surf
+  regex: Surf(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Safari
+  engine:
+    default: WebKit
+  name: Safari Technology Preview
+  regex: Safari%20Technology%20Preview/(\d+[\.\d]+)
+  version: $1
+- browser: Safari
+  engine:
+    default: WebKit
+  name: Mobile Safari
+  regex: (?:(?:iPod|iPad|iPhone).+Version|MobileSafari)/(\d+[\.\d]+)
+  version: $1
+- browser: Safari
+  engine:
+    default: WebKit
+  name: Mobile Safari
+  regex: (?:Version/(\d+\.[\.\d]+) .*)?Mobile.*Safari/
+  version: $1
+- browser: Safari
+  engine:
+    default: WebKit
+  name: Mobile Safari
+  regex: (?!^AppleCoreMedia/1\.0\.0)(?:iPod|(?<!Apple TV; U; CPU )iPhone|iPad)
+  version: ""
+- browser: Safari
+  engine:
+    default: WebKit
+  name: Safari
+  regex: Version/(\d+\.[\.\d]+) .*Safari/|(?:Safari|Safari(?:%20)?%E6%B5%8F%E8%A7%88%E5%99%A8)/?\d+
+  version: $1
+- browser: Dorado
+  name: Dorado
+  regex: (?:\w{1,5}[_ ])?Dorado WAP-Browser(?:[/ ](\d+[\.\d]+))?
+  version: $1
+- browser: NetSurf
+  engine:
+    default: NetSurf
+  name: NetSurf
+  regex: NetSurf(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: Uzbl
+  name: Uzbl
+  regex: Uzbl
+  version: ""
+- browser: SimpleBrowser
+  name: SimpleBrowser
+  regex: SimpleBrowser
+  version: ""
+- browser: Zvu
+  engine:
+    default: Gecko
+  name: Zvu
+  regex: Zvu(?:/(\d+[\.\d]+))?
+  version: $1
+- browser: GOG Galaxy
+  name: GOG Galaxy
+  regex: GOGGalaxyClient/(\d+[\.\d]+)?
+  version: $1
+- browser: MAUI WAP Browser
+  name: MAUI WAP Browser
+  regex: WAP Browser/MAUI|(?:\w*)Maui Wap Browser|MAUI[- ]Browser
+  version: ""
+- browser: SP Browser
+  engine:
+    default: WebKit
+  name: SP Browser
+  regex: SP%20Browser/(\d+[\.\d]+)
+  version: $1
+- browser: Firefox
+  engine:
+    default: Gecko
+  name: Firefox
+  regex: (?<!like )Gecko
+  version: ""
+
+- regex: Windows
+  device_type: DESKTOP
+
+
