@@ -5,9 +5,12 @@ import (
 	"time"
 )
 
-var ErrCacheMiss = errors.New("cache miss")
+var (
+	ErrCacheMiss = errors.New("cache miss")
+	ErrExists    = errors.New("already exists")
+)
 
-//go:generate go run github.com/vektra/mockery/v2 --all --with-expecter
+//go:generate go run github.com/vektra/mockery/v2 --all --with-expecter --exclude v2
 
 // ILocalCacheRepository ...
 type ILocalCacheRepository interface {

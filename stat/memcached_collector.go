@@ -3,7 +3,7 @@ package stat
 import (
 	"context"
 
-	"github.com/bldsoft/gost/cache/memcached"
+	"github.com/bldsoft/gost/cache/v2/memcached"
 )
 
 type MemcachedCollector struct {
