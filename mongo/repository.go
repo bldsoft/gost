@@ -97,6 +97,9 @@ func (r *BaseRepository[T, U]) findByRawIDs(ctx context.Context, ids []interface
 	if err != nil {
 		return nil, err
 	}
+	if len(entities) == 0 {
+		return nil, repository.ErrNotFound
+	}
 
 	if preserveOrder {
 		entityById := make(map[interface{}]U)
@@ -329,16 +332,12 @@ func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.I
 
 func (r *BaseRepository[T, U]) where(filter interface{}, options ...*repository.QueryOptions) interface{} {
 	if len(options) == 0 {
-		return filter
+		options = append(options, &repository.QueryOptions{})
 	}
 	switch filter := filter.(type) {
 	case bson.M:
-
 		if !options[0].Archived {
-			nonArchivedCond := bson.A{
-				bson.M{BsonFieldNameArchived: bson.M{"$exists": false}},
-				bson.M{BsonFieldNameArchived: false},
-			}
+			nonArchivedCond := r.nonArchivedCond()
 
 			if cond, ok := filter["$or"]; ok {
 				filter["$and"] = bson.A{
@@ -368,4 +367,11 @@ func (r *BaseRepository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.
 		return repository.ErrNotFound
 	}
 	return cursor.Decode(entity)
+}
+
+func (r *BaseRepository[T, U]) nonArchivedCond() bson.A {
+	return bson.A{
+		bson.M{BsonFieldNameArchived: bson.M{"$exists": false}},
+		bson.M{BsonFieldNameArchived: false},
+	}
 }
