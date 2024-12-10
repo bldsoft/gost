@@ -1,8 +1,9 @@
 package inhouse
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/gob"
 	"fmt"
 	"sort"
 	"strings"
@@ -259,23 +260,24 @@ func (d *Discovery) Mount(r chi.Router) {
 
 // Delegates
 
-// Limit argument is currently ignored.
 // NodeMeta is used to retrieve meta-data about the current node
 // when broadcasting an alive message. It's length is limited to
 // the given byte size. This metadata is available in the Node structure.
 func (d *Discovery) NodeMeta(limit int) []byte {
-	res, err := json.Marshal(d.BaseDiscovery.ServiceInfo)
-	if err != nil {
+	var buf bytes.Buffer
+	buf.Grow(limit)
+	encoder := gob.NewEncoder(&buf)
+	if err := encoder.Encode(d.ServiceInfo); err != nil {
 		log.Error("Discovery: failed to encode service info: %w")
 		return nil
 	}
-	return res
+	return buf.Bytes()
 }
 
 func (d *Discovery) parseMeta(node *memberlist.Node) (*discovery.ServiceInstanceInfo, error) {
 	var meta discovery.ServiceInstanceInfo
-
-	if err := json.Unmarshal(node.Meta, &meta); err != nil {
+	decoder := gob.NewDecoder(bytes.NewReader(node.Meta))
+	if err := decoder.Decode(&meta); err != nil {
 		return nil, fmt.Errorf("Discovery: failed to decode service info: %w", err)
 	}
 	return &meta, nil
