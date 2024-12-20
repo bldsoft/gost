@@ -26,7 +26,7 @@ func (c BaseController) ResponseJson(w http.ResponseWriter, r *http.Request, v i
 	// err := json.NewEncoder(w).Encode(v)
 	body, err := json.Marshal(v)
 	if len(needObjectLog) == 0 || needObjectLog[0] {
-		log.FromContext(r.Context()).DebugOrErrorWithFields(err, log.Fields{"body": string(body), "object": v}, "Encode response json")
+		log.FromContext(r.Context()).TraceOrErrorWithFields(err, log.Fields{"body": string(body), "object": v}, "Encode response json")
 	}
 	_, err = w.Write(body)
 	if err != nil {
@@ -50,7 +50,7 @@ func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request
 	// err := json.NewDecoder(bytes.NewBuffer(bodyBytes)).Decode(obj)
 	err := json.Unmarshal(bodyBytes, obj)
 	if len(needObjectLog) == 0 || needObjectLog[0] {
-		log.FromContext(r.Context()).DebugOrErrorWithFields(err, log.Fields{"body": string(bodyBytes), "object": obj}, "Decode request json")
+		log.FromContext(r.Context()).TraceOrErrorWithFields(err, log.Fields{"body": string(bodyBytes), "object": obj}, "Decode request json")
 	}
 	if err != nil {
 		c.ResponseError(w, err.Error(), http.StatusBadRequest)

@@ -54,6 +54,14 @@ func (l *ServiceLogger) TracefWithFields(fields Fields, format string, v ...inte
 	l.logger.Trace().Fields(fields).Msgf(format, v...)
 }
 
+func (l *ServiceLogger) TraceOrErrorWithFields(err error, fields Fields, msg string) {
+	if err == nil {
+		l.logger.Trace().Fields(fields).Msg(msg)
+	} else {
+		l.logger.Err(err).Fields(fields).Msg(msg)
+	}
+}
+
 // TraceOrErrorfWithFields logs a message at level Error if err is not nil or Debug otherwise on the default logger.
 func (l *ServiceLogger) TraceOrErrorfWithFields(err error, fields Fields, format string, v ...interface{}) {
 	if err == nil {
