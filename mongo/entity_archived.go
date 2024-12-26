@@ -3,7 +3,7 @@ package mongo
 import "time"
 
 const (
-	BsonFieldNameDeletedAt = "deleted_at"
+	BsonFieldNameDeletedAt = "deleteTime"
 	BsonFieldNameArchived  = "archived"
 )
 
@@ -11,10 +11,10 @@ type IEntityArchived interface {
 	IsArchived() bool
 }
 type EntityArchived struct {
-	DeletedAt time.Time `json:"deleted_at,omitempty" bson:"deleted_at,omitempty"`
-	Archived  bool      `json:"archived,omitempty" bson:"archived,omitempty"`
+	DeleteTime time.Time `json:"deleteTime,omitempty" bson:"deleted_at,omitempty"`
+	Archived   bool      `json:"archived,omitempty" bson:"archived,omitempty"` // Backwards compatibility
 }
 
 func (e EntityArchived) IsArchived() bool {
-	return !e.DeletedAt.IsZero() || e.Archived
+	return !e.DeleteTime.IsZero() || e.Archived
 }
