@@ -281,7 +281,7 @@ func (r *BaseRepository[T, U]) Delete(ctx context.Context, id interface{}, optio
 		}
 	}
 
-	return r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{BsonFieldNameArchived: true}})
+	return r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{BsonFieldNameDeletedAt: time.Now().UTC()}})
 }
 
 // Delete removes objects
@@ -292,7 +292,7 @@ func (r *BaseRepository[T, U]) DeleteMany(ctx context.Context, filter interface{
 			return err
 		}
 	}
-	_, err := r.Collection().UpdateMany(ctx, filter, bson.M{"$set": bson.M{BsonFieldNameArchived: true}})
+	_, err := r.Collection().UpdateMany(ctx, filter, bson.M{"$set": bson.M{BsonFieldNameDeletedAt: true}})
 	return err
 }
 
@@ -336,7 +336,8 @@ func (r *BaseRepository[T, U]) where(filter interface{}, options ...*repository.
 
 		if !options[0].Archived {
 			nonArchivedCond := bson.A{
-				bson.M{BsonFieldNameArchived: bson.M{"$exists": false}},
+				bson.M{BsonFieldNameArchived: bson.M{"$exists": false}, BsonFieldNameDeletedAt: bson.M{"$exists": false}},
+				bson.M{BsonFieldNameDeletedAt: time.Time{}},
 				bson.M{BsonFieldNameArchived: false},
 			}
 
