@@ -281,7 +281,7 @@ func (r *BaseRepository[T, U]) Delete(ctx context.Context, id interface{}, optio
 		}
 	}
 
-	err := r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{BsonFieldNameDeletedAt: time.Now().UTC()}})
+	err := r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{BsonFieldNameDeletedAt: time.Now().UTC(), BsonFieldNameArchived: true}})
 	return err
 }
 
