@@ -281,7 +281,8 @@ func (r *BaseRepository[T, U]) Delete(ctx context.Context, id interface{}, optio
 		}
 	}
 
-	return r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{BsonFieldNameDeletedAt: time.Now().UTC()}})
+	err := r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{BsonFieldNameDeletedAt: time.Now().UTC()}})
+	return err
 }
 
 // Delete removes objects
