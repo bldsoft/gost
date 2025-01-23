@@ -13,6 +13,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var (
+	defaultOpt = repository.QueryOptions{
+		Archived: false,
+	}
+)
+
 // UserEntryCtxKey is the context.Context key to store the user entry. It's used for setting UpdateUserID, CreateUserID fields
 var UserEntryCtxKey interface{} = "UserEntry"
 
@@ -330,7 +336,7 @@ func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.I
 
 func (r *BaseRepository[T, U]) where(filter interface{}, options ...*repository.QueryOptions) interface{} {
 	if len(options) == 0 {
-		return filter
+		options = append(options, &defaultOpt)
 	}
 	switch filter := filter.(type) {
 	case bson.M:
