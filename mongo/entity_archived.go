@@ -3,8 +3,8 @@ package mongo
 import "time"
 
 const (
-	BsonFieldNameDeletedAt = "deleteTime"
-	BsonFieldNameArchived  = "archived"
+	BsonFieldNameDeleteTime = "deleteTime"
+	BsonFieldNameArchived   = "archived"
 )
 
 type IEntityArchived interface {
