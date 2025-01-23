@@ -334,7 +334,6 @@ func (r *BaseRepository[T, U]) where(filter interface{}, options ...*repository.
 	}
 	switch filter := filter.(type) {
 	case bson.M:
-
 		if !options[0].Archived {
 			nonArchivedCond := bson.A{
 				bson.M{BsonFieldNameArchived: bson.M{"$exists": false}, BsonFieldNameDeleteTime: bson.M{"$exists": false}},
