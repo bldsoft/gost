@@ -447,8 +447,8 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 			`+FieldsColumnName+` String
 	) 
 	ENGINE = %s
-	PARTITION BY toYYYYMM(`+TimestampColumnName+`)
-	TTL `+`toDateTime(`+TimestampColumnName+`) + INTERVAL 1 MONTH 
+	PARTITION BY toMonday(`+TimestampColumnName+`)
+	TTL `+`toDateTime(`+TimestampColumnName+`) + INTERVAL 1 WEEK 
 	ORDER BY (`+strings.Join([]string{
 		"CAST(" + LevelColumName + ",'Int8')",
 		ServiceColumnName,
