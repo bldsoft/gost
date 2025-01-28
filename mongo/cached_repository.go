@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
+	"errors"
 	"fmt"
 
 	"github.com/bldsoft/gost/cache"
@@ -144,7 +145,9 @@ func (r *CachedRepository[T, U]) cacheFindByID(ctx context.Context, id string, o
 	strID := repository.ToStringID[T, U](id)
 	e, err := r.cache.CacheGet(strID)
 	if err != nil {
-		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.Name(), "id": strID}, "failed to get entity from cache")
+		if !errors.Is(err, cache.ErrCacheMiss) {
+			log.FromContext(ctx).WarnWithFields(log.Fields{"err": err, "collection": r.Repository.Name(), "id": strID}, "failed to get entity from cache")
+		}
 		return nil
 	}
 	if len(options) == 0 || options[0].Archived {
