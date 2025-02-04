@@ -16,7 +16,7 @@ func DBConnectAsync(wg *sync.WaitGroup, connect func(), n int, sleepPeriod time.
 			err := func() (err error) {
 				defer func() {
 					if _err := recover(); _err != nil {
-						err = fmt.Errorf("%v", err)
+						err = fmt.Errorf("%v", _err)
 					}
 				}()
 				connect()
