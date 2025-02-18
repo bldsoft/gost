@@ -54,10 +54,12 @@ func (s *UserService[PT, T]) UpdatePassword(ctx context.Context, id, password st
 	if err != nil {
 		return err
 	}
-	var user T
-	PT(&user).SetIDFromString(id)
-	PT(&user).SetPassword(hashedPass)
-	return s.userRep.Update(ctx, &user)
+	user, err := s.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	user.SetPassword(hashedPass)
+	return s.userRep.Update(ctx, user)
 }
 
 func (s *UserService[PT, T]) Delete(ctx context.Context, id string, archived bool) error {
