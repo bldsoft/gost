@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -44,7 +45,11 @@ type Server struct {
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
 	srv := Server{srv: &http.Server{
-		Addr:    config.ServiceBindAddress.HostPort(),
+		Addr: config.ServiceBindAddress.HostPort(),
+		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
+			ctx = context.WithValue(ctx, "conn", c)
+			return ctx
+		},
 		Handler: nil},
 		router:            chi.NewRouter(),
 		microservices:     microservices,
