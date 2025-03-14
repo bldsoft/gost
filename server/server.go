@@ -11,6 +11,7 @@ import (
 
 	"github.com/bldsoft/gost/log"
 	gost_middleware "github.com/bldsoft/gost/server/middleware"
+	"github.com/bldsoft/gost/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/hashicorp/go-multierror"
@@ -47,7 +48,7 @@ func NewServer(config Config, microservices ...IMicroservice) *Server {
 	srv := Server{srv: &http.Server{
 		Addr: config.ServiceBindAddress.HostPort(),
 		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
-			ctx = context.WithValue(ctx, "conn", c)
+			ctx = context.WithValue(ctx, utils.ContextKey{Name: "conn"}, c)
 			return ctx
 		},
 		Handler: nil},
