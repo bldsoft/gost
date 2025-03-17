@@ -19,7 +19,10 @@ import (
 
 type Router = chi.Router
 
-var DefaultLogger func(next http.Handler) http.Handler = log.DefaultRequestLogger()
+var (
+	DefaultLogger  func(next http.Handler) http.Handler = log.DefaultRequestLogger()
+	connContextKey                                      = utils.ContextKey{Name: "conn"}
+)
 
 func defaultMiddlewares() chi.Middlewares {
 	return chi.Middlewares{
@@ -48,7 +51,7 @@ func NewServer(config Config, microservices ...IMicroservice) *Server {
 	srv := Server{srv: &http.Server{
 		Addr: config.ServiceBindAddress.HostPort(),
 		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
-			ctx = context.WithValue(ctx, utils.ContextKey{Name: "conn"}, c)
+			ctx = context.WithValue(ctx, connContextKey, c)
 			return ctx
 		},
 		Handler: nil},
