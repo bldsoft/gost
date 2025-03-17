@@ -6,8 +6,6 @@ import (
 )
 
 func ConnFromContext(ctx context.Context) net.Conn {
-	if conn, ok := ctx.Value(connContextKey).(net.Conn); ok {
-		return conn
-	}
-	return nil
+	conn, _ := ctx.Value(connContextKey).(net.Conn)
+	return conn
 }
