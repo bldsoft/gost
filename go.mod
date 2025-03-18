@@ -6,7 +6,7 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.16.0
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/allegro/bigcache v1.2.1
-	github.com/bldsoft/memberlist v0.0.0-20231108153136-87acdac036f5
+	github.com/bldsoft/memberlist v0.0.0-20250318063233-36c35bf6fda4
 	github.com/bradfitz/gomemcache v0.0.0-20220106215444-fb4bf637b56d
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/evanphx/json-patch v4.9.0+incompatible
@@ -48,7 +48,7 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/hashicorp/go-msgpack/v2 v2.1.3 // indirect
-	github.com/hashicorp/go-sockaddr v1.0.7 // indirect
+	github.com/hashicorp/go-sockaddr v1.0.8-0.20250219041811-d46bd783c3f7 // indirect
 	github.com/hashicorp/memberlist v0.5.3 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/iancoleman/strcase v0.2.0 // indirect
@@ -79,7 +79,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/fatih/color v1.13.0 // indirect
+	github.com/fatih/color v1.17.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-chi/chi v4.0.2+incompatible // indirect
 	github.com/goccy/go-json v0.9.4 // indirect
@@ -103,7 +103,7 @@ require (
 	github.com/lestrrat-go/iter v1.0.1 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
