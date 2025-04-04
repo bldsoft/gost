@@ -18,10 +18,15 @@ type Config struct {
 	DeprecatedServiceInstance string `mapstructure:"SERVICE_NAME" description:"DEPRECATED. Unique service instance name. Use 'auto' to set the hostname+service value. "`
 	ServiceInstance           string `mapstructure:"SERVICE_INSTANCE_NAME" description:"Unique service instance name. Use 'auto' to set the hostname+service value. The name is used to identify the service in logs."`
 
-	ServiceBindHost    string         `mapstructure:"SERVICE_HOST" description:"DEPRECATED. IP address, or a host name that can be resolved to IP addresses"`
-	ServiceBindPort    int            `mapstructure:"SERVICE_PORT" description:"DEPRECATED. Service port"`
-	ServiceBindAddress config.Address `mapstructure:"SERVICE_BIND_ADDRESS" description:"Service configuration related to what address bind to and port to listen on"`
-	ServiceAddress     config.Address `mapstructure:"SERVICE_ADDRESS" description:"Service public address"`
+	ServiceBindHost         string         `mapstructure:"SERVICE_HOST" description:"DEPRECATED. IP address, or a host name that can be resolved to IP addresses"`
+	ServiceBindPort         int            `mapstructure:"SERVICE_PORT" description:"DEPRECATED. Service port"`
+	ServiceBindAddressHTTP  config.Address `mapstructure:"SERVICE_BIND_ADDRESS" description:"Service configuration related to what address bind to and port to listen on for HTTP"`
+	ServiceAddressHTTP      config.Address `mapstructure:"SERVICE_ADDRESS" description:"Service public address for HTTP"`
+	ServiceBindAddressHTTPS config.Address `mapstructure:"SERVICE_BIND_ADDRESS_HTTPS" description:"Service configuration related to what address bind to and port to listen on for HTTPS"`
+	ServiceAddressHTTPS     config.Address `mapstructure:"SERVICE_ADDRESS" description:"Service public address for HTTPS"`
+
+	TLSCertificatePath string `mapstructure:"TLS_CERTIFICATE_PATH" description:"Path to TLS certificate file"`
+	TLSKeyPath         string `mapstructure:"TLS_KEY_PATH" description:"Path to TLS key file"`
 }
 
 func (c *Config) LogExporterConfig() log.LogExporterConfig {
@@ -49,12 +54,12 @@ func (c *Config) Validate() error {
 	if len(c.ServiceName) == 0 {
 		return errors.New("ServiceName is not set. Do it in SetDefaults method")
 	}
-	if len(c.ServiceBindAddress) == 0 {
+	if len(c.ServiceBindAddressHTTP) == 0 {
 		log.Warn("SERVICE_HOST and SERVICE_PORT are deprecated, use SERVICE_BIND_ADDRESS instead")
-		c.ServiceBindAddress = config.Address(net.JoinHostPort(c.ServiceBindHost, strconv.Itoa(c.ServiceBindPort)))
+		c.ServiceBindAddressHTTP = config.Address(net.JoinHostPort(c.ServiceBindHost, strconv.Itoa(c.ServiceBindPort)))
 	}
-	if len(c.ServiceAddress) == 0 {
-		c.ServiceAddress = c.ServiceBindAddress
+	if len(c.ServiceAddressHTTP) == 0 {
+		c.ServiceAddressHTTP = c.ServiceBindAddressHTTP
 	}
 	if c.DeprecatedServiceInstance == serviceInstanceAuto {
 		c.DeprecatedServiceInstance = fmt.Sprintf("%s(%s)", c.ServiceName, utils.Hostname())

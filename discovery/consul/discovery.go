@@ -47,7 +47,7 @@ func NewDiscovery(serviceCfg server.Config, consulCfg Config) *Discovery {
 	d.initMetadata()
 
 	d.AsyncRunner = server.NewContextAsyncRunner(func(ctx context.Context) error {
-		if len(serviceCfg.ServiceAddress) == 0 { // do not register in consul
+		if len(serviceCfg.ServiceAddressHTTP) == 0 { // do not register in consul
 			return nil
 		}
 		if err := d.Register(); err != nil {

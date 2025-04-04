@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -40,16 +41,17 @@ type Server struct {
 	commonMiddlewares chi.Middlewares
 	runnerManager     *AsyncJobManager
 	routerWrapper     func(http.Handler) http.Handler
+	config            Config
 }
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
 	srv := Server{srv: &http.Server{
-		Addr:    config.ServiceBindAddress.HostPort(),
 		Handler: nil},
 		router:            chi.NewRouter(),
 		microservices:     microservices,
 		commonMiddlewares: nil,
-		runnerManager:     NewAsyncJobManager()}
+		runnerManager:     NewAsyncJobManager(),
+		config:            config}
 	middleware.DefaultLogger = DefaultLogger
 	return &srv
 }
@@ -105,12 +107,35 @@ func (s *Server) Start() {
 	s.init()
 
 	go s.runnerManager.Start()
-	go func() {
-		log.Infof("Server started. Listening on %s", s.srv.Addr)
-		if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Error(err.Error())
-		}
-	}()
+
+	httpListener, err := net.Listen("tcp", s.config.ServiceBindAddressHTTP.HostPort())
+	if err != nil {
+		log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create http listener on %s. HTTP is disa", s.config.ServiceBindAddressHTTP.HostPort())
+	}
+
+	httpsListener, err := net.Listen("tcp", s.config.ServiceBindAddressHTTPS.HostPort())
+	if err != nil {
+		log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create https listener on %s", s.config.ServiceBindAddressHTTPS.HostPort())
+	}
+
+	if httpListener != nil {
+		log.Infof("Server listening http on %s", s.config.ServiceBindAddressHTTP.HostPort())
+		go func() {
+			if err := http.Serve(httpListener, nil); err != http.ErrServerClosed {
+				log.Error(err.Error())
+			}
+		}()
+	}
+
+	if httpsListener != nil {
+		log.Infof("Server listening https on %s", s.config.ServiceBindAddressHTTPS.HostPort())
+		go func() {
+			if err := http.ServeTLS(httpsListener, nil, s.config.TLSCertificatePath, s.config.TLSKeyPath); err != http.ErrServerClosed {
+				log.Error(err.Error())
+			}
+		}()
+	}
+
 	s.gracefulShutdown()
 }
 

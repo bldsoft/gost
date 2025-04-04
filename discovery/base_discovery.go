@@ -19,7 +19,7 @@ func NewBaseDiscovery(serviceCfg server.Config) BaseDiscovery {
 		ServiceInfo: ServiceInstanceInfo{
 			ServiceName: serviceCfg.ServiceName,
 			ID:          serviceCfg.ServiceID(),
-			Address:     serviceCfg.ServiceAddress,
+			Address:     serviceCfg.ServiceAddressHTTP,
 			Node:        utils.Hostname(),
 			Version:     version.Version,
 			Commit:      version.GitCommit,
