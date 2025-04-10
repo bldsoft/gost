@@ -19,6 +19,7 @@ func (c BaseController) ResponseError(w http.ResponseWriter, err string, code in
 
 func (c BaseController) ResponseOK(w http.ResponseWriter) {
 	w.Write([]byte("OK"))
+	w.WriteHeader(http.StatusOK)
 }
 
 func (c BaseController) ResponseJson(w http.ResponseWriter, r *http.Request, v interface{}, needObjectLog ...bool) {
