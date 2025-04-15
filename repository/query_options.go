@@ -25,3 +25,8 @@ func (o SortOpt) Asc(field string) SortOpt {
 func (o SortOpt) Desc(field string) SortOpt {
 	return append(o, SortField{Field: field, Desc: true})
 }
+
+type ModifyOptions struct {
+	DuplicateFilter interface{}
+	QueryOptions
+}

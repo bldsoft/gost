@@ -175,7 +175,13 @@ func (r *BaseRepository[T, U]) prepareInsertEntity(ctx context.Context, entity U
 	r.fillTimeStamp(ctx, entity, true)
 }
 
-func (r *BaseRepository[T, U]) Insert(ctx context.Context, entity U) error {
+func (r *BaseRepository[T, U]) Insert(ctx context.Context, entity U, opt ...*repository.ModifyOptions) error {
+	if len(opt) > 0 && opt[0].DuplicateFilter != nil {
+		if err := r.hasDuplicate(ctx, opt[0].DuplicateFilter); err != nil {
+			return err
+		}
+	}
+
 	r.prepareInsertEntity(ctx, entity)
 	_, err := r.Collection().InsertOne(ctx, entity)
 	if mongo.IsDuplicateKeyError(err) {
@@ -184,10 +190,16 @@ func (r *BaseRepository[T, U]) Insert(ctx context.Context, entity U) error {
 	return err
 }
 
-func (r *BaseRepository[T, U]) InsertMany(ctx context.Context, entities []U) error {
+func (r *BaseRepository[T, U]) InsertMany(ctx context.Context, entities []U, opt ...*repository.ModifyOptions) error {
 	if len(entities) == 0 {
 		return nil
 	}
+	if len(opt) > 0 && opt[0].DuplicateFilter != nil {
+		if err := r.hasDuplicate(ctx, opt[0].DuplicateFilter); err != nil {
+			return err
+		}
+	}
+
 	docs := make([]interface{}, 0, len(entities))
 	for _, entity := range entities {
 		r.prepareInsertEntity(ctx, entity)
@@ -197,9 +209,13 @@ func (r *BaseRepository[T, U]) InsertMany(ctx context.Context, entities []U) err
 	return err
 }
 
-func (r *BaseRepository[T, U]) Update(ctx context.Context, entity U, options ...*repository.QueryOptions) error {
+func (r *BaseRepository[T, U]) Update(ctx context.Context, entity U, options ...*repository.ModifyOptions) error {
 	r.fillTimeStamp(ctx, entity, false)
-	result, err := r.Collection().ReplaceOne(ctx, r.where(bson.M{"_id": entity.RawID()}, options...), entity)
+	var qOpt *repository.QueryOptions
+	if len(options) > 0 {
+		qOpt = &options[0].QueryOptions
+	}
+	result, err := r.Collection().ReplaceOne(ctx, r.where(bson.M{"_id": entity.RawID()}, qOpt), entity)
 	if err == nil && result.MatchedCount == 0 {
 		return repository.ErrNotFound
 	}
@@ -232,23 +248,37 @@ func (r *BaseRepository[T, U]) UpdateMany(ctx context.Context, entities []U) err
 	}
 }
 
-func (r *BaseRepository[T, U]) UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*repository.QueryOptions) error {
-	result, err := r.Collection().UpdateOne(ctx, r.where(filter, options...), update)
+func (r *BaseRepository[T, U]) UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*repository.ModifyOptions) error {
+	if len(options) > 0 && options[0].DuplicateFilter != nil {
+		if err := r.hasDuplicate(ctx, options[0].DuplicateFilter); err != nil {
+			return err
+		}
+	}
+
+	var qOpt *repository.QueryOptions
+	if len(options) > 0 {
+		qOpt = &options[0].QueryOptions
+	}
+	result, err := r.Collection().UpdateOne(ctx, r.where(filter, qOpt), update)
 	if err == nil && result.MatchedCount == 0 {
 		return repository.ErrNotFound
 	}
 	return err
 }
 
-func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, queryOpt ...*repository.QueryOptions) (U, error) {
+func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, opts ...*repository.ModifyOptions) (U, error) {
 	opt := options.FindOneAndUpdate()
 	if returnNewDocument {
 		opt.SetReturnDocument(options.After)
 	} else {
 		opt.SetReturnDocument(options.Before)
 	}
+	var qOpt *repository.QueryOptions
+	if len(opts) > 0 {
+		qOpt = &opts[0].QueryOptions
+	}
 	r.fillTimeStamp(ctx, updateEntity, false)
-	res := r.Collection().FindOneAndUpdate(ctx, r.where(bson.M{"_id": updateEntity.RawID()}, queryOpt...), bson.M{"$set": updateEntity}, opt)
+	res := r.Collection().FindOneAndUpdate(ctx, r.where(bson.M{"_id": updateEntity.RawID()}, qOpt), bson.M{"$set": updateEntity}, opt)
 	switch {
 	case res.Err() == mongo.ErrNoDocuments:
 		return nil, repository.ErrNotFound
@@ -374,4 +404,16 @@ func (r *BaseRepository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.
 		return repository.ErrNotFound
 	}
 	return cursor.Decode(entity)
+}
+
+func (r *BaseRepository[T, U]) hasDuplicate(ctx context.Context, filter interface{}) error {
+	count, err := r.Count(ctx, filter)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return repository.ErrAlreadyExists
+	}
+
+	return nil
 }
