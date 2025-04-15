@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"os"
@@ -56,7 +57,7 @@ func NewServer(config Config, microservices ...IMicroservice) *Server {
 		log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create http listener on %s.", config.ServiceBindAddress.HostPort())
 	}
 
-	if len(config.TLS.CertificatePath) != 0 {
+	if config.TLS.IsTLSEnabled() {
 		httpsListener, err = net.Listen("tcp", config.TLS.ServiceBindAddress.HostPort())
 		if err != nil {
 			log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create https listener on %s", config.TLS.ServiceBindAddress.HostPort())
@@ -162,25 +163,19 @@ func (s *Server) gracefulShutdown() {
 	defer cancel()
 
 	var eg errgroup.Group
-
-	if s.httpListener != nil {
-		eg.Go(func() error {
-			return s.httpListener.Close()
-		})
+	for _, listener := range []net.Listener{s.httpListener, s.httpsListener} {
+		if listener != nil {
+			eg.Go(func() error {
+				return listener.Close()
+			})
+		}
 	}
+	errs := eg.Wait()
 
-	if s.httpsListener != nil {
-		eg.Go(func() error {
-			return s.httpListener.Close()
-		})
-	}
+	errs = errors.Join(errs, s.runnerManager.Stop(timeout))
 
-	eg.Go(func() error {
-		return s.runnerManager.Stop(timeout)
-	})
-
-	if err := eg.Wait(); err != nil {
-		log.Errorf("Failed to shut down server gracefully\n%v", err)
+	if errs != nil {
+		log.Errorf("Failed to shut down server gracefully\n%v", errs)
 	} else {
 		log.Info("Server gracefully stopped")
 	}

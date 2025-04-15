@@ -28,24 +28,12 @@ type Config struct {
 
 type TLSConfig struct {
 	ServiceBindAddress config.Address `mapstructure:"SERVICE_BIND_ADDRESS" description:"Service configuration related to what address bind to and port to listen on for HTTPS"`
-	ServiceAddress     config.Address `mapstructure:"SERVICE_ADDRESS" description:"Service public address for HTTPS"`
-
-	CertificatePath string `mapstructure:"CERTIFICATE_PATH" description:"Path to TLS certificate file"`
-	KeyPath         string `mapstructure:"KEY_PATH" description:"Path to TLS key file"`
+	CertificatePath    string         `mapstructure:"CERTIFICATE_PATH" description:"Path to TLS certificate file"`
+	KeyPath            string         `mapstructure:"KEY_PATH" description:"Path to TLS key file"`
 }
 
-func (tls *TLSConfig) Validate(parent *Config) error {
-	if len(tls.CertificatePath) == 0 {
-		return nil
-	}
-
-	if len(tls.ServiceAddress) == 0 {
-		tls.ServiceAddress = parent.ServiceAddress
-	}
-	if len(tls.ServiceBindAddress) == 0 {
-		tls.ServiceBindAddress = config.Address(net.JoinHostPort(parent.ServiceBindAddress.Host(), "443"))
-	}
-	return nil
+func (c TLSConfig) IsTLSEnabled() bool {
+	return len(c.CertificatePath) > 0
 }
 
 func (c *Config) LogExporterConfig() log.LogExporterConfig {
@@ -64,7 +52,8 @@ func (c *Config) SetDefaults() {
 	c.DeprecatedServiceInstance = serviceInstanceAuto
 	// c.ServiceInstance = serviceInstanceHostname // use value from DeprecatedServiceInstance
 
-	c.ServiceBindAddress = config.Address("0.0.0.0:3000")
+	c.ServiceBindHost = "0.0.0.0"
+	c.ServiceBindPort = 3000
 }
 
 // Validate ...
@@ -86,5 +75,9 @@ func (c *Config) Validate() error {
 		log.Warn("SERVICE_NAME is deprecated, use SERVICE_INSTANCE_NAME instead")
 		c.ServiceInstance = c.DeprecatedServiceInstance
 	}
-	return c.TLS.Validate(c)
+
+	if len(c.TLS.ServiceBindAddress) == 0 {
+		c.ServiceBindAddress = config.Address(net.JoinHostPort(c.ServiceBindAddress.Host(), "443"))
+	}
+	return nil
 }
