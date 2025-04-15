@@ -89,7 +89,7 @@ func (r *MongoRepository) FindByID(ctx context.Context, id config.IdType) (*Feat
 }
 
 func (r *MongoRepository) GetAll(ctx context.Context) ([]*Feature, error) {
-	return r.rep.GetAll(ctx, &repository.QueryOptions{Archived: false})
+	return r.rep.GetAll(ctx, &repository.QueryOptions{Archived: false, Sort: repository.SortOpt{}.Asc("_id")})
 }
 
 func (r *MongoRepository) Update(ctx context.Context, feature *Feature) (*Feature, error) {
