@@ -214,6 +214,11 @@ func (r *BaseRepository[T, U]) Update(ctx context.Context, entity U, options ...
 	var qOpt *repository.QueryOptions
 	if len(options) > 0 {
 		qOpt = &options[0].QueryOptions
+		if options[0].DuplicateFilter != nil {
+			if err := r.hasDuplicate(ctx, options[0].DuplicateFilter); err != nil {
+				return err
+			}
+		}
 	}
 	result, err := r.Collection().ReplaceOne(ctx, r.where(bson.M{"_id": entity.RawID()}, qOpt), entity)
 	if err == nil && result.MatchedCount == 0 {
