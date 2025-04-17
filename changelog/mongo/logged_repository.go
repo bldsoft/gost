@@ -35,7 +35,7 @@ func WrapRepository[T any, U LoggedEntity[T]](repo mongo.Repository[T, U], chang
 	return &LoggedRepository[T, U]{repo, changeLogRepo}
 }
 
-func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U, opt ...*repository.ModifyOptions) (err error) {
+func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err error) {
 	rec, err := NewRecord(ctx, r.Name(), changelog.Create)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (r *LoggedRepository[T, U]) getDiff(old U, new U) ([]byte, error) {
 	return patch, nil
 }
 
-func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U, opt ...*repository.ModifyOptions) error {
+func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U, opt ...*repository.QueryOptions) error {
 	rec, err := NewRecord(ctx, r.Name(), changelog.Update)
 	if err != nil {
 		return err

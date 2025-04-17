@@ -136,7 +136,7 @@ func NewCachedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, colle
 	}
 	cacheWatcher := newCacheWatcher[T, U](cache, options)
 	return &CachedRepository[T, U]{
-		WatchedRepository: NewWatchedRepository(db, collectionName, cacheWatcher),
+		WatchedRepository: NewWatchedRepository[T, U](db, collectionName, cacheWatcher),
 		cache:             cacheWatcher,
 	}
 }

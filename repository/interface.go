@@ -13,12 +13,12 @@ type Repository[T any, U IEntityIDPtr[T]] interface {
 	Count(ctx context.Context, filter interface{}, opt ...*QueryOptions) (int64, error)
 	GetAll(ctx context.Context, options ...*QueryOptions) ([]U, error)
 
-	Insert(ctx context.Context, entity U, opt ...*ModifyOptions) error
-	InsertMany(ctx context.Context, entities []U, opt ...*ModifyOptions) error
-	Update(ctx context.Context, entity U, options ...*ModifyOptions) error
+	Insert(ctx context.Context, entity U) error
+	InsertMany(ctx context.Context, entities []U) error
+	Update(ctx context.Context, entity U, options ...*QueryOptions) error
 	UpdateMany(ctx context.Context, entities []U) error
-	UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*ModifyOptions) error
-	UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, queryOpt ...*ModifyOptions) (U, error)
+	UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*QueryOptions) error
+	UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, queryOpt ...*QueryOptions) (U, error)
 	Upsert(ctx context.Context, entity U, opt ...*QueryOptions) error
 	UpsertOne(ctx context.Context, filter interface{}, update U) error
 	Delete(ctx context.Context, id interface{}, options ...*QueryOptions) error
