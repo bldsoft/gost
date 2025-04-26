@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -68,7 +69,8 @@ type ClickHouseLogExporter struct {
 	server.AsyncRunner
 
 	BaseRepository
-	config LogExporterConfig
+	config  LogExporterConfig
+	isReady atomic.Bool
 }
 
 func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExporter {
@@ -77,6 +79,10 @@ func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExpor
 		BaseRepository: NewBaseRepository(storage),
 	}
 
+	// go func() {
+	// 	for !storage.IsReady() {
+	// 	}
+
 	go func() {
 		for !storage.IsReady() {
 		}
@@ -84,22 +90,23 @@ func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExpor
 		if err := logExporter.createTableIfNotExitst(); err != nil {
 			log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to create log table")
 		}
-
-		bufExporter := NewExporter[*chLogRecord](storage, ExporterConfig{
-			cfg.TableName,
-			exporter.BufferedExporterConfig{
-				MaxFlushInterval: time.Duration(cfg.FlushTimeMs) * time.Millisecond,
-				MaxBatchSize:     int(cfg.MaxBatchSize),
-				ChanBufSize:      cfg.ChanBufSize,
-				PreserveOld:      false,
-				Logger:           log.Logger.WithFields(log.Fields{"exporter": "LOG_RECORDS"}),
-			},
-			storage.IsReadyRaw(),
-		})
-
-		logExporter.Exporter = exporter.Transform(bufExporter, formLogRecord)
-		logExporter.AsyncRunner = bufExporter
 	}()
+
+	bufExporter := NewExporter[*chLogRecord](storage, ExporterConfig{
+		cfg.TableName,
+		exporter.BufferedExporterConfig{
+			MaxFlushInterval: time.Duration(cfg.FlushTimeMs) * time.Millisecond,
+			MaxBatchSize:     int(cfg.MaxBatchSize),
+			ChanBufSize:      cfg.ChanBufSize,
+			PreserveOld:      false,
+			Logger:           log.Logger.WithFields(log.Fields{"exporter": "LOG_RECORDS"}),
+		},
+		storage.IsReadyRaw(),
+	})
+
+	logExporter.Exporter = exporter.Transform(bufExporter, formLogRecord)
+	logExporter.AsyncRunner = bufExporter
+	// }()
 
 	return logExporter
 }
@@ -182,6 +189,14 @@ func (e *ClickHouseLogExporter) parseExpr(search string, makeRawExpr func(string
 	return parseHelper[sq.Or](search, "|", func(s string) sq.Sqlizer {
 		return parseHelper[sq.And](s, "&", makeRawExpr)
 	})
+}
+
+func (e *ClickHouseLogExporter) Export(r ...*log.LogRecord) (n int, err error) {
+	if !e.IsReady() || e.Exporter == nil {
+		return 0, nil
+	}
+
+	return e.Exporter.Export(r...)
 }
 
 func parseHelper[T sq.Or | sq.And](search, op string, makeRawExpr func(string) sq.Sqlizer) sq.Sqlizer {

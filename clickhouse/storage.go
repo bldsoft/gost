@@ -128,7 +128,7 @@ func (db *Storage) LogError(err error) {
 }
 
 func (db *Storage) runMigrations(dbname string) bool {
-	log.Debug("Checking clickhouse DB schema...")
+	// log.Debug("Checking clickhouse DB schema...")
 	cfg := &mm.Config{DatabaseName: dbname, MultiStatementEnabled: true}
 
 	driver, err := mm.WithInstance(db.Db, cfg)

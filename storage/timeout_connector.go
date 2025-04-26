@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/bldsoft/gost/log"
 )
 
 func DBConnectAsync(wg *sync.WaitGroup, connect func(), n int, sleepPeriod time.Duration) {
@@ -23,7 +25,7 @@ func DBConnectAsync(wg *sync.WaitGroup, connect func(), n int, sleepPeriod time.
 			}()
 
 			if err != nil {
-				// log.ErrorWithFields(log.Fields{"error": err}, "error connecting to db")
+				log.ErrorWithFields(log.Fields{"error": err}, "error connecting to db")
 				time.Sleep(sleepPeriod)
 				continue
 			}

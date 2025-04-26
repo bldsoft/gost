@@ -14,7 +14,11 @@ type ServiceLogger struct {
 }
 
 func (l *ServiceLogger) AddExporter(exporter LogExporter, isOn *feature.Bool) {
-	l.exportWriter.Append(exporter, isOn)
+	go func() {
+		for !exporter.IsReady() {
+		}
+		l.exportWriter.Append(exporter, isOn)
+	}()
 }
 
 // Fields struct
