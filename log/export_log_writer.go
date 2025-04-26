@@ -120,6 +120,9 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 func (w *ExportLogWriter) export(rec *LogRecord) error {
 	var multiErr error
 	for i, exporter := range w.exporters {
+		if !exporter.IsReady() {
+			continue
+		}
 		if t := w.exportersToggles[i]; t != nil && !t.Get() {
 			continue
 		}

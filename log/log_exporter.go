@@ -31,6 +31,7 @@ type LogExporter interface {
 	Services(ctx context.Context, filter Filter) ([]string, error)
 	ServiceVersions(ctx context.Context, filter Filter) ([]string, error)
 	RequestIDs(ctx context.Context, filter Filter, limit *int) ([]string, int64, error)
+	IsReady() bool
 }
 
 type LogsMetricsParams struct {

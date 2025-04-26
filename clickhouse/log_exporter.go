@@ -465,6 +465,10 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 	return err
 }
 
+func (e *ClickHouseLogExporter) IsReady() bool {
+	return e.db.IsReady()
+}
+
 type chLogRecord struct {
 	Service        string    `json:"service,omitempty"        ch:"service"`
 	ServiceVersion string    `json:"serviceVersion,omitempty" ch:"service_version"`
