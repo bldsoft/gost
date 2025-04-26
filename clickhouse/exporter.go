@@ -2,6 +2,7 @@ package clickhouse
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/bldsoft/gost/utils/exporter"
 )
@@ -9,11 +10,13 @@ import (
 type ExporterConfig struct {
 	TableName string
 	exporter.BufferedExporterConfig
+	IsReady *atomic.Bool
 }
 
 type Exporter[T any] struct {
 	storage     *Storage
 	bufExporter *exporter.BufferedExporter[T]
+	isReady     *atomic.Bool
 }
 
 func NewExporter[T any](storage *Storage, cfg ExporterConfig) *Exporter[T] {
@@ -24,10 +27,14 @@ func NewExporter[T any](storage *Storage, cfg ExporterConfig) *Exporter[T] {
 		newExporterBatch[T](storage, cfg.TableName),
 		cfg.BufferedExporterConfig,
 	)
+	e.isReady = cfg.IsReady
 	return e
 }
 
 func (e *Exporter[T]) Export(items ...T) (n int, err error) {
+	if !e.isReady.Load() {
+		return 0, nil
+	}
 	return e.bufExporter.Export(items...)
 }
 

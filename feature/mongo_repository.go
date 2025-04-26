@@ -23,7 +23,7 @@ func NewMongoRepository(db *mongo.Storage, serviceInstanceName string) *MongoRep
 	if err := rep.Load(); err != nil {
 		log.Error("Failed to load features")
 	} else {
-		log.Infof("Features loaded")
+		// log.Infof("Features loaded")
 	}
 	rep.InitWatcher()
 	return rep

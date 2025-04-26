@@ -77,23 +77,29 @@ func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExpor
 		BaseRepository: NewBaseRepository(storage),
 	}
 
-	if err := logExporter.createTableIfNotExitst(); err != nil {
-		log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to create log table")
-	}
+	go func() {
+		for !storage.IsReady() {
+		}
 
-	bufExporter := NewExporter[*chLogRecord](storage, ExporterConfig{
-		cfg.TableName,
-		exporter.BufferedExporterConfig{
-			MaxFlushInterval: time.Duration(cfg.FlushTimeMs) * time.Millisecond,
-			MaxBatchSize:     int(cfg.MaxBatchSize),
-			ChanBufSize:      cfg.ChanBufSize,
-			PreserveOld:      false,
-			Logger:           log.Logger.WithFields(log.Fields{"exporter": "LOG_RECORDS"}),
-		},
-	})
+		if err := logExporter.createTableIfNotExitst(); err != nil {
+			log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to create log table")
+		}
 
-	logExporter.Exporter = exporter.Transform(bufExporter, formLogRecord)
-	logExporter.AsyncRunner = bufExporter
+		bufExporter := NewExporter[*chLogRecord](storage, ExporterConfig{
+			cfg.TableName,
+			exporter.BufferedExporterConfig{
+				MaxFlushInterval: time.Duration(cfg.FlushTimeMs) * time.Millisecond,
+				MaxBatchSize:     int(cfg.MaxBatchSize),
+				ChanBufSize:      cfg.ChanBufSize,
+				PreserveOld:      false,
+				Logger:           log.Logger.WithFields(log.Fields{"exporter": "LOG_RECORDS"}),
+			},
+			storage.IsReadyRaw(),
+		})
+
+		logExporter.Exporter = exporter.Transform(bufExporter, formLogRecord)
+		logExporter.AsyncRunner = bufExporter
+	}()
 
 	return logExporter
 }

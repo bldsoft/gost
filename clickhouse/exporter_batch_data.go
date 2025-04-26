@@ -14,16 +14,27 @@ type exporterBatch[T any] struct {
 }
 
 func newExporterBatch[T any](storage *Storage, table string) *exporterBatch[T] {
-	columns := strings.Join(columnNames[T](), ",")
-	insert := fmt.Sprintf("INSERT INTO %s (%s) VALUES", table, columns)
-	batch, err := storage.PrepareStaticBatch(insert)
-	if err != nil {
-		panic(err)
-	}
-	return &exporterBatch[T]{batch: batch}
+	res := &exporterBatch[T]{}
+
+	go func() {
+		for !storage.isReady.Load() {
+		}
+		columns := strings.Join(columnNames[T](), ",")
+		insert := fmt.Sprintf("INSERT INTO %s (%s) VALUES", table, columns)
+		batch, err := storage.PrepareStaticBatch(insert)
+		if err != nil {
+			panic(err)
+		}
+		res.batch = batch
+	}()
+
+	return res
 }
 
 func (e *exporterBatch[T]) Send() error {
+	if e.batch == nil {
+		return nil
+	}
 	if err := e.batch.Send(); err != nil {
 		return err
 	}
@@ -36,6 +47,9 @@ func (e *exporterBatch[T]) Len() int {
 }
 
 func (e *exporterBatch[T]) Add(items ...T) (n int, err error) {
+	if e.batch == nil {
+		return 0, nil
+	}
 	for i, item := range items {
 		if err := e.batch.Append(item); err != nil {
 			return i, err
