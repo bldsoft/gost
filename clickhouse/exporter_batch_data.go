@@ -2,6 +2,8 @@ package clickhouse
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/bldsoft/gost/utils/exporter"
 )
@@ -12,7 +14,8 @@ type exporterBatch[T any] struct {
 }
 
 func newExporterBatch[T any](storage *Storage, table string) *exporterBatch[T] {
-	insert := fmt.Sprintf("INSERT INTO %s", table)
+	columns := strings.Join(columnNames[T](), ",")
+	insert := fmt.Sprintf("INSERT INTO %s (%s) VALUES", table, columns)
 	batch, err := storage.PrepareStaticBatch(insert)
 	if err != nil {
 		panic(err)
@@ -51,3 +54,36 @@ func (e *exporterBatch[T]) Reset() error {
 }
 
 var _ exporter.Data[int] = (*exporterBatch[int])(nil)
+
+func columnNames[T any]() []string {
+	var zero T
+	t := reflect.TypeOf(zero)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return columnNamesFromType(t)
+}
+
+// https://github.com/ClickHouse/clickhouse-go/blob/main/struct_map.go
+func columnNamesFromType(t reflect.Type) []string {
+	var keys []string
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		name := f.Name
+
+		if tn := f.Tag.Get("ch"); len(tn) != 0 {
+			name = tn
+		}
+		if name == "-" || (len(f.PkgPath) != 0 && !f.Anonymous) {
+			continue
+		}
+
+		if f.Anonymous && f.Type.Kind() != reflect.Ptr {
+			subKeys := columnNamesFromType(f.Type)
+			keys = append(keys, subKeys...)
+		} else {
+			keys = append(keys, name)
+		}
+	}
+	return keys
+}
