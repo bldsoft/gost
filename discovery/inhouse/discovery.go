@@ -181,7 +181,7 @@ func (d *Discovery) deregisterExpired() {
 func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 	meta, err := d.parseMeta(node)
 	if err != nil {
-		log.Errorf(err.Error())
+		log.Error(err.Error())
 		return
 	}
 
@@ -326,7 +326,7 @@ func (d *Discovery) NotifyJoin(node *memberlist.Node) {
 func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 	serviceInfo, err := d.parseMeta(node)
 	if err != nil {
-		log.Errorf(err.Error())
+		log.Error(err.Error())
 		return
 	}
 
