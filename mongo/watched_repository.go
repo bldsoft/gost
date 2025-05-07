@@ -29,7 +29,7 @@ func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, coll
 		Repository: NewRepository[T, U](db, collectionName),
 		handlerC:   make(chan repository.Watcher[T, U]),
 	}
-	rep.init()
+	rep.init(db)
 	for _, w := range watchers {
 		rep.AddWatcher(w)
 	}
@@ -37,10 +37,12 @@ func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, coll
 }
 
 func (r *WatchedRepository[T, U]) AddWatcher(w repository.Watcher[T, U]) {
-	r.handlerC <- w
+	go func() {
+		r.handlerC <- w
+	}()
 }
 
-func (r *WatchedRepository[T, U]) init() {
+func (r *WatchedRepository[T, U]) init(db *Storage) {
 	updateC := make(chan repository.Event[T, U], updateChanBufferSize)
 
 	convertEventType := map[OperationType]repository.EventType{
@@ -49,7 +51,7 @@ func (r *WatchedRepository[T, U]) init() {
 		Delete: repository.EventTypeDelete,
 	}
 
-	r.mongoWatcher = NewWatcher(r.Repository.Collection())
+	r.mongoWatcher = NewWatcher(r.Repository.Collection(), db.DBReadyRaw())
 	r.mongoWatcher.SetHandler(func(fullDocument bson.Raw, opType OperationType) {
 		var e T
 		if err := bson.Unmarshal(fullDocument, &e); err != nil {
@@ -61,9 +63,11 @@ func (r *WatchedRepository[T, U]) init() {
 			Type:   convertEventType[opType],
 		}
 	})
-	r.mongoWatcher.Start()
+	go r.mongoWatcher.Start()
 
 	go func() {
+		for !db.IsReady() {
+		}
 		for {
 			select {
 			case handler := <-r.handlerC:

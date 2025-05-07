@@ -26,6 +26,7 @@ type Storage struct {
 	Db      *sql.DB
 	native  driver.Conn
 	isReady atomic.Bool
+	readyWg sync.WaitGroup
 	doOnce  sync.Once
 
 	migrations  *source.Migrations
@@ -64,6 +65,7 @@ func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string)
 }
 
 func (db *Storage) Connect() {
+	db.readyWg.Add(1)
 	connect := clickhouse.OpenDB(db.cfg.options)
 	if err := connect.Ping(); err != nil {
 		db.LogError(err)
@@ -87,6 +89,7 @@ func (db *Storage) Connect() {
 	db.native = native
 
 	db.isReady.Store(true)
+	db.readyWg.Done()
 
 	log.InfoWithFields(log.Fields{"dsn": &db.cfg.Dsn}, "Clickhouse connected!")
 }
@@ -190,4 +193,13 @@ func (db *Storage) PrepareBatch(q string) (driver.Batch, error) {
 
 func (db *Storage) PrepareStaticBatch(q string) (*Batch, error) {
 	return NewBatch(db.native, q)
+}
+
+func (db *Storage) NotifyReady() <-chan struct{} {
+	ch := make(chan struct{})
+	go func() {
+		db.readyWg.Wait()
+		close(ch)
+	}()
+	return ch
 }

@@ -29,11 +29,12 @@ type Watcher struct {
 	cancel     context.CancelFunc
 	handler    func(fullDocument bson.Raw, opType OperationType)
 	isActive   int32
+	dbReady    *atomic.Bool
 }
 
 // NewWatcher creates new MongoPoolWatcher.
-func NewWatcher(collection *mongo.Collection) *Watcher {
-	return &Watcher{collection: collection}
+func NewWatcher(collection *mongo.Collection, dbReady *atomic.Bool) *Watcher {
+	return &Watcher{collection: collection, dbReady: dbReady}
 }
 
 // SetHandler sets handler for watch method. opType is "update",
@@ -71,15 +72,20 @@ func (w *Watcher) watch() {
 	ctx := w.getNewContext()
 
 	reserveWatcher := newReserveWatcher()
-	changeStreamWatcher := NewChangeStreamWatcher()
+	// changeStreamWatcher := NewChangeStreamWatcher()
 
-	go changeStreamWatcher.watch(ctx, w.collection, func(fullDocument bson.Raw, opType OperationType) {
-		if updatedTime, ok := fullDocument.Lookup(BsonFieldNameUpdateTime).TimeOK(); ok {
-			reserveWatcher.SetLastCheckTime(updatedTime)
+	go func() {
+		for !w.dbReady.Load() {
 		}
-		w.handler(fullDocument, opType)
-	})
-	reserveWatcher.watch(ctx, w.collection, w.handler)
+		// changeStreamWatcher.watch(ctx, w.collection, func(fullDocument bson.Raw, opType OperationType) {
+		// 	if updatedTime, ok := fullDocument.Lookup(BsonFieldNameUpdateTime).TimeOK(); ok {
+		// 		reserveWatcher.SetLastCheckTime(updatedTime)
+		// 	}
+		// 	w.handler(fullDocument, opType)
+		// })
+
+		reserveWatcher.watch(ctx, w.collection, w.handler)
+	}()
 
 }
 

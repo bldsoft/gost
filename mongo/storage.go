@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/bldsoft/gost/log"
@@ -29,6 +30,8 @@ type Storage struct {
 	doOnce          sync.Once
 	migrations      *source.Migrations
 	migrationReadyC chan struct{}
+
+	ready atomic.Bool
 }
 
 // NewStorage ...
@@ -66,6 +69,7 @@ func (db *Storage) Connect() {
 	}
 
 	<-db.migrationReadyC
+	db.ready.Store(true)
 }
 
 // Disconnect closes db connection
@@ -104,8 +108,13 @@ func (db *Storage) poolEventMonitor(ev *event.PoolEvent) {
 }
 
 func (db *Storage) IsReady() bool {
-	return true
+	return db.ready.Load()
 }
+
+func (db *Storage) DBReadyRaw() *atomic.Bool {
+	return &db.ready
+}
+
 func (db *Storage) runMigrations(dbname string) bool {
 	log.Debug("Checking DB schema...")
 

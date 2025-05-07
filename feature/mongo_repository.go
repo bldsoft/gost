@@ -20,17 +20,23 @@ type MongoRepository struct {
 // NewMongoRepository creates feature repository.
 func NewMongoRepository(db *mongo.Storage, serviceInstanceName string) *MongoRepository {
 	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, "feature"), serviceInstanceName: serviceInstanceName}
-	if err := rep.Load(); err != nil {
-		log.Error("Failed to load features")
-	} else {
-		// log.Infof("Features loaded")
-	}
-	rep.InitWatcher()
+	go func() {
+		for !db.IsReady() {
+		}
+
+		if err := rep.Load(); err != nil {
+			log.Error("Failed to load features")
+		} else {
+			log.Infof("Features loaded")
+		}
+	}()
+
+	rep.InitWatcher(db)
 	return rep
 }
 
-func (r *MongoRepository) InitWatcher() {
-	w := mongo.NewWatcher(r.rep.Collection())
+func (r *MongoRepository) InitWatcher(db *mongo.Storage) {
+	w := mongo.NewWatcher(r.rep.Collection(), db.DBReadyRaw())
 	w.SetHandler(func(fullDocument bson.Raw, optype mongo.OperationType) {
 		f := &Feature{}
 		err := bson.Unmarshal(fullDocument, f)
