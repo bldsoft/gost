@@ -37,7 +37,9 @@ type Storage struct {
 
 // NewStorage ...
 func NewStorage(config Config) *Storage {
-	return &Storage{config: config, migrations: source.NewMigrations(), migrationReadyC: make(chan struct{})}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	return &Storage{config: config, migrations: source.NewMigrations(), migrationReadyC: make(chan struct{}), readyWg: wg}
 }
 
 // AddMigration adds a migration. All migrations should be added before db.Connect
@@ -50,7 +52,6 @@ const timeout = 5 * time.Second
 
 // Connect initializes db connection
 func (db *Storage) Connect() {
-	db.readyWg.Add(1)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
