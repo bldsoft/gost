@@ -31,7 +31,8 @@ type Storage struct {
 	migrations      *source.Migrations
 	migrationReadyC chan struct{}
 
-	ready atomic.Bool
+	ready   atomic.Bool
+	readyWg sync.WaitGroup
 }
 
 // NewStorage ...
@@ -49,6 +50,7 @@ const timeout = 5 * time.Second
 
 // Connect initializes db connection
 func (db *Storage) Connect() {
+	db.readyWg.Add(1)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -70,6 +72,7 @@ func (db *Storage) Connect() {
 
 	<-db.migrationReadyC
 	db.ready.Store(true)
+	db.readyWg.Done()
 }
 
 // Disconnect closes db connection
@@ -176,4 +179,13 @@ func (db *Storage) Stats(ctx context.Context) (interface{}, error) {
 		stats = append(stats, colStat)
 	}
 	return stats, err
+}
+
+func (db *Storage) NotifyReady() <-chan struct{} {
+	ch := make(chan struct{})
+	go func() {
+		db.readyWg.Wait()
+		close(ch)
+	}()
+	return ch
 }

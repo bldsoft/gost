@@ -34,7 +34,9 @@ type Storage struct {
 }
 
 func NewStorage(config Config) *Storage {
-	return &Storage{cfg: config, migrations: source.NewMigrations()}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	return &Storage{cfg: config, migrations: source.NewMigrations(), readyWg: wg}
 }
 
 func (s *Storage) Auth() Auth {
@@ -65,7 +67,6 @@ func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string)
 }
 
 func (db *Storage) Connect() {
-	db.readyWg.Add(1)
 	connect := clickhouse.OpenDB(db.cfg.options)
 	if err := connect.Ping(); err != nil {
 		db.LogError(err)
@@ -95,6 +96,7 @@ func (db *Storage) Connect() {
 }
 
 func (db *Storage) RunMigrations() {
+	db.readyWg.Wait()
 	db.doOnce.Do(func() {
 		dbname := db.cfg.options.Auth.Database
 		db.runMigrations(dbname)
