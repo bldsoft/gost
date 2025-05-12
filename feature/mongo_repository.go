@@ -36,7 +36,7 @@ func NewMongoRepository(db *mongo.Storage, serviceInstanceName string) *MongoRep
 }
 
 func (r *MongoRepository) InitWatcher(db *mongo.Storage) {
-	w := mongo.NewWatcher(r.rep.Collection(), db.DBReadyRaw())
+	w := mongo.NewWatcher(r.rep.Collection(), db.ReadyState)
 	w.SetHandler(func(fullDocument bson.Raw, optype mongo.OperationType) {
 		f := &Feature{}
 		err := bson.Unmarshal(fullDocument, f)

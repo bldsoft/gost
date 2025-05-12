@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"sync"
-	"sync/atomic"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
@@ -23,20 +22,22 @@ type Auth = clickhouse.Auth
 type Storage struct {
 	cfg Config
 
-	Db      *sql.DB
-	native  driver.Conn
-	isReady atomic.Bool
-	readyWg sync.WaitGroup
-	doOnce  sync.Once
+	Db     *sql.DB
+	native driver.Conn
+	doOnce sync.Once
 
 	migrations  *source.Migrations
 	clusterName string
+
+	*storage.ReadyState
 }
 
 func NewStorage(config Config) *Storage {
-	var wg sync.WaitGroup
-	wg.Add(1)
-	return &Storage{cfg: config, migrations: source.NewMigrations(), readyWg: wg}
+	return &Storage{
+		cfg:        config,
+		migrations: source.NewMigrations(),
+		ReadyState: storage.NewReadyState(),
+	}
 }
 
 func (s *Storage) Auth() Auth {
@@ -89,7 +90,7 @@ func (db *Storage) Connect() {
 	db.Db = connect
 	db.native = native
 
-	db.setReady()
+	db.SetReady()
 	log.InfoWithFields(log.Fields{"dsn": &db.cfg.Dsn}, "Clickhouse connected!")
 }
 
@@ -107,19 +108,6 @@ func (db *Storage) Disconnect(ctx context.Context) error {
 	}
 	log.Info("Clickhouse disconnected.")
 	return nil
-}
-
-func (db *Storage) setReady() {
-	db.readyWg.Done()
-	db.isReady.Store(true)
-}
-
-func (db *Storage) IsReady() bool {
-	return db.isReady.Load()
-}
-
-func (db *Storage) IsReadyRaw() *atomic.Bool {
-	return &db.isReady
 }
 
 func (db *Storage) LogError(err error) {
@@ -197,13 +185,4 @@ func (db *Storage) PrepareBatch(q string) (driver.Batch, error) {
 
 func (db *Storage) PrepareStaticBatch(q string) (*Batch, error) {
 	return NewBatch(db.native, q)
-}
-
-func (db *Storage) NotifyReady() <-chan struct{} {
-	ch := make(chan struct{})
-	go func() {
-		db.readyWg.Wait()
-		close(ch)
-	}()
-	return ch
 }

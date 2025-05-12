@@ -55,7 +55,7 @@ func (r *WatchedRepository[T, U]) init(db *Storage) {
 	storage.ScheduleTask(db, func() error {
 		rep := r.Repository
 		col := rep.Collection()
-		r.mongoWatcher = NewWatcher(col, db.DBReadyRaw())
+		r.mongoWatcher = NewWatcher(col, db.ReadyState)
 		r.mongoWatcher.SetHandler(func(fullDocument bson.Raw, opType OperationType) {
 			var e T
 			if err := bson.Unmarshal(fullDocument, &e); err != nil {
@@ -67,10 +67,8 @@ func (r *WatchedRepository[T, U]) init(db *Storage) {
 				Type:   convertEventType[opType],
 			}
 		})
-
+		r.mongoWatcher.Start()
 		go func() {
-			r.mongoWatcher.Start()
-
 			for {
 				select {
 				case handler := <-r.handlerC:

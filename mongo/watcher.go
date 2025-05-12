@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync/atomic"
 
+	"github.com/bldsoft/gost/storage"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -29,11 +30,11 @@ type Watcher struct {
 	cancel     context.CancelFunc
 	handler    func(fullDocument bson.Raw, opType OperationType)
 	isActive   int32
-	dbReady    *atomic.Bool
+	dbReady    *storage.ReadyState
 }
 
 // NewWatcher creates new MongoPoolWatcher.
-func NewWatcher(collection *mongo.Collection, dbReady *atomic.Bool) *Watcher {
+func NewWatcher(collection *mongo.Collection, dbReady *storage.ReadyState) *Watcher {
 	return &Watcher{collection: collection, dbReady: dbReady}
 }
 
@@ -75,8 +76,7 @@ func (w *Watcher) watch() {
 	changeStreamWatcher := NewChangeStreamWatcher()
 
 	go func() {
-		for !w.dbReady.Load() {
-		}
+		w.dbReady.NotifyReady()
 		changeStreamWatcher.watch(ctx, w.collection, func(fullDocument bson.Raw, opType OperationType) {
 			if updatedTime, ok := fullDocument.Lookup(BsonFieldNameUpdateTime).TimeOK(); ok {
 				reserveWatcher.SetLastCheckTime(updatedTime)

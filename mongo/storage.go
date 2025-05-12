@@ -3,7 +3,6 @@ package mongo
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/bldsoft/gost/log"
@@ -31,15 +30,17 @@ type Storage struct {
 	migrations      *source.Migrations
 	migrationReadyC chan struct{}
 
-	ready   atomic.Bool
-	readyWg sync.WaitGroup
+	*storage.ReadyState
 }
 
 // NewStorage ...
 func NewStorage(config Config) *Storage {
-	var wg sync.WaitGroup
-	wg.Add(1)
-	return &Storage{config: config, migrations: source.NewMigrations(), migrationReadyC: make(chan struct{}), readyWg: wg}
+	return &Storage{
+		config:          config,
+		migrations:      source.NewMigrations(),
+		migrationReadyC: make(chan struct{}),
+		ReadyState:      storage.NewReadyState(),
+	}
 }
 
 // AddMigration adds a migration. All migrations should be added before db.Connect
@@ -71,7 +72,7 @@ func (db *Storage) Connect() {
 		log.PanicWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB ping failed")
 	}
 
-	db.setReady()
+	db.SetReady()
 	<-db.migrationReadyC
 }
 
@@ -108,14 +109,6 @@ func (db *Storage) poolEventMonitor(ev *event.PoolEvent) {
 	default:
 		// log.Debugf("MogoDB event: %v", *ev)
 	}
-}
-
-func (db *Storage) IsReady() bool {
-	return db.ready.Load()
-}
-
-func (db *Storage) DBReadyRaw() *atomic.Bool {
-	return &db.ready
 }
 
 func (db *Storage) runMigrations(dbname string) bool {
@@ -181,16 +174,16 @@ func (db *Storage) Stats(ctx context.Context) (interface{}, error) {
 	return stats, err
 }
 
-func (db *Storage) NotifyReady() <-chan struct{} {
-	ch := make(chan struct{})
-	go func() {
-		db.readyWg.Wait()
-		close(ch)
-	}()
-	return ch
-}
+// func (db *Storage) NotifyReady() <-chan struct{} {
+// 	ch := make(chan struct{})
+// 	go func() {
+// 		db.readyWg.Wait()
+// 		close(ch)
+// 	}()
+// 	return ch
+// }
 
-func (db *Storage) setReady() {
-	db.readyWg.Done()
-	db.ready.Store(true)
-}
+// func (db *Storage) setReady() {
+// 	db.readyWg.Done()
+// 	db.ready.Store(true)
+// }
