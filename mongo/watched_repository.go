@@ -6,6 +6,7 @@ import (
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
+	"github.com/bldsoft/gost/storage"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -51,9 +52,7 @@ func (r *WatchedRepository[T, U]) init(db *Storage) {
 		Delete: repository.EventTypeDelete,
 	}
 
-	go func() {
-		for !db.IsReady() {
-		}
+	storage.ScheduleTask(db, func() error {
 		rep := r.Repository
 		col := rep.Collection()
 		r.mongoWatcher = NewWatcher(col, db.DBReadyRaw())
@@ -68,21 +67,27 @@ func (r *WatchedRepository[T, U]) init(db *Storage) {
 				Type:   convertEventType[opType],
 			}
 		})
-		go r.mongoWatcher.Start()
-		for {
-			select {
-			case handler := <-r.handlerC:
-				if err := handler.WarmUp(context.Background(), r.Repository); err != nil {
-					log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.Name()}, "Failed to warm up")
-				} else {
-					log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.Name()}, "Warmed up")
-				}
-				r.handlers = append(r.handlers, handler)
-			case upd := <-updateC:
-				for _, handler := range r.handlers {
-					handler.OnEvent(upd)
+
+		go func() {
+			r.mongoWatcher.Start()
+
+			for {
+				select {
+				case handler := <-r.handlerC:
+					if err := handler.WarmUp(context.Background(), r.Repository); err != nil {
+						log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.Name()}, "Failed to warm up")
+					} else {
+						log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.Name()}, "Warmed up")
+					}
+					r.handlers = append(r.handlers, handler)
+				case upd := <-updateC:
+					for _, handler := range r.handlers {
+						handler.OnEvent(upd)
+					}
 				}
 			}
-		}
-	}()
+		}()
+		return nil
+	})
+
 }

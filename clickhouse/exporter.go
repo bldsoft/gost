@@ -10,7 +10,6 @@ import (
 type ExporterConfig struct {
 	TableName string
 	exporter.BufferedExporterConfig
-	IsReady *atomic.Bool
 }
 
 type Exporter[T any] struct {
@@ -23,11 +22,11 @@ func NewExporter[T any](storage *Storage, cfg ExporterConfig) *Exporter[T] {
 	e := &Exporter[T]{
 		storage: storage,
 	}
-	e.bufExporter = exporter.NewBuffered[T](
+	e.bufExporter = exporter.NewBuffered(
 		newExporterBatch[T](storage, cfg.TableName),
 		cfg.BufferedExporterConfig,
 	)
-	e.isReady = cfg.IsReady
+	e.isReady = &storage.isReady
 	return e
 }
 

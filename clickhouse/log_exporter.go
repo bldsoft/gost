@@ -99,7 +99,6 @@ func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExpor
 			PreserveOld:      false,
 			Logger:           log.Logger.WithFields(log.Fields{"exporter": "LOG_RECORDS"}),
 		},
-		storage.IsReadyRaw(),
 	})
 
 	logExporter.Exporter = exporter.Transform(bufExporter, formLogRecord)

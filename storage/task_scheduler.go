@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"log"
+	"sync"
 	"sync/atomic"
 )
 
@@ -11,10 +13,11 @@ type AsyncDB interface {
 type taskScheduler struct {
 	active atomic.Bool
 	taskCh chan func() error
+	wg     *sync.WaitGroup
 }
 
 var scheduler = &taskScheduler{
-	taskCh: make(chan func() error, 100),
+	taskCh: make(chan func() error, 1),
 }
 
 func ScheduleTask(db AsyncDB, t func() error) {
@@ -38,6 +41,8 @@ func (s *taskScheduler) run() {
 	defer s.active.Store(false)
 
 	for task := range s.taskCh {
-		task()
+		if err := task(); err != nil {
+			log.Fatalf("scheduled task failed: %v", err)
+		}
 	}
 }

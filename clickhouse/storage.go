@@ -89,14 +89,11 @@ func (db *Storage) Connect() {
 	db.Db = connect
 	db.native = native
 
-	db.isReady.Store(true)
-	db.readyWg.Done()
-
+	db.setReady()
 	log.InfoWithFields(log.Fields{"dsn": &db.cfg.Dsn}, "Clickhouse connected!")
 }
 
 func (db *Storage) RunMigrations() {
-	db.readyWg.Wait()
 	db.doOnce.Do(func() {
 		dbname := db.cfg.options.Auth.Database
 		db.runMigrations(dbname)
@@ -110,6 +107,11 @@ func (db *Storage) Disconnect(ctx context.Context) error {
 	}
 	log.Info("Clickhouse disconnected.")
 	return nil
+}
+
+func (db *Storage) setReady() {
+	db.readyWg.Done()
+	db.isReady.Store(true)
 }
 
 func (db *Storage) IsReady() bool {
@@ -133,7 +135,7 @@ func (db *Storage) LogError(err error) {
 }
 
 func (db *Storage) runMigrations(dbname string) bool {
-	// log.Debug("Checking clickhouse DB schema...")
+	log.Debug("Checking clickhouse DB schema...")
 	cfg := &mm.Config{DatabaseName: dbname, MultiStatementEnabled: true}
 
 	driver, err := mm.WithInstance(db.Db, cfg)

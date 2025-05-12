@@ -45,7 +45,7 @@ func (w *reserveWatcher) watch(ctx context.Context, collection *mongo.Collection
 	var ticker *time.Ticker
 	if readInterval := w.getReserveWatcherInterval(); readInterval > 0 {
 		ticker = time.NewTicker(readInterval)
-		// log.Debugf("Reserve watcher for \"%s\" started", collection.Name())
+		log.Debugf("Reserve watcher for \"%s\" started", collection.Name())
 	} else {
 		//create stopped ticker
 		ticker = time.NewTicker(time.Second)

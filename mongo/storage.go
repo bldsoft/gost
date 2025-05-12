@@ -71,9 +71,8 @@ func (db *Storage) Connect() {
 		log.PanicWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB ping failed")
 	}
 
+	db.setReady()
 	<-db.migrationReadyC
-	db.ready.Store(true)
-	db.readyWg.Done()
 }
 
 // Disconnect closes db connection
@@ -189,4 +188,9 @@ func (db *Storage) NotifyReady() <-chan struct{} {
 		close(ch)
 	}()
 	return ch
+}
+
+func (db *Storage) setReady() {
+	db.readyWg.Done()
+	db.ready.Store(true)
 }
