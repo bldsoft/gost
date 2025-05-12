@@ -80,12 +80,15 @@ func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExpor
 		BaseRepository: NewBaseRepository(storage),
 	}
 
-	gost_storage.ScheduleTask(storage, func() error {
-		if err := logExporter.createTableIfNotExitst(); err != nil {
-			log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to create log table")
-		}
-		return nil
-	})
+	go gost_storage.ScheduleTask(
+		storage,
+		func() error {
+			if err := logExporter.createTableIfNotExitst(); err != nil {
+				log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to create log table")
+			}
+			return nil
+		},
+	)
 
 	bufExporter := NewExporter[*chLogRecord](storage, ExporterConfig{
 		cfg.TableName,

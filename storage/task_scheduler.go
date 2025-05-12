@@ -14,7 +14,7 @@ type taskScheduler struct {
 }
 
 var scheduler = &taskScheduler{
-	taskCh: make(chan func() error),
+	taskCh: make(chan func() error, 100),
 }
 
 func ScheduleTask(db AsyncDB, t func() error) {
@@ -26,7 +26,7 @@ func ScheduleTask(db AsyncDB, t func() error) {
 
 func (s *taskScheduler) scheduleTask(db AsyncDB, t func() error) {
 	s.taskCh <- func() error {
-		db.NotifyReady()
+		<-db.NotifyReady()
 		return t()
 	}
 }
@@ -35,6 +35,7 @@ func (s *taskScheduler) run() {
 	if !s.active.CompareAndSwap(false, true) {
 		return
 	}
+	defer s.active.Store(false)
 
 	for task := range s.taskCh {
 		task()

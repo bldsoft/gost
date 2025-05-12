@@ -21,17 +21,17 @@ type MongoRepository struct {
 func NewMongoRepository(db *mongo.Storage, serviceInstanceName string) *MongoRepository {
 	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, "feature"), serviceInstanceName: serviceInstanceName}
 	go func() {
-		for !db.IsReady() {
-		}
+		<-db.NotifyReady()
 
 		if err := rep.Load(); err != nil {
 			log.Error("Failed to load features")
 		} else {
 			log.Infof("Features loaded")
 		}
+
+		rep.InitWatcher(db)
 	}()
 
-	rep.InitWatcher(db)
 	return rep
 }
 

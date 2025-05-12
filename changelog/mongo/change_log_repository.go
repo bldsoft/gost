@@ -30,7 +30,7 @@ func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	storage.ScheduleTask(db, func() error {
+	go storage.ScheduleTask(db, func() error {
 		_, err := r.rep.Collection().Indexes().CreateMany(ctx, indexes)
 		if err != nil {
 			log.ErrorWithFields(log.Fields{"err": err}, "Failed to create indexes for change_log")

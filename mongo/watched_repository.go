@@ -51,23 +51,24 @@ func (r *WatchedRepository[T, U]) init(db *Storage) {
 		Delete: repository.EventTypeDelete,
 	}
 
-	r.mongoWatcher = NewWatcher(r.Repository.Collection(), db.DBReadyRaw())
-	r.mongoWatcher.SetHandler(func(fullDocument bson.Raw, opType OperationType) {
-		var e T
-		if err := bson.Unmarshal(fullDocument, &e); err != nil {
-			log.Logger.ErrorWithFields(log.Fields{"err": err, "type": reflect.TypeOf(e).String()}, "WatchedRepository: failed to update")
-		}
-
-		updateC <- repository.Event[T, U]{
-			Entity: &e,
-			Type:   convertEventType[opType],
-		}
-	})
-	go r.mongoWatcher.Start()
-
 	go func() {
 		for !db.IsReady() {
 		}
+		rep := r.Repository
+		col := rep.Collection()
+		r.mongoWatcher = NewWatcher(col, db.DBReadyRaw())
+		r.mongoWatcher.SetHandler(func(fullDocument bson.Raw, opType OperationType) {
+			var e T
+			if err := bson.Unmarshal(fullDocument, &e); err != nil {
+				log.Logger.ErrorWithFields(log.Fields{"err": err, "type": reflect.TypeOf(e).String()}, "WatchedRepository: failed to update")
+			}
+
+			updateC <- repository.Event[T, U]{
+				Entity: &e,
+				Type:   convertEventType[opType],
+			}
+		})
+		go r.mongoWatcher.Start()
 		for {
 			select {
 			case handler := <-r.handlerC:
