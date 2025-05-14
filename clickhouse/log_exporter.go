@@ -80,7 +80,7 @@ func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExpor
 		BaseRepository: NewBaseRepository(storage),
 	}
 
-	go gost_storage.ScheduleTask(
+	gost_storage.ScheduleTask(
 		storage,
 		func() error {
 			if err := logExporter.createTableIfNotExitst(); err != nil {
