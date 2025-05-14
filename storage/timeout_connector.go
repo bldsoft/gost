@@ -11,7 +11,6 @@ import (
 func DBConnectAsync(wg *sync.WaitGroup, connect func(), n int, sleepPeriod time.Duration) {
 	wg.Add(1)
 	go func() {
-		time.Sleep(10 * time.Second)
 		defer wg.Done()
 		for i := 1; (i != n+1) || (n < 0); i++ {
 			err := func() (err error) {

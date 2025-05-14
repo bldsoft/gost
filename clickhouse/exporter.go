@@ -15,7 +15,7 @@ type ExporterConfig struct {
 type Exporter[T any] struct {
 	storage     *Storage
 	bufExporter *exporter.BufferedExporter[T]
-	isReady     *storage.ReadyState
+	readyState  *storage.ReadyState
 }
 
 func NewExporter[T any](storage *Storage, cfg ExporterConfig) *Exporter[T] {
@@ -26,12 +26,12 @@ func NewExporter[T any](storage *Storage, cfg ExporterConfig) *Exporter[T] {
 		newExporterBatch[T](storage, cfg.TableName),
 		cfg.BufferedExporterConfig,
 	)
-	e.isReady = storage.ReadyState
+	e.readyState = storage.ReadyState
 	return e
 }
 
 func (e *Exporter[T]) Export(items ...T) (n int, err error) {
-	if !e.isReady.IsReady() {
+	if !e.readyState.IsReady() {
 		return 0, nil
 	}
 	return e.bufExporter.Export(items...)

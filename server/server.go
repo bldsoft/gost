@@ -43,9 +43,11 @@ type Server struct {
 }
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
-	srv := Server{srv: &http.Server{
-		Addr:    config.ServiceBindAddress.HostPort(),
-		Handler: nil},
+	srv := Server{
+		srv: &http.Server{
+			Addr:    config.ServiceBindAddress.HostPort(),
+			Handler: nil,
+		},
 		router:            chi.NewRouter(),
 		microservices:     microservices,
 		commonMiddlewares: nil,
