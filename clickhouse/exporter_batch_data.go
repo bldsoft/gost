@@ -17,8 +17,7 @@ func newExporterBatch[T any](storage *Storage, table string) *exporterBatch[T] {
 	res := &exporterBatch[T]{}
 
 	go func() {
-		for !storage.isReady.Load() {
-		}
+		<-storage.NotifyReady()
 		columns := strings.Join(columnNames[T](), ",")
 		insert := fmt.Sprintf("INSERT INTO %s (%s) VALUES", table, columns)
 		batch, err := storage.PrepareStaticBatch(insert)
