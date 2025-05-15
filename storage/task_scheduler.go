@@ -36,7 +36,7 @@ func (s *TaskScheduler) run() {
 
 	for task := range s.taskCh {
 		if err := task(); err != nil {
-			log.Errorf("scheduled task failed: %v", err)
+			log.Fatalf("scheduled task failed: %v", err)
 		}
 		s.wg.Done()
 	}
