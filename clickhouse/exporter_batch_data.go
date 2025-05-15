@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strings"
 
-	gost_storage "github.com/bldsoft/gost/storage"
 	"github.com/bldsoft/gost/utils/exporter"
 )
 
@@ -17,7 +16,7 @@ type exporterBatch[T any] struct {
 func newExporterBatch[T any](storage *Storage, table string) *exporterBatch[T] {
 	res := &exporterBatch[T]{}
 
-	gost_storage.ScheduleTask(storage, func() error {
+	storage.ScheduleTask(func() error {
 		columns := strings.Join(columnNames[T](), ",")
 		insert := fmt.Sprintf("INSERT INTO %s (%s) VALUES", table, columns)
 		batch, err := storage.PrepareStaticBatch(insert)

@@ -31,6 +31,7 @@ type Storage struct {
 	migrationReadyC chan struct{}
 
 	*storage.ReadyState
+	taskScheduler *storage.TaskScheduler
 }
 
 // NewStorage ...
@@ -41,6 +42,11 @@ func NewStorage(config Config) *Storage {
 		migrationReadyC: make(chan struct{}),
 		ReadyState:      storage.NewReadyState(),
 	}
+}
+
+func (s *Storage) WithTaskScheduler(taskScheduler *storage.TaskScheduler) *Storage {
+	s.taskScheduler = taskScheduler
+	return s
 }
 
 // AddMigration adds a migration. All migrations should be added before db.Connect
@@ -187,3 +193,15 @@ func (db *Storage) Stats(ctx context.Context) (interface{}, error) {
 // 	db.readyWg.Done()
 // 	db.ready.Store(true)
 // }
+
+func (db *Storage) ScheduleTask(task func() error) {
+	if db.taskScheduler == nil {
+		if err := task(); err != nil {
+			log.Fatalf("db task failed: %v", err)
+		}
+	}
+	db.taskScheduler.ScheduleTask(func() error {
+		<-db.NotifyReady()
+		return task()
+	})
+}

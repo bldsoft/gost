@@ -8,7 +8,6 @@ import (
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
-	"github.com/bldsoft/gost/storage"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	driver "go.mongodb.org/mongo-driver/mongo"
@@ -30,7 +29,7 @@ func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	storage.ScheduleTask(db, func() error {
+	db.ScheduleTask(func() error {
 		_, err := r.rep.Collection().Indexes().CreateMany(ctx, indexes)
 		if err != nil {
 			log.ErrorWithFields(log.Fields{"err": err}, "Failed to create indexes for change_log")

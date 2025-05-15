@@ -14,7 +14,6 @@ import (
 	"github.com/bldsoft/gost/entity/stat"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
-	gost_storage "github.com/bldsoft/gost/storage"
 	"github.com/bldsoft/gost/utils/exporter"
 	"golang.org/x/sync/errgroup"
 )
@@ -80,8 +79,7 @@ func NewLogExporter(storage *Storage, cfg LogExporterConfig) *ClickHouseLogExpor
 		BaseRepository: NewBaseRepository(storage),
 	}
 
-	gost_storage.ScheduleTask(
-		storage,
+	storage.ScheduleTask(
 		func() error {
 			if err := logExporter.createTableIfNotExitst(); err != nil {
 				log.Logger.ErrorWithFields(log.Fields{"err": err}, "failed to create log table")

@@ -30,6 +30,7 @@ type Storage struct {
 	clusterName string
 
 	*storage.ReadyState
+	taskScheduler *storage.TaskScheduler
 }
 
 func NewStorage(config Config) *Storage {
@@ -38,6 +39,11 @@ func NewStorage(config Config) *Storage {
 		migrations: source.NewMigrations(),
 		ReadyState: storage.NewReadyState(),
 	}
+}
+
+func (s *Storage) WithTaskScheduler(taskScheduler *storage.TaskScheduler) *Storage {
+	s.taskScheduler = taskScheduler
+	return s
 }
 
 func (s *Storage) Auth() Auth {
@@ -185,4 +191,16 @@ func (db *Storage) PrepareBatch(q string) (driver.Batch, error) {
 
 func (db *Storage) PrepareStaticBatch(q string) (*Batch, error) {
 	return NewBatch(db.native, q)
+}
+
+func (db *Storage) ScheduleTask(task func() error) {
+	if db.taskScheduler == nil {
+		if err := task(); err != nil {
+			log.Fatalf("db task failed: %v", err)
+		}
+	}
+	db.taskScheduler.ScheduleTask(func() error {
+		<-db.NotifyReady()
+		return task()
+	})
 }

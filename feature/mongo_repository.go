@@ -9,7 +9,6 @@ import (
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
-	"github.com/bldsoft/gost/storage"
 )
 
 // MongoRepository implements IFeatureRepository interface
@@ -21,7 +20,7 @@ type MongoRepository struct {
 // NewMongoRepository creates feature repository.
 func NewMongoRepository(db *mongo.Storage, serviceInstanceName string) *MongoRepository {
 	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, "feature"), serviceInstanceName: serviceInstanceName}
-	storage.ScheduleTask(db, func() error {
+	db.ScheduleTask(func() error {
 		if err := rep.Load(); err != nil {
 			log.Error("Failed to load features")
 		} else {

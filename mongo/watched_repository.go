@@ -6,7 +6,6 @@ import (
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
-	"github.com/bldsoft/gost/storage"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -52,7 +51,7 @@ func (r *WatchedRepository[T, U]) init(db *Storage) {
 		Delete: repository.EventTypeDelete,
 	}
 
-	storage.ScheduleTask(db, func() error {
+	db.ScheduleTask(func() error {
 		rep := r.Repository
 		col := rep.Collection()
 		r.mongoWatcher = NewWatcher(col, db.ReadyState)
