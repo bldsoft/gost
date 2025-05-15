@@ -180,20 +180,6 @@ func (db *Storage) Stats(ctx context.Context) (interface{}, error) {
 	return stats, err
 }
 
-// func (db *Storage) NotifyReady() <-chan struct{} {
-// 	ch := make(chan struct{})
-// 	go func() {
-// 		db.readyWg.Wait()
-// 		close(ch)
-// 	}()
-// 	return ch
-// }
-
-// func (db *Storage) setReady() {
-// 	db.readyWg.Done()
-// 	db.ready.Store(true)
-// }
-
 func (db *Storage) ScheduleTask(task func() error) {
 	if db.taskScheduler == nil {
 		if err := task(); err != nil {
