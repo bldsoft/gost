@@ -11,7 +11,6 @@ import (
 
 	"github.com/bldsoft/gost/log"
 	gost_middleware "github.com/bldsoft/gost/server/middleware"
-	"github.com/bldsoft/gost/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/hashicorp/go-multierror"
@@ -19,10 +18,9 @@ import (
 
 type Router = chi.Router
 
-var (
-	DefaultLogger  func(next http.Handler) http.Handler = log.DefaultRequestLogger()
-	connContextKey                                      = utils.ContextKey{Name: "conn"}
-)
+type connContextKey struct{}
+
+var DefaultLogger func(next http.Handler) http.Handler = log.DefaultRequestLogger()
 
 func defaultMiddlewares() chi.Middlewares {
 	return chi.Middlewares{
@@ -51,7 +49,7 @@ func NewServer(config Config, microservices ...IMicroservice) *Server {
 	srv := Server{srv: &http.Server{
 		Addr: config.ServiceBindAddress.HostPort(),
 		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
-			ctx = context.WithValue(ctx, connContextKey, c)
+			ctx = context.WithValue(ctx, connContextKey{}, c)
 			return ctx
 		},
 		Handler: nil},
