@@ -1,7 +1,10 @@
 package aerospike
 
 import (
+	"fmt"
+
 	aero "github.com/aerospike/aerospike-client-go/v8"
+	"github.com/mitchellh/mapstructure"
 )
 
 type Storage struct {
@@ -19,4 +22,16 @@ func NewStorage(cfg Config) (*Storage, error) {
 		Client:    client,
 		keyPrefix: cfg.KeyPrefix,
 	}, nil
+}
+
+func (s *Storage) Stat() (*Stats, error) {
+	stats, err := s.Stats()
+	if err != nil {
+		return nil, err
+	}
+	var stat Stats
+	if err := mapstructure.WeakDecode(stats, &stat); err != nil {
+		return nil, fmt.Errorf("failed to decode aerospike stats: %w", err)
+	}
+	return &stat, nil
 }
