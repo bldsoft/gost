@@ -1,6 +1,8 @@
 package stat
 
 import (
+	"context"
+
 	"github.com/bldsoft/gost/cache/v2/aerospike"
 )
 
@@ -12,7 +14,7 @@ func NewAerospikeCollector(cache *aerospike.Storage) *AerospikeCollector {
 	return &AerospikeCollector{cache: cache}
 }
 
-func (c *AerospikeCollector) Collect() Stat {
+func (c *AerospikeCollector) Stat(ctx context.Context) Stat {
 	stat, err := c.cache.Stat()
 	return NewStat("aerospike", stat, err)
 }
