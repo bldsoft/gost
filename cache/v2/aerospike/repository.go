@@ -8,6 +8,7 @@ import (
 	"github.com/bldsoft/gost/cache/v2"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
+	aeroTypes "github.com/aerospike/aerospike-client-go/v8/types"
 )
 
 const (
@@ -83,7 +84,7 @@ func (r *Repository) Add(key string, val []byte, item ...cache.ItemF) error {
 		return nil
 	}
 	var asErr *aero.AerospikeError
-	if errors.As(err, &asErr) && asErr.ResultCode == 2 {
+	if errors.As(err, &asErr) && asErr.ResultCode == aeroTypes.KEY_EXISTS_ERROR {
 		return cache.ErrExists
 	}
 	return err
@@ -140,7 +141,7 @@ func (r *Repository) CompareAndSwap(
 		err = r.cache.Put(wp, asKey, bins)
 
 		var asErr *aero.AerospikeError
-		if errors.As(err, &asErr) && asErr.ResultCode == 3 {
+		if errors.As(err, &asErr) && asErr.ResultCode == aeroTypes.GENERATION_ERROR {
 			time.Sleep(casSleepTime * time.Millisecond)
 			continue
 		}
