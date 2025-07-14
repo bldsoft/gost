@@ -114,7 +114,7 @@ func (r *Repository) CompareAndSwap(
 			return aErr
 		}
 		if item == nil {
-			return aero.ErrKeyNotFound
+			return cache.ErrCacheMiss
 		}
 
 		newItem, err := handler(&cache.Item{
