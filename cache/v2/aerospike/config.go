@@ -5,10 +5,11 @@ type Config struct {
 	Port      int    `mapstructure:"PORT"`
 	KeyPrefix string `mapstructure:"KEY_PREFIX"`
 
-	ClusterName string `mapstructure:"CLUSTER_NAME"`
-	Username    string `mapstructure:"USERNAME"`
-	Password    string `mapstructure:"PASSWORD"`
-	Namespace   string `mapstructure:"NAMESPACE"`
+	// TODO: add support for the fields if needed
+	// ClusterName string `mapstructure:"CLUSTER_NAME"`
+	// Username    string `mapstructure:"USERNAME"`
+	// Password    string `mapstructure:"PASSWORD"`
+	// Namespace   string `mapstructure:"NAMESPACE"`
 }
 
 func (c *Config) SetDefaults() {
