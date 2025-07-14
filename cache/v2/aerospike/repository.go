@@ -79,7 +79,7 @@ func (r *Repository) Add(key string, val []byte, item ...cache.ItemF) error {
 		return err
 	}
 	p, b := r.item(false, val, item...)
-	err = r.cache.Put(p, asKey, b)
+	err = r.cache.PutBins(p, asKey, b...)
 	if err == nil {
 		return nil
 	}
@@ -96,7 +96,7 @@ func (r *Repository) Set(key string, val []byte, item ...cache.ItemF) error {
 		return err
 	}
 	p, b := r.item(true, val, item...)
-	return r.cache.Put(p, asKey, b)
+	return r.cache.PutBins(p, asKey, b...)
 }
 
 func (r *Repository) CompareAndSwap(
@@ -174,10 +174,8 @@ func (r *Repository) key(key string) (*aero.Key, error) {
 	return aero.NewKey(r.cache.namespace, r.cache.keyPrefix, key)
 }
 
-func (r *Repository) item(replace bool, val []byte, itemFs ...cache.ItemF) (*aero.WritePolicy, aero.BinMap) {
-	bins := aero.BinMap{
-		valueBinKey: val,
-	}
+func (r *Repository) item(replace bool, val []byte, itemFs ...cache.ItemF) (*aero.WritePolicy, []*aero.Bin) {
+	bins := []*aero.Bin{aero.NewBin(valueBinKey, val)}
 	policy := aero.NewWritePolicy(0, truncExpiration(r.liveTime))
 	policy.RecordExistsAction = aero.CREATE_ONLY
 	if replace {
@@ -188,7 +186,7 @@ func (r *Repository) item(replace bool, val []byte, itemFs ...cache.ItemF) (*aer
 	}
 	it := cache.CollectItem(itemFs...)
 	if it.Flags != 0 {
-		bins[flagsBinKey] = it.Flags
+		bins = append(bins, aero.NewBin(flagsBinKey, it.Flags))
 	}
 	if it.TTL != 0 {
 		policy.Expiration = truncExpiration(it.TTL)
@@ -198,7 +196,7 @@ func (r *Repository) item(replace bool, val []byte, itemFs ...cache.ItemF) (*aer
 			if k == flagsBinKey || k == valueBinKey {
 				continue
 			}
-			bins[k] = v
+			bins = append(bins, aero.NewBin(k, v))
 		}
 	}
 
