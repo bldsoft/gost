@@ -45,11 +45,13 @@ func (r *Repository) Get(key string) (*cache.Item, error) {
 		}
 		return nil, err
 	}
-	return &cache.Item{
-		Value: item.Bins[valueBinKey].([]byte),
-		TTL:   time.Duration(item.Expiration) * time.Second,
-		Flags: item.Bins["flags"].(uint32),
-	}, nil
+	res := &cache.Item{}
+	res.Value = item.Bins[valueBinKey].([]byte)
+	res.TTL = time.Duration(item.Expiration) * time.Second
+	if flags, ok := item.Bins["flags"]; ok {
+		res.Flags = flags.(uint32)
+	}
+	return res, nil
 }
 
 func (r *Repository) Exist(key string) bool {
@@ -103,13 +105,13 @@ func (r *Repository) CompareAndSwap(
 ) error {
 	asKey, err := r.key(key)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	for i := 0; i < casRetryLimit; i++ {
 		item, aErr := r.cache.Get(nil, asKey)
 		if aErr != nil {
-			return err
+			return aErr
 		}
 		if item == nil {
 			return aero.ErrKeyNotFound
@@ -118,8 +120,10 @@ func (r *Repository) CompareAndSwap(
 		newItem, err := handler(&cache.Item{
 			Value: item.Bins[valueBinKey].([]byte),
 			TTL:   time.Duration(item.Expiration) * time.Second,
-			Flags: item.Bins["flags"].(uint32),
 		})
+		if flags, ok := item.Bins["flags"]; ok {
+			newItem.Flags = flags.(uint32)
+		}
 		if err != nil || newItem == nil {
 			return err
 		}

@@ -12,6 +12,6 @@ type Config struct {
 }
 
 func (c *Config) SetDefaults() {
-	c.Host = "172.17.0.1:3000"
+	c.Host = "127.0.0.1"
 	c.Port = 3000
 }

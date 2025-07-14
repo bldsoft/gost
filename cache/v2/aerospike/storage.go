@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
+	"github.com/bldsoft/gost/log"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -17,6 +18,9 @@ func NewStorage(cfg Config) (*Storage, error) {
 	client, err := aero.NewClient(cfg.Host, cfg.Port)
 	if err != nil {
 		return nil, err
+	}
+	if _, err := client.WarmUp(0); err != nil {
+		log.WarnWithFields(log.Fields{"err": err}, "failed to warm up aerospike client")
 	}
 	return &Storage{
 		Client:    client,
