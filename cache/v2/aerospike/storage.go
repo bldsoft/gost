@@ -24,6 +24,7 @@ func NewStorage(cfg Config) (*Storage, error) {
 	}
 	return &Storage{
 		Client:    client,
+		namespace: cfg.Namespace,
 		keyPrefix: cfg.KeyPrefix,
 	}, nil
 }
