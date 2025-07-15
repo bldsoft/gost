@@ -118,28 +118,28 @@ func (r *Repository) CompareAndSwap(
 			return cache.ErrCacheMiss
 		}
 
-		newItem, err := handler(&cache.Item{
-			Value: item.Bins[valueBinKey].([]byte),
-			TTL:   time.Duration(item.Expiration) * time.Second,
-		})
-		if flags, ok := item.Bins[flagsBinKey]; ok {
-			item.Bins[flagsBinKey] = flags.(uint32)
+		data := &cache.Item{}
+		if val, ok := item.Bins[valueBinKey]; ok {
+			data.Value = val.([]byte)
 		}
-		if err != nil || newItem == nil {
+		if flags, ok := item.Bins[flagsBinKey]; ok {
+			data.Flags = flags.(uint32)
+		}
+
+		data, err := handler(data)
+		if err != nil || data == nil {
 			return err
+		}
+		item.Bins[valueBinKey] = data.Value
+		if data.Flags != 0 {
+			item.Bins[flagsBinKey] = data.Flags
 		}
 
 		wp := aero.NewWritePolicy(0, 0)
 		wp.GenerationPolicy = aero.EXPECT_GEN_EQUAL
 		wp.Generation = item.Generation
 
-		bins := aero.BinMap{
-			valueBinKey: newItem.Value,
-			flagsBinKey: newItem.Flags,
-		}
-
-		err = r.cache.Put(wp, asKey, bins)
-
+		err = r.cache.Put(wp, asKey, item.Bins)
 		var asErr *aero.AerospikeError
 		if errors.As(err, &asErr) && asErr.ResultCode == aeroTypes.GENERATION_ERROR {
 			time.Sleep(casSleepTime * time.Millisecond)
