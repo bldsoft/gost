@@ -49,7 +49,7 @@ func (r *Repository) Get(key string) (*cache.Item, error) {
 	res := &cache.Item{}
 	res.Value = item.Bins[valueBinKey].([]byte)
 	res.TTL = time.Duration(item.Expiration) * time.Second
-	if flags, ok := item.Bins["flags"]; ok {
+	if flags, ok := item.Bins[flagsBinKey]; ok {
 		res.Flags = flags.(uint32)
 	}
 	return res, nil
@@ -122,8 +122,8 @@ func (r *Repository) CompareAndSwap(
 			Value: item.Bins[valueBinKey].([]byte),
 			TTL:   time.Duration(item.Expiration) * time.Second,
 		})
-		if flags, ok := item.Bins["flags"]; ok {
-			newItem.Flags = flags.(uint32)
+		if flags, ok := item.Bins[flagsBinKey]; ok {
+			item.Bins[flagsBinKey] = flags.(uint32)
 		}
 		if err != nil || newItem == nil {
 			return err
@@ -134,8 +134,8 @@ func (r *Repository) CompareAndSwap(
 		wp.Generation = item.Generation
 
 		bins := aero.BinMap{
-			"value": newItem.Value,
-			"flags": newItem.Flags,
+			valueBinKey: newItem.Value,
+			flagsBinKey: newItem.Flags,
 		}
 
 		err = r.cache.Put(wp, asKey, bins)
