@@ -141,7 +141,7 @@ func iterateFields(config interface{}, prefix string, startSructCb structCallbac
 			continue
 		}
 		tagValue := field.Tag.Get("mapstructure")
-		fieldValue := value.Elem().Field(i)
+		fieldValue := reflect.Indirect(reflect.Indirect(value).Field(i))
 
 		switch {
 		case fieldValue.Kind() == reflect.Struct:
