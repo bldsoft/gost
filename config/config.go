@@ -141,48 +141,9 @@ func iterateFields(config interface{}, prefix string, startSructCb structCallbac
 			continue
 		}
 		tagValue := field.Tag.Get("mapstructure")
-		fieldValue := reflect.Indirect(reflect.Indirect(value).Field(i))
-
-		switch {
-		case fieldValue.Kind() == reflect.Struct:
-			if err := iterateFields(fieldValue.Addr().Interface(), addPrefix(tagValue, prefix), startSructCb, fieldCb, finishStructCb); err != nil {
+		if field := reflect.Indirect(reflect.Indirect(value).Field(i)); field.Kind() == reflect.Struct {
+			if err := iterateFields(field.Addr().Interface(), addPrefix(tagValue, prefix), startSructCb, fieldCb, finishStructCb); err != nil {
 				return err
-			}
-			continue
-		case fieldValue.Kind() == reflect.Slice && fieldValue.Type().Elem().Kind() == reflect.Struct:
-			tagValue := field.Tag.Get("mapstructure")
-			if tagValue == "" {
-				tagValue = strings.ToUpper(field.Name)
-			}
-			sliceElemType := fieldValue.Type().Elem()
-			slice := reflect.MakeSlice(fieldValue.Type(), 0, 0)
-			for idx := 0; ; idx++ {
-				elemPtr := reflect.New(sliceElemType)
-				fieldPrefix := addPrefix(tagValue, prefix)
-				elemPrefix := addPrefix(fmt.Sprintf("%d", idx), fieldPrefix)
-				found := false
-				for j := 0; j < sliceElemType.NumField(); j++ {
-					subField := sliceElemType.Field(j)
-					subTag := subField.Tag.Get("mapstructure")
-					if subTag == "" {
-						subTag = strings.ToUpper(subField.Name)
-					}
-					envVar := elemPrefix + "_" + subTag
-					if val, ok := os.LookupEnv(envVar); ok {
-						if elemPtr.Elem().Field(j).Kind() == reflect.String {
-							elemPtr.Elem().Field(j).SetString(val)
-							found = true
-						}
-					}
-				}
-				if !found {
-					break
-				}
-				slice = reflect.Append(slice, elemPtr.Elem())
-			}
-
-			if slice.Len() > 0 {
-				fieldValue.Set(slice)
 			}
 			continue
 		}
