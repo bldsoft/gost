@@ -5,6 +5,8 @@ import (
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/bldsoft/gost/log"
+
+	logger "github.com/aerospike/aerospike-client-go/v8/logger"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -14,6 +16,7 @@ type Storage struct {
 }
 
 func NewStorage(cfg Config) (*Storage, error) {
+	logger.Logger.SetLevel(logger.DEBUG)
 	client, err := aero.NewClient(cfg.Host, cfg.Port)
 	if err != nil {
 		return nil, err
