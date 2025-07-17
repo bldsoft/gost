@@ -34,4 +34,19 @@ type ReadWritePolicy struct {
 func (c *Config) SetDefaults() {
 	c.Host = "127.0.0.1"
 	c.Port = 3000
+
+	c.ConnectionPolicy.ConnectionQueueSize = 2000
+	c.ConnectionPolicy.TimeOutMs = 500
+	c.ConnectionPolicy.IdleTimeoutMs = 30
+	c.ConnectionPolicy.FailIfNotConnected = false
+
+	c.WritePolicy.TotalTimeoutMs = 5
+	c.WritePolicy.MaxRetries = 2
+	c.WritePolicy.SleepBetweenRetriesMs = 1
+	c.WritePolicy.SocketTimeoutMs = 5
+
+	c.ReadPolicy.TotalTimeoutMs = 5
+	c.ReadPolicy.MaxRetries = 2
+	c.ReadPolicy.SleepBetweenRetriesMs = 1
+	c.ReadPolicy.SocketTimeoutMs = 5
 }
