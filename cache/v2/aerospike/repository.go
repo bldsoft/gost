@@ -191,14 +191,6 @@ func (r *Repository) item(replace bool, val []byte, itemFs ...cache.ItemF) (*aer
 	if it.TTL != 0 {
 		policy.Expiration = truncExpiration(it.TTL)
 	}
-	if len(it.Extras) > 0 {
-		for k, v := range it.Extras {
-			if k == flagsBinKey || k == valueBinKey {
-				continue
-			}
-			bins = append(bins, aero.NewBin(k, v))
-		}
-	}
 
 	return policy, bins
 }
