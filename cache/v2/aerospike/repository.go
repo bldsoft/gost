@@ -52,7 +52,7 @@ func (r *Repository) Get(key string) (*cache.Item, error) {
 	res.Value = item.Bins[valueBinKey].([]byte)
 	res.TTL = time.Duration(item.Expiration) * time.Second
 	if flags, ok := item.Bins[flagsBinKey]; ok {
-		res.Flags = flags.(uint32)
+		res.Flags = uint32(flags.(int))
 	}
 	return res, nil
 }
@@ -125,7 +125,7 @@ func (r *Repository) CompareAndSwap(
 			data.Value = val.([]byte)
 		}
 		if flags, ok := item.Bins[flagsBinKey]; ok {
-			data.Flags = flags.(uint32)
+			data.Flags = uint32(flags.(int))
 		}
 
 		data, err := handler(data)
