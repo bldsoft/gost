@@ -14,16 +14,17 @@ import (
 type Storage struct {
 	*aero.Client
 	namespace string
+	cfg       Config
 }
 
 func NewStorage(cfg Config) (*Storage, error) {
 	logger.Logger.SetLevel(logger.DEBUG)
 
 	policy := aero.NewClientPolicy()
-	policy.ConnectionQueueSize = 2000
-	policy.Timeout = 500 * time.Millisecond
-	policy.IdleTimeout = 30 * time.Second
-	policy.FailIfNotConnected = false
+	policy.ConnectionQueueSize = cfg.ConnectionPolicy.ConnectionQueueSize
+	policy.Timeout = time.Duration(cfg.ConnectionPolicy.TimeOutMs) * time.Millisecond
+	policy.IdleTimeout = time.Duration(cfg.ConnectionPolicy.IdleTimeoutMs) * time.Millisecond
+	policy.FailIfNotConnected = cfg.ConnectionPolicy.FailIfNotConnected
 
 	client, err := aero.NewClientWithPolicy(policy, cfg.Host, cfg.Port)
 	if err != nil {
@@ -35,6 +36,7 @@ func NewStorage(cfg Config) (*Storage, error) {
 	return &Storage{
 		Client:    client,
 		namespace: cfg.Namespace,
+		cfg:       cfg,
 	}, nil
 }
 
@@ -48,4 +50,22 @@ func (s *Storage) Stat() (*Stats, error) {
 		return nil, fmt.Errorf("failed to decode aerospike stats: %w", err)
 	}
 	return &stat, nil
+}
+
+func (s *Storage) getWritePolicy(generation uint32, expiration uint32) *aero.WritePolicy {
+	wp := aero.NewWritePolicy(0, 0)
+	wp.TotalTimeout = time.Duration(s.cfg.WritePolicy.TotalTimeoutMs) * time.Millisecond
+	wp.MaxRetries = s.cfg.WritePolicy.MaxRetries
+	wp.SleepBetweenRetries = time.Duration(s.cfg.WritePolicy.SleepBetweenRetriesMs) * time.Millisecond
+	wp.SocketTimeout = time.Duration(s.cfg.WritePolicy.SocketTimeoutMs) * time.Millisecond
+	return wp
+}
+
+func (s *Storage) getReadPolicy() *aero.BasePolicy {
+	rp := aero.NewPolicy()
+	rp.TotalTimeout = time.Duration(s.cfg.ReadPolicy.TotalTimeoutMs) * time.Millisecond
+	rp.MaxRetries = s.cfg.ReadPolicy.MaxRetries
+	rp.SleepBetweenRetries = time.Duration(s.cfg.ReadPolicy.SleepBetweenRetriesMs) * time.Millisecond
+	rp.SocketTimeout = time.Duration(s.cfg.ReadPolicy.SocketTimeoutMs) * time.Millisecond
+	return rp
 }

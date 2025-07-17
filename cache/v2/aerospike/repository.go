@@ -41,7 +41,7 @@ func (r *Repository) Get(key string) (*cache.Item, error) {
 	if err != nil {
 		return nil, err
 	}
-	item, err := r.cache.Get(nil, asKey)
+	item, err := r.cache.Get(r.cache.getReadPolicy(), asKey)
 	if err != nil || item == nil {
 		if errors.Is(err, aero.ErrKeyNotFound) {
 			return nil, cache.ErrCacheMiss
@@ -112,7 +112,7 @@ func (r *Repository) CompareAndSwap(
 	}
 
 	for i := 0; i < casRetryLimit; i++ {
-		item, aErr := r.cache.Get(nil, asKey)
+		item, aErr := r.cache.Get(r.cache.getReadPolicy(), asKey)
 		if aErr != nil {
 			return aErr
 		}
@@ -137,9 +137,8 @@ func (r *Repository) CompareAndSwap(
 			item.Bins[flagsBinKey] = data.Flags
 		}
 
-		wp := aero.NewWritePolicy(0, 0)
+		wp := r.cache.getWritePolicy(item.Generation, 0)
 		wp.GenerationPolicy = aero.EXPECT_GEN_EQUAL
-		wp.Generation = item.Generation
 
 		err = r.cache.Put(wp, asKey, item.Bins)
 		var asErr *aero.AerospikeError
@@ -183,15 +182,11 @@ func (r *Repository) key(key string) (*aero.Key, error) {
 
 func (r *Repository) item(replace bool, val []byte, itemFs ...cache.ItemF) (*aero.WritePolicy, []*aero.Bin) {
 	bins := []*aero.Bin{aero.NewBin(valueBinKey, val)}
-	policy := aero.NewWritePolicy(0, truncExpiration(r.liveTime))
+	policy := r.cache.getWritePolicy(0, truncExpiration(r.liveTime))
 	policy.RecordExistsAction = aero.CREATE_ONLY
 	if replace {
 		policy.RecordExistsAction = aero.UPDATE
 	}
-	policy.TotalTimeout = 5 * time.Millisecond
-	policy.MaxRetries = 2
-	policy.SleepBetweenRetries = 1 * time.Millisecond
-	policy.SocketTimeout = 5 * time.Millisecond
 
 	if len(itemFs) == 0 {
 		return policy, bins
