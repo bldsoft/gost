@@ -2,6 +2,7 @@ package aerospike
 
 import (
 	"fmt"
+	"time"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/bldsoft/gost/log"
@@ -17,7 +18,14 @@ type Storage struct {
 
 func NewStorage(cfg Config) (*Storage, error) {
 	logger.Logger.SetLevel(logger.DEBUG)
-	client, err := aero.NewClient(cfg.Host, cfg.Port)
+
+	policy := aero.NewClientPolicy()
+	policy.ConnectionQueueSize = 2000
+	policy.Timeout = 500 * time.Millisecond
+	policy.IdleTimeout = 30 * time.Second
+	policy.FailIfNotConnected = false
+
+	client, err := aero.NewClientWithPolicy(policy, cfg.Host, cfg.Port)
 	if err != nil {
 		return nil, err
 	}

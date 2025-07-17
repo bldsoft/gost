@@ -188,6 +188,11 @@ func (r *Repository) item(replace bool, val []byte, itemFs ...cache.ItemF) (*aer
 	if replace {
 		policy.RecordExistsAction = aero.UPDATE
 	}
+	policy.TotalTimeout = 5 * time.Millisecond
+	policy.MaxRetries = 2
+	policy.SleepBetweenRetries = 1 * time.Millisecond
+	policy.SocketTimeout = 5 * time.Millisecond
+
 	if len(itemFs) == 0 {
 		return policy, bins
 	}
