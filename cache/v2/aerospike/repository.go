@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bldsoft/gost/cache/v2"
+	"github.com/bldsoft/gost/log"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	aeroTypes "github.com/aerospike/aerospike-client-go/v8/types"
@@ -22,10 +23,11 @@ const (
 type Repository struct {
 	cache    *Storage
 	liveTime time.Duration
+	setName  string
 }
 
-func NewRepository(cache *Storage, liveTime time.Duration) *Repository {
-	rep := &Repository{cache: cache}
+func NewRepository(cache *Storage, liveTime time.Duration, setName string) *Repository {
+	rep := &Repository{cache: cache, setName: setName}
 	rep.SetLiveTimeMin(liveTime)
 	return rep
 }
@@ -168,10 +170,15 @@ func (r *Repository) AddOrGet(key string, val []byte, opts ...cache.ItemF) (*cac
 	return nil, true, err
 }
 
-func (r *Repository) Reset() {}
+func (r *Repository) Reset() {
+	now := time.Now()
+	if err := r.cache.Truncate(nil, r.cache.namespace, r.setName, &now); err != nil {
+		log.WarnWithFields(log.Fields{"err": err}, "failed to reset aerospike cache")
+	}
+}
 
 func (r *Repository) key(key string) (*aero.Key, error) {
-	return aero.NewKey(r.cache.namespace, r.cache.keyPrefix, key)
+	return aero.NewKey(r.cache.namespace, r.setName, key)
 }
 
 func (r *Repository) item(replace bool, val []byte, itemFs ...cache.ItemF) (*aero.WritePolicy, []*aero.Bin) {
