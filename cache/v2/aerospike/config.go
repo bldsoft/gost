@@ -18,10 +18,9 @@ type Config struct {
 }
 
 type ConnectionPolicy struct {
-	ConnectionQueueSize int  `mapstructure:"CONNECTION_QUEUE_SIZE"`
-	TimeOutMs           int  `mapstructure:"TIMEOUT_MS"`
-	IdleTimeoutMs       int  `mapstructure:"IDLE_TIMEOUT_MS"`
-	FailIfNotConnected  bool `mapstructure:"FAIL_IF_NOT_CONNECTED"`
+	ConnectionQueueSize int `mapstructure:"CONNECTION_QUEUE_SIZE"`
+	TimeOutMs           int `mapstructure:"TIMEOUT_MS"`
+	IdleTimeoutMs       int `mapstructure:"IDLE_TIMEOUT_MS"`
 }
 
 type ReadWritePolicy struct {
@@ -38,7 +37,6 @@ func (c *Config) SetDefaults() {
 	c.ConnectionPolicy.ConnectionQueueSize = 2000
 	c.ConnectionPolicy.TimeOutMs = 500
 	c.ConnectionPolicy.IdleTimeoutMs = 30
-	c.ConnectionPolicy.FailIfNotConnected = false
 
 	c.WritePolicy.TotalTimeoutMs = 5
 	c.WritePolicy.MaxRetries = 2
