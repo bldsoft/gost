@@ -54,18 +54,34 @@ func (s *Storage) Stat() (*Stats, error) {
 
 func (s *Storage) getWritePolicy(generation uint32, expiration uint32) *aero.WritePolicy {
 	wp := aero.NewWritePolicy(0, 0)
-	wp.TotalTimeout = time.Duration(s.cfg.WritePolicy.TotalTimeoutMs) * time.Millisecond
-	wp.MaxRetries = s.cfg.WritePolicy.MaxRetries
-	wp.SleepBetweenRetries = time.Duration(s.cfg.WritePolicy.SleepBetweenRetriesMs) * time.Millisecond
-	wp.SocketTimeout = time.Duration(s.cfg.WritePolicy.SocketTimeoutMs) * time.Millisecond
+	if s.cfg.WritePolicy.TotalTimeoutMs > 0 {
+		wp.TotalTimeout = time.Duration(s.cfg.WritePolicy.TotalTimeoutMs) * time.Millisecond
+	}
+	if s.cfg.WritePolicy.MaxRetries > 0 {
+		wp.MaxRetries = s.cfg.WritePolicy.MaxRetries
+	}
+	if s.cfg.WritePolicy.SleepBetweenRetriesMs > 0 {
+		wp.SleepBetweenRetries = time.Duration(s.cfg.WritePolicy.SleepBetweenRetriesMs) * time.Millisecond
+	}
+	if s.cfg.WritePolicy.SocketTimeoutMs > 0 {
+		wp.SocketTimeout = time.Duration(s.cfg.WritePolicy.SocketTimeoutMs) * time.Millisecond
+	}
 	return wp
 }
 
 func (s *Storage) getReadPolicy() *aero.BasePolicy {
 	rp := aero.NewPolicy()
-	rp.TotalTimeout = time.Duration(s.cfg.ReadPolicy.TotalTimeoutMs) * time.Millisecond
-	rp.MaxRetries = s.cfg.ReadPolicy.MaxRetries
-	rp.SleepBetweenRetries = time.Duration(s.cfg.ReadPolicy.SleepBetweenRetriesMs) * time.Millisecond
-	rp.SocketTimeout = time.Duration(s.cfg.ReadPolicy.SocketTimeoutMs) * time.Millisecond
+	if s.cfg.ReadPolicy.TotalTimeoutMs > 0 {
+		rp.TotalTimeout = time.Duration(s.cfg.ReadPolicy.TotalTimeoutMs) * time.Millisecond
+	}
+	if s.cfg.ReadPolicy.MaxRetries > 0 {
+		rp.MaxRetries = s.cfg.ReadPolicy.MaxRetries
+	}
+	if s.cfg.ReadPolicy.SleepBetweenRetriesMs > 0 {
+		rp.SleepBetweenRetries = time.Duration(s.cfg.ReadPolicy.SleepBetweenRetriesMs) * time.Millisecond
+	}
+	if s.cfg.ReadPolicy.SocketTimeoutMs > 0 {
+		rp.SocketTimeout = time.Duration(s.cfg.ReadPolicy.SocketTimeoutMs) * time.Millisecond
+	}
 	return rp
 }
