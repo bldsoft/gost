@@ -21,10 +21,18 @@ func NewStorage(cfg Config) (*Storage, error) {
 	logger.Logger.SetLevel(logger.DEBUG)
 
 	policy := aero.NewClientPolicy()
-	policy.ConnectionQueueSize = cfg.ConnectionPolicy.ConnectionQueueSize
-	policy.Timeout = time.Duration(cfg.ConnectionPolicy.TimeOutMs) * time.Millisecond
-	policy.IdleTimeout = time.Duration(cfg.ConnectionPolicy.IdleTimeoutMs) * time.Millisecond
-	policy.FailIfNotConnected = cfg.ConnectionPolicy.FailIfNotConnected
+	if cfg.ConnectionPolicy.ConnectionQueueSize > 0 {
+		policy.ConnectionQueueSize = cfg.ConnectionPolicy.ConnectionQueueSize
+	}
+	if cfg.ConnectionPolicy.TimeOutMs > 0 {
+		policy.Timeout = time.Duration(cfg.ConnectionPolicy.TimeOutMs) * time.Millisecond
+	}
+	if cfg.ConnectionPolicy.IdleTimeoutMs > 0 {
+		policy.IdleTimeout = time.Duration(cfg.ConnectionPolicy.IdleTimeoutMs) * time.Millisecond
+	}
+	if cfg.ConnectionPolicy.FailIfNotConnected {
+		policy.FailIfNotConnected = cfg.ConnectionPolicy.FailIfNotConnected
+	}
 
 	client, err := aero.NewClientWithPolicy(policy, cfg.Host, cfg.Port)
 	if err != nil {
