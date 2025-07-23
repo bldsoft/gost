@@ -58,7 +58,7 @@ func (s *Storage) Stat() (*Stats, error) {
 }
 
 func (s *Storage) getWritePolicy(generation uint32, expiration uint32) *aero.WritePolicy {
-	wp := aero.NewWritePolicy(0, 0)
+	wp := aero.NewWritePolicy(generation, expiration)
 	if s.cfg.WritePolicy.TotalTimeoutMs > 0 {
 		wp.TotalTimeout = time.Duration(s.cfg.WritePolicy.TotalTimeoutMs) * time.Millisecond
 	}
