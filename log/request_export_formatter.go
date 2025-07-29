@@ -77,7 +77,7 @@ type ContextExportFormatterLoggerEntry[T any, P RequestInfoPtr[T]] struct {
 }
 
 func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
-	duration := elapsed.Milliseconds()
+	duration := elapsed.Microseconds()
 
 	if l.requestInfo != nil {
 		baseRequestInfo := l.requestInfo.BaseRequestInfo()

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +17,8 @@ import (
 )
 
 type Router = chi.Router
+
+type connContextKey struct{}
 
 var DefaultLogger func(next http.Handler) http.Handler = log.DefaultRequestLogger()
 
@@ -44,7 +47,11 @@ type Server struct {
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
 	srv := Server{srv: &http.Server{
-		Addr:    config.ServiceBindAddress.HostPort(),
+		Addr: config.ServiceBindAddress.HostPort(),
+		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
+			ctx = context.WithValue(ctx, connContextKey{}, c)
+			return ctx
+		},
 		Handler: nil},
 		router:            chi.NewRouter(),
 		microservices:     microservices,
