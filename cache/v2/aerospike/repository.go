@@ -81,6 +81,7 @@ func (r *Repository) Add(key string, val []byte, item ...cache.ItemF) error {
 		return err
 	}
 	p, b := r.item(false, val, item...)
+	log.TraceWithFields(log.Fields{"key": key, "p": p}, "add")
 	err = r.cache.PutBins(p, asKey, b...)
 	if err == nil {
 		return nil
@@ -98,6 +99,7 @@ func (r *Repository) Set(key string, val []byte, item ...cache.ItemF) error {
 		return err
 	}
 	p, b := r.item(true, val, item...)
+	log.TraceWithFields(log.Fields{"key": key, "p": p}, "set")
 	return r.cache.PutBins(p, asKey, b...)
 }
 
