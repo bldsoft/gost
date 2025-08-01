@@ -18,9 +18,10 @@ type Config struct {
 }
 
 type ConnectionPolicy struct {
-	ConnectionQueueSize int `mapstructure:"CONNECTION_QUEUE_SIZE"`
-	TimeOutMs           int `mapstructure:"TIMEOUT_MS"`
-	IdleTimeoutMs       int `mapstructure:"IDLE_TIMEOUT_MS"`
+	ConnectionQueueSize   int `mapstructure:"CONNECTION_QUEUE_SIZE"`
+	TimeOutMs             int `mapstructure:"TIMEOUT_MS"`
+	IdleTimeoutMs         int `mapstructure:"IDLE_TIMEOUT_MS"`
+	MinConnectionsPerNode int `mapstructure:"MIN_CONNECTIONS_PER_NODE"`
 }
 
 type ReadWritePolicy struct {

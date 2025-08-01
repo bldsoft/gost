@@ -30,6 +30,9 @@ func NewStorage(cfg Config) (*Storage, error) {
 	if cfg.ConnectionPolicy.IdleTimeoutMs > 0 {
 		policy.IdleTimeout = time.Duration(cfg.ConnectionPolicy.IdleTimeoutMs) * time.Millisecond
 	}
+	if cfg.ConnectionPolicy.MinConnectionsPerNode > 0 {
+		policy.MinConnectionsPerNode = cfg.ConnectionPolicy.MinConnectionsPerNode
+	}
 
 	client, err := aero.NewClientWithPolicy(policy, cfg.Host, cfg.Port)
 	if err != nil {
