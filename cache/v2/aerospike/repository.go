@@ -61,9 +61,9 @@ func (r *Repository) Get(key string) (*cache.Item, error) {
 	}
 
 	if item.Bins[continuationBinKey] != nil {
-		keys := make([]*aero.Key, 0, len(item.Bins[continuationBinKey].([]string)))
-		for _, k := range item.Bins[continuationBinKey].([]string) {
-			asKey, err := r.key(k)
+		keys := make([]*aero.Key, 0, len(item.Bins[continuationBinKey].([]interface{})))
+		for _, k := range item.Bins[continuationBinKey].([]interface{}) {
+			asKey, err := r.key(k.(string))
 			if err != nil {
 				return nil, err
 			}
@@ -264,7 +264,7 @@ func (r *Repository) split(key string, val []byte) ([]byte, map[string][]byte) {
 
 	continuations := make(map[string][]byte)
 	for i := itemSizeLimit; i < len(val); i += itemSizeLimit {
-		continuations[fmt.Sprintf("%s_%d", key, i/itemSizeLimit)] = val[i : i+itemSizeLimit]
+		continuations[fmt.Sprintf("%s_%d", key, i/itemSizeLimit)] = val[i : i+min(itemSizeLimit, len(val)-i)]
 	}
 	return val[:itemSizeLimit], continuations
 }
