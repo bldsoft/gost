@@ -177,36 +177,39 @@ func (r *Repository) Set(key string, val []byte, item ...cache.ItemF) error {
 	return r.put(true, key, val, item...)
 }
 
-func (r *Repository) put(replace bool, key string, val []byte, item ...cache.ItemF) error {
+func (r *Repository) put(replace bool, key string, val []byte, itemFs ...cache.ItemF) error {
 	asKey, err := r.key(key)
 	if err != nil {
 		return err
 	}
-	p, b, continuations := r.item(replace, key, val, item...)
-	log.TraceWithFields(log.Fields{"key": key, "p": p}, "set")
-	err = r.cache.PutBins(p, asKey, b...)
-	if err != nil {
-		return err
-	}
-	if len(continuations) > 0 {
-		batchWrites := make([]aero.BatchRecordIfc, 0, len(continuations))
+	p, bins, continuations := r.item(replace, key, val, itemFs...)
+	log.TraceWithFields(log.Fields{"key": key, "p": p, "continuations": len(continuations)}, "set")
 
-		for _, c := range continuations {
-			asKey, err := r.key(c.Key)
-			if err != nil {
-				return err
-			}
-			bw := aero.NewBatchWrite(
-				nil,
-				asKey,
-				aero.PutOp(aero.NewBin(valueBinKey, c.Value)),
-			)
-			batchWrites = append(batchWrites, bw)
+	batchWrites := make([]aero.BatchRecordIfc, 0, len(continuations)+1)
+	bp := aero.NewBatchWritePolicy()
+	bp.RecordExistsAction = p.RecordExistsAction
+	bp.Expiration = p.Expiration
+
+	mainOps := make([]*aero.Operation, 0, len(bins))
+	for _, b := range bins {
+		mainOps = append(mainOps, aero.PutOp(b))
+	}
+	batchWrites = append(batchWrites, aero.NewBatchWrite(bp, asKey, mainOps...))
+
+	for _, c := range continuations {
+		asKey, err := r.key(c.Key)
+		if err != nil {
+			return err
 		}
-		return r.cache.BatchOperate(nil, batchWrites)
+		bw := aero.NewBatchWrite(
+			bp,
+			asKey,
+			aero.PutOp(aero.NewBin(valueBinKey, c.Value)),
+		)
+		batchWrites = append(batchWrites, bw)
 	}
 
-	return nil
+	return r.cache.BatchOperate(nil, batchWrites)
 }
 
 func (r *Repository) CompareAndSwap(
