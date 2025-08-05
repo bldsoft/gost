@@ -182,20 +182,15 @@ func (r *Repository) put(replace bool, key string, val []byte, itemFs ...cache.I
 	if err != nil {
 		return err
 	}
-	p, bins, continuations := r.item(replace, key, val, itemFs...)
-	log.TraceWithFields(log.Fields{"key": key, "p": p, "continuations": len(continuations)}, "set")
+	wp, mainBins, continuations := r.item(replace, key, val, itemFs...)
+	log.TraceWithFields(log.Fields{"key": key, "write policy": wp, "continuations": len(continuations)}, "set")
 
 	batchWrites := make([]aero.BatchRecordIfc, 0, len(continuations)+1)
 	bp := aero.NewBatchWritePolicy()
-	bp.RecordExistsAction = p.RecordExistsAction
-	bp.Expiration = p.Expiration
+	bp.RecordExistsAction = wp.RecordExistsAction
+	bp.Expiration = wp.Expiration
 
-	mainOps := make([]*aero.Operation, 0, len(bins))
-	for _, b := range bins {
-		mainOps = append(mainOps, aero.PutOp(b))
-	}
-	batchWrites = append(batchWrites, aero.NewBatchWrite(bp, asKey, mainOps...))
-
+	continuationKeys := make([]string, 0, len(continuations))
 	for _, c := range continuations {
 		asKey, err := r.key(c.Key)
 		if err != nil {
@@ -207,9 +202,25 @@ func (r *Repository) put(replace bool, key string, val []byte, itemFs ...cache.I
 			aero.PutOp(aero.NewBin(valueBinKey, c.Value)),
 		)
 		batchWrites = append(batchWrites, bw)
+		continuationKeys = append(continuationKeys, c.Key)
 	}
 
-	return r.cache.BatchOperate(nil, batchWrites)
+	mainOps := make([]*aero.Operation, 0, len(mainBins))
+	for _, b := range mainBins {
+		mainOps = append(mainOps, aero.PutOp(b))
+	}
+	if len(continuationKeys) > 0 {
+		mainOps = append(mainOps, aero.PutOp(aero.NewBin(continuationBinKey, continuationKeys)))
+	}
+	batchWrites = append(batchWrites, aero.NewBatchWrite(bp, asKey, mainOps...))
+
+	bop := aero.NewBatchPolicy()
+	bop.TotalTimeout = wp.TotalTimeout
+	bop.MaxRetries = wp.MaxRetries
+	bop.SleepBetweenRetries = wp.SleepBetweenRetries
+	bop.SocketTimeout = wp.SocketTimeout
+
+	return r.cache.BatchOperate(bop, batchWrites)
 }
 
 func (r *Repository) CompareAndSwap(
@@ -294,12 +305,14 @@ func (r *Repository) CompareAndSwap(
 
 		if len(continuations) > 0 {
 			batchWrites := make([]aero.BatchRecordIfc, 0, len(continuations))
+			bwp := aero.NewBatchWritePolicy()
+			bwp.Expiration = wp.Expiration
 			for _, c := range continuations {
 				asKey, err := r.key(c.Key)
 				if err != nil {
 					return err
 				}
-				bw := aero.NewBatchWrite(nil, asKey, aero.PutOp(aero.NewBin(valueBinKey, c.Value)))
+				bw := aero.NewBatchWrite(bwp, asKey, aero.PutOp(aero.NewBin(valueBinKey, c.Value)))
 				batchWrites = append(batchWrites, bw)
 			}
 			if err := r.cache.BatchOperate(nil, batchWrites); err != nil {
@@ -344,19 +357,6 @@ func (r *Repository) key(key string) (*aero.Key, error) {
 func (r *Repository) item(replace bool, key string, val []byte, itemFs ...cache.ItemF) (*aero.WritePolicy, []*aero.Bin, []continuation) {
 	val, continuations := r.split(key, val)
 	bins := []*aero.Bin{aero.NewBin(valueBinKey, val)}
-	if len(continuations) > 0 {
-		cks := make([]string, 0, len(continuations))
-		for _, c := range continuations {
-			cks = append(cks, c.Key)
-		}
-		bins = append(
-			bins,
-			aero.NewBin(
-				continuationBinKey,
-				cks,
-			),
-		)
-	}
 
 	policy := r.cache.getWritePolicy(0, truncExpiration(r.liveTime))
 	policy.RecordExistsAction = aero.CREATE_ONLY
