@@ -3,8 +3,6 @@ package aerospike
 import (
 	"errors"
 	"fmt"
-	"maps"
-	"slices"
 	"time"
 
 	"github.com/bldsoft/gost/cache/v2"
@@ -193,15 +191,15 @@ func (r *Repository) put(replace bool, key string, val []byte, item ...cache.Ite
 	if len(continuations) > 0 {
 		batchWrites := make([]aero.BatchRecordIfc, 0, len(continuations))
 
-		for k, v := range continuations {
-			asKey, err := r.key(k)
+		for _, c := range continuations {
+			asKey, err := r.key(c.Key)
 			if err != nil {
 				return err
 			}
 			bw := aero.NewBatchWrite(
 				nil,
 				asKey,
-				aero.PutOp(aero.NewBin(valueBinKey, v)),
+				aero.PutOp(aero.NewBin(valueBinKey, c.Value)),
 			)
 			batchWrites = append(batchWrites, bw)
 		}
@@ -271,7 +269,11 @@ func (r *Repository) CompareAndSwap(
 			bins = append(bins, aero.NewBin(flagsBinKey, newData.Flags))
 		}
 		if len(continuations) > 0 {
-			bins = append(bins, aero.NewBin(continuationBinKey, slices.Collect(maps.Keys(continuations))))
+			cks := make([]string, 0, len(continuations))
+			for _, c := range continuations {
+				cks = append(cks, c.Key)
+			}
+			bins = append(bins, aero.NewBin(continuationBinKey, cks))
 		}
 
 		wp := r.cache.getWritePolicy(item.Generation, 0)
@@ -289,12 +291,12 @@ func (r *Repository) CompareAndSwap(
 
 		if len(continuations) > 0 {
 			batchWrites := make([]aero.BatchRecordIfc, 0, len(continuations))
-			for k, v := range continuations {
-				asKey, err := r.key(k)
+			for _, c := range continuations {
+				asKey, err := r.key(c.Key)
 				if err != nil {
 					return err
 				}
-				bw := aero.NewBatchWrite(nil, asKey, aero.PutOp(aero.NewBin(valueBinKey, v)))
+				bw := aero.NewBatchWrite(nil, asKey, aero.PutOp(aero.NewBin(valueBinKey, c.Value)))
 				batchWrites = append(batchWrites, bw)
 			}
 			if err := r.cache.BatchOperate(nil, batchWrites); err != nil {
@@ -336,15 +338,19 @@ func (r *Repository) key(key string) (*aero.Key, error) {
 	return aero.NewKey(r.cache.namespace, r.setName, key)
 }
 
-func (r *Repository) item(replace bool, key string, val []byte, itemFs ...cache.ItemF) (*aero.WritePolicy, []*aero.Bin, map[string][]byte) {
+func (r *Repository) item(replace bool, key string, val []byte, itemFs ...cache.ItemF) (*aero.WritePolicy, []*aero.Bin, []continuation) {
 	val, continuations := r.split(key, val)
 	bins := []*aero.Bin{aero.NewBin(valueBinKey, val)}
 	if len(continuations) > 0 {
+		cks := make([]string, 0, len(continuations))
+		for _, c := range continuations {
+			cks = append(cks, c.Key)
+		}
 		bins = append(
 			bins,
 			aero.NewBin(
 				continuationBinKey,
-				slices.Collect(maps.Keys(continuations)),
+				cks,
 			),
 		)
 	}
@@ -369,7 +375,7 @@ func (r *Repository) item(replace bool, key string, val []byte, itemFs ...cache.
 	return policy, bins, continuations
 }
 
-func (r *Repository) split(key string, val []byte) ([]byte, map[string][]byte) {
+func (r *Repository) split(key string, val []byte) ([]byte, []continuation) {
 	if len(val) <= r.itemSizeLimit {
 		return val, nil
 	}
@@ -381,9 +387,12 @@ func (r *Repository) split(key string, val []byte) ([]byte, map[string][]byte) {
 		"chunks": estimatedChunks,
 	}, "aerospike: value exceeds limit")
 
-	continuations := make(map[string][]byte)
+	continuations := make([]continuation, 0, estimatedChunks)
 	for i := r.itemSizeLimit; i < len(val); i += r.itemSizeLimit {
-		continuations[fmt.Sprintf("%s_%d", key, i/r.itemSizeLimit)] = val[i : i+min(r.itemSizeLimit, len(val)-i)]
+		continuations = append(continuations, continuation{
+			Key:   fmt.Sprintf("%s_%d", key, i/r.itemSizeLimit),
+			Value: val[i : i+min(r.itemSizeLimit, len(val)-i)],
+		})
 	}
 	return val[:r.itemSizeLimit], continuations
 }
@@ -394,6 +403,11 @@ func truncExpiration(d time.Duration) uint32 {
 		return uint32(maxDuration.Seconds())
 	}
 	return uint32(d.Seconds())
+}
+
+type continuation struct {
+	Key   string
+	Value []byte
 }
 
 var _ cache.IDistrCacheRepository = (*Repository)(nil)
