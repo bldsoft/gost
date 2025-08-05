@@ -1,8 +1,7 @@
 package aerospike
 
 type Config struct {
-	Host      string `mapstructure:"HOSTS"`
-	Port      int    `mapstructure:"PORT"`
+	Hosts     []host `mapstructure:"HOSTS"`
 	KeyPrefix string `mapstructure:"KEY_PREFIX"`
 	Namespace string `mapstructure:"NAMESPACE"`
 
@@ -15,6 +14,11 @@ type Config struct {
 	// Username    string `mapstructure:"USERNAME"`
 	// Password    string `mapstructure:"PASSWORD"`
 
+}
+
+type host struct {
+	Host string `mapstructure:"HOST"`
+	Port int    `mapstructure:"PORT"`
 }
 
 type ConnectionPolicy struct {
@@ -32,8 +36,12 @@ type ReadWritePolicy struct {
 }
 
 func (c *Config) SetDefaults() {
-	c.Host = "127.0.0.1"
-	c.Port = 3000
+	c.Hosts = []host{
+		{
+			Host: "127.0.0.1",
+			Port: 3000,
+		},
+	}
 
 	c.ConnectionPolicy.ConnectionQueueSize = 2000
 	c.ConnectionPolicy.TimeOutMs = 500

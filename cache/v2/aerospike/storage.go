@@ -18,7 +18,9 @@ type Storage struct {
 }
 
 func NewStorage(cfg Config) (*Storage, error) {
-	// logger.Logger.SetLevel(logger.DEBUG)
+	if len(cfg.Hosts) == 0 {
+		return nil, fmt.Errorf("aerospike: no hosts provided")
+	}
 
 	policy := aero.NewClientPolicy()
 	if cfg.ConnectionPolicy.ConnectionQueueSize > 0 {
@@ -34,7 +36,12 @@ func NewStorage(cfg Config) (*Storage, error) {
 		policy.MinConnectionsPerNode = cfg.ConnectionPolicy.MinConnectionsPerNode
 	}
 
-	client, err := aero.NewClientWithPolicy(policy, cfg.Host, cfg.Port)
+	hosts := make([]*aero.Host, 0, len(cfg.Hosts))
+	for _, h := range cfg.Hosts {
+		hosts = append(hosts, aero.NewHost(h.Host, h.Port))
+	}
+
+	client, err := aero.NewClientWithPolicyAndHost(policy, hosts...)
 	if err != nil {
 		return nil, err
 	}
