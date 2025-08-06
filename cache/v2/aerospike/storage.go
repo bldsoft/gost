@@ -84,6 +84,23 @@ func (s *Storage) getWritePolicy(generation uint32, expiration uint32) *aero.Wri
 	return wp
 }
 
+func (s *Storage) getBatchWritePolicy() *aero.BatchPolicy {
+	bp := aero.NewBatchPolicy()
+	if s.cfg.WritePolicy.TotalTimeoutMs > 0 {
+		bp.TotalTimeout = time.Duration(s.cfg.WritePolicy.TotalTimeoutMs) * time.Millisecond
+	}
+	if s.cfg.WritePolicy.MaxRetries > 0 {
+		bp.MaxRetries = s.cfg.WritePolicy.MaxRetries
+	}
+	if s.cfg.WritePolicy.SleepBetweenRetriesMs > 0 {
+		bp.SleepBetweenRetries = time.Duration(s.cfg.WritePolicy.SleepBetweenRetriesMs) * time.Millisecond
+	}
+	if s.cfg.WritePolicy.SocketTimeoutMs > 0 {
+		bp.SocketTimeout = time.Duration(s.cfg.WritePolicy.SocketTimeoutMs) * time.Millisecond
+	}
+	return bp
+}
+
 func (s *Storage) getReadPolicy() *aero.BasePolicy {
 	rp := aero.NewPolicy()
 	if s.cfg.ReadPolicy.TotalTimeoutMs > 0 {
