@@ -267,7 +267,7 @@ func (r *Repository) prepBatchWrite(replace bool, key string, val []byte, genera
 	bwp.Expiration = truncExpiration(r.liveTime)
 	bwp.RecordExistsAction = aero.CREATE_ONLY
 	if replace {
-		bwp.RecordExistsAction = aero.UPDATE
+		bwp.RecordExistsAction = aero.REPLACE
 	}
 	if len(itemFs) > 0 {
 		it := cache.CollectItem(itemFs...)
