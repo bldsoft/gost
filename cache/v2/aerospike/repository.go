@@ -317,7 +317,7 @@ func (r *Repository) split(key string, val []byte) ([]byte, []continuation) {
 		"chunks": estimatedChunks,
 	}, "aerospike: value exceeds limit")
 
-	continuations := make([]continuation, 0, estimatedChunks)
+	continuations := make([]continuation, 0, estimatedChunks-1)
 	for i := r.itemSizeLimit; i < len(val); i += r.itemSizeLimit {
 		continuations = append(continuations, continuation{
 			Key:   fmt.Sprintf("%s_%d", key, i/r.itemSizeLimit),
