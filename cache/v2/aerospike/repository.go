@@ -16,6 +16,7 @@ const (
 	valueBinKey        = "value"
 	flagsBinKey        = "flags"
 	continuationBinKey = "continuation"
+	lenBinKey          = "totalValueSize"
 
 	casRetryLimit = 5
 	casSleepTime  = 10
@@ -100,6 +101,9 @@ func (r *Repository) get(key string) (*cache.Item, uint32, error) {
 		return res, item.Generation, nil
 	}
 
+	if l, ok := item.Bins[lenBinKey]; ok {
+		totalSize = l.(int)
+	}
 	res.Value = make([]byte, 0, totalSize)
 	res.Value = append(res.Value, mainValue...)
 
@@ -260,9 +264,10 @@ func (r *Repository) prepBatchWrite(replace bool, key string, val []byte, genera
 		return nil, nil, err
 	}
 
+	lenBin := aero.NewBin(lenBinKey, len(val))
 	val, continuations := r.split(key, val)
 	br := make([]aero.BatchRecordIfc, 0, len(continuations)+1)
-	mainBins := []*aero.Bin{aero.NewBin(valueBinKey, val)}
+	mainBins := []*aero.Bin{aero.NewBin(valueBinKey, val), lenBin}
 	bwp := aero.NewBatchWritePolicy()
 	bwp.Expiration = truncExpiration(r.liveTime)
 	bwp.RecordExistsAction = aero.CREATE_ONLY
