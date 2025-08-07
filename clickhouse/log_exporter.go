@@ -347,7 +347,8 @@ func (e *ClickHouseLogExporter) distinctValues(
 ) ([]string, error) {
 	query := sq.Select("distinct " + column).
 		From(e.config.TableName).
-		Where(e.filter(&filter))
+		Where(e.filter(&filter)).
+		OrderBy(column)
 	rows, err := e.RunSelect(ctx, query)
 	if err != nil {
 		return nil, err
