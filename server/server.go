@@ -36,13 +36,18 @@ type IMicroservice interface {
 	GetAsyncRunners() []AsyncRunner
 }
 
+type InitializableMicroservice interface {
+	IMicroservice
+	Initialize()
+}
+
 type Server struct {
 	srv               *http.Server
-	router            *chi.Mux
 	microservices     []IMicroservice
 	commonMiddlewares chi.Middlewares
 	runnerManager     *AsyncJobManager
 	routerWrapper     func(http.Handler) http.Handler
+	needHealthProbes  bool
 }
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
@@ -53,7 +58,6 @@ func NewServer(config Config, microservices ...IMicroservice) *Server {
 			return ctx
 		},
 		Handler: nil},
-		router:            chi.NewRouter(),
 		microservices:     microservices,
 		commonMiddlewares: nil,
 		runnerManager:     NewAsyncJobManager()}
@@ -81,6 +85,11 @@ func (s *Server) SetRouterWrapper(middleware func(http.Handler) http.Handler) *S
 	return s
 }
 
+func (s *Server) WithHealthProbes(v bool) *Server {
+	s.needHealthProbes = v
+	return s
+}
+
 func (s *Server) AddAsyncRunners(runners ...AsyncRunner) *Server {
 	s.runnerManager.Append(runners...)
 	return s
@@ -91,21 +100,48 @@ func (s *Server) init() {
 		s.runnerManager.Append(microservice.GetAsyncRunners()...)
 	}
 
-	s.router.Use(s.commonMiddlewares...)
+	if !s.needHealthProbes {
+		http.Handle("/", s.appRouter())
+		return
+	}
 
-	s.router.Mount("/debug", middleware.Profiler())
+	dynamicRouter := new(dynamicRouter)
+	dynamicRouter.Set(s.probesOnlyRouter())
+	http.Handle("/", dynamicRouter)
+	go func() {
+		dynamicRouter.Set(s.appRouter())
+	}()
+}
 
+func (s *Server) appRouter() http.Handler {
+	appRouter := s.newRouter(true)
 	for _, m := range s.microservices {
-		s.router.Group(func(r chi.Router) {
+		appRouter.Group(func(r chi.Router) {
+			if im, ok := m.(InitializableMicroservice); ok {
+				im.Initialize()
+			}
 			m.BuildRoutes(r)
 		})
 	}
 
 	if s.routerWrapper != nil {
-		http.Handle("/", s.routerWrapper(s.router))
-	} else {
-		http.Handle("/", s.router)
+		return s.routerWrapper(appRouter)
 	}
+	return appRouter
+}
+
+func (s *Server) probesOnlyRouter() http.Handler {
+	return s.newRouter(false)
+}
+
+func (s *Server) newRouter(isAppRouter bool) chi.Router {
+	r := chi.NewMux()
+	r.Use(s.commonMiddlewares...)
+	r.Mount("/debug", middleware.Profiler())
+	if s.needHealthProbes {
+		r.Route("/probes", newProbesController().SetReady(isAppRouter).Mount)
+	}
+	return r
 }
 
 func (s *Server) Start() {
