@@ -96,10 +96,6 @@ func (s *Server) AddAsyncRunners(runners ...AsyncRunner) *Server {
 }
 
 func (s *Server) init() {
-	for _, microservice := range s.microservices {
-		s.runnerManager.Append(microservice.GetAsyncRunners()...)
-	}
-
 	if !s.needHealthProbes {
 		http.Handle("/", s.appRouter())
 		return
@@ -114,6 +110,13 @@ func (s *Server) init() {
 }
 
 func (s *Server) appRouter() http.Handler {
+	defer func() {
+		for _, microservice := range s.microservices {
+			s.runnerManager.Append(microservice.GetAsyncRunners()...)
+		}
+		go s.runnerManager.Start()
+	}()
+
 	appRouter := s.newRouter(true)
 	for _, m := range s.microservices {
 		appRouter.Group(func(r chi.Router) {
@@ -147,7 +150,6 @@ func (s *Server) newRouter(isAppRouter bool) chi.Router {
 func (s *Server) Start() {
 	s.init()
 
-	go s.runnerManager.Start()
 	go func() {
 		log.Infof("Server started. Listening on %s", s.srv.Addr)
 		if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
