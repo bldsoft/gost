@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -81,14 +82,16 @@ func (db *Storage) Disconnect(ctx context.Context) error {
 func (db *Storage) poolEventMonitor(ev *event.PoolEvent) {
 	switch ev.Type {
 	case event.ConnectionReady:
-		//run migrations only once
+		// run migrations only once
 		db.doOnce.Do(func() {
 			go func() {
 				log.InfoWithFields(
 					log.Fields{"server": ev.Address, "connectionID": ev.ConnectionID},
 					"MongoDB connected!")
-				//then run migrations
-				db.runMigrations(db.Db.Name())
+				// then run migrations
+				if err := db.runMigrations(db.Db.Name()); err != nil {
+					log.Errorf("Mongo migrations: %s", err)
+				}
 				close(db.migrationReadyC)
 			}()
 		})
@@ -106,18 +109,16 @@ func (db *Storage) poolEventMonitor(ev *event.PoolEvent) {
 func (db *Storage) IsReady() bool {
 	return true
 }
-func (db *Storage) runMigrations(dbname string) bool {
-	log.Debug("Checking DB schema...")
 
+func (db *Storage) runMigrations(dbname string) error {
 	if _, ok := db.migrations.First(); !ok {
-		return true
+		return nil
 	}
 
 	config := &mm.Config{DatabaseName: dbname}
 	driver, err := mm.WithInstance(db.Client, config)
 	if err != nil {
-		log.ErrorWithFields(log.Fields{"error": err}, "Migrations: driver failed")
-		return false
+		return fmt.Errorf("driver failed: %w", err)
 	}
 
 	src, _ := source.Open("stub://")
@@ -126,15 +127,13 @@ func (db *Storage) runMigrations(dbname string) bool {
 	m.Log = storage.MigrateLogger{}
 
 	if err != nil {
-		log.ErrorWithFields(log.Fields{"error": err}, "Migrations: instance failed")
-		return false
+		return fmt.Errorf("instance failed: %w", err)
 	}
 	err = m.Up()
 	if err != nil && err != migrate.ErrNoChange {
-		log.ErrorWithFields(log.Fields{"error": err}, "Migrations: process failed")
-		return false
+		return fmt.Errorf("process failed: %w", err)
 	}
-	return true
+	return nil
 }
 
 func (db *Storage) Stats(ctx context.Context) (interface{}, error) {
