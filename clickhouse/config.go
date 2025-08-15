@@ -38,8 +38,10 @@ func (c *Config) prepareDsn() error {
 	if err != nil {
 		return err
 	}
-	if !utils.IsIn(url.Scheme, "clickhouse", "http", "https") {
-		url.Scheme = "clickhouse"
+	if !utils.IsIn(url.Scheme, "clickhouse") {
+		if !utils.IsIn("http", "https") {
+			url.Scheme = "clickhouse"
+		}
 
 		// remove default database from query and set it to path
 		database := url.Query().Get("database")
