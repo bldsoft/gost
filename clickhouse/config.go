@@ -39,7 +39,7 @@ func (c *Config) prepareDsn() error {
 		return err
 	}
 	if !utils.IsIn(url.Scheme, "clickhouse") {
-		if !utils.IsIn("http", "https") {
+		if !utils.IsIn(url.Scheme, "http", "https") {
 			url.Scheme = "clickhouse"
 		}
 
