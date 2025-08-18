@@ -43,5 +43,5 @@ func (c *probesController) writeCode(w http.ResponseWriter, code int) {
 func (c *probesController) Mount(r chi.Router) {
 	r.Get("/healthy", c.HealthHandler)
 	r.Get("/ready", c.ReadyHandler)
-	r.Post("/startup", c.StartupHandler)
+	r.Get("/startup", c.StartupHandler)
 }
