@@ -10,6 +10,14 @@ type Item struct {
 
 type ItemF func(*Item)
 
+func CollectItem(itemFs ...ItemF) *Item {
+	it := &Item{}
+	for _, f := range itemFs {
+		f(it)
+	}
+	return it
+}
+
 func WithTTL(ttl time.Duration) ItemF {
 	return func(it *Item) {
 		it.TTL = ttl
