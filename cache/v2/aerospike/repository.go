@@ -78,28 +78,27 @@ func (r *Repository) get(key string) (*cache.Item, uint32, error) {
 	mainValue := item.Bins[valueBinKey].([]byte)
 	totalSize := len(mainValue)
 
-	var continuationKeys []*aero.Key
-	if item.Bins[continuationBinKey] != nil {
-		continuationKeys = make([]*aero.Key, len(item.Bins[continuationBinKey].([]interface{})))
-		for i, k := range item.Bins[continuationBinKey].([]interface{}) {
-			asKey, err := r.key(k.(string))
-			if err != nil {
-				return nil, 0, err
-			}
-			continuationKeys[i] = asKey
-		}
-
-		totalSize += len(continuationKeys) * r.itemSizeLimit
-		log.TraceWithFields(log.Fields{
-			"key":                key,
-			"mainSize":           len(mainValue),
-			"continuations":      len(continuationKeys),
-			"estimatedTotalSize": totalSize,
-		}, "aerospike: reconstructing from continuations")
-	} else {
+	if item.Bins[continuationBinKey] == nil {
 		res.Value = mainValue
 		return res, item.Generation, nil
 	}
+
+	continuationKeys := make([]*aero.Key, len(item.Bins[continuationBinKey].([]interface{})))
+	for i, k := range item.Bins[continuationBinKey].([]interface{}) {
+		asKey, err := r.key(k.(string))
+		if err != nil {
+			return nil, 0, err
+		}
+		continuationKeys[i] = asKey
+	}
+
+	totalSize += len(continuationKeys) * r.itemSizeLimit
+	log.TraceWithFields(log.Fields{
+		"key":                key,
+		"mainSize":           len(mainValue),
+		"continuations":      len(continuationKeys),
+		"estimatedTotalSize": totalSize,
+	}, "aerospike: reconstructing from continuations")
 
 	if l, ok := item.Bins[lenBinKey]; ok {
 		totalSize = l.(int)
