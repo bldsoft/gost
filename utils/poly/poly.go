@@ -32,7 +32,7 @@ func (f *Poly[T]) interfaceString() string {
 	return fmt.Sprintln(reflect.TypeOf((*T)(nil)).Elem())
 }
 
-func (f *Poly[T]) typeString() string {
+func (f *Poly[T]) Type() string {
 	typeString, ok := f.typesMap().GetObj(f.Value)
 	if !ok {
 		panic(fmt.Errorf("poly: unregistered type %T for interface %s", f.Value, f.interfaceString()))
@@ -44,7 +44,7 @@ func (f Poly[T]) MarshalJSON() ([]byte, error) {
 	return f.marshalJsonAndJoin(struct {
 		Name string `json:"type"`
 	}{
-		Name: f.typeString(),
+		Name: f.Type(),
 	}, f.Value)
 }
 
@@ -101,7 +101,7 @@ func (f *Poly[T]) marshalJsonAndJoin(objects ...interface{}) ([]byte, error) {
 }
 
 func (f Poly[T]) MarshalBSON() ([]byte, error) {
-	return f.addTypeAndMashalBson(f.Value, f.typeString())
+	return f.addTypeAndMashalBson(f.Value, f.Type())
 }
 
 func (f *Poly[T]) UnmarshalBSON(data []byte) error {
