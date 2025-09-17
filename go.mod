@@ -1,6 +1,6 @@
 module github.com/bldsoft/gost
 
-go 1.24.1
+go 1.25.0
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.16.0
@@ -24,6 +24,7 @@ require (
 	github.com/grobie/gomemcache v0.0.0-20201204163352-08d7c80fcac6
 	github.com/hashicorp/consul/api v1.20.0
 	github.com/hashicorp/go-multierror v1.1.1
+	github.com/jellydator/ttlcache/v3 v3.4.0
 	github.com/lestrrat-go/jwx v1.2.18
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mitchellh/mapstructure v1.5.0
@@ -35,7 +36,7 @@ require (
 	go.mongodb.org/mongo-driver v1.11.4
 	golang.org/x/crypto v0.36.0
 	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
-	golang.org/x/sync v0.12.0
+	golang.org/x/sync v0.17.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
