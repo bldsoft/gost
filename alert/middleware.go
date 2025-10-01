@@ -17,12 +17,13 @@ func GroupRecurringMiddleware(store cache.Repository[time.Time], period time.Dur
 
 			for _, alert := range alerts {
 				to, err := store.Get(alert.SourceID)
-				if err == nil {
-					if to.After(time.Now()) {
-						continue
-					}
-				} else if !errors.Is(err, cache.ErrCacheMiss) {
+				if err != nil && !errors.Is(err, cache.ErrCacheMiss) {
 					log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to get value from store")
+				}
+
+				// Skip if alert is still within cooldown period
+				if err == nil && to.After(time.Now()) {
+					continue
 				}
 
 				if err := store.SetFor(alert.SourceID, time.Now().Add(period), period); err != nil {
@@ -48,11 +49,11 @@ func DeduplicationMiddleware(store cache.Repository[Alert], TTL time.Duration) M
 				//for alerts where we are waiting for the finisher
 				key := fmt.Sprintf("%s-%d", alert.SourceID, alert.Severity)
 
-				//for alerts that were already finished (in case of sender restarts etc)
+				//for alerts that were already finished (in case of sender restarts etc.)
 				timedKey := fmt.Sprintf("%s-%d-recvd", alert.SourceID, alert.Severity)
 				if val, err := store.Get(timedKey); err == nil {
 					if val.To.After(alert.From) {
-						continue //already received this alert fully previously
+						continue //already received this alert
 					}
 				}
 
@@ -60,29 +61,30 @@ func DeduplicationMiddleware(store cache.Repository[Alert], TTL time.Duration) M
 				alertExistsInStore := err == nil
 				isStartAlert := alert.To.IsZero()
 
+				// Handle start alert
 				if isStartAlert {
-					// Start alert: skip if already in store (duplicate), otherwise store it
 					if alertExistsInStore {
 						continue // Already received this start alert
 					}
-
 					if err := store.Set(key, alert); err != nil {
 						logger.ErrorWithFields(log.Fields{"err": err, "key": key}, "alerts deduplication middleware: failed to store alert in cache")
 					}
-				} else {
-					// End alert: remove from store if exists, skip if already processed
-					if !alertExistsInStore {
-						continue // Already received the end alert for this
-					}
+					deduplicated = append(deduplicated, alert)
+					continue
+				}
 
-					if err := store.Delete(key); err != nil {
-						logger.ErrorWithFields(log.Fields{"err": err, "key": key}, "alerts deduplication middleware: failed to delete alert from cache")
-					}
+				// Handle end alert
+				if !alertExistsInStore {
+					continue // Already received the end alert for this
+				}
 
-					// Store in case we get this alert again (e.g. sender restarts)
-					if err := store.SetFor(timedKey, alert, TTL); err != nil {
-						logger.ErrorWithFields(log.Fields{"err": err, "key": timedKey}, "alerts deduplication middleware: failed to store received end alert in cache")
-					}
+				if err := store.Delete(key); err != nil {
+					logger.ErrorWithFields(log.Fields{"err": err, "key": key}, "alerts deduplication middleware: failed to delete alert from cache")
+				}
+
+				// Store in case we get this alert again (e.g. sender restarts)
+				if err := store.SetFor(timedKey, alert, TTL); err != nil {
+					logger.ErrorWithFields(log.Fields{"err": err, "key": timedKey}, "alerts deduplication middleware: failed to store received end alert in cache")
 				}
 
 				deduplicated = append(deduplicated, alert)
