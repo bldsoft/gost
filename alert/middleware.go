@@ -38,7 +38,7 @@ func GroupRecurringMiddleware(store cache.Repository[time.Time], period time.Dur
 	}
 }
 
-// TODO: handle restart cases (when we get previous alerts that were completely sent)
+// DeduplicationMiddleware TTL is being used for caching alerts to prevent duplicates on sender restarts
 func DeduplicationMiddleware(store cache.Repository[Alert], TTL time.Duration) Middleware {
 	return func(next Handler) Handler {
 		return AlertHandlerFunc(func(ctx context.Context, alerts ...Alert) {
