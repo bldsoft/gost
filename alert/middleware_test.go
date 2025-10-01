@@ -75,11 +75,9 @@ func (m *mockHandler) Handle(_ context.Context, alerts ...Alert) {
 }
 
 func newMockAlert(id string, severity SeverityLevel, start time.Time, end time.Time, sendAt ...time.Time) *mockAlert {
-	var sendAtTime time.Time
+	sendAtTime := start
 	if len(sendAt) > 0 {
 		sendAtTime = sendAt[0]
-	} else {
-		sendAtTime = start
 	}
 
 	return &mockAlert{
