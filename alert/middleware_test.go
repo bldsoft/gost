@@ -70,7 +70,7 @@ type mockHandler struct {
 	receivedAlerts []Alert
 }
 
-func (m *mockHandler) Handle(ctx context.Context, alerts ...Alert) {
+func (m *mockHandler) Handle(_ context.Context, alerts ...Alert) {
 	m.receivedAlerts = append(m.receivedAlerts, alerts...)
 }
 
@@ -153,7 +153,7 @@ func createSender(window time.Duration, alerts []*mockAlert) <-chan []Alert {
 		winStart := trueAlerts[0].sendAt.Truncate(window)
 		winEnd := winStart.Add(window)
 
-		batch := []Alert{}
+		var batch []Alert
 
 		flush := func() {
 			if len(batch) > 0 {
@@ -278,6 +278,17 @@ func TestDeduplicationMiddleware(t *testing.T) {
 			inputAlerts: []*mockAlert{
 				newMockAlert("1", SeverityLow, base, base.Add(13*time.Minute)),
 				newMockAlert("1", SeverityLow, base, base.Add(13*time.Minute), base.Add(7*time.Minute)),
+			},
+			expected: []*resultAlert{
+				newResultAlert("1", SeverityLow, UP),
+				newResultAlert("1", SeverityLow, DOWN),
+			},
+		},
+		{
+			name: "duplicate after finisher",
+			inputAlerts: []*mockAlert{
+				newMockAlert("1", SeverityLow, base, base.Add(11*time.Minute)),
+				newMockAlert("1", SeverityLow, base, base.Add(11*time.Minute), base.Add(13*time.Minute)),
 			},
 			expected: []*resultAlert{
 				newResultAlert("1", SeverityLow, UP),
