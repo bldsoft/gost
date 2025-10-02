@@ -11,18 +11,26 @@ type serviceValue struct {
 	Value   string
 }
 
+type FeaturesGroup string
+
 // Feature ...
 type Feature struct {
-	ID          feature.IdType  `bson:"_id,omitempty" json:"_id"`
-	Name        string          `bson:"name,omitempty" json:"name"`
-	Description *string         `bson:"description,omitempty" json:"description"`
-	GlobalValue *string         `bson:"globalValue,omitempty" json:"globalValue"`
-	SrvValues   *[]serviceValue `bson:"srvvalues,omitempty" json:"srvValues,omitempty"`
+	ID          feature.IdType   `bson:"_id,omitempty" json:"_id"`
+	Name        string           `bson:"name,omitempty" json:"name"`
+	Description *string          `bson:"description,omitempty" json:"description"`
+	Groups      *[]FeaturesGroup `bson:"groups,omitempty" json:"groups,omitempty"`
+	GlobalValue *string          `bson:"globalValue,omitempty" json:"globalValue"`
+	SrvValues   *[]serviceValue  `bson:"srvvalues,omitempty" json:"srvValues,omitempty"`
 }
 
 func NewFeature(feature feature.IFeature, name string, description string) *Feature {
 	value := feature.String()
 	return &Feature{ID: feature.GetID(), Name: name, Description: &description, GlobalValue: &value}
+}
+
+func (f *Feature) WithGroups(groups ...FeaturesGroup) *Feature {
+	f.Groups = &groups
+	return f
 }
 
 func (f *Feature) RawID() interface{} {
