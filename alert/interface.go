@@ -4,6 +4,9 @@ import (
 	"context"
 	"slices"
 	"time"
+
+	"github.com/bldsoft/gost/alert/notify"
+	"github.com/bldsoft/gost/utils/poly"
 )
 
 type SeverityLevel int
@@ -20,7 +23,7 @@ type Alert struct {
 
 	Severity  SeverityLevel
 	From, To  time.Time
-	Notifiers []Notifier
+	Receivers []poly.Poly[notify.Receiver]
 
 	MetaData map[string]string
 }
@@ -31,9 +34,9 @@ type Handler interface {
 
 type Middleware func(Handler) Handler
 
-type AlertHandlerFunc func(ctx context.Context, alerts ...Alert)
+type HandlerFunc func(ctx context.Context, alerts ...Alert)
 
-func (f AlertHandlerFunc) Handle(ctx context.Context, alerts ...Alert) {
+func (f HandlerFunc) Handle(ctx context.Context, alerts ...Alert) {
 	f(ctx, alerts...)
 }
 
