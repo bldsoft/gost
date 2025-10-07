@@ -24,11 +24,10 @@ require (
 	github.com/grobie/gomemcache v0.0.0-20201204163352-08d7c80fcac6
 	github.com/hashicorp/consul/api v1.20.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/jellydator/ttlcache/v3 v3.4.0
+	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/lestrrat-go/jwx v1.2.18
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nikoksr/notify v1.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/viper v1.15.0
@@ -56,7 +55,6 @@ require (
 	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/copier v0.3.5 // indirect
-	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible // indirect
 	github.com/miekg/dns v1.1.63 // indirect
 	github.com/paulmach/orb v0.10.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
@@ -66,6 +64,7 @@ require (
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/cobra v1.6.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.opentelemetry.io/otel v1.32.0 // indirect
