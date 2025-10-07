@@ -36,7 +36,7 @@ func (e *Email) Send(ctx context.Context, receiver Receiver, message channel.Mes
 
 	msg := &email.Email{
 		To:      receiver.Emails,
-		From:    e.Cfg.SMTP.From,
+		From:    e.Cfg.SMTP.Sender,
 		Subject: subject.String(),
 		Headers: textproto.MIMEHeader{},
 	}

@@ -27,9 +27,9 @@ type Config struct {
 
 type SMTPConfig struct {
 	Address      config.Address    `mapstructure:"ADDRESS" description:"SMTP server address"`
-	AuthUsername string            `mapstructure:"AUTH_USERNAME" description:"SMTP admin username"`
-	AuthPassword utils.FullyHidden `mapstructure:"AUTH_PASSWORD" description:"SMTP admin password"`
-	From         string            `mapstructure:"FROM" description:"SMTP email sender"`
+	AuthUsername string            `mapstructure:"USERNAME" description:"SMTP admin username"`
+	AuthPassword utils.FullyHidden `mapstructure:"PASSWORD" description:"SMTP admin password"`
+	Sender       string            `mapstructure:"SENDER" description:"SMTP email sender"`
 }
 
 var DefaultEmailConfig = Config{
@@ -37,7 +37,7 @@ var DefaultEmailConfig = Config{
 		Address:      config.Address("smtp.gmail.com:587"),
 		AuthUsername: "",
 		AuthPassword: "",
-		From:         "",
+		Sender:       "",
 	},
 	SubjectTemplate: DefaultSubjectTemplate,
 	MessageTemplate: DefaultEmailTemplate,
@@ -48,7 +48,7 @@ func prepareEmailConfig(cfg Config) Config {
 	cfg.SMTP.Address = cmp.Or(cfg.SMTP.Address, DefaultEmailConfig.SMTP.Address)
 	cfg.SMTP.AuthUsername = cmp.Or(cfg.SMTP.AuthUsername, DefaultEmailConfig.SMTP.AuthUsername)
 	cfg.SMTP.AuthPassword = cmp.Or(cfg.SMTP.AuthPassword, DefaultEmailConfig.SMTP.AuthPassword)
-	cfg.SMTP.From = cmp.Or(cfg.SMTP.From, DefaultEmailConfig.SMTP.From)
+	cfg.SMTP.Sender = cmp.Or(cfg.SMTP.Sender, DefaultEmailConfig.SMTP.Sender)
 	cfg.MessageTemplate = cmp.Or(cfg.MessageTemplate, DefaultEmailConfig.MessageTemplate)
 	cfg.SubjectTemplate = cmp.Or(cfg.SubjectTemplate, DefaultEmailConfig.SubjectTemplate)
 	return cfg
