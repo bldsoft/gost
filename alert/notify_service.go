@@ -1,6 +1,7 @@
 package alert
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"slices"
@@ -28,10 +29,9 @@ var defaultEmailMessageTemplate = template.Must(template.New("email_message").Pa
 var defaultSlackMessageTemplate = template.Must(template.New("slack_message").Parse(slackMessageTemplate))
 
 const (
-	DescriptionKey = "description"
-	FromKey        = "from"
-	ToKey          = "to"
-	SeverityKey    = "severity"
+	FromMsgKey     = "from"
+	ToMsgKey       = "to"
+	SeverityMsgKey = "severity"
 )
 
 type NotifyConfig = notify.ServiceConfig
@@ -43,6 +43,9 @@ type NotifyServiceAdapter struct {
 }
 
 func NewNotifyService(cfg NotifyConfig, receivers ...poly.Poly[notify.Receiver]) *NotifyServiceAdapter {
+	cfg.Dispatcher.Email.MessageTemplate = cmp.Or(cfg.Dispatcher.Email.MessageTemplate, defaultEmailMessageTemplate)
+	cfg.Dispatcher.Email.SubjectTemplate = cmp.Or(cfg.Dispatcher.Email.SubjectTemplate, defaultEmailSubjectTemplate)
+	cfg.Dispatcher.SlackWebhook.MessageTemplate = cmp.Or(cfg.Dispatcher.SlackWebhook.MessageTemplate, defaultSlackMessageTemplate)
 	return &NotifyServiceAdapter{
 		cfg:           cfg,
 		notifyService: notify.NewService(cfg),
@@ -82,9 +85,8 @@ func (h *NotifyServiceAdapter) prepareMessage(alert Alert) channel.Message {
 	for k, v := range alert.MetaData {
 		msg.Data[k] = v
 	}
-	msg.Data[DescriptionKey] = alert.MetaData[DescriptionKey]
-	msg.Data[FromKey] = alert.From
-	msg.Data[ToKey] = alert.To
-	msg.Data[SeverityKey] = alert.Severity
+	msg.Data[FromMsgKey] = alert.From
+	msg.Data[ToMsgKey] = alert.To
+	msg.Data[SeverityMsgKey] = alert.Severity
 	return msg
 }

@@ -27,11 +27,14 @@ func (w *Webhook) client() *http.Client {
 
 func (w *Webhook) Send(ctx context.Context, receiver Receiver, msg channel.Message) error {
 	body, mimeType := w.Cfg.BodyFormat(msg)
-	resp, err := w.client().Post(
-		receiver.URL,
-		mimeType,
-		bytes.NewBuffer(body),
-	)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, receiver.URL, bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", mimeType)
+
+	resp, err := w.client().Do(req)
 	if err != nil {
 		return err
 	}

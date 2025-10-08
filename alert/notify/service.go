@@ -113,17 +113,16 @@ func (ns *Service) Run(ctx context.Context) error {
 			for {
 				id, n, err := ns.queue.Dequeue(ctx)
 				if err != nil {
-					if errors.Is(err, utils.ErrObjectNotFound) {
-						continue
+					if !errors.Is(err, utils.ErrObjectNotFound) {
+						log.FromContext(ctx).ErrorfWithFields(log.Fields{
+							"error": err,
+						}, "Failed to dequeue retried notification")
 					}
-					log.FromContext(ctx).ErrorfWithFields(log.Fields{
-						"error": err,
-					}, "Failed to dequeue retried notification")
-					continue
+					break
 				}
 				if n == nil {
 					// empty queue
-					continue
+					break
 				}
 				ns.wg.In() <- func() {
 					if err := ns.retrySend(ctx, id, *n); err != nil {

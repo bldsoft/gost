@@ -31,8 +31,8 @@ func (q *MemoryQueue) Enqueue(ctx context.Context, n RetriedNotification) error 
 }
 
 func (q *MemoryQueue) Dequeue(ctx context.Context) (id string, _ *RetriedNotification, err error) {
-	q.mtx.RLock()
-	defer q.mtx.RUnlock()
+	q.mtx.Lock()
+	defer q.mtx.Unlock()
 	n, ok := q.ring.Top()
 	if !ok || time.Now().Before(n.RetryAt) {
 		return "", nil, utils.ErrObjectNotFound
