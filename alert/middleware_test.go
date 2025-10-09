@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	UP   = true
-	DOWN = false
+	UP       = "UP"
+	DOWN     = "DOWN"
+	HAPPENED = "HAPPENED" //up and down was in the same time window
 )
 
 func NewMockLocalCacheRepository() *cache.ExpiringCacheRepository {
@@ -95,14 +96,14 @@ func newMockAlert(id string, severity SeverityLevel, start time.Time, end time.T
 type resultAlert struct {
 	id       string
 	severity SeverityLevel
-	up       bool
+	status   string
 }
 
-func newResultAlert(id string, severity SeverityLevel, up bool) *resultAlert {
+func newResultAlert(id string, severity SeverityLevel, status string) *resultAlert {
 	return &resultAlert{
 		id:       id,
 		severity: severity,
-		up:       up,
+		status:   status,
 	}
 }
 
@@ -112,29 +113,46 @@ func createSender(window time.Duration, alerts []*mockAlert) <-chan []Alert {
 	trueAlerts := make([]*mockAlert, 0, len(alerts)*2)
 
 	for _, alert := range alerts {
-		initialAlert := &mockAlert{
-			Alert: &Alert{
-				SourceID: alert.SourceID,
-				From:     alert.From,
-				Severity: alert.Severity,
-				MetaData: cloneMeta(alert.MetaData),
-			},
-			sendAt: alert.sendAt,
-		}
+		startWindow := alert.From.Truncate(window)
+		endWindow := alert.To.Truncate(window)
 
-		downAlert := &mockAlert{
-			Alert: &Alert{
-				SourceID: alert.SourceID,
-				From:     alert.From,
-				To:       alert.To,
-				Severity: alert.Severity,
-				MetaData: cloneMeta(alert.MetaData),
-			},
-			sendAt: alert.To,
-		}
+		if startWindow.Equal(endWindow) {
+			happenedAlert := &mockAlert{
+				Alert: &Alert{
+					SourceID: alert.SourceID,
+					From:     alert.From,
+					To:       alert.To,
+					Severity: alert.Severity,
+					MetaData: cloneMeta(alert.MetaData),
+				},
+				sendAt: alert.From,
+			}
+			trueAlerts = append(trueAlerts, happenedAlert.withMsg("HAPPENED"))
+		} else {
+			upAlert := &mockAlert{
+				Alert: &Alert{
+					SourceID: alert.SourceID,
+					From:     alert.From,
+					Severity: alert.Severity,
+					MetaData: cloneMeta(alert.MetaData),
+				},
+				sendAt: alert.From,
+			}
 
-		trueAlerts = append(trueAlerts, initialAlert.withMsg("UP"))
-		trueAlerts = append(trueAlerts, downAlert.withMsg("DOWN"))
+			downAlert := &mockAlert{
+				Alert: &Alert{
+					SourceID: alert.SourceID,
+					From:     alert.From,
+					To:       alert.To,
+					Severity: alert.Severity,
+					MetaData: cloneMeta(alert.MetaData),
+				},
+				sendAt: alert.To,
+			}
+
+			trueAlerts = append(trueAlerts, upAlert.withMsg("UP"))
+			trueAlerts = append(trueAlerts, downAlert.withMsg("DOWN"))
+		}
 	}
 
 	sort.Slice(trueAlerts, func(i, j int) bool {
@@ -223,12 +241,11 @@ func TestGroupRecurringMiddleware(t *testing.T) {
 			name: "recurring alerts",
 			inputAlerts: []*mockAlert{
 				newMockAlert("1", SeverityLow, base, base.Add(3*time.Minute)),
-				newMockAlert("1", SeverityLow, base.Add(4*time.Minute), base.Add(5*time.Minute)),
-				newMockAlert("1", SeverityLow, base.Add(6*time.Minute), base.Add(7*time.Minute)),
+				newMockAlert("1", SeverityLow, base.Add(4*time.Minute), base.Add(6*time.Minute)),
+				newMockAlert("1", SeverityLow, base.Add(6*time.Minute), base.Add(9*time.Minute)),
 			},
 			expectedAlerts: []*resultAlert{
-				newResultAlert("1", SeverityLow, UP),
-				newResultAlert("1", SeverityLow, DOWN),
+				newResultAlert("1", SeverityLow, HAPPENED),
 			},
 			ignorePeriod: 5 * time.Minute,
 		},
@@ -254,9 +271,7 @@ func TestGroupRecurringMiddleware(t *testing.T) {
 				for i, expected := range tc.expectedAlerts {
 					assert.Equal(t, expected.id, mockHandler.receivedAlerts[i].SourceID)
 					assert.Equal(t, expected.severity, mockHandler.receivedAlerts[i].Severity)
-
-					up := mockHandler.receivedAlerts[i].To.IsZero()
-					assert.Equal(t, up, expected.up)
+					assert.Equal(t, expected.status, mockHandler.receivedAlerts[i].MetaData["message"])
 				}
 			})
 		})
@@ -293,6 +308,20 @@ func TestDeduplicationMiddleware(t *testing.T) {
 				newResultAlert("1", SeverityLow, DOWN),
 			},
 		},
+		{
+			name: "fast duplicates",
+			inputAlerts: []*mockAlert{
+				newMockAlert("1", SeverityLow, base, base.Add(4*time.Minute)),
+				newMockAlert("1", SeverityMedium, base.Add(time.Minute), base.Add(3*time.Minute)),
+				newMockAlert("1", SeverityLow, base.Add(7*time.Minute), base.Add(13*time.Minute)),
+			},
+			expected: []*resultAlert{
+				newResultAlert("1", SeverityLow, HAPPENED),
+				newResultAlert("1", SeverityMedium, HAPPENED),
+				newResultAlert("1", SeverityLow, UP),
+				newResultAlert("1", SeverityLow, DOWN),
+			},
+		},
 	}
 
 	for _, testcase := range testcases {
@@ -315,13 +344,7 @@ func TestDeduplicationMiddleware(t *testing.T) {
 				for i, expected := range testcase.expected {
 					assert.Equal(t, expected.id, mockHandler.receivedAlerts[i].SourceID)
 					assert.Equal(t, expected.severity, mockHandler.receivedAlerts[i].Severity)
-
-					up := false
-					if mockHandler.receivedAlerts[i].To.IsZero() {
-						up = true
-					}
-
-					assert.Equal(t, expected.up, up)
+					assert.Equal(t, expected.status, mockHandler.receivedAlerts[i].MetaData["message"])
 				}
 			})
 		})
