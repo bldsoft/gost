@@ -10,25 +10,67 @@ import (
 	"github.com/bldsoft/gost/log"
 )
 
-func GroupRecurringMiddleware(store cache.Repository[time.Time], period time.Duration) Middleware {
+const (
+	deduplicationWaitingPrefix  = "dw"
+	deduplicationReceivedPrefix = "dr"
+	groupingStoredPrefix        = "gs"
+	groupingIgnoredStartPrefix  = "gi"
+)
+
+func GroupRecurringMiddleware(store cache.Repository[Alert], period time.Duration) Middleware {
 	return func(next Handler) Handler {
 		return AlertHandlerFunc(func(ctx context.Context, alerts ...Alert) {
 			grouped := make([]Alert, 0, len(alerts))
 
 			for _, alert := range alerts {
-				key := fmt.Sprintf("group-%s-%d", alert.SourceID, alert.Severity)
-				to, err := store.Get(key)
+				key := fmt.Sprintf("%s-%s-%d", groupingStoredPrefix, alert.SourceID, alert.Severity)
+				ignoreKey := fmt.Sprintf("%s-%s-%d", groupingIgnoredStartPrefix, alert.SourceID, alert.Severity)
+
+				storedAlert, err := store.Get(key)
 				if err != nil && !errors.Is(err, cache.ErrCacheMiss) {
 					log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to get value from store")
 				}
-				now := time.Now()
 
-				// Skip if alert is still within cooldown period
-				if err == nil && to.After(now) {
+				if err == nil && storedAlert.To.Add(period).After(alert.From) {
+					// we received alert during ignore period (either start/end/happened)
+
+					// this alert started during ignore period
+					if alert.To.IsZero() {
+						// we store it in case it finishes outside ignore period
+						if err := store.Set(ignoreKey, alert); err != nil {
+							log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to store ignored start alert")
+						}
+					} else {
+						if alert.To.Before(storedAlert.To.Add(period)) {
+							// this alert started during ignore period and finished during ignore period, we skip it
+							_ = store.Delete(ignoreKey)
+							continue
+						}
+						goto free //this is happened alert which started during ignore period and finished outside ignore period
+					}
+
 					continue
 				}
 
-				if err := store.SetFor(key, now.Add(period), period); err != nil {
+			free:
+
+				//we received start/end/happened alert outside ignore period
+
+				if !alert.To.IsZero() {
+					// this is end or happened alert
+					// check if we had start alert during ignore period
+					ignoredStartAlert, err := store.Get(ignoreKey)
+					if err == nil {
+						// this is end alert
+						alert.From = ignoredStartAlert.From
+						_ = store.Delete(ignoreKey)
+					} else if !errors.Is(err, cache.ErrCacheMiss) {
+						log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to get ignored start alert from store")
+					}
+				}
+
+				// just in case use ttl
+				if err := store.SetFor(key, alert, 2*period); err != nil {
 					log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to store alert")
 				}
 
@@ -49,10 +91,10 @@ func DeduplicationMiddleware(store cache.Repository[Alert], TTL time.Duration) M
 
 			for _, alert := range alerts {
 				//for alerts where we are waiting for the finisher
-				key := fmt.Sprintf("dedup-%s-%d-wait", alert.SourceID, alert.Severity)
+				key := fmt.Sprintf("%s-%s-%d", deduplicationWaitingPrefix, alert.SourceID, alert.Severity)
 
 				//for alerts that were already finished (in case of sender restarts etc.)
-				timedKey := fmt.Sprintf("dedup-%s-%d-recvd", alert.SourceID, alert.Severity)
+				timedKey := fmt.Sprintf("%s-%s-%d", deduplicationReceivedPrefix, alert.SourceID, alert.Severity)
 				if val, err := store.Get(timedKey); err == nil {
 					if val.To.After(alert.From) {
 						continue //already received this alert
@@ -75,7 +117,7 @@ func DeduplicationMiddleware(store cache.Repository[Alert], TTL time.Duration) M
 				}
 
 				//either delete entry if this is an end alert or fail if this
-				// is "happened" (started in finished in the same window) alert
+				// is "happened" (started and finished in the same window) alert
 				// that we didn't store, we don't care
 				_ = store.Delete(key)
 
