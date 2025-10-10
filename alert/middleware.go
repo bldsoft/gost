@@ -31,54 +31,67 @@ func GroupRecurringMiddleware(store cache.Repository[Alert], period time.Duratio
 					log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to get value from store")
 				}
 
-				if err == nil && storedAlert.To.Add(period).After(alert.From) {
+				// we received start/end/happened alert outside ignore period
+				isOutsideIgnorePeriod := err != nil || !storedAlert.To.Add(period).After(alert.From)
+
+				if !isOutsideIgnorePeriod {
 					// we received alert during ignore period (either start/end/happened)
-
-					// this alert started during ignore period
-					if alert.To.IsZero() {
-						// we store it in case it finishes outside ignore period
-						if err := store.Set(ignoreKey, alert); err != nil {
-							log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to store ignored start alert")
-						}
-					} else {
-						if alert.To.Before(storedAlert.To.Add(period)) {
-							// this alert started during ignore period and finished during ignore period, we skip it
-							_ = store.Delete(ignoreKey)
-							continue
-						}
-						goto free //this is happened alert which started during ignore period and finished outside ignore period
-					}
-
-					continue
-				}
-
-			free:
-
-				//we received start/end/happened alert outside ignore period
-
-				if !alert.To.IsZero() {
-					// this is end or happened alert
-					// check if we had start alert during ignore period
-					ignoredStartAlert, err := store.Get(ignoreKey)
-					if err == nil {
-						// this is end alert
-						alert.From = ignoredStartAlert.From
-						_ = store.Delete(ignoreKey)
-					} else if !errors.Is(err, cache.ErrCacheMiss) {
-						log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to get ignored start alert from store")
+					if shouldSkipAlert(ctx, store, alert, storedAlert, ignoreKey, period) {
+						continue
 					}
 				}
 
-				// just in case use ttl
-				if err := store.SetFor(key, alert, 2*period); err != nil {
-					log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to store alert")
-				}
-
+				// process alert outside ignore period or happened alert that started in ignore period but finished outside
+				processAlertOutsideIgnorePeriod(ctx, store, &alert, ignoreKey, key, period)
 				grouped = append(grouped, alert)
 			}
 
 			next.Handle(ctx, grouped...)
 		})
+	}
+}
+
+func shouldSkipAlert(ctx context.Context, store cache.Repository[Alert], alert Alert, storedAlert Alert, ignoreKey string, period time.Duration) bool {
+	// this alert started during ignore period
+	if alert.To.IsZero() {
+		// we store it in case it finishes outside ignore period
+		if err := store.Set(ignoreKey, alert); err != nil {
+			log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to store ignored start alert")
+		}
+		return true
+	}
+
+	// this alert started during ignore period and finished during ignore period, we skip it
+	if alert.To.Before(storedAlert.To.Add(period)) {
+		if err := store.Delete(ignoreKey); err != nil {
+			log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to delete ignored start alert")
+		}
+		return true
+	}
+
+	// this is happened alert which started during ignore period and finished outside ignore period
+	return false
+}
+
+func processAlertOutsideIgnorePeriod(ctx context.Context, store cache.Repository[Alert], alert *Alert, ignoreKey, key string, period time.Duration) {
+	// this is end or happened alert
+	if !alert.To.IsZero() {
+		// check if we had start alert during ignore period
+		ignoredStartAlert, err := store.Get(ignoreKey)
+		if err == nil {
+			// this is end alert
+			alert.From = ignoredStartAlert.From
+			if err := store.Delete(ignoreKey); err != nil {
+				log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to delete ignored start alert")
+			}
+		} else if !errors.Is(err, cache.ErrCacheMiss) {
+			log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to get ignored start alert from store")
+		}
+	}
+
+	// just in case use ttl
+	if err := store.SetFor(key, *alert, 2*period); err != nil {
+		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts recurring middleware: failed to store alert")
 	}
 }
 
