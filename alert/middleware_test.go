@@ -2,8 +2,10 @@ package alert
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
+	"slices"
 	"sort"
 	"testing"
 	"testing/synctest"
@@ -19,6 +21,38 @@ const (
 	DOWN     = "DOWN"
 	HAPPENED = "HAPPENED" //up and down was in the same time window
 )
+
+type mockRepository struct {
+	Store map[string]Alert
+}
+
+func (r *mockRepository) CreateAlerts(ctx context.Context, alerts ...Alert) error {
+	for _, alert := range alerts {
+		key := fmt.Sprintf("%s%d", alert.SourceID, alert.Severity)
+		r.Store[key] = alert
+	}
+	return nil
+}
+
+func (r *mockRepository) GetAlert(ctx context.Context, id string, level SeverityLevel) (Alert, error) {
+	key := fmt.Sprintf("%s%d", id, level)
+	alert, ok := r.Store[key]
+	if !ok {
+		return Alert{}, errors.New("not found")
+	}
+	return alert, nil
+}
+
+func (r *mockRepository) UpdateAlert(ctx context.Context, id string, level SeverityLevel, newAlert Alert) error {
+	key := fmt.Sprintf("%s%d", id, level)
+	_, ok := r.Store[key]
+	if !ok {
+		return errors.New("not found")
+	}
+
+	r.Store[key] = newAlert
+	return nil
+}
 
 func NewMockLocalCacheRepository() *cache.ExpiringCacheRepository {
 	return bigcache.NewExpiringRepository("{}")
@@ -359,6 +393,73 @@ func TestDeduplicationMiddleware(t *testing.T) {
 					assert.Equal(t, expected.id, mockHandler.receivedAlerts[i].SourceID)
 					assert.Equal(t, expected.severity, mockHandler.receivedAlerts[i].Severity)
 					assert.Equal(t, expected.status, mockHandler.receivedAlerts[i].MetaData["message"])
+				}
+			})
+		})
+	}
+}
+
+func TestMiddlewares(t *testing.T) {
+	base := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	testcases := []struct {
+		name         string
+		ignorePeriod time.Duration
+		inputAlerts  []*mockAlert
+		expected     []*mockAlert
+	}{
+		{
+			name:         "plain alerts of different severity",
+			ignorePeriod: time.Second,
+			inputAlerts: []*mockAlert{
+				newMockAlert("1", SeverityLow, base, base.Add(9*time.Minute)),
+				newMockAlert("1", SeverityMedium, base.Add(3*time.Minute), base.Add(8*time.Minute)),
+				newMockAlert("1", SeverityHigh, base.Add(4*time.Minute), base.Add(7*time.Minute)),
+				newMockAlert("1", SeverityLow, base.Add(11*time.Minute), base.Add(13*time.Minute)),
+			},
+			expected: []*mockAlert{
+				newMockAlert("1", SeverityLow, base, base.Add(9*time.Minute)),
+				newMockAlert("1", SeverityMedium, base.Add(3*time.Minute), base.Add(8*time.Minute)),
+				newMockAlert("1", SeverityHigh, base.Add(4*time.Minute), base.Add(7*time.Minute)),
+				newMockAlert("1", SeverityLow, base.Add(11*time.Minute), base.Add(13*time.Minute)),
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				store := NewMockLocalCacheRepository()
+				rep := new(mockRepository)
+
+				middleware := Middlewares(
+					DeduplicationMiddleware(cache.Typed[Alert](store), time.Hour),
+					GroupRecurringMiddleware(cache.Typed[Alert](store), testcase.ignorePeriod),
+					ArchivingMiddleware(rep),
+				)
+				mockHandler := &mockHandler{}
+				handler := middleware(mockHandler)
+
+				senderCh := createSender(5*time.Minute, testcase.inputAlerts)
+				for batch := range senderCh {
+					handler.Handle(context.Background(), batch...)
+				}
+
+				assert.Equal(t, len(testcase.expected), len(rep.Store))
+
+				stored := slices.Collect(maps.Values(rep.Store))
+				slices.SortFunc(stored, func(a, b Alert) int {
+					if a.From.Before(b.From) {
+						return -1
+					}
+					return 1
+				})
+
+				for i, expected := range testcase.expected {
+					assert.Equal(t, expected.SourceID, stored[i].SourceID)
+					assert.Equal(t, expected.Severity, stored[i].Severity)
+					assert.Equal(t, expected.From, stored[i].From)
+					assert.Equal(t, expected.To, stored[i].To)
 				}
 			})
 		})
