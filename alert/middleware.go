@@ -17,6 +17,18 @@ const (
 	groupingIgnoredStartPrefix  = "gi"
 )
 
+func ArchivingMiddleware(rep Repository) Middleware {
+	return func(next Handler) Handler {
+		return AlertHandlerFunc(func(ctx context.Context, alerts ...Alert) {
+			if err := rep.CreateAlerts(ctx, alerts...); err != nil {
+				log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts archiving middleware: failed to create alerts")
+			}
+
+			next.Handle(ctx, alerts...)
+		})
+	}
+}
+
 func GroupRecurringMiddleware(store cache.Repository[Alert], period time.Duration) Middleware {
 	return func(next Handler) Handler {
 		return AlertHandlerFunc(func(ctx context.Context, alerts ...Alert) {

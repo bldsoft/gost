@@ -59,3 +59,9 @@ type SourceFunc func(ctx context.Context) ([]Alert, time.Time, error)
 func (f SourceFunc) EvaluateAlerts(ctx context.Context) ([]Alert, time.Time, error) {
 	return f(ctx)
 }
+
+type Repository interface {
+	CreateAlerts(ctx context.Context, alerts ...Alert) error
+	GetAlert(ctx context.Context, id string, level SeverityLevel) (Alert, error)
+	UpdateAlert(ctx context.Context, id string, level SeverityLevel, newAlert Alert) error
+}
