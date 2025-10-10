@@ -45,9 +45,9 @@ func (m Alert) SeverityString() string {
 }
 
 func (m Alert) String() string {
-	base := fmt.Sprintf("%s, %s: %d", m.SourceID, m.SeverityString(), m.From.Unix())
+	base := fmt.Sprintf("%s, %s: %s", m.SourceID, m.SeverityString(), m.From)
 	if !m.To.IsZero() {
-		base = fmt.Sprintf("%s-%d", base, m.To.Unix())
+		base = fmt.Sprintf("%s-%s", base, m.To)
 	}
 
 	return fmt.Sprintf("%s: %s", base, m.MetaData["message"])
@@ -188,8 +188,8 @@ func createSender(window time.Duration, alerts []*mockAlert) <-chan []Alert {
 				winStart = winEnd
 				winEnd = winStart.Add(window)
 				flush()
-				fmt.Println("\n** New window start: ", winStart.Unix(), " **")
 				time.Sleep(time.Until(winEnd))
+				fmt.Println("\n** New window start: ", time.Now(), " **")
 			}
 
 			if alert.From.Before(winStart) {
@@ -246,6 +246,20 @@ func TestGroupRecurringMiddleware(t *testing.T) {
 			},
 			expectedAlerts: []*resultAlert{
 				newResultAlert("1", SeverityLow, HAPPENED),
+				newResultAlert("1", SeverityLow, HAPPENED),
+			},
+			ignorePeriod: 5 * time.Minute,
+		},
+		{
+			name: "recurring alerts with delayed end",
+			inputAlerts: []*mockAlert{
+				newMockAlert("1", SeverityLow, base, base.Add(3*time.Minute)),
+				newMockAlert("1", SeverityLow, base.Add(4*time.Minute), base.Add(6*time.Minute)),
+				newMockAlert("1", SeverityLow, base.Add(6*time.Minute), base.Add(12*time.Minute)),
+			},
+			expectedAlerts: []*resultAlert{
+				newResultAlert("1", SeverityLow, HAPPENED),
+				newResultAlert("1", SeverityLow, DOWN),
 			},
 			ignorePeriod: 5 * time.Minute,
 		},
@@ -256,7 +270,7 @@ func TestGroupRecurringMiddleware(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
 				store := NewMockLocalCacheRepository()
 				middleware := Middlewares(
-					GroupRecurringMiddleware(cache.Typed[time.Time](store), tc.ignorePeriod),
+					GroupRecurringMiddleware(cache.Typed[Alert](store), tc.ignorePeriod),
 				)
 				mockHandler := &mockHandler{}
 				handler := middleware(mockHandler)
