@@ -20,8 +20,32 @@ const (
 func ArchivingMiddleware(rep Repository) Middleware {
 	return func(next Handler) Handler {
 		return AlertHandlerFunc(func(ctx context.Context, alerts ...Alert) {
-			if err := rep.CreateAlerts(ctx, alerts...); err != nil {
-				log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alerts archiving middleware: failed to create alerts")
+			for _, alert := range alerts {
+				if alert.To.IsZero() {
+					//this is starting alert thus we do not search for anything additional
+					if err := rep.CreateAlert(ctx, alert); err != nil {
+						log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alert archiving middleware: failed to archive alert")
+					}
+					continue
+				}
+
+				//this is either "happened" alert or finish alert
+				startAlert, err := rep.GetAlert(ctx, alert.SourceID, alert.Severity)
+				if err != nil {
+					//this is probably "happened" alert or something went wrong
+					//so we just try to save this as is
+					if err := rep.CreateAlert(ctx, alert); err != nil {
+						log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alert archiving middleware: failed to archive alert")
+					}
+					continue
+				}
+
+				//this is finish alert because we found its start version
+				alert.From = startAlert.From
+
+				if err := rep.UpdateAlert(ctx, alert.SourceID, alert.Severity, alert); err != nil {
+					log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "alert archiving middleware: failed to archive alert")
+				}
 			}
 
 			next.Handle(ctx, alerts...)

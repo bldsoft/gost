@@ -26,11 +26,15 @@ type mockRepository struct {
 	Store map[string]Alert
 }
 
-func (r *mockRepository) CreateAlerts(ctx context.Context, alerts ...Alert) error {
-	for _, alert := range alerts {
-		key := fmt.Sprintf("%s%d", alert.SourceID, alert.Severity)
-		r.Store[key] = alert
+func newMockRepository() *mockRepository {
+	return &mockRepository{
+		Store: make(map[string]Alert),
 	}
+}
+
+func (r *mockRepository) CreateAlert(ctx context.Context, alert Alert) error {
+	key := fmt.Sprintf("%s%d", alert.SourceID, alert.Severity)
+	r.Store[key] = alert
 	return nil
 }
 
@@ -399,7 +403,7 @@ func TestDeduplicationMiddleware(t *testing.T) {
 	}
 }
 
-func TestMiddlewares(t *testing.T) {
+func TestArchivingMiddleware(t *testing.T) {
 	base := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	testcases := []struct {
@@ -415,13 +419,13 @@ func TestMiddlewares(t *testing.T) {
 				newMockAlert("1", SeverityLow, base, base.Add(9*time.Minute)),
 				newMockAlert("1", SeverityMedium, base.Add(3*time.Minute), base.Add(8*time.Minute)),
 				newMockAlert("1", SeverityHigh, base.Add(4*time.Minute), base.Add(7*time.Minute)),
-				newMockAlert("1", SeverityLow, base.Add(11*time.Minute), base.Add(13*time.Minute)),
+				newMockAlert("2", SeverityLow, base.Add(11*time.Minute), base.Add(13*time.Minute)),
 			},
 			expected: []*mockAlert{
 				newMockAlert("1", SeverityLow, base, base.Add(9*time.Minute)),
 				newMockAlert("1", SeverityMedium, base.Add(3*time.Minute), base.Add(8*time.Minute)),
 				newMockAlert("1", SeverityHigh, base.Add(4*time.Minute), base.Add(7*time.Minute)),
-				newMockAlert("1", SeverityLow, base.Add(11*time.Minute), base.Add(13*time.Minute)),
+				newMockAlert("2", SeverityLow, base.Add(11*time.Minute), base.Add(13*time.Minute)),
 			},
 		},
 	}
@@ -430,7 +434,7 @@ func TestMiddlewares(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
 				store := NewMockLocalCacheRepository()
-				rep := new(mockRepository)
+				rep := newMockRepository()
 
 				middleware := Middlewares(
 					DeduplicationMiddleware(cache.Typed[Alert](store), time.Hour),
