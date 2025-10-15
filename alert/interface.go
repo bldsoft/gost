@@ -12,13 +12,6 @@ import (
 // ENUM(SeverityLow,SeverityMedium,SeverityHigh,SeverityCritical)
 type SeverityLevel int
 
-// const (
-// 	SeverityLow SeverityLevel = iota
-// 	SeverityMedium
-// 	SeverityHigh
-// 	SeverityCritical
-// )
-
 type Alert struct {
 	SourceID string
 
