@@ -9,6 +9,7 @@ require (
 	github.com/bldsoft/memberlist v0.0.0-20250318063233-36c35bf6fda4
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874
 	github.com/dgraph-io/ristretto v0.1.0
+	github.com/dmarkham/enumer v1.5.9
 	github.com/evanphx/json-patch v4.9.0+incompatible
 	github.com/felixge/httpsnoop v1.0.4
 	github.com/ghodss/yaml v1.0.0
@@ -56,6 +57,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/copier v0.3.5 // indirect
 	github.com/miekg/dns v1.1.63 // indirect
+	github.com/pascaldekloe/name v1.0.1 // indirect
 	github.com/paulmach/orb v0.10.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect

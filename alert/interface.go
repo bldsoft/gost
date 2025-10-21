@@ -9,8 +9,15 @@ import (
 	"github.com/bldsoft/gost/utils/poly"
 )
 
-// ENUM(SeverityLow,SeverityMedium,SeverityHigh,SeverityCritical)
+//go:generate go run github.com/dmarkham/enumer -gqlgen --json -transform=lower -type SeverityLevel --output severity_level.go --trimprefix "SeverityLevel"
 type SeverityLevel int
+
+const (
+	SeverityLevelLow SeverityLevel = iota
+	SeverityLevelMedium
+	SeverityLevelHigh
+	SeverityLevelCritical
+)
 
 type Alert struct {
 	SourceID string
