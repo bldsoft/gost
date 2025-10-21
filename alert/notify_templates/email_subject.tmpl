@@ -1,0 +1,7 @@
+{{- $sev := index . "severity" -}}
+{{- if eq $sev 3 -}}🚨 Critical {{- end -}}
+{{- if eq $sev 2 -}}⚠️ High {{- end -}}
+{{- if eq $sev 1 -}}❗ Medium {{- end -}}
+{{- if eq $sev 0 -}}ℹ️ Low {{- end -}}
+{{- print " alert" -}}
+{{- with index . "id" -}}{{- print ": " -}}{{ . }}{{- end -}}

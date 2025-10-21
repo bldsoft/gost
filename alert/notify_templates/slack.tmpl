@@ -1,0 +1,13 @@
+:rotating_light: *[Alert]*{{- with index . "id" -}} *{{ . }}*{{- end }}
+*Severity:* {{- $sev := index . "severity" -}}
+{{- if eq $sev 3 }} :red_circle: CRITICAL {{- end }}
+{{- if eq $sev 2 }} :large_orange_circle: HIGH {{- end }}
+{{- if eq $sev 1 }} :large_yellow_circle: MEDIUM {{- end }}
+{{- if eq $sev 0 }} :large_blue_circle: LOW {{- end }}
+*Time:* {{ (index . "from").Format "2006-01-02 15:04:05" }}{{if not (index . "to").IsZero}} — {{ (index . "to").Format "2006-01-02 15:04:05" }}{{end}}
+*Details:*
+{{- range $key, $value := . }}
+{{- if and (ne $key "id") (ne $key "severity") (ne $key "from") (ne $key "to") (ne $key "description") }}
+• {{$key}}: `{{$value}}`
+{{- end }}
+{{- end }}
