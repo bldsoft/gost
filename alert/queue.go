@@ -16,20 +16,25 @@ type item[T any] struct {
 
 type queue[T any] struct {
 	heap   *heap.Heap[item[T]]
-	mtx    *sync.RWMutex
+	mtx    sync.RWMutex
 	pushed chan struct{}
 	closed bool
 }
 
 func newQueue[T any]() *queue[T] {
-	var mtx sync.RWMutex
 	return &queue[T]{
 		heap: heap.NewHeap(func(a, b item[T]) bool {
 			return a.next.Before(b.next)
 		}),
-		mtx:    &mtx,
+		mtx:    sync.RWMutex{},
 		pushed: make(chan struct{}, 1),
-		closed: false,
+	}
+}
+
+func (q *queue[T]) notify() {
+	select {
+	case q.pushed <- struct{}{}:
+	default:
 	}
 }
 
@@ -40,10 +45,7 @@ func (q *queue[T]) Push(value T, next time.Time) {
 		return
 	}
 	q.heap.Push(item[T]{value, next})
-	select {
-	case q.pushed <- struct{}{}:
-	default:
-	}
+	q.notify()
 }
 
 func (q *queue[T]) popAndWait(ctx context.Context) *item[T] {
@@ -54,7 +56,7 @@ func (q *queue[T]) popAndWait(ctx context.Context) *item[T] {
 		}
 
 		select {
-		case t := <-time.After(time.Until(v.next)):
+		case <-time.After(time.Until(v.next)):
 			res := func() *item[T] {
 				q.mtx.Lock()
 				defer q.mtx.Unlock()
@@ -62,7 +64,7 @@ func (q *queue[T]) popAndWait(ctx context.Context) *item[T] {
 					return nil
 				}
 				res := q.heap.Top()
-				if !res.next.After(t) {
+				if !res.next.After(v.next) {
 					_ = q.heap.Pop()
 					return &res
 				}
@@ -84,10 +86,7 @@ func (q *queue[T]) RemoveFirstFunc(f func(value T) bool) {
 	q.heap.RemoveFirstFunc(func(item item[T]) bool {
 		return f(item.value)
 	})
-	select {
-	case q.pushed <- struct{}{}:
-	default:
-	}
+	q.notify()
 }
 
 func (q *queue[T]) topWait(ctx context.Context) *item[T] {
@@ -145,8 +144,5 @@ func (q *queue[T]) Close() {
 		return
 	}
 	q.closed = true
-	select {
-	case q.pushed <- struct{}{}:
-	default:
-	}
+	q.notify()
 }

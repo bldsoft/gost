@@ -15,8 +15,8 @@ import (
 func TestQueueScheduledTask(t *testing.T) {
 	type producedTaks struct {
 		id              int
-		startIn         time.Duration
 		issuedIn        time.Duration
+		startIn         time.Duration
 		expectedStartIn time.Duration
 	}
 
@@ -29,31 +29,31 @@ func TestQueueScheduledTask(t *testing.T) {
 			producedTaks: []producedTaks{},
 		},
 		{
-			name: "normal",
+			name: "monotonic",
 			producedTaks: []producedTaks{
-				{id: 1, startIn: 10 * time.Second, issuedIn: 0},
-				{id: 2, startIn: 20 * time.Second, issuedIn: 0},
-				{id: 3, startIn: 30 * time.Second, issuedIn: 0},
+				{id: 1, issuedIn: 0, startIn: 10 * time.Second},
+				{id: 2, issuedIn: 0, startIn: 20 * time.Second},
+				{id: 3, issuedIn: 0, startIn: 30 * time.Second},
 			},
 		}, {
-			name: "earlier start, issued later",
+			name: "issued later, earlier start",
 			producedTaks: []producedTaks{
-				{id: 3, startIn: 30 * time.Second, issuedIn: 0},
-				{id: 2, startIn: 20 * time.Second, issuedIn: 0},
-				{id: 1, startIn: 10 * time.Second, issuedIn: 0},
+				{id: 3, issuedIn: 0, startIn: 30 * time.Second},
+				{id: 2, issuedIn: 0, startIn: 20 * time.Second},
+				{id: 1, issuedIn: 0, startIn: 10 * time.Second},
 			},
 		}, {
-			name: "earlier start, issued later",
+			name: "issued later, earlier start",
 			producedTaks: []producedTaks{
-				{id: 1, startIn: time.Second, issuedIn: time.Second},
-				{id: 2, startIn: time.Second * 2, issuedIn: 0},
+				{id: 1, issuedIn: 0, startIn: time.Second * 2},
+				{id: 2, issuedIn: time.Second, startIn: time.Second},
 			},
 		}, {
 			name: "negative start",
 			producedTaks: []producedTaks{
-				{id: 1, startIn: 10 * time.Second, issuedIn: 0},
-				{id: 2, startIn: -10 * time.Second, issuedIn: 50 * time.Second, expectedStartIn: 50 * time.Second},
-				{id: 3, startIn: 60 * time.Second, issuedIn: 0},
+				{id: 1, issuedIn: 0, startIn: 10 * time.Second},
+				{id: 2, issuedIn: 50 * time.Second, startIn: -10 * time.Second, expectedStartIn: 50 * time.Second},
+				{id: 3, issuedIn: 0, startIn: 60 * time.Second},
 			},
 		},
 	}
