@@ -20,13 +20,22 @@ const (
 )
 
 type Alert struct {
-	SourceID string
+	SourceID string `bson:"sourceID" json:"sourceID"`
 
-	Severity  SeverityLevel
-	From, To  time.Time
-	Receivers []poly.Poly[notify.Receiver]
+	Severity  SeverityLevel                `bson:"severity" json:"severity"`
+	From      time.Time                    `bson:"from" json:"from"`
+	To        time.Time                    `bson:"to,omitempty" json:"to,omitempty"`
+	Receivers []poly.Poly[notify.Receiver] `bson:"receivers" json:"receivers"`
 
-	MetaData map[string]string
+	MetaData map[string]any `bson:"metadata" json:"metadata"`
+}
+
+func (a Alert) AddMetaData(key string, value any) Alert {
+	if a.MetaData == nil {
+		a.MetaData = make(map[string]any)
+	}
+	a.MetaData[key] = value
+	return a
 }
 
 type Handler interface {

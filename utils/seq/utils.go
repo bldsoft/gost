@@ -25,3 +25,15 @@ func Concat2[K, V any](iterators ...iter.Seq2[K, V]) iter.Seq2[K, V] {
 		}
 	}
 }
+
+func FilterFunc[K any](seq iter.Seq[K], filter func(k K) bool) iter.Seq[K] {
+	return func(yield func(k K) bool) {
+		for k := range seq {
+			if filter(k) {
+				if !yield(k) {
+					return
+				}
+			}
+		}
+	}
+}
