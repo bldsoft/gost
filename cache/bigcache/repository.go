@@ -10,6 +10,12 @@ import (
 	"github.com/bldsoft/gost/log"
 )
 
+type Config = bigcache.Config
+
+func DefaultConfig() Config {
+	return bigcache.DefaultConfig(time.Minute)
+}
+
 // ErrNotImplemented means repository method not implemented
 var ErrNotImplemented = errors.New("BigCacheRepositor: method not implemented")
 
@@ -17,10 +23,18 @@ type Repository struct {
 	cache *bigcache.BigCache
 }
 
+func NewRepositoryFromConfig(config bigcache.Config) *Repository {
+	client, err := bigcache.NewBigCache(config)
+	if err != nil {
+		log.Panicf("BigCache failed: %v", err)
+	}
+	return &Repository{cache: client}
+}
+
 func NewRepository(jsonConfig string) *Repository {
 	defConfig := bigcache.DefaultConfig(time.Minute)
 	if err := json.Unmarshal([]byte(jsonConfig), &defConfig); err != nil {
-		log.WarnWithFields(log.Fields{"err": err}, "Failed to unmarshal Ristretto config")
+		log.WarnWithFields(log.Fields{"err": err}, "Failed to unmarshal BigCache config")
 	}
 	client, err := bigcache.NewBigCache(defConfig)
 	if err != nil {
