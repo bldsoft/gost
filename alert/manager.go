@@ -2,6 +2,7 @@ package alert
 
 import (
 	"context"
+	"runtime/debug"
 	"time"
 
 	"github.com/bldsoft/gost/log"
@@ -55,7 +56,8 @@ func (m *Manager) Run(ctx context.Context) {
 			defer func() {
 				if err := recover(); err != nil {
 					log.FromContext(ctx).ErrorfWithFields(log.Fields{
-						"error": err,
+						"error":       err,
+						"stack trace": string(debug.Stack()),
 					}, "Failed to process alerts")
 				}
 			}()
