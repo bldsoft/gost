@@ -36,12 +36,7 @@ func NewRepository(jsonConfig string) *Repository {
 	if err := json.Unmarshal([]byte(jsonConfig), &defConfig); err != nil {
 		log.WarnWithFields(log.Fields{"err": err}, "Failed to unmarshal BigCache config")
 	}
-	client, err := bigcache.NewBigCache(defConfig)
-	if err != nil {
-		log.Panicf("BigCache failed: %v", err)
-	}
-
-	return &Repository{cache: client}
+	return NewRepositoryFromConfig(defConfig)
 }
 
 func (r *Repository) Add(key string, value []byte) error {

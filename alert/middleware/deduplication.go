@@ -44,6 +44,9 @@ func Deduplication(duplicatedCache cache.Repository[*alert.Alert], uniqueKey ...
 				}
 				deduplicated = append(deduplicated, alert)
 			}
+			if len(deduplicated) == 0 {
+				return
+			}
 			next.Handle(ctx, deduplicated...)
 		})
 	}
