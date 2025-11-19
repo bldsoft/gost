@@ -79,6 +79,39 @@ func TestDeduplicationMiddleware(t *testing.T) {
 				}
 			}(),
 			expectSentAlerts: []alert.Alert{alertLow1(0), alertLow1(0, 20*time.Minute)},
+		}, {
+			name: "finished alert shift",
+			handlerCalls: func() []HandleCall {
+				source1 := IntervalCaller(now, 5*time.Minute)
+				return []HandleCall{
+					source1(alertLow1(0)),
+					source1(alertLow1(0*time.Minute, 5*time.Minute)),
+					source1(alertLow1(2*time.Minute, 7*time.Minute)),
+				}
+			}(),
+			expectSentAlerts: []alert.Alert{alertLow1(0), alertLow1(0, 5*time.Minute)},
+		}, {
+			name: "end negative shift",
+			handlerCalls: func() []HandleCall {
+				source1 := IntervalCaller(now, 5*time.Minute)
+				return []HandleCall{
+					source1(alertLow1(0)),
+					source1(alertLow1(0*time.Minute, 5*time.Minute)),
+					source1(alertLow1(2*time.Minute, 4*time.Minute)),
+				}
+			}(),
+			expectSentAlerts: []alert.Alert{alertLow1(0), alertLow1(0, 5*time.Minute)},
+		}, {
+			name: "late alert",
+			handlerCalls: func() []HandleCall {
+				source1 := IntervalCaller(now, 5*time.Minute)
+				return []HandleCall{
+					source1(),
+					source1(alertLow1(5 * time.Minute)),
+					source1(alertLow1(0, 4*time.Minute)),
+				}
+			}(),
+			expectSentAlerts: []alert.Alert{alertLow1(5 * time.Minute)},
 		},
 	}
 	for _, testcase := range testcases {
