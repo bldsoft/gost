@@ -59,8 +59,13 @@ func LogicalDeduplication(duplicatedCache cache.Repository[*alert.Alert], dedupl
 					continue
 				}
 
-				if prev != nil && prev.To.IsZero() && alert.From.Sub(prev.From) < deduplicateStartDur {
-					continue
+				if prev != nil {
+					if prev.To.IsZero() && alert.From.Sub(prev.From) < deduplicateStartDur {
+						continue
+					}
+					if !prev.To.IsZero() && alert.From.Before(prev.To) {
+						alert.From = prev.To
+					}
 				}
 				pass(cacheKey, alert)
 			}
