@@ -33,8 +33,9 @@ func TestGroupMiddleware(t *testing.T) {
 			Interval(5 * time.Minute).GroupInterval(10 * time.Minute).
 			EmitAlerts(alertLow1(0)).ExpectedImmediateAlerts(alertLow1(0)).ExpectedGroupedAlerts().
 			EmitAlerts(alertLow1(0, 5*time.Minute)).ExpectedImmediateAlerts(alertLow1(0, 5*time.Minute)).ExpectedGroupedAlerts().
-			EmitAlerts(alertLow1(10 * time.Minute)).ExpectedImmediateAlerts(alertLow1(10 * time.Minute)).ExpectedGroupedAlerts().
-			EmitAlerts(alertLow1(10*time.Minute, 20*time.Minute)).ExpectedImmediateAlerts(alertLow1(10*time.Minute, 20*time.Minute)).ExpectedGroupedAlerts().
+			EmitAlerts().ExpectedImmediateAlerts().ExpectedGroupedAlerts().
+			EmitAlerts(alertLow1(15 * time.Minute)).ExpectedImmediateAlerts(alertLow1(15 * time.Minute)).ExpectedGroupedAlerts().
+			EmitAlerts(alertLow1(15*time.Minute, 20*time.Minute)).ExpectedImmediateAlerts(alertLow1(15*time.Minute, 20*time.Minute)).ExpectedGroupedAlerts().
 			EmitAlerts().ExpectedImmediateAlerts().ExpectedGroupedAlerts(),
 		newGroupTestcaseBuilder("grouped alert").
 			Interval(5 * time.Minute).GroupInterval(25 * time.Minute).
