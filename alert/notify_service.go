@@ -86,7 +86,9 @@ func (h *NotifyServiceAdapter) prepareMessage(alert Alert) channel.Message {
 		msg.Data[k] = v
 	}
 	msg.Data[FromMsgKey] = alert.From
-	msg.Data[ToMsgKey] = alert.To
+	if !alert.To.IsZero() {
+		msg.Data[ToMsgKey] = alert.To
+	}
 	msg.Data[SeverityMsgKey] = alert.Severity
 	return msg
 }
