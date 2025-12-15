@@ -2,11 +2,14 @@ package cache
 
 import (
 	"errors"
+	"fmt"
 	"time"
+
+	"github.com/bldsoft/gost/utils"
 )
 
 var (
-	ErrCacheMiss = errors.New("cache miss")
+	ErrCacheMiss = fmt.Errorf("cache miss: %w", utils.ErrObjectNotFound)
 	ErrExists    = errors.New("already exists")
 )
 
