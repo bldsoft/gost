@@ -2,12 +2,18 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/bldsoft/gost/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+const (
+	mongoErrCodeResumeTokenLost        = 286
+	mongoErrCodeChangeStreamFatalError = 280
 )
 
 const changeStreamRecoverTime = 30 * time.Second
@@ -40,7 +46,10 @@ func NewChangeStreamWatcher(operations ...OperationType) *changeStreamWatcher {
 			operationTypes = append(operationTypes, changeStreamDeleteOp)
 		}
 	}
-	return &changeStreamWatcher{operationTypes: operationTypes, recoverTime: changeStreamRecoverTime}
+	return &changeStreamWatcher{
+		operationTypes: operationTypes,
+		recoverTime:    changeStreamRecoverTime,
+	}
 }
 
 func (w *changeStreamWatcher) Watch(ctx context.Context, collection *mongo.Collection, handler WatchHandler) {
@@ -49,6 +58,7 @@ func (w *changeStreamWatcher) Watch(ctx context.Context, collection *mongo.Colle
 
 // Watch creates change stream and watch collection. It invokes handler() for each updated.
 func (w *changeStreamWatcher) watch(ctx context.Context, collection *mongo.Collection, handler WatchHandler) {
+	ctx = context.WithValue(ctx, log.LoggerCtxKey, log.FromContext(ctx).WithFields(log.Fields{"collection": collection.Name()}))
 	w.changeStreamWatch(ctx, collection, handler)
 	for {
 		select {
@@ -73,11 +83,14 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 
 	changeStream, err := collection.Watch(ctx, pipline, opt)
 	if err != nil {
-		log.Warnf("Falied to get change stream: %s", err.Error())
+		if needResumeTokenReset(err) {
+			w.resumeToken = nil
+		}
+		log.FromContext(ctx).Warnf("Falied to get change stream: %s", err.Error())
 		return
 	}
 	defer changeStream.Close(ctx)
-	log.Debugf("Change stream watcher for \"%s\" started", collection.Name())
+	log.FromContext(ctx).Debugf("Change stream watcher for \"%s\" started", collection.Name())
 	for changeStream.Next(ctx) {
 		if handler == nil {
 			continue
@@ -93,14 +106,14 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 
 		if opType := w.getOpType(fullDocument, operationType); opType != None {
 			handler(fullDocument, opType)
-			log.Debugf("Change stream watcher detected changes: %s %s", opType, fullDocument)
+			log.FromContext(ctx).Debugf("Change stream watcher detected changes: %s %s", opType, fullDocument)
 		}
 
 		w.resumeToken = changeStream.ResumeToken()
 	}
 
 	if err = changeStream.Err(); err != nil {
-		log.Debugf("Change stream watcher for \"%s\" collection stopped: %s", collection.Name(), err.Error())
+		log.FromContext(ctx).Debugf("Change stream watcher for \"%s\" collection stopped: %s", collection.Name(), err.Error())
 	}
 }
 
@@ -115,4 +128,12 @@ func (w *changeStreamWatcher) getOpType(fulldocument bson.Raw, opType string) Op
 	default:
 		return None
 	}
+}
+
+func needResumeTokenReset(err error) bool {
+	if se := mongo.ServerError(nil); errors.As(err, &se) {
+		return se.HasErrorCode(mongoErrCodeResumeTokenLost) ||
+			se.HasErrorCode(mongoErrCodeChangeStreamFatalError)
+	}
+	return false
 }

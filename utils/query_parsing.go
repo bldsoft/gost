@@ -15,24 +15,28 @@ var (
 	encoder = schema.NewEncoder()
 )
 
+func RegisterQueryConverter[T any](encode func(v reflect.Value) string, decode func(s string) reflect.Value) {
+	var v T
+	decoder.RegisterConverter(v, decode)
+	encoder.RegisterEncoder(v, encode)
+}
+
 func init() {
 	decoder.IgnoreUnknownKeys(true)
 	decoder.ZeroEmpty(true)
-	decoder.RegisterConverter(time.Time{}, func(s string) reflect.Value {
+
+	RegisterQueryConverter[time.Time](func(v reflect.Value) string {
+		return strconv.FormatInt(v.Interface().(time.Time).Unix(), 10)
+	}, func(s string) reflect.Value {
 		ts, _ := strconv.ParseInt(s, 10, 64)
 		return reflect.ValueOf(time.Unix(ts, 0))
 	})
-	encoder.RegisterEncoder(time.Time{}, func(v reflect.Value) string {
-		return strconv.FormatInt(v.Interface().(time.Time).Unix(), 10)
-	})
 
-	var d time.Duration
-	decoder.RegisterConverter(d, func(s string) reflect.Value {
+	RegisterQueryConverter[time.Duration](func(v reflect.Value) string {
+		return time.Duration(v.Int()).String()
+	}, func(s string) reflect.Value {
 		dur, _ := time.ParseDuration(s)
 		return reflect.ValueOf(dur)
-	})
-	encoder.RegisterEncoder(d, func(v reflect.Value) string {
-		return time.Duration(v.Int()).String()
 	})
 }
 
