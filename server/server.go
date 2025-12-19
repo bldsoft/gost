@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"os"
@@ -11,9 +12,9 @@ import (
 
 	"github.com/bldsoft/gost/log"
 	gost_middleware "github.com/bldsoft/gost/server/middleware"
+	"github.com/bldsoft/gost/utils/errgroup"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/hashicorp/go-multierror"
 )
 
 type Router = chi.Router
@@ -42,45 +43,49 @@ type InitializableMicroservice interface {
 }
 
 type Server struct {
-	// httpListener net.Listener
-	// httpsListener net.Listener
+	httpListener      net.Listener
+	httpsListener     net.Listener
 	srv               *http.Server
 	microservices     []IMicroservice
 	commonMiddlewares chi.Middlewares
 	runnerManager     *AsyncJobManager
 	routerWrapper     func(http.Handler) http.Handler
 	needHealthProbes  bool
-	//config            Config
+	config            Config
 }
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
-	//var (
-	//	httpListener, httpsListener net.Listener
-	//	err                         error
-	//)
-	//
-	//httpListener, err = net.Listen("tcp", config.ServiceBindAddress.HostPort())
-	//if err != nil {
-	//	log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create http listener on %s.", config.ServiceBindAddress.HostPort())
-	//}
-	//
-	//if config.TLS.IsTLSEnabled() {
-	//	httpsListener, err = net.Listen("tcp", config.TLS.ServiceBindAddress.HostPort())
-	//	if err != nil {
-	//		log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create https listener on %s", config.TLS.ServiceBindAddress.HostPort())
-	//	}
-	//}
+	var (
+		httpListener, httpsListener net.Listener
+		err                         error
+	)
 
-	srv := Server{srv: &http.Server{
-		Addr: config.ServiceBindAddress.HostPort(),
-		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
-			ctx = context.WithValue(ctx, connContextKey{}, c)
-			return ctx
-		},
-		Handler: nil},
+	httpListener, err = net.Listen("tcp", config.ServiceBindAddress.HostPort())
+	if err != nil {
+		log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create http listener on %s.", config.ServiceBindAddress.HostPort())
+	}
+
+	if config.TLS.IsTLSEnabled() {
+		httpsListener, err = net.Listen("tcp", config.TLS.ServiceBindAddress.HostPort())
+		if err != nil {
+			log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create https listener on %s", config.TLS.ServiceBindAddress.HostPort())
+		}
+	}
+
+	srv := Server{
+		httpListener:  httpListener,
+		httpsListener: httpsListener,
+		srv: &http.Server{
+			ConnContext: func(ctx context.Context, c net.Conn) context.Context {
+				ctx = context.WithValue(ctx, connContextKey{}, c)
+				return ctx
+			},
+			Handler: nil},
 		microservices:     microservices,
 		commonMiddlewares: nil,
-		runnerManager:     NewAsyncJobManager()}
+		runnerManager:     NewAsyncJobManager(),
+		config:            config,
+	}
 	middleware.DefaultLogger = DefaultLogger
 	return &srv
 }
@@ -170,30 +175,23 @@ func (s *Server) newRouter(isAppRouter bool) chi.Router {
 func (s *Server) Start() {
 	s.init()
 
-	go func() {
-		log.Infof("Server started. Listening on %s", s.srv.Addr)
-		if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Error(err.Error())
-		}
-	}()
+	if s.httpListener != nil {
+		log.Infof("Server listening http on %s", s.config.ServiceBindAddress.HostPort())
+		go func() {
+			if err := s.srv.Serve(s.httpListener); !errors.Is(err, http.ErrServerClosed) {
+				log.Error(err.Error())
+			}
+		}()
+	}
 
-	//if s.httpListener != nil {
-	//	log.Infof("Server listening http on %s", s.config.ServiceBindAddress.HostPort())
-	//	go func() {
-	//		if err := http.Serve(s.httpListener, nil); err != http.ErrServerClosed {
-	//			log.Error(err.Error())
-	//		}
-	//	}()
-	//}
-	//
-	//if s.httpsListener != nil {
-	//	log.Infof("Server listening https on %s", s.config.TLS.ServiceBindAddress.HostPort())
-	//	go func() {
-	//		if err := http.ServeTLS(s.httpsListener, nil, s.config.TLS.CertificatePath, s.config.TLS.KeyPath); err != http.ErrServerClosed {
-	//			log.Error(err.Error())
-	//		}
-	//	}()
-	//}
+	if s.httpsListener != nil {
+		log.Infof("Server listening https on %s", s.config.TLS.ServiceBindAddress.HostPort())
+		go func() {
+			if err := s.srv.ServeTLS(s.httpsListener, s.config.TLS.CertificatePath, s.config.TLS.KeyPath); !errors.Is(err, http.ErrServerClosed) {
+				log.Error(err.Error())
+			}
+		}()
+	}
 
 	s.gracefulShutdown()
 }
@@ -210,41 +208,20 @@ func (s *Server) gracefulShutdown() {
 	timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	//var eg errgroup.Group
-	//for _, listener := range []net.Listener{s.httpListener, s.httpsListener} {
-	//	if listener != nil {
-	//		eg.Go(func() error {
-	//			return listener.Close()
-	//		})
-	//	}
-	//}
-	//errs := eg.Wait()
-	//
-	//errs = errors.Join(errs, s.runnerManager.Stop(timeout))
-	//
-	//if errs != nil {
-	//	log.Errorf("Failed to shut down server gracefully\n%v", errs)
-	//} else {
-	//	log.Info("Server gracefully stopped")
-	//}
-
-	errors := make([]error, 0)
-	if err := s.srv.Shutdown(timeout); err != nil {
-		errors = append(errors, err)
-	}
-	if err := s.runnerManager.Stop(timeout); err != nil {
-		if merr, ok := err.(*multierror.Error); ok {
-			errors = append(errors, merr.Errors...)
-		} else {
-			errors = append(errors, err)
+	var eg errgroup.Group
+	for _, listener := range []net.Listener{s.httpListener, s.httpsListener} {
+		if listener != nil {
+			eg.Go(func() error {
+				return listener.Close()
+			})
 		}
 	}
+	errs := eg.Wait()
 
-	if len(errors) > 0 {
-		log.Errorf("Failed to shut down server gracefully")
-		for _, err := range errors {
-			log.Errorf("%v", err)
-		}
+	errs = errors.Join(errs, s.srv.Shutdown(ctx), s.runnerManager.Stop(timeout))
+
+	if errs != nil {
+		log.Errorf("Failed to shut down server gracefully\n%v", errs)
 	} else {
 		log.Info("Server gracefully stopped")
 	}
