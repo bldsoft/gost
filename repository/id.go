@@ -1,5 +1,7 @@
 package repository
 
+import "fmt"
+
 type IIDProvider interface {
 	RawID() interface{}
 	StringID() string
@@ -38,7 +40,7 @@ func ToStringID[T any, U IEntityIDPtr[T]](id interface{}) string {
 		if err := U(&e).SetIDFromString(v); err == nil {
 			return U(&e).StringID()
 		} else {
-			panic("failed to get string id: " + err.Error())
+			panic(fmt.Sprintf("failed to get string id: %v"+err.Error(), id))
 		}
 	case IEntityID:
 		return v.StringID()

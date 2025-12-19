@@ -5,6 +5,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	gost "github.com/bldsoft/gost/config"
+	"github.com/bldsoft/gost/utils"
 )
 
 type Config struct {
@@ -37,8 +38,10 @@ func (c *Config) prepareDsn() error {
 	if err != nil {
 		return err
 	}
-	if url.Scheme != "clickhouse" {
-		url.Scheme = "clickhouse"
+	if !utils.IsIn(url.Scheme, "clickhouse") {
+		if !utils.IsIn(url.Scheme, "http", "https") {
+			url.Scheme = "clickhouse"
+		}
 
 		// remove default database from query and set it to path
 		database := url.Query().Get("database")

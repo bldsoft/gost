@@ -17,6 +17,7 @@ var (
 
 func init() {
 	decoder.IgnoreUnknownKeys(true)
+	decoder.ZeroEmpty(true)
 	decoder.RegisterConverter(time.Time{}, func(s string) reflect.Value {
 		ts, _ := strconv.ParseInt(s, 10, 64)
 		return reflect.ValueOf(time.Unix(ts, 0))

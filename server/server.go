@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"net"
 	"net/http"
 	"os"
@@ -12,12 +11,14 @@ import (
 
 	"github.com/bldsoft/gost/log"
 	gost_middleware "github.com/bldsoft/gost/server/middleware"
-	"github.com/bldsoft/gost/utils/errgroup"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/hashicorp/go-multierror"
 )
 
 type Router = chi.Router
+
+type connContextKey struct{}
 
 var DefaultLogger func(next http.Handler) http.Handler = log.DefaultRequestLogger()
 
@@ -35,44 +36,51 @@ type IMicroservice interface {
 	GetAsyncRunners() []AsyncRunner
 }
 
+type InitializableMicroservice interface {
+	IMicroservice
+	Initialize()
+}
+
 type Server struct {
-	httpListener      net.Listener
-	httpsListener     net.Listener
-	router            *chi.Mux
+	// httpListener net.Listener
+	// httpsListener net.Listener
+	srv               *http.Server
 	microservices     []IMicroservice
 	commonMiddlewares chi.Middlewares
 	runnerManager     *AsyncJobManager
 	routerWrapper     func(http.Handler) http.Handler
-	config            Config
+	needHealthProbes  bool
+	//config            Config
 }
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
-	var (
-		httpListener, httpsListener net.Listener
-		err                         error
-	)
+	//var (
+	//	httpListener, httpsListener net.Listener
+	//	err                         error
+	//)
+	//
+	//httpListener, err = net.Listen("tcp", config.ServiceBindAddress.HostPort())
+	//if err != nil {
+	//	log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create http listener on %s.", config.ServiceBindAddress.HostPort())
+	//}
+	//
+	//if config.TLS.IsTLSEnabled() {
+	//	httpsListener, err = net.Listen("tcp", config.TLS.ServiceBindAddress.HostPort())
+	//	if err != nil {
+	//		log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create https listener on %s", config.TLS.ServiceBindAddress.HostPort())
+	//	}
+	//}
 
-	httpListener, err = net.Listen("tcp", config.ServiceBindAddress.HostPort())
-	if err != nil {
-		log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create http listener on %s.", config.ServiceBindAddress.HostPort())
-	}
-
-	if config.TLS.IsTLSEnabled() {
-		httpsListener, err = net.Listen("tcp", config.TLS.ServiceBindAddress.HostPort())
-		if err != nil {
-			log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create https listener on %s", config.TLS.ServiceBindAddress.HostPort())
-		}
-	}
-
-	srv := Server{
-		httpListener:      httpListener,
-		httpsListener:     httpsListener,
-		router:            chi.NewRouter(),
+	srv := Server{srv: &http.Server{
+		Addr: config.ServiceBindAddress.HostPort(),
+		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
+			ctx = context.WithValue(ctx, connContextKey{}, c)
+			return ctx
+		},
+		Handler: nil},
 		microservices:     microservices,
 		commonMiddlewares: nil,
-		runnerManager:     NewAsyncJobManager(),
-		config:            config,
-	}
+		runnerManager:     NewAsyncJobManager()}
 	middleware.DefaultLogger = DefaultLogger
 	return &srv
 }
@@ -97,55 +105,95 @@ func (s *Server) SetRouterWrapper(middleware func(http.Handler) http.Handler) *S
 	return s
 }
 
+func (s *Server) WithHealthProbes(v bool) *Server {
+	s.needHealthProbes = v
+	return s
+}
+
 func (s *Server) AddAsyncRunners(runners ...AsyncRunner) *Server {
 	s.runnerManager.Append(runners...)
 	return s
 }
 
 func (s *Server) init() {
-	for _, microservice := range s.microservices {
-		s.runnerManager.Append(microservice.GetAsyncRunners()...)
+	if !s.needHealthProbes {
+		http.Handle("/", s.appRouter())
+		return
 	}
 
-	s.router.Use(s.commonMiddlewares...)
+	dynamicRouter := new(dynamicRouter)
+	dynamicRouter.Set(s.probesOnlyRouter())
+	http.Handle("/", dynamicRouter)
+	go func() {
+		dynamicRouter.Set(s.appRouter())
+	}()
+}
 
-	s.router.Mount("/debug", middleware.Profiler())
+func (s *Server) appRouter() http.Handler {
+	defer func() {
+		for _, microservice := range s.microservices {
+			s.runnerManager.Append(microservice.GetAsyncRunners()...)
+		}
+		go s.runnerManager.Start()
+	}()
 
+	appRouter := s.newRouter(true)
 	for _, m := range s.microservices {
-		s.router.Group(func(r chi.Router) {
+		appRouter.Group(func(r chi.Router) {
+			if im, ok := m.(InitializableMicroservice); ok {
+				im.Initialize()
+			}
 			m.BuildRoutes(r)
 		})
 	}
 
 	if s.routerWrapper != nil {
-		http.Handle("/", s.routerWrapper(s.router))
-	} else {
-		http.Handle("/", s.router)
+		return s.routerWrapper(appRouter)
 	}
+	return appRouter
+}
+
+func (s *Server) probesOnlyRouter() http.Handler {
+	return s.newRouter(false)
+}
+
+func (s *Server) newRouter(isAppRouter bool) chi.Router {
+	r := chi.NewMux()
+	r.Use(s.commonMiddlewares...)
+	r.Mount("/debug", middleware.Profiler())
+	if s.needHealthProbes {
+		r.Route("/probes", newProbesController().SetReady(isAppRouter).Mount)
+	}
+	return r
 }
 
 func (s *Server) Start() {
 	s.init()
 
-	go s.runnerManager.Start()
+	go func() {
+		log.Infof("Server started. Listening on %s", s.srv.Addr)
+		if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.Error(err.Error())
+		}
+	}()
 
-	if s.httpListener != nil {
-		log.Infof("Server listening http on %s", s.config.ServiceBindAddress.HostPort())
-		go func() {
-			if err := http.Serve(s.httpListener, nil); err != http.ErrServerClosed {
-				log.Error(err.Error())
-			}
-		}()
-	}
-
-	if s.httpsListener != nil {
-		log.Infof("Server listening https on %s", s.config.TLS.ServiceBindAddress.HostPort())
-		go func() {
-			if err := http.ServeTLS(s.httpsListener, nil, s.config.TLS.CertificatePath, s.config.TLS.KeyPath); err != http.ErrServerClosed {
-				log.Error(err.Error())
-			}
-		}()
-	}
+	//if s.httpListener != nil {
+	//	log.Infof("Server listening http on %s", s.config.ServiceBindAddress.HostPort())
+	//	go func() {
+	//		if err := http.Serve(s.httpListener, nil); err != http.ErrServerClosed {
+	//			log.Error(err.Error())
+	//		}
+	//	}()
+	//}
+	//
+	//if s.httpsListener != nil {
+	//	log.Infof("Server listening https on %s", s.config.TLS.ServiceBindAddress.HostPort())
+	//	go func() {
+	//		if err := http.ServeTLS(s.httpsListener, nil, s.config.TLS.CertificatePath, s.config.TLS.KeyPath); err != http.ErrServerClosed {
+	//			log.Error(err.Error())
+	//		}
+	//	}()
+	//}
 
 	s.gracefulShutdown()
 }
@@ -162,20 +210,41 @@ func (s *Server) gracefulShutdown() {
 	timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var eg errgroup.Group
-	for _, listener := range []net.Listener{s.httpListener, s.httpsListener} {
-		if listener != nil {
-			eg.Go(func() error {
-				return listener.Close()
-			})
+	//var eg errgroup.Group
+	//for _, listener := range []net.Listener{s.httpListener, s.httpsListener} {
+	//	if listener != nil {
+	//		eg.Go(func() error {
+	//			return listener.Close()
+	//		})
+	//	}
+	//}
+	//errs := eg.Wait()
+	//
+	//errs = errors.Join(errs, s.runnerManager.Stop(timeout))
+	//
+	//if errs != nil {
+	//	log.Errorf("Failed to shut down server gracefully\n%v", errs)
+	//} else {
+	//	log.Info("Server gracefully stopped")
+	//}
+
+	errors := make([]error, 0)
+	if err := s.srv.Shutdown(timeout); err != nil {
+		errors = append(errors, err)
+	}
+	if err := s.runnerManager.Stop(timeout); err != nil {
+		if merr, ok := err.(*multierror.Error); ok {
+			errors = append(errors, merr.Errors...)
+		} else {
+			errors = append(errors, err)
 		}
 	}
-	errs := eg.Wait()
 
-	errs = errors.Join(errs, s.runnerManager.Stop(timeout))
-
-	if errs != nil {
-		log.Errorf("Failed to shut down server gracefully\n%v", errs)
+	if len(errors) > 0 {
+		log.Errorf("Failed to shut down server gracefully")
+		for _, err := range errors {
+			log.Errorf("%v", err)
+		}
 	} else {
 		log.Info("Server gracefully stopped")
 	}

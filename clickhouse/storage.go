@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -94,7 +95,9 @@ func (db *Storage) Connect() {
 func (db *Storage) RunMigrations() {
 	db.doOnce.Do(func() {
 		dbname := db.cfg.options.Auth.Database
-		db.runMigrations(dbname)
+		if err := db.runMigrations(dbname); err != nil {
+			log.Errorf("ClickHouse migrations: %s", err)
+		}
 	})
 }
 
@@ -123,36 +126,29 @@ func (db *Storage) LogError(err error) {
 	}
 }
 
-func (db *Storage) runMigrations(dbname string) bool {
+func (db *Storage) runMigrations(dbname string) error {
 	log.Debug("Checking clickhouse DB schema...")
 	cfg := &mm.Config{DatabaseName: dbname, MultiStatementEnabled: true}
 
 	driver, err := mm.WithInstance(db.Db, cfg)
 	if err != nil {
-		log.ErrorWithFields(log.Fields{"error": err}, "Migrations: driver failed")
-
-		return false
+		return fmt.Errorf("driver failed: %w", err)
 	}
 
 	src, _ := source.Open("stub://")
 	src.(*stub.Stub).Migrations = db.migrations
 	m, err := migrate.NewWithInstance("", src, "", driver)
 	m.Log = storage.MigrateLogger{}
-
 	if err != nil {
-		log.ErrorWithFields(log.Fields{"error": err}, "Migrations: instance failed")
-
-		return false
+		return fmt.Errorf("instance failed: %w", err)
 	}
 
 	err = m.Up()
 	if err != nil && err != migrate.ErrNoChange {
-		log.ErrorWithFields(log.Fields{"error": err}, "Migrations: process failed")
-
-		return false
+		return fmt.Errorf("process failed: %w", err)
 	}
 
-	return true
+	return nil
 }
 
 func (db *Storage) Stats(ctx context.Context) (map[string]interface{}, error) {

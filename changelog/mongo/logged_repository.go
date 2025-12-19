@@ -90,7 +90,6 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U, opt ...*r
 			return nil, err
 		}
 		rec.Record.Data = string(data)
-
 		return nil, r.changeLogRep.Insert(ctx, rec)
 	})
 	return err

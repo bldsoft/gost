@@ -13,6 +13,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var (
+	defaultOpt = repository.QueryOptions{
+		Archived: false,
+	}
+)
+
 // UserEntryCtxKey is the context.Context key to store the user entry. It's used for setting UpdateUserID, CreateUserID fields
 var UserEntryCtxKey interface{} = "UserEntry"
 
@@ -281,7 +287,8 @@ func (r *BaseRepository[T, U]) Delete(ctx context.Context, id interface{}, optio
 		}
 	}
 
-	return r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{BsonFieldNameArchived: true}})
+	err := r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{BsonFieldNameDeleteTime: time.Now(), BsonFieldNameArchived: true}})
+	return err
 }
 
 // Delete removes objects
@@ -292,7 +299,7 @@ func (r *BaseRepository[T, U]) DeleteMany(ctx context.Context, filter interface{
 			return err
 		}
 	}
-	_, err := r.Collection().UpdateMany(ctx, filter, bson.M{"$set": bson.M{BsonFieldNameArchived: true}})
+	_, err := r.Collection().UpdateMany(ctx, filter, bson.M{"$set": bson.M{BsonFieldNameDeleteTime: time.Now(), BsonFieldNameArchived: true}})
 	return err
 }
 
@@ -329,14 +336,13 @@ func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.I
 
 func (r *BaseRepository[T, U]) where(filter interface{}, options ...*repository.QueryOptions) interface{} {
 	if len(options) == 0 {
-		return filter
+		options = append(options, &defaultOpt)
 	}
 	switch filter := filter.(type) {
 	case bson.M:
-
 		if !options[0].Archived {
 			nonArchivedCond := bson.A{
-				bson.M{BsonFieldNameArchived: bson.M{"$exists": false}},
+				bson.M{BsonFieldNameArchived: bson.M{"$exists": false}, BsonFieldNameDeleteTime: bson.M{"$exists": false}},
 				bson.M{BsonFieldNameArchived: false},
 			}
 
