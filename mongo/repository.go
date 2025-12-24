@@ -13,11 +13,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var (
-	defaultOpt = repository.QueryOptions{
-		Archived: false,
-	}
-)
+var defaultOpt = repository.QueryOptions{
+	Archived: false,
+}
 
 // UserEntryCtxKey is the context.Context key to store the user entry. It's used for setting UpdateUserID, CreateUserID fields
 var UserEntryCtxKey interface{} = "UserEntry"
@@ -263,8 +261,21 @@ func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntit
 	}
 }
 
-func (r *BaseRepository[T, U]) Upsert(ctx context.Context, entity U, opt ...*repository.QueryOptions) error {
-	return r.UpsertOne(ctx, r.where(bson.M{"_id": entity.RawID()}, opt...), entity)
+func (r *BaseRepository[T, U]) InsertOrReplace(ctx context.Context, entity U) (inserted bool, _ error) {
+	if entity.IsZeroID() {
+		err := r.Insert(ctx, entity)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+
+	opts := options.Replace().SetUpsert(true)
+	result, err := r.Collection().ReplaceOne(ctx, bson.M{"_id": entity.RawID()}, entity, opts)
+	if err != nil {
+		return false, err
+	}
+	return result.MatchedCount == 0, nil
 }
 
 func (r *BaseRepository[T, U]) UpsertOne(ctx context.Context, filter interface{}, update U) error {

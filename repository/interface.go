@@ -19,7 +19,7 @@ type Repository[T any, U IEntityIDPtr[T]] interface {
 	UpdateMany(ctx context.Context, entities []U) error
 	UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*QueryOptions) error
 	UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, queryOpt ...*QueryOptions) (U, error)
-	Upsert(ctx context.Context, entity U, opt ...*QueryOptions) error
+	InsertOrReplace(ctx context.Context, entity U) (inserted bool, _ error)
 	UpsertOne(ctx context.Context, filter interface{}, update U) error
 	Delete(ctx context.Context, id interface{}, options ...*QueryOptions) error
 	DeleteMany(ctx context.Context, filter interface{}, options ...*QueryOptions) error
