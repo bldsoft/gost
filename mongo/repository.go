@@ -13,11 +13,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var (
-	defaultOpt = repository.QueryOptions{
-		Archived: false,
-	}
-)
+var defaultOpt = repository.QueryOptions{
+	Archived: false,
+}
 
 // UserEntryCtxKey is the context.Context key to store the user entry. It's used for setting UpdateUserID, CreateUserID fields
 var UserEntryCtxKey interface{} = "UserEntry"
@@ -263,20 +261,47 @@ func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntit
 	}
 }
 
-func (r *BaseRepository[T, U]) Upsert(ctx context.Context, entity U, opt ...*repository.QueryOptions) error {
-	return r.UpsertOne(ctx, r.where(bson.M{"_id": entity.RawID()}, opt...), entity)
+func (r *BaseRepository[T, U]) InsertOrReplace(ctx context.Context, entity U) (inserted bool, _ error) {
+	if entity.IsZeroID() {
+		err := r.Insert(ctx, entity)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+
+	opts := options.Replace().SetUpsert(true)
+	result, err := r.Collection().ReplaceOne(ctx, bson.M{"_id": entity.RawID()}, entity, opts)
+	if err != nil {
+		return false, err
+	}
+	return result.MatchedCount == 0, nil
 }
 
-func (r *BaseRepository[T, U]) UpsertMany(ctx context.Context, entities []U, opt ...*repository.QueryOptions) error {
+func (r *BaseRepository[T, U]) InsertOrReplaceMany(ctx context.Context, entities []U) error {
 	if len(entities) == 0 {
 		return nil
 	}
+	if len(entities) == 1 {
+		_, err := r.InsertOrReplace(ctx, entities[0])
+		return err
+	}
 	docs := make([]mongo.WriteModel, 0, len(entities))
 	for _, entity := range entities {
+		if entity.IsZeroID() {
+			r.fillTimeStamp(ctx, entity, true)
+			docs = append(docs, mongo.NewInsertOneModel().SetDocument(entity))
+			continue
+		}
+
 		r.fillTimeStamp(ctx, entity, false)
-		docs = append(docs, mongo.NewUpdateOneModel().SetFilter(bson.M{"_id": entity.RawID()}).SetUpdate(bson.M{"$set": entity}).SetUpsert(true))
+		docs = append(docs, mongo.NewReplaceOneModel().
+			SetFilter(bson.M{"_id": entity.RawID()}).
+			SetReplacement(entity).
+			SetUpsert(false))
 	}
-	_, err := r.Collection().BulkWrite(ctx, docs, &options.BulkWriteOptions{})
+	opt := options.BulkWrite().SetOrdered(false)
+	_, err := r.Collection().BulkWrite(ctx, docs, opt)
 	return err
 }
 
