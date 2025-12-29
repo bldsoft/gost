@@ -12,7 +12,6 @@ import (
 
 	"github.com/bldsoft/gost/log"
 	gost_middleware "github.com/bldsoft/gost/server/middleware"
-	"github.com/bldsoft/gost/utils/errgroup"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -208,17 +207,7 @@ func (s *Server) gracefulShutdown() {
 	timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var eg errgroup.Group
-	for _, listener := range []net.Listener{s.httpListener, s.httpsListener} {
-		if listener != nil {
-			eg.Go(func() error {
-				return listener.Close()
-			})
-		}
-	}
-	errs := eg.Wait()
-
-	errs = errors.Join(errs, s.srv.Shutdown(ctx), s.runnerManager.Stop(timeout))
+	errs := errors.Join(s.srv.Shutdown(ctx), s.runnerManager.Stop(timeout))
 
 	if errs != nil {
 		log.Errorf("Failed to shut down server gracefully\n%v", errs)
