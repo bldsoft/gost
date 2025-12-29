@@ -77,7 +77,7 @@ func (c *Config) Validate() error {
 	}
 
 	if len(c.TLS.ServiceBindAddress) == 0 {
-		c.ServiceBindAddress = config.Address(net.JoinHostPort(c.ServiceBindAddress.Host(), "3443"))
+		c.TLS.ServiceBindAddress = config.Address(net.JoinHostPort(c.ServiceBindAddress.Host(), "3443"))
 	}
 	return nil
 }
