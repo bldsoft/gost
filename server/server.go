@@ -174,25 +174,29 @@ func (s *Server) newRouter(isAppRouter bool) chi.Router {
 func (s *Server) Start() {
 	s.init()
 
-	if s.httpListener != nil {
-		log.Infof("Server listening http on %s", s.config.ServiceBindAddress.HostPort())
-		go func() {
-			if err := s.srv.Serve(s.httpListener); !errors.Is(err, http.ErrServerClosed) {
-				log.Error(err.Error())
-			}
-		}()
-	}
-
-	if s.httpsListener != nil {
-		log.Infof("Server listening https on %s", s.config.TLS.ServiceBindAddress.HostPort())
-		go func() {
-			if err := s.srv.ServeTLS(s.httpsListener, s.config.TLS.CertificatePath, s.config.TLS.KeyPath); !errors.Is(err, http.ErrServerClosed) {
-				log.Error(err.Error())
-			}
-		}()
-	}
+	s.serveListener(s.httpListener, "", "")
+	s.serveListener(s.httpsListener, s.config.TLS.CertificatePath, s.config.TLS.KeyPath)
 
 	s.gracefulShutdown()
+}
+
+func (s *Server) serveListener(listener net.Listener, certPath, keyPath string) {
+	if listener == nil {
+		return
+	}
+
+	log.Infof("Server listening %s", listener.Addr().String())
+	go func() {
+		var err error
+		if certPath != "" && keyPath != "" {
+			err = s.srv.ServeTLS(listener, certPath, keyPath)
+		} else {
+			err = s.srv.Serve(listener)
+		}
+		if !errors.Is(err, http.ErrServerClosed) {
+			log.Error(err.Error())
+		}
+	}()
 }
 
 func (s *Server) gracefulShutdown() {
