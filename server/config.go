@@ -21,7 +21,7 @@ type Config struct {
 	ServiceBindHost    string         `mapstructure:"SERVICE_HOST" description:"DEPRECATED. IP address, or a host name that can be resolved to IP addresses"`
 	ServiceBindPort    int            `mapstructure:"SERVICE_PORT" description:"DEPRECATED. Service port"`
 	ServiceBindAddress config.Address `mapstructure:"SERVICE_BIND_ADDRESS" description:"Service configuration related to what address bind to and port to listen on for HTTP"`
-	ServiceAddress     config.Address `mapstructure:"SERVICE_ADDRESS" description:"Service public address for HTTP"`
+	ServiceAddress     config.Address `mapstructure:"SERVICE_ADDRESS" description:"Service public address"`
 
 	TLS TLSConfig `mapstructure:"TLS"`
 }
@@ -76,7 +76,7 @@ func (c *Config) Validate() error {
 		c.ServiceInstance = c.DeprecatedServiceInstance
 	}
 
-	if len(c.TLS.ServiceBindAddress) == 0 {
+	if c.TLS.IsTLSEnabled() && len(c.TLS.ServiceBindAddress) == 0 {
 		c.TLS.ServiceBindAddress = config.Address(net.JoinHostPort(c.ServiceBindAddress.Host(), "3443"))
 	}
 	return nil

@@ -42,8 +42,6 @@ type InitializableMicroservice interface {
 }
 
 type Server struct {
-	httpListener      net.Listener
-	httpsListener     net.Listener
 	srv               *http.Server
 	microservices     []IMicroservice
 	commonMiddlewares chi.Middlewares
@@ -54,26 +52,8 @@ type Server struct {
 }
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
-	var (
-		httpListener, httpsListener net.Listener
-		err                         error
-	)
-
-	httpListener, err = net.Listen("tcp", config.ServiceBindAddress.HostPort())
-	if err != nil {
-		log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create http listener on %s.", config.ServiceBindAddress.HostPort())
-	}
-
-	if config.TLS.IsTLSEnabled() {
-		httpsListener, err = net.Listen("tcp", config.TLS.ServiceBindAddress.HostPort())
-		if err != nil {
-			log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create https listener on %s", config.TLS.ServiceBindAddress.HostPort())
-		}
-	}
 
 	srv := Server{
-		httpListener:  httpListener,
-		httpsListener: httpsListener,
 		srv: &http.Server{
 			ConnContext: func(ctx context.Context, c net.Conn) context.Context {
 				ctx = context.WithValue(ctx, connContextKey{}, c)
@@ -174,8 +154,25 @@ func (s *Server) newRouter(isAppRouter bool) chi.Router {
 func (s *Server) Start() {
 	s.init()
 
-	s.serveListener(s.httpListener, "", "")
-	s.serveListener(s.httpsListener, s.config.TLS.CertificatePath, s.config.TLS.KeyPath)
+	var (
+		httpListener, httpsListener net.Listener
+		err                         error
+	)
+
+	httpListener, err = net.Listen("tcp", s.config.ServiceBindAddress.HostPort())
+	if err != nil {
+		log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create http listener on %s.", s.config.ServiceBindAddress.HostPort())
+	}
+
+	if s.config.TLS.IsTLSEnabled() {
+		httpsListener, err = net.Listen("tcp", s.config.TLS.ServiceBindAddress.HostPort())
+		if err != nil {
+			log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create https listener on %s", s.config.TLS.ServiceBindAddress.HostPort())
+		}
+	}
+
+	s.serveListener(httpListener, "", "")
+	s.serveListener(httpsListener, s.config.TLS.CertificatePath, s.config.TLS.KeyPath)
 
 	s.gracefulShutdown()
 }
