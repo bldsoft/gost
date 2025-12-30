@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"os"
@@ -13,7 +14,6 @@ import (
 	gost_middleware "github.com/bldsoft/gost/server/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/hashicorp/go-multierror"
 )
 
 type Router = chi.Router
@@ -48,19 +48,23 @@ type Server struct {
 	runnerManager     *AsyncJobManager
 	routerWrapper     func(http.Handler) http.Handler
 	needHealthProbes  bool
+	config            Config
 }
 
 func NewServer(config Config, microservices ...IMicroservice) *Server {
-	srv := Server{srv: &http.Server{
-		Addr: config.ServiceBindAddress.HostPort(),
-		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
-			ctx = context.WithValue(ctx, connContextKey{}, c)
-			return ctx
-		},
-		Handler: nil},
+
+	srv := Server{
+		srv: &http.Server{
+			ConnContext: func(ctx context.Context, c net.Conn) context.Context {
+				ctx = context.WithValue(ctx, connContextKey{}, c)
+				return ctx
+			},
+			Handler: nil},
 		microservices:     microservices,
 		commonMiddlewares: nil,
-		runnerManager:     NewAsyncJobManager()}
+		runnerManager:     NewAsyncJobManager(),
+		config:            config,
+	}
 	middleware.DefaultLogger = DefaultLogger
 	return &srv
 }
@@ -150,13 +154,46 @@ func (s *Server) newRouter(isAppRouter bool) chi.Router {
 func (s *Server) Start() {
 	s.init()
 
+	var (
+		httpListener, httpsListener net.Listener
+		err                         error
+	)
+
+	httpListener, err = net.Listen("tcp", s.config.ServiceBindAddress.HostPort())
+	if err != nil {
+		log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create http listener on %s.", s.config.ServiceBindAddress.HostPort())
+	}
+
+	if s.config.TLS.IsTLSEnabled() {
+		httpsListener, err = net.Listen("tcp", s.config.TLS.ServiceBindAddress.HostPort())
+		if err != nil {
+			log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create https listener on %s", s.config.TLS.ServiceBindAddress.HostPort())
+		}
+	}
+
+	s.serveListener(httpListener, "", "")
+	s.serveListener(httpsListener, s.config.TLS.CertificatePath, s.config.TLS.KeyPath)
+
+	s.gracefulShutdown()
+}
+
+func (s *Server) serveListener(listener net.Listener, certPath, keyPath string) {
+	if listener == nil {
+		return
+	}
+
+	log.Infof("Server listening %s", listener.Addr().String())
 	go func() {
-		log.Infof("Server started. Listening on %s", s.srv.Addr)
-		if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
+		var err error
+		if certPath != "" && keyPath != "" {
+			err = s.srv.ServeTLS(listener, certPath, keyPath)
+		} else {
+			err = s.srv.Serve(listener)
+		}
+		if !errors.Is(err, http.ErrServerClosed) {
 			log.Error(err.Error())
 		}
 	}()
-	s.gracefulShutdown()
 }
 
 func (s *Server) gracefulShutdown() {
@@ -171,23 +208,10 @@ func (s *Server) gracefulShutdown() {
 	timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	errors := make([]error, 0)
-	if err := s.srv.Shutdown(timeout); err != nil {
-		errors = append(errors, err)
-	}
-	if err := s.runnerManager.Stop(timeout); err != nil {
-		if merr, ok := err.(*multierror.Error); ok {
-			errors = append(errors, merr.Errors...)
-		} else {
-			errors = append(errors, err)
-		}
-	}
+	errs := errors.Join(s.srv.Shutdown(ctx), s.runnerManager.Stop(timeout))
 
-	if len(errors) > 0 {
-		log.Errorf("Failed to shut down server gracefully")
-		for _, err := range errors {
-			log.Errorf("%v", err)
-		}
+	if errs != nil {
+		log.Errorf("Failed to shut down server gracefully\n%v", errs)
 	} else {
 		log.Info("Server gracefully stopped")
 	}

@@ -20,8 +20,20 @@ type Config struct {
 
 	ServiceBindHost    string         `mapstructure:"SERVICE_HOST" description:"DEPRECATED. IP address, or a host name that can be resolved to IP addresses"`
 	ServiceBindPort    int            `mapstructure:"SERVICE_PORT" description:"DEPRECATED. Service port"`
-	ServiceBindAddress config.Address `mapstructure:"SERVICE_BIND_ADDRESS" description:"Service configuration related to what address bind to and port to listen on"`
+	ServiceBindAddress config.Address `mapstructure:"SERVICE_BIND_ADDRESS" description:"Service configuration related to what address bind to and port to listen on for HTTP"`
 	ServiceAddress     config.Address `mapstructure:"SERVICE_ADDRESS" description:"Service public address"`
+
+	TLS TLSConfig `mapstructure:"TLS"`
+}
+
+type TLSConfig struct {
+	ServiceBindAddress config.Address `mapstructure:"SERVICE_BIND_ADDRESS" description:"Service configuration related to what address bind to and port to listen on for HTTPS"`
+	CertificatePath    string         `mapstructure:"CERTIFICATE_PATH" description:"Path to TLS certificate file"`
+	KeyPath            string         `mapstructure:"KEY_PATH" description:"Path to TLS key file"`
+}
+
+func (c TLSConfig) IsTLSEnabled() bool {
+	return len(c.CertificatePath) > 0
 }
 
 func (c *Config) LogExporterConfig() log.LogExporterConfig {
@@ -39,13 +51,13 @@ func (c *Config) ServiceID() string {
 func (c *Config) SetDefaults() {
 	c.DeprecatedServiceInstance = serviceInstanceAuto
 	// c.ServiceInstance = serviceInstanceHostname // use value from DeprecatedServiceInstance
+
 	c.ServiceBindHost = "0.0.0.0"
 	c.ServiceBindPort = 3000
 }
 
 // Validate ...
 func (c *Config) Validate() error {
-	var err error
 	if len(c.ServiceName) == 0 {
 		return errors.New("ServiceName is not set. Do it in SetDefaults method")
 	}
@@ -63,5 +75,9 @@ func (c *Config) Validate() error {
 		log.Warn("SERVICE_NAME is deprecated, use SERVICE_INSTANCE_NAME instead")
 		c.ServiceInstance = c.DeprecatedServiceInstance
 	}
-	return err
+
+	if c.TLS.IsTLSEnabled() && len(c.TLS.ServiceBindAddress) == 0 {
+		c.TLS.ServiceBindAddress = config.Address(net.JoinHostPort(c.ServiceBindAddress.Host(), "3443"))
+	}
+	return nil
 }
