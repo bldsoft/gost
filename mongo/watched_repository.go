@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"reflect"
+	"slices"
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
@@ -19,15 +20,17 @@ type WatchedRepositoryOptions struct {
 // WatchedRepository is a helper wrapper for Repository, that allows you to monitor changes via Watcher
 type WatchedRepository[T any, U repository.IEntityIDPtr[T]] struct {
 	Repository[T, U]
-	mongoWatcher *Watcher
-	handlers     []repository.Watcher[T, U]
-	handlerC     chan repository.Watcher[T, U]
+	mongoWatcher   *Watcher
+	handlers       []repository.Watcher[T, U]
+	handlerC       chan repository.Watcher[T, U]
+	deleteHandlerC chan repository.Watcher[T, U]
 }
 
 func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, watchers ...repository.Watcher[T, U]) *WatchedRepository[T, U] {
 	rep := &WatchedRepository[T, U]{
-		Repository: NewRepository[T, U](db, collectionName),
-		handlerC:   make(chan repository.Watcher[T, U]),
+		Repository:     NewRepository[T, U](db, collectionName),
+		handlerC:       make(chan repository.Watcher[T, U]),
+		deleteHandlerC: make(chan repository.Watcher[T, U]),
 	}
 	rep.init()
 	for _, w := range watchers {
@@ -36,8 +39,11 @@ func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, coll
 	return rep
 }
 
-func (r *WatchedRepository[T, U]) AddWatcher(w repository.Watcher[T, U]) {
+func (r *WatchedRepository[T, U]) AddWatcher(w repository.Watcher[T, U]) (unsubscribe func()) {
 	r.handlerC <- w
+	return func() {
+		r.deleteHandlerC <- w
+	}
 }
 
 func (r *WatchedRepository[T, U]) init() {
@@ -73,6 +79,10 @@ func (r *WatchedRepository[T, U]) init() {
 					log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.Name()}, "Warmed up")
 				}
 				r.handlers = append(r.handlers, handler)
+			case handler := <-r.deleteHandlerC:
+				r.handlers = slices.DeleteFunc(r.handlers, func(w repository.Watcher[T, U]) bool {
+					return w == handler
+				})
 			case upd := <-updateC:
 				for _, handler := range r.handlers {
 					handler.OnEvent(upd)

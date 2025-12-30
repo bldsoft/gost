@@ -42,7 +42,7 @@ type Watcher[T any, U IEntityIDPtr[T]] interface {
 
 type WatchedRepository[T any, U IEntityIDPtr[T]] interface {
 	Repository[T, U]
-	AddWatcher(w Watcher[T, U])
+	AddWatcher(w Watcher[T, U]) (unsubscribe func())
 }
 
 func NewWatcher[T any, U IEntityIDPtr[T]](
