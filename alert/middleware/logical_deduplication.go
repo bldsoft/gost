@@ -47,7 +47,7 @@ func LogicalDeduplication(duplicatedCache cache.Repository[*alert.Alert], dedupl
 					case prev == nil:
 						pass(cacheKey, alert)
 					case prev.To.IsZero():
-						if alert.To.After(prev.From) {
+						if !alert.To.Before(prev.From) {
 							alert.From = prev.From
 							pass(cacheKey, alert)
 						}

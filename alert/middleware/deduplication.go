@@ -16,9 +16,9 @@ func Deduplication(duplicatedCache cache.Repository[*alert.Alert], uniqueKey ...
 		uniqueKey = []func(alert alert.Alert) string{
 			func(alert alert.Alert) string {
 				if alert.To.IsZero() {
-					return fmt.Sprintf("%s-%s-%d", alert.SourceID, alert.Severity, alert.From.Unix())
+					return fmt.Sprintf("%s-%s-%d-s", alert.SourceID, alert.Severity, alert.From.Unix())
 				}
-				return fmt.Sprintf("%s-%s-%d", alert.SourceID, alert.Severity, alert.To.Unix())
+				return fmt.Sprintf("%s-%s-%d-e", alert.SourceID, alert.Severity, alert.To.Unix())
 			},
 		}
 	}

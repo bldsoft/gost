@@ -113,6 +113,20 @@ func TestDeduplicationMiddleware(t *testing.T) {
 			}(),
 			expectSentAlerts: []alert.Alert{alertLow1(5 * time.Minute)},
 		},
+		{
+			name: "start stop at the same time",
+			handlerCalls: func() []HandleCall {
+				source1 := IntervalCaller(now, 5*time.Minute)
+				return []HandleCall{
+					source1(alertLow1(5 * time.Minute)),
+					source1(alertLow1(5*time.Minute, 5*time.Minute)),
+				}
+			}(),
+			expectSentAlerts: []alert.Alert{
+				alertLow1(5 * time.Minute),
+				alertLow1(5*time.Minute, 5*time.Minute),
+			},
+		},
 	}
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
