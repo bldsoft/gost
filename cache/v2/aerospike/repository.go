@@ -112,6 +112,9 @@ func (r *Repository) get(key string) (*cache.Item, uint32, error) {
 			return nil, 0, err
 		}
 		for _, c := range continuations {
+			if c == nil || c.Bins[valueBinKey] == nil {
+				return nil, 0, cache.ErrCacheMiss
+			}
 			res.Value = append(res.Value, c.Bins[valueBinKey].([]byte)...)
 		}
 	}
