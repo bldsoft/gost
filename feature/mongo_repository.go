@@ -11,6 +11,8 @@ import (
 	"github.com/bldsoft/gost/repository"
 )
 
+const DefaultCollectionName = "feature"
+
 // MongoRepository implements IFeatureRepository interface
 type MongoRepository struct {
 	rep                 mongo.Repository[Feature, *Feature]
@@ -18,8 +20,11 @@ type MongoRepository struct {
 }
 
 // NewMongoRepository creates feature repository.
-func NewMongoRepository(db *mongo.Storage, serviceInstanceName string) *MongoRepository {
-	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, "feature"), serviceInstanceName: serviceInstanceName}
+func NewMongoRepository(db *mongo.Storage, serviceInstanceName string, collName ...string) *MongoRepository {
+	if len(collName) == 0 {
+		collName = []string{DefaultCollectionName}
+	}
+	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, collName[0]), serviceInstanceName: serviceInstanceName}
 	if err := rep.Load(); err != nil {
 		log.Error("Failed to load features")
 	} else {

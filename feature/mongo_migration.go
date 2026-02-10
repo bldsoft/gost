@@ -9,7 +9,16 @@ import (
 	"github.com/bldsoft/gost/mongo"
 )
 
-func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) {
+type FeatureMigrator struct {
+	db       *mongo.Storage
+	collName string
+}
+
+func NewFeatureMigrator(db *mongo.Storage, collName string) *FeatureMigrator {
+	return &FeatureMigrator{db: db, collName: collName}
+}
+
+func (m *FeatureMigrator) AddFeatureMigration(version uint, features ...*Feature) {
 	size := len(features)
 	if size == 0 {
 		return
@@ -26,11 +35,11 @@ func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) 
 	}
 
 	up := fmt.Sprintf(`[{
-	"insert": "feature",
+	"insert": "%s",
 	"documents": %s
 	},
 	{
-	"update": "feature",
+	"update": "%s",
 	"updates": [{
 		"q": {
 			"_id": { "$in" : [%s] }
@@ -44,22 +53,22 @@ func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) 
 		"multi": true
 	}]
 	}
-]`, featureStr, IDs, mongo.BsonFieldNameCreateTime, mongo.BsonFieldNameUpdateTime)
+]`, m.collName, featureStr, m.collName, IDs, mongo.BsonFieldNameCreateTime, mongo.BsonFieldNameUpdateTime)
 
 	down := fmt.Sprintf(`[{
-	"delete": "feature",
+	"delete": "%s",
 	"deletes": [{
 		"q": {
 			"_id": { "$in" : [%s] }
 		},
 		"limit": 0
 	}]
-}]`, IDs)
+}]`, m.collName, IDs)
 
-	db.AddMigration(version, up, down)
+	m.db.AddMigration(version, up, down)
 }
 
-func DeleteFeatureMigration(db *mongo.Storage, version uint, featureIDs ...feature.IdType) {
+func (m *FeatureMigrator) DeleteFeatureMigration(version uint, featureIDs ...feature.IdType) {
 	if len(featureIDs) == 0 {
 		return
 	}
@@ -68,8 +77,8 @@ func DeleteFeatureMigration(db *mongo.Storage, version uint, featureIDs ...featu
 		IDs += fmt.Sprintf(",%d", featureIDs[i])
 	}
 
-	db.AddMigration(version, fmt.Sprintf(`[{
-		"update": "feature",
+	m.db.AddMigration(version, fmt.Sprintf(`[{
+		"update": "%s",
 		"updates": [{
 			"q": {
 				"_id": { "$in" : [%s] }
@@ -81,8 +90,8 @@ func DeleteFeatureMigration(db *mongo.Storage, version uint, featureIDs ...featu
 			},
 			"multi": true
 		}]
-	}]`, IDs, mongo.BsonFieldNameArchived), fmt.Sprintf(`[{
-		"update": "feature",
+	}]`, m.collName, IDs, mongo.BsonFieldNameArchived), fmt.Sprintf(`[{
+		"update": "%s",
 		"updates": [{
 			"q": {
 				"_id": { "$in" : [%s] }
@@ -94,5 +103,10 @@ func DeleteFeatureMigration(db *mongo.Storage, version uint, featureIDs ...featu
 			},
 			"multi": true
 		}]
-	}]`, IDs, mongo.BsonFieldNameArchived))
+	}]`, m.collName, IDs, mongo.BsonFieldNameArchived))
+}
+
+func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) {
+	m := NewFeatureMigrator(db, DefaultCollectionName)
+	m.AddFeatureMigration(version, features...)
 }
