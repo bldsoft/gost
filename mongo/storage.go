@@ -115,7 +115,7 @@ func (db *Storage) runMigrations(dbname string) error {
 		return nil
 	}
 
-	config := &mm.Config{DatabaseName: dbname}
+	config := &mm.Config{DatabaseName: dbname, MigrationsCollection: db.config.MigrationCollection}
 	driver, err := mm.WithInstance(db.Client, config)
 	if err != nil {
 		return fmt.Errorf("driver failed: %w", err)
