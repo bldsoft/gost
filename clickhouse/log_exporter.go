@@ -46,8 +46,8 @@ type LogExporterConfig struct {
 
 // SetDefaults ...
 func (c *LogExporterConfig) SetDefaults() {
-	c.FlushTimeMs = 1000
-	c.MaxBatchSize = 1000
+	c.FlushTimeMs = 30_000
+	c.MaxBatchSize = 10_000
 	c.ChanBufSize = 16384
 	c.TableName = "LOG_RECORDS"
 }
