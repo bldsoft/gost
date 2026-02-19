@@ -38,12 +38,15 @@ func (f *ExportFormatter[T, P]) GetRequestInfo(ctx context.Context) P {
 }
 
 func (f *ExportFormatter[T, P]) NewLogEntry(r *http.Request) (middleware.LogEntry, *http.Request) {
+	receivedAt := time.Now()
+
 	var requestInfo T
 	requestInfoPtr := (P)(&requestInfo)
 	baseRequestInfo := requestInfoPtr.BaseRequestInfo()
 
 	reqID := middleware.GetReqID(r.Context())
-	baseRequestInfo.RequestTime = time.Now().Unix()
+	baseRequestInfo.RequestTime = receivedAt.Unix()
+	baseRequestInfo.RequestTimeFractionMs = uint16(receivedAt.UnixMilli() % 1000)
 	baseRequestInfo.Instance = f.instanceName
 	baseRequestInfo.RequestMethod = GetRequestMethodType(r.Method)
 	if baseRequestInfo.RequestMethod == ERROR {
