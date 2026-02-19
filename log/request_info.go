@@ -36,7 +36,7 @@ type RequestInfo struct {
 	ResponseCode  ResponseCodeType
 	Size          uint32
 	RequestTime   int64
-	RequestTimeMs int16
+	RequestTimeMs uint16
 	HandleTime    uint32
 	Instance      string
 	RequestId     string
