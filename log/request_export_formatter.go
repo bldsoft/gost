@@ -46,7 +46,7 @@ func (f *ExportFormatter[T, P]) NewLogEntry(r *http.Request) (middleware.LogEntr
 
 	reqID := middleware.GetReqID(r.Context())
 	baseRequestInfo.RequestTime = receivedAt.Unix()
-	baseRequestInfo.RequestTimeMs = uint16(receivedAt.UnixMilli() % 1000)
+	baseRequestInfo.RequestTimeFractionMs = uint16(receivedAt.UnixMilli() % 1000)
 	baseRequestInfo.Instance = f.instanceName
 	baseRequestInfo.RequestMethod = GetRequestMethodType(r.Method)
 	if baseRequestInfo.RequestMethod == ERROR {
