@@ -106,6 +106,11 @@ func (m *FeatureMigrator) DeleteFeatureMigration(version uint, featureIDs ...fea
 	}]`, m.collName, IDs, mongo.BsonFieldNameArchived))
 }
 
+func DeleteFeatureMigration(db *mongo.Storage, version uint, featureIDs ...feature.IdType) {
+	m := NewFeatureMigrator(db, DefaultCollectionName)
+	m.DeleteFeatureMigration(version, featureIDs...)
+}
+
 func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) {
 	m := NewFeatureMigrator(db, DefaultCollectionName)
 	m.AddFeatureMigration(version, features...)
