@@ -8,7 +8,10 @@ import (
 )
 
 func TestExporterSearchParse(t *testing.T) {
-	eq := func(s string) sq.Sqlizer {
+	eq := func(s string, not bool) sq.Sqlizer {
+		if not {
+			return sq.Eq{"field": "!" + s}
+		}
 		return sq.Eq{"field": s}
 	}
 	tests := []struct {
@@ -19,53 +22,71 @@ func TestExporterSearchParse(t *testing.T) {
 		{
 			name:     "no operators",
 			search:   "1",
-			expected: eq("1"),
+			expected: eq("1", false),
 		},
 		{
 			name:     "or operator",
 			search:   "1|2|3",
-			expected: sq.Or{eq("1"), eq("2"), eq("3")},
+			expected: sq.Or{eq("1", false), eq("2", false), eq("3", false)},
 		},
 		{
 			name:     "or empty",
 			search:   "1|",
-			expected: eq("1"),
+			expected: eq("1", false),
 		},
 		{
 			name:     "and operator",
 			search:   "1&2&3",
-			expected: sq.And{eq("1"), eq("2"), eq("3")},
+			expected: sq.And{eq("1", false), eq("2", false), eq("3", false)},
 		},
 		{
 			name:     "and empty",
 			search:   "1&",
-			expected: eq("1"),
+			expected: eq("1", false),
 		},
 		{
 			name:   "and/or operator",
 			search: "1|2&3|4&5&6|7|8",
 			expected: sq.Or{
-				eq("1"),
-				sq.And{eq("2"), eq("3")},
-				sq.And{eq("4"), eq("5"), eq("6")},
-				eq("7"),
-				eq("8"),
+				eq("1", false),
+				sq.And{eq("2", false), eq("3", false)},
+				sq.And{eq("4", false), eq("5", false), eq("6", false)},
+				eq("7", false),
+				eq("8", false),
 			},
 		},
 		{
 			name:     "escaped and",
 			search:   "1\\&2",
-			expected: eq("1&2"),
+			expected: eq("1&2", false),
 		},
 		{
 			name:     "escaped or",
 			search:   "1\\|2",
-			expected: eq("1|2"),
+			expected: eq("1|2", false),
 		},
 		{
-			name:     "escaped or",
+			name:     "escaped or in sequence",
 			search:   "1\\||\\|2",
-			expected: sq.Or{eq("1|"), eq("|2")},
+			expected: sq.Or{eq("1|", false), eq("|2", false)},
+		},
+		{
+			name:     "not operator",
+			search:   "!response",
+			expected: eq("response", true),
+		},
+		{
+			name:   "not with and and quoted terms",
+			search: "!'failed to' & !\"cache miss\"",
+			expected: sq.And{
+				eq("failed to", true),
+				eq("cache miss", true),
+			},
+		},
+		{
+			name:     "escaped not",
+			search:   "\\!response",
+			expected: eq("!response", false),
 		},
 	}
 
@@ -74,5 +95,4 @@ func TestExporterSearchParse(t *testing.T) {
 			require.Equal(t, tc.expected, new(ClickHouseLogExporter).parseExpr(tc.search, eq))
 		})
 	}
-
 }

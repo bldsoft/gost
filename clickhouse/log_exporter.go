@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"slices"
 	"strings"
 	"time"
 
@@ -140,18 +139,26 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 
 	if filter.Search != nil && len(*filter.Search) > 0 {
 		var searchFilter sq.Sqlizer
-		searchFilter = e.parseExpr(*filter.Search, func(search string) sq.Sqlizer {
-			search = strings.TrimSpace(search)
-			return sq.Or{
-				sq.Expr(
-					fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName),
-					search,
-				),
-				sq.Expr(
-					fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName),
-					search,
-				),
+		searchFilter = e.parseExpr(*filter.Search, func(search string, not bool) sq.Sqlizer {
+			cmp := "<> 0"
+			if not {
+				cmp = "= 0"
 			}
+
+			msgExpr := sq.Expr(
+				fmt.Sprintf(`positionCaseInsensitive(%s, ?) %s`, MsgColumnName, cmp),
+				search,
+			)
+			fieldsExpr := sq.Expr(
+				fmt.Sprintf(`positionCaseInsensitive(%s, ?) %s`, FieldsColumnName, cmp),
+				search,
+			)
+
+			if not {
+				return sq.And{msgExpr, fieldsExpr}
+			}
+
+			return sq.Or{msgExpr, fieldsExpr}
 		})
 
 		if filter.TrackRequest {
@@ -166,31 +173,78 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 			searchFilter = sq.Expr(fmt.Sprintf("%s IN (?)", ReqIDColumnName), subQuery)
 		}
 
-		where = append(where, searchFilter)
+		if searchFilter != nil {
+			where = append(where, searchFilter)
+		}
 	}
 
 	return where
 }
 
-func (e *ClickHouseLogExporter) parseExpr(search string, makeRawExpr func(string) sq.Sqlizer) sq.Sqlizer {
+func (e *ClickHouseLogExporter) parseExpr(search string, makeRawExpr func(string, bool) sq.Sqlizer) sq.Sqlizer {
 	return parseHelper[sq.Or](search, "|", func(s string) sq.Sqlizer {
-		return parseHelper[sq.And](s, "&", makeRawExpr)
+		return parseHelper[sq.And](s, "&", func(s string) sq.Sqlizer {
+			s, not := parseExprTerm(s)
+			if len(s) == 0 {
+				return nil
+			}
+			return makeRawExpr(s, not)
+		})
 	})
 }
 
 func parseHelper[T sq.Or | sq.And](search, op string, makeRawExpr func(string) sq.Sqlizer) sq.Sqlizer {
 	exprs := split(search, op)
-	exprs = slices.DeleteFunc(exprs, func(s string) bool { return len(s) == 0 })
-
-	if len(exprs) == 1 {
-		return makeRawExpr(exprs[0])
-	}
 
 	var res T
 	for _, expr := range exprs {
-		res = append(res, makeRawExpr(expr))
+		sqlExpr := makeRawExpr(expr)
+		if sqlExpr == nil {
+			continue
+		}
+		res = append(res, sqlExpr)
 	}
-	return sq.Sqlizer(res)
+
+	switch len(res) {
+	case 0:
+		return nil
+	case 1:
+		return res[0]
+	default:
+		return sq.Sqlizer(res)
+	}
+}
+
+func parseExprTerm(expr string) (string, bool) {
+	expr = strings.TrimSpace(expr)
+	if len(expr) == 0 {
+		return "", false
+	}
+
+	not := false
+	switch {
+	case strings.HasPrefix(expr, "!"):
+		not = true
+		expr = strings.TrimSpace(strings.TrimPrefix(expr, "!"))
+	case strings.HasPrefix(expr, "\\!"):
+		expr = strings.TrimPrefix(expr, "\\")
+	}
+
+	expr = strings.TrimSpace(expr)
+	expr = trimQuotes(expr)
+	return expr, not
+}
+
+func trimQuotes(s string) string {
+	if len(s) < 2 {
+		return s
+	}
+
+	if (s[0] == '\'' && s[len(s)-1] == '\'') || (s[0] == '"' && s[len(s)-1] == '"') {
+		return s[1 : len(s)-1]
+	}
+
+	return s
 }
 
 func split(search, op string) []string {
