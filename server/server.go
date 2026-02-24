@@ -59,7 +59,10 @@ func NewServer(config Config, microservices ...IMicroservice) *Server {
 				ctx = context.WithValue(ctx, connContextKey{}, c)
 				return ctx
 			},
-			Handler: nil},
+			Handler:      nil,
+			ReadTimeout:  time.Duration(config.ReadTimeoutMs) * time.Millisecond,
+			WriteTimeout: time.Duration(config.WriteTimeoutMs) * time.Millisecond,
+		},
 		microservices:     microservices,
 		commonMiddlewares: nil,
 		runnerManager:     NewAsyncJobManager(),
