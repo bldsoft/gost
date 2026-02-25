@@ -12,6 +12,7 @@ import (
 	"github.com/bldsoft/gost/entity/stat"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
+	"github.com/bldsoft/gost/utils"
 	"github.com/bldsoft/gost/utils/exporter"
 	"golang.org/x/sync/errgroup"
 )
@@ -222,7 +223,7 @@ func parseExprTerm(expr string) (string, bool) {
 	switch {
 	case strings.HasPrefix(expr, "!"):
 		not = true
-		expr = strings.TrimSpace(strings.TrimPrefix(expr, "!"))
+		expr = strings.TrimPrefix(expr, "!")
 	case strings.HasPrefix(expr, "\\!"):
 		expr = strings.TrimPrefix(expr, "\\")
 	}
@@ -237,7 +238,11 @@ func trimQuotes(s string) string {
 		return s
 	}
 
-	if (s[0] == '\'' && s[len(s)-1] == '\'') || (s[0] == '"' && s[len(s)-1] == '"') {
+	if s[0] != s[len(s)-1] {
+		return s
+	}
+
+	if utils.IsIn(s[0], '\'', '"') {
 		return s[1 : len(s)-1]
 	}
 
