@@ -8,11 +8,11 @@ import (
 )
 
 func TestExporterSearchParse(t *testing.T) {
-	eq := func(s string, not bool) sq.Sqlizer {
-		if not {
-			return sq.Eq{"field": "!" + s}
-		}
+	eq := func(s string) sq.Sqlizer {
 		return sq.Eq{"field": s}
+	}
+	notEq := func(s string) sq.Sqlizer {
+		return sq.Expr("NOT (?)", eq(s))
 	}
 	tests := []struct {
 		name     string
@@ -22,71 +22,71 @@ func TestExporterSearchParse(t *testing.T) {
 		{
 			name:     "no operators",
 			search:   "1",
-			expected: eq("1", false),
+			expected: eq("1"),
 		},
 		{
 			name:     "or operator",
 			search:   "1|2|3",
-			expected: sq.Or{eq("1", false), eq("2", false), eq("3", false)},
+			expected: sq.Or{eq("1"), eq("2"), eq("3")},
 		},
 		{
 			name:     "or empty",
 			search:   "1|",
-			expected: eq("1", false),
+			expected: eq("1"),
 		},
 		{
 			name:     "and operator",
 			search:   "1&2&3",
-			expected: sq.And{eq("1", false), eq("2", false), eq("3", false)},
+			expected: sq.And{eq("1"), eq("2"), eq("3")},
 		},
 		{
 			name:     "and empty",
 			search:   "1&",
-			expected: eq("1", false),
+			expected: eq("1"),
 		},
 		{
 			name:   "and/or operator",
 			search: "1|2&3|4&5&6|7|8",
 			expected: sq.Or{
-				eq("1", false),
-				sq.And{eq("2", false), eq("3", false)},
-				sq.And{eq("4", false), eq("5", false), eq("6", false)},
-				eq("7", false),
-				eq("8", false),
+				eq("1"),
+				sq.And{eq("2"), eq("3")},
+				sq.And{eq("4"), eq("5"), eq("6")},
+				eq("7"),
+				eq("8"),
 			},
 		},
 		{
 			name:     "escaped and",
 			search:   "1\\&2",
-			expected: eq("1&2", false),
+			expected: eq("1&2"),
 		},
 		{
 			name:     "escaped or",
 			search:   "1\\|2",
-			expected: eq("1|2", false),
+			expected: eq("1|2"),
 		},
 		{
 			name:     "escaped or in sequence",
 			search:   "1\\||\\|2",
-			expected: sq.Or{eq("1|", false), eq("|2", false)},
+			expected: sq.Or{eq("1|"), eq("|2")},
 		},
 		{
 			name:     "not operator",
 			search:   "!response",
-			expected: eq("response", true),
+			expected: notEq("response"),
 		},
 		{
 			name:   "not with and and quoted terms",
 			search: "!'failed to' & !\"cache miss\"",
 			expected: sq.And{
-				eq("failed to", true),
-				eq("cache miss", true),
+				notEq("failed to"),
+				notEq("cache miss"),
 			},
 		},
 		{
 			name:     "escaped not",
 			search:   "\\!response",
-			expected: eq("!response", false),
+			expected: eq("!response"),
 		},
 	}
 

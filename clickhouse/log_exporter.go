@@ -139,25 +139,15 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 
 	if filter.Search != nil && len(*filter.Search) > 0 {
 		var searchFilter sq.Sqlizer
-		searchFilter = e.parseExpr(*filter.Search, func(search string, not bool) sq.Sqlizer {
-			cmp := "<> 0"
-			if not {
-				cmp = "= 0"
-			}
-
+		searchFilter = e.parseExpr(*filter.Search, func(search string) sq.Sqlizer {
 			msgExpr := sq.Expr(
-				fmt.Sprintf(`positionCaseInsensitive(%s, ?) %s`, MsgColumnName, cmp),
+				fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName),
 				search,
 			)
 			fieldsExpr := sq.Expr(
-				fmt.Sprintf(`positionCaseInsensitive(%s, ?) %s`, FieldsColumnName, cmp),
+				fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName),
 				search,
 			)
-
-			if not {
-				return sq.And{msgExpr, fieldsExpr}
-			}
-
 			return sq.Or{msgExpr, fieldsExpr}
 		})
 
@@ -181,16 +171,23 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 	return where
 }
 
-func (e *ClickHouseLogExporter) parseExpr(search string, makeRawExpr func(string, bool) sq.Sqlizer) sq.Sqlizer {
+func (e *ClickHouseLogExporter) parseExpr(search string, makeRawExpr func(string) sq.Sqlizer) sq.Sqlizer {
 	return parseHelper[sq.Or](search, "|", func(s string) sq.Sqlizer {
-		return parseHelper[sq.And](s, "&", func(s string) sq.Sqlizer {
-			s, not := parseExprTerm(s)
-			if len(s) == 0 {
-				return nil
-			}
-			return makeRawExpr(s, not)
-		})
+		return parseHelper[sq.And](s, "&", parseNotExpr(makeRawExpr))
 	})
+}
+
+func parseNotExpr(makeRawExpr func(search string) sq.Sqlizer) func(search string) sq.Sqlizer {
+	return func(search string) sq.Sqlizer {
+		s, not := parseExprTerm(search)
+		if len(s) == 0 {
+			return nil
+		}
+		if not {
+			return sq.Expr("NOT (?)", makeRawExpr(s))
+		}
+		return makeRawExpr(s)
+	}
 }
 
 func parseHelper[T sq.Or | sq.And](search, op string, makeRawExpr func(string) sq.Sqlizer) sq.Sqlizer {
