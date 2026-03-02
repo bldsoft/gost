@@ -1,5 +1,7 @@
 package log
 
+import "time"
+
 type (
 	RequestMethodType int8
 	ResponseCodeType  uint16
@@ -28,19 +30,18 @@ type IRequestInfo interface {
 }
 
 type RequestInfo struct {
-	RequestMethod         RequestMethodType
-	Path                  string
-	Query                 string
-	ClientIp              string
-	UserAgent             string
-	ResponseCode          ResponseCodeType
-	Size                  uint32
-	RequestTime           int64
-	RequestTimeFractionMs uint16
-	HandleTime            uint32
-	Instance              string
-	RequestId             string
-	Error                 string
+	RequestMethod RequestMethodType
+	Path          string
+	Query         string
+	ClientIp      string
+	UserAgent     string
+	ResponseCode  ResponseCodeType
+	Size          uint32
+	RequestTime   time.Time
+	HandleTime    uint32
+	Instance      string
+	RequestId     string
+	Error         string
 }
 
 func (r *RequestInfo) BaseRequestInfo() *RequestInfo {
