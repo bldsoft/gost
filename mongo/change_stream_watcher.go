@@ -77,6 +77,7 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 	}
 	opt := options.ChangeStream()
 	opt.SetFullDocument(options.UpdateLookup)
+	opt.SetFullDocumentBeforeChange(options.WhenAvailable)
 	if w.resumeToken != nil {
 		opt.SetResumeAfter(w.resumeToken)
 	}
@@ -99,7 +100,11 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 		var fullDocument bson.Raw
 		if operationType == changeStreamDeleteOp {
 			// for delete operation only _id is returned
-			fullDocument = changeStream.Current.Lookup("documentKey").Document()
+			if bc := changeStream.Current.Lookup("fullDocumentBeforeChange"); bc.Type == bson.TypeNull && len(bc.Value) == 0 {
+				fullDocument = changeStream.Current.Lookup("documentKey").Document()
+			} else {
+				fullDocument = bc.Document()
+			}
 		} else {
 			fullDocument = changeStream.Current.Lookup("fullDocument").Document()
 		}

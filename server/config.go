@@ -23,7 +23,9 @@ type Config struct {
 	ServiceBindAddress config.Address `mapstructure:"SERVICE_BIND_ADDRESS" description:"Service configuration related to what address bind to and port to listen on for HTTP"`
 	ServiceAddress     config.Address `mapstructure:"SERVICE_ADDRESS" description:"Service public address"`
 
-	TLS TLSConfig `mapstructure:"TLS"`
+	TLS            TLSConfig `mapstructure:"TLS"`
+	ReadTimeoutMs  int       `mapstructure:"READ_TIMEOUT_MS" description:"Maximum duration for reading the entire request, including the body (in milliseconds)"`
+	WriteTimeoutMs int       `mapstructure:"WRITE_TIMEOUT_MS" description:"Maximum duration before timing out writes of the response (in milliseconds)"`
 }
 
 type TLSConfig struct {
