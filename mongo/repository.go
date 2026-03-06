@@ -267,6 +267,19 @@ func (r *BaseRepository[T, U]) Upsert(ctx context.Context, entity U, opt ...*rep
 	return r.UpsertOne(ctx, r.where(bson.M{"_id": entity.RawID()}, opt...), entity)
 }
 
+func (r *BaseRepository[T, U]) UpsertMany(ctx context.Context, entities []U, opt ...*repository.QueryOptions) error {
+	if len(entities) == 0 {
+		return nil
+	}
+	docs := make([]mongo.WriteModel, 0, len(entities))
+	for _, entity := range entities {
+		r.fillTimeStamp(ctx, entity, false)
+		docs = append(docs, mongo.NewUpdateOneModel().SetFilter(bson.M{"_id": entity.RawID()}).SetUpdate(bson.M{"$set": entity}).SetUpsert(true))
+	}
+	_, err := r.Collection().BulkWrite(ctx, docs, &options.BulkWriteOptions{})
+	return err
+}
+
 func (r *BaseRepository[T, U]) UpsertOne(ctx context.Context, filter interface{}, update U) error {
 	opts := options.Update().SetUpsert(true)
 	result, err := r.Collection().UpdateOne(ctx, filter, bson.M{"$set": update}, opts)
@@ -327,7 +340,8 @@ func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.I
 			var entity EntityTimeStamp
 			result.Decode(&entity)
 			if entity.CreateTime == nil {
-				entity.CreateTime = &time.Time{}
+				entity.CreateTime = &now
+				entity.CreateUserID = user.RawID()
 			}
 			entityTimestamp.SetCreateFields(*entity.CreateTime, entity.CreateUserID)
 		}
