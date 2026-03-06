@@ -1,6 +1,9 @@
 package v2
 
-import "github.com/bldsoft/gost/config"
+import (
+	"github.com/bldsoft/gost/config"
+	mm "github.com/golang-migrate/migrate/v4/database/mongodb"
+)
 
 type Config struct {
 	Server              config.ConnectionString `mapstructure:"DATABASE_SERVER" description:"MongoDB connection string"`
