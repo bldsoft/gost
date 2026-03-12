@@ -3,7 +3,7 @@ package v2
 import (
 	"reflect"
 
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func RecursiveParse(filter bson.M, t interface{}, prefix string) {

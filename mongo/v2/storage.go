@@ -13,9 +13,9 @@ import (
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/stub"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
 	mongoV1 "go.mongodb.org/mongo-driver/mongo"
 	mongoV1Options "go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/event"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -44,7 +44,6 @@ func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string)
 
 const timeout = 5 * time.Second
 
-// Connect initializes db connection
 func (db *Storage) Connect() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -61,7 +60,6 @@ func (db *Storage) Connect() {
 	}
 	db.Db = db.Client.Database(db.config.DbName)
 
-	// Check the connection
 	if err = db.Client.Ping(ctx, readpref.Primary()); err != nil {
 		log.PanicWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB v2 ping failed")
 	}
@@ -69,7 +67,6 @@ func (db *Storage) Connect() {
 	<-db.migrationReadyC
 }
 
-// Disconnect closes db connection
 func (db *Storage) Disconnect(ctx context.Context) error {
 	if err := db.Client.Disconnect(ctx); err != nil {
 		return errors.Wrap(err, "MongoDB v2 disconnect failed")
