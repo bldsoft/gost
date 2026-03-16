@@ -1,10 +1,8 @@
 package clickhouse
 
 import (
-	"net/url"
-	"strings"
-
 	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/ClickHouse/clickhouse-go/v2/lib/churl"
 	gost "github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/utils"
 )
@@ -35,11 +33,7 @@ func (c *Config) Validate() (err error) {
 
 // convert v1 client DSN to v2
 func (c *Config) prepareDsn() error {
-	if strings.HasPrefix(c.Dsn.String(), "clickhouse://") {
-		return nil
-	}
-
-	url, err := url.Parse(c.Dsn.String())
+	url, err := churl.Parse(c.Dsn.String())
 	if err != nil {
 		return err
 	}
