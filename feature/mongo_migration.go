@@ -10,11 +10,11 @@ import (
 )
 
 type FeatureMigrator struct {
-	db       *mongo.Storage
+	db       MigrationStorage
 	collName string
 }
 
-func NewFeatureMigrator(db *mongo.Storage, collName string) *FeatureMigrator {
+func NewFeatureMigrator(db MigrationStorage, collName string) *FeatureMigrator {
 	return &FeatureMigrator{db: db, collName: collName}
 }
 
@@ -106,12 +106,16 @@ func (m *FeatureMigrator) DeleteFeatureMigration(version uint, featureIDs ...fea
 	}]`, m.collName, IDs, mongo.BsonFieldNameArchived))
 }
 
-func DeleteFeatureMigration(db *mongo.Storage, version uint, featureIDs ...feature.IdType) {
+func DeleteFeatureMigration(db MigrationStorage, version uint, featureIDs ...feature.IdType) {
 	m := NewFeatureMigrator(db, DefaultCollectionName)
 	m.DeleteFeatureMigration(version, featureIDs...)
 }
 
-func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) {
+func AddFeatureMigration(db MigrationStorage, version uint, features ...*Feature) {
 	m := NewFeatureMigrator(db, DefaultCollectionName)
 	m.AddFeatureMigration(version, features...)
+}
+
+type MigrationStorage interface {
+	AddMigration(version uint, migrationUp, migrationDown string)
 }
