@@ -142,3 +142,17 @@ func (r *IpRange) UnmarshalBSONValue(t bsontype.Type, value []byte) error {
 	*r = ipRange
 	return nil
 }
+
+// TODO: backward compatibility; remove when v1 is removed
+type IpRangeV2 struct {
+	IpRange `bson:",inline"`
+}
+
+func (r *IpRangeV2) UnmarshalBSONValue(t byte, value []byte) error {
+	return r.IpRange.UnmarshalBSONValue(bsontype.Type(t), value)
+}
+
+func (r *IpRangeV2) MarshalBSONValue() (byte, []byte, error) {
+	t, data, err := r.IpRange.MarshalBSONValue()
+	return byte(t), data, err
+}
