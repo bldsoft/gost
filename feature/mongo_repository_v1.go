@@ -2,19 +2,19 @@ package feature
 
 import (
 	"github.com/bldsoft/gost/log"
-	mongov2 "github.com/bldsoft/gost/mongo/v2"
-	"go.mongodb.org/mongo-driver/v2/bson"
+	"github.com/bldsoft/gost/mongo"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
-func NewMongoRepositoryV2(db *mongov2.Storage, serviceInstanceName string, collName ...string) *mongoFeatureRepository {
+func NewMongoRepository(db *mongo.Storage, serviceInstanceName string, collName ...string) *mongoFeatureRepository {
 	if len(collName) == 0 {
 		collName = []string{DefaultCollectionName}
 	}
-	rep := mongov2.NewRepository[Feature](db, collName[0])
+	rep := mongo.NewRepository[Feature](db, collName[0])
 	r := newMongoFeatureRepository(rep, serviceInstanceName)
 
-	w := mongov2.NewWatcher(rep.Collection())
-	w.SetHandler(func(fullDocument bson.Raw, optype mongov2.OperationType) {
+	w := mongo.NewWatcher(rep.Collection())
+	w.SetHandler(func(fullDocument bson.Raw, optype mongo.OperationType) {
 		f := &Feature{}
 		if err := bson.Unmarshal(fullDocument, f); err != nil {
 			log.Errorf("Failed to unmarshal Feature: %s", err.Error())

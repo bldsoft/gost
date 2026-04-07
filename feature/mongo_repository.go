@@ -3,53 +3,29 @@ package feature
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	config "github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/log"
-	"github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
 )
 
 const DefaultCollectionName = "feature"
 
-// MongoRepository implements IFeatureRepository interface
-type MongoRepository struct {
-	rep                 mongo.Repository[Feature, *Feature]
+type mongoFeatureRepository struct {
+	rep                 repository.Repository[Feature, *Feature]
 	serviceInstanceName string
 }
 
-// NewMongoRepository creates feature repository.
-func NewMongoRepository(db *mongo.Storage, serviceInstanceName string, collName ...string) *MongoRepository {
-	if len(collName) == 0 {
-		collName = []string{DefaultCollectionName}
-	}
-	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, collName[0]), serviceInstanceName: serviceInstanceName}
-	if err := rep.Load(); err != nil {
+func newMongoFeatureRepository(rep repository.Repository[Feature, *Feature], serviceInstanceName string) *mongoFeatureRepository {
+	r := &mongoFeatureRepository{rep: rep, serviceInstanceName: serviceInstanceName}
+	if err := r.Load(); err != nil {
 		log.Error("Failed to load features")
 	} else {
 		log.Infof("Features loaded")
 	}
-	rep.InitWatcher()
-	return rep
+	return r
 }
 
-func (r *MongoRepository) InitWatcher() {
-	w := mongo.NewWatcher(r.rep.Collection())
-	w.SetHandler(func(fullDocument bson.Raw, optype mongo.OperationType) {
-		f := &Feature{}
-		err := bson.Unmarshal(fullDocument, f)
-		if err != nil {
-			log.Errorf("Failed to unmarshal Feature: %s", err.Error())
-			return
-		}
-		r.SetFeature(f)
-	})
-	w.Start()
-}
-
-// SetFeature ...
-func (r *MongoRepository) SetFeature(feature *Feature) {
+func (r *mongoFeatureRepository) SetFeature(feature *Feature) {
 	value := *feature.GlobalValue
 	if feature.SrvValues != nil {
 		for _, serviceValue := range *feature.SrvValues {
@@ -65,8 +41,7 @@ func (r *MongoRepository) SetFeature(feature *Feature) {
 	}
 }
 
-// Load loads features
-func (r *MongoRepository) Load() error {
+func (r *mongoFeatureRepository) Load() error {
 	features, err := r.GetAll(context.Background())
 	if err != nil {
 		return err
@@ -77,29 +52,24 @@ func (r *MongoRepository) Load() error {
 	return nil
 }
 
-func (r *MongoRepository) FindByName(ctx context.Context, name string) *Feature {
-	feature, err := r.rep.FindOne(ctx, bson.M{"name": name})
+func (r *mongoFeatureRepository) FindByName(ctx context.Context, name string) *Feature {
+	feature, err := r.rep.FindOne(ctx, map[string]any{"name": name})
 	if err != nil {
 		return nil
 	}
 	return feature
 }
 
-func (r *MongoRepository) FindByID(ctx context.Context, id config.IdType) (*Feature, error) {
-	feature, err := r.rep.FindOne(ctx, bson.M{"_id": id})
-	if err != nil {
-		return nil, err
-	}
-	return feature, nil
+func (r *mongoFeatureRepository) FindByID(ctx context.Context, id config.IdType) (*Feature, error) {
+	return r.rep.FindOne(ctx, map[string]any{"_id": id})
 }
 
-func (r *MongoRepository) GetAll(ctx context.Context) ([]*Feature, error) {
+func (r *mongoFeatureRepository) GetAll(ctx context.Context) ([]*Feature, error) {
 	return r.rep.GetAll(ctx, &repository.QueryOptions{Archived: false})
 }
 
-func (r *MongoRepository) Update(ctx context.Context, feature *Feature) (*Feature, error) {
+func (r *mongoFeatureRepository) Update(ctx context.Context, feature *Feature) (*Feature, error) {
 	return r.rep.UpdateAndGetByID(ctx, feature, true)
 }
 
-// Compile time checks to ensure your type satisfies an interface
-var _ IFeatureRepository = (*MongoRepository)(nil)
+var _ IFeatureRepository = (*mongoFeatureRepository)(nil)
