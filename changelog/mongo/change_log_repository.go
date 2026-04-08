@@ -9,9 +9,9 @@ import (
 	"github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
-	driver "go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	driver "go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type ChangeLogRepository struct {

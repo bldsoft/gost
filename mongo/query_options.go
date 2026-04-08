@@ -2,7 +2,7 @@ package mongo
 
 import (
 	"github.com/bldsoft/gost/repository"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func ParseQueryOptions(q *repository.QueryOptions) bson.M {

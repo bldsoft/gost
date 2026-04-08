@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/bldsoft/gost/mongo"
-	mongov2 "github.com/bldsoft/gost/mongo/v2"
 )
 
 type MongoStatsProvider interface {
@@ -16,10 +15,6 @@ type MongoCollector struct {
 }
 
 func NewMongoCollector(db *mongo.Storage) *MongoCollector {
-	return &MongoCollector{db: db}
-}
-
-func NewMongoCollectorV2(db *mongov2.Storage) *MongoCollector {
 	return &MongoCollector{db: db}
 }
 

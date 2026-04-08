@@ -8,6 +8,8 @@ import (
 	"github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/utils"
 	lock "github.com/square/mongo-lock"
+
+	mongoV1 "go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -23,6 +25,7 @@ const (
 )
 
 type mongoDistLock struct {
+	mongoCli   *mongoV1.Client
 	client     *lock.Client
 	recourceID string
 	lockID     string
@@ -31,8 +34,12 @@ type mongoDistLock struct {
 	quit       chan struct{}
 }
 
-func NewMongoDistLock(db *mongo.Storage, lockID string, ttl time.Duration) DistrMutex {
-	col := db.Db.Collection(collName)
+func NewMongoDistLock(db *mongo.Storage, lockID string, ttl time.Duration) (DistrMutex, error) {
+	v1Client, dbV1, err := db.LegacyClient()
+	if err != nil {
+		return nil, err
+	}
+	col := dbV1.Collection(collName)
 
 	client := lock.NewClient(col)
 
@@ -42,11 +49,12 @@ func NewMongoDistLock(db *mongo.Storage, lockID string, ttl time.Duration) Distr
 	}
 
 	return &mongoDistLock{
+		mongoCli:   v1Client,
 		client:     client,
 		recourceID: lockID,
 		lockID:     utils.RandString(64),
 		ttl:        ttl,
-	}
+	}, nil
 }
 
 func (l *mongoDistLock) Lock(ctx context.Context) {
@@ -103,6 +111,7 @@ func (l *mongoDistLock) Unlock() {
 }
 
 func (l *mongoDistLock) Quit() <-chan struct{} {
+	l.mongoCli.Disconnect(context.Background())
 	return l.quit
 }
 

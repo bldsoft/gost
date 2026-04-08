@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/bldsoft/gost/log"
@@ -13,13 +14,14 @@ import (
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/stub"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/event"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	mongoV1 "go.mongodb.org/mongo-driver/mongo"
+	mongoV1Options "go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/event"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
-
-type EventHandler = func()
 
 type Storage struct {
 	config Config
@@ -27,17 +29,16 @@ type Storage struct {
 	Client *mongo.Client
 	Db     *mongo.Database
 
-	doOnce          sync.Once
+	dbOnce          sync.Once
 	migrations      *source.Migrations
 	migrationReadyC chan struct{}
+	ready           atomic.Bool
 }
 
-// NewStorage ...
 func NewStorage(config Config) *Storage {
 	return &Storage{config: config, migrations: source.NewMigrations(), migrationReadyC: make(chan struct{})}
 }
 
-// AddMigration adds a migration. All migrations should be added before db.Connect
 func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string) {
 	db.migrations.Append(&source.Migration{Version: version, Direction: source.Up, Identifier: migrationUp})
 	db.migrations.Append(&source.Migration{Version: version, Direction: source.Down, Identifier: migrationDown})
@@ -45,37 +46,36 @@ func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string)
 
 const timeout = 5 * time.Second
 
-// Connect initializes db connection
 func (db *Storage) Connect() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	// Set client options
 	monitor := &event.PoolMonitor{Event: db.poolEventMonitor}
-	clientOptions := options.Client().ApplyURI(db.config.Server.String()).SetPoolMonitor(monitor).SetServerSelectionTimeout(5 * time.Second)
+	clientOptions := options.Client().ApplyURI(db.config.Server.String()).
+		SetPoolMonitor(monitor).
+		SetServerSelectionTimeout(timeout)
+
 	var err error
-	db.Client, err = mongo.Connect(ctx, clientOptions)
+	db.Client, err = mongo.Connect(clientOptions)
 	if err != nil {
-		log.PanicWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB connection failed")
+		log.PanicWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB v2 connection failed")
 	}
 	db.Db = db.Client.Database(db.config.DbName)
 
-	// Check the connection
-	err = db.Client.Ping(ctx, nil)
-	if err != nil {
-		log.PanicWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB ping failed")
+	if err = db.Client.Ping(ctx, readpref.Primary()); err != nil {
+		log.PanicWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB v2 ping failed")
 	}
 
+	db.ready.Store(true)
 	<-db.migrationReadyC
 }
 
-// Disconnect closes db connection
 func (db *Storage) Disconnect(ctx context.Context) error {
-	err := db.Client.Disconnect(ctx)
-	if err != nil {
-		return errors.Wrap(err, "MongoDB disconnect failed")
+	if err := db.Client.Disconnect(ctx); err != nil {
+		return errors.Wrap(err, "MongoDB v2 disconnect failed")
 	}
-	log.Info("MongoDB disconnected.")
+	log.Info("MongoDB v2 disconnected.")
+	db.ready.Store(false)
 	return nil
 }
 
@@ -83,14 +83,14 @@ func (db *Storage) poolEventMonitor(ev *event.PoolEvent) {
 	switch ev.Type {
 	case event.ConnectionReady:
 		// run migrations only once
-		db.doOnce.Do(func() {
+		db.dbOnce.Do(func() {
 			go func() {
 				log.InfoWithFields(
 					log.Fields{"server": ev.Address, "connectionID": ev.ConnectionID},
-					"MongoDB connected!")
+					"MongoDB v2 connected!")
 				// then run migrations
 				if err := db.runMigrations(db.Db.Name()); err != nil {
-					log.Errorf("Mongo migrations: %s", err)
+					log.Errorf("Mongo v2 migrations: %s", err)
 				}
 				close(db.migrationReadyC)
 			}()
@@ -99,15 +99,14 @@ func (db *Storage) poolEventMonitor(ev *event.PoolEvent) {
 		if ev.Reason != "stale" {
 			log.InfoWithFields(
 				log.Fields{"server": ev.Address, "connectionID": ev.ConnectionID, "reason": ev.Reason},
-				"MongoDB connection closed!")
+				"MongoDB v2 connection closed!")
 		}
 	default:
-		// log.Debugf("MogoDB event: %v", *ev)
 	}
 }
 
 func (db *Storage) IsReady() bool {
-	return true
+	return db.ready.Load()
 }
 
 func (db *Storage) runMigrations(dbname string) error {
@@ -115,8 +114,16 @@ func (db *Storage) runMigrations(dbname string) error {
 		return nil
 	}
 
+	// golang-migrate's MongoDB driver currently depends on the v1 mongo-driver.
+	// Use a temporary v1 client for running migrations while the main storage uses v2.
+	v1Client, _, err := db.LegacyClient()
+	if err != nil {
+		return fmt.Errorf("migration client failed: %w", err)
+	}
+	defer v1Client.Disconnect(context.Background())
+
 	config := &mm.Config{DatabaseName: dbname, MigrationsCollection: db.config.MigrationCollection}
-	driver, err := mm.WithInstance(db.Client, config)
+	driver, err := mm.WithInstance(v1Client, config)
 	if err != nil {
 		return fmt.Errorf("driver failed: %w", err)
 	}
@@ -134,6 +141,19 @@ func (db *Storage) runMigrations(dbname string) error {
 		return fmt.Errorf("process failed: %w", err)
 	}
 	return nil
+}
+
+// Some packages still rely on the v1 driver impl
+// e.g. migrate and mongo-lock
+func (db *Storage) LegacyClient() (*mongoV1.Client, *mongoV1.Database, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	cli, err := mongoV1.Connect(ctx, mongoV1Options.Client().ApplyURI(db.config.Server.String()))
+	if err != nil {
+		return nil, nil, err
+	}
+	dbV1 := cli.Database(db.config.DbName)
+	return cli, dbV1, nil
 }
 
 func (db *Storage) Stats(ctx context.Context) (interface{}, error) {

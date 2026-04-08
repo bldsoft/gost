@@ -7,12 +7,10 @@ import (
 
 	"github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/log"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-// ReserveWatcherInterval is used for changing update interval when mongo change stream is off. Set it before start watching
-// If ReserveWatcherInterval is not set, update interval is 5 min by default.
 var ReserveWatcherInterval *feature.Duration
 
 const defaultDuration = time.Minute * 5
@@ -47,7 +45,6 @@ func (w *reserveWatcher) watch(ctx context.Context, collection *mongo.Collection
 		ticker = time.NewTicker(readInterval)
 		log.Debugf("Reserve watcher for \"%s\" started", collection.Name())
 	} else {
-		//create stopped ticker
 		ticker = time.NewTicker(time.Second)
 		ticker.Stop()
 		log.Debugf("Reserve watcher for \"%s\" is paused", collection.Name())
@@ -83,7 +80,7 @@ func (w *reserveWatcher) watchCollection(collection *mongo.Collection, handler W
 	ctx := context.TODO()
 	cursor, err := collection.Find(ctx, bson.M{BsonFieldNameUpdateTime: bson.M{"$gte": w.lastCheck}})
 	if err != nil {
-		log.Errorf("%s reserve watcher falied to open cursor %s", collection.Name(), err.Error())
+		log.Errorf("%s reserve watcher failed to open cursor %s", collection.Name(), err.Error())
 		return
 	}
 	defer cursor.Close(ctx)
@@ -91,7 +88,7 @@ func (w *reserveWatcher) watchCollection(collection *mongo.Collection, handler W
 	for cursor.Next(ctx) {
 		var item bson.Raw
 		if err = cursor.Decode(&item); err != nil {
-			log.Errorf("Falied to decode item %s", err.Error())
+			log.Errorf("Failed to decode item %s", err.Error())
 			continue
 		}
 		if opType := w.getOpType(item); opType != None {
@@ -113,10 +110,9 @@ func (w *reserveWatcher) getOpType(item bson.Raw) OperationType {
 		return None
 	}
 
-	//TODO: check delete flag
-
-	if createdTime == updatedTime {
+	if createdTime.Equal(updatedTime) {
 		return Insert
 	}
+
 	return Update
 }
