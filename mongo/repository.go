@@ -318,15 +318,15 @@ func (r *BaseRepository[T, U]) DeleteMany(ctx context.Context, filter interface{
 
 func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.IEntityID, fillCreateTime bool) {
 	if entityTimestamp, ok := e.(IEntityTimeStamp); ok {
-		user, ok := ctx.Value(UserEntryCtxKey).(repository.IEntityID)
-		if !ok {
-			return
+		now := time.Now().UTC()
+		var userID any
+		if user, ok := ctx.Value(UserEntryCtxKey).(repository.IEntityID); ok {
+			userID = user.RawID()
 		}
 
-		now := time.Now().UTC()
-		entityTimestamp.SetUpdateFields(now, user.RawID())
+		entityTimestamp.SetUpdateFields(now, userID)
 		if fillCreateTime {
-			entityTimestamp.SetCreateFields(now, user.RawID())
+			entityTimestamp.SetCreateFields(now, userID)
 		} else {
 			projection := bson.D{
 				{Key: BsonFieldNameCreateUserID, Value: 1},
@@ -341,7 +341,7 @@ func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.I
 			result.Decode(&entity)
 			if entity.CreateTime == nil {
 				entity.CreateTime = &now
-				entity.CreateUserID = user.RawID()
+				entity.CreateUserID = userID
 			}
 			entityTimestamp.SetCreateFields(*entity.CreateTime, entity.CreateUserID)
 		}

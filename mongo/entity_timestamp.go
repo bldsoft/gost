@@ -18,10 +18,14 @@ type EntityTimeStamp struct {
 
 func (e *EntityTimeStamp) SetUpdateFields(updateTime time.Time, updateUserID interface{}) {
 	e.UpdateTime = &updateTime
-	e.UpdateUserID = updateUserID
+	if updateUserID != nil {
+		e.UpdateUserID = updateUserID
+	}
 }
 
 func (e *EntityTimeStamp) SetCreateFields(createTime time.Time, createUserID interface{}) {
 	e.CreateTime = &createTime
-	e.CreateUserID = createUserID
+	if createUserID != nil {
+		e.CreateUserID = createUserID
+	}
 }
