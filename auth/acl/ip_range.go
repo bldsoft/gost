@@ -7,9 +7,11 @@ import (
 	"net"
 	"strings"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
-	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
+	// "go.mongodb.org/mongo-driver/bson/bsontype"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/x/bsonx/bsoncore"
+	// "go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
 var invalidBsonValue = fmt.Errorf("invalid bson string value")
@@ -108,15 +110,17 @@ func (r *IpRange) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (r IpRange) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	return bson.MarshalValue(r.Strings())
+func (r IpRange) MarshalBSONValue() (byte, []byte, error) {
+	t, data, err := bson.MarshalValue(r.Strings())
+	return byte(t), data, err
 }
 
-func (r *IpRange) UnmarshalBSONValue(t bsontype.Type, value []byte) error {
+func (r *IpRange) UnmarshalBSONValue(b byte, value []byte) error {
 	if value == nil {
 		return nil
 	}
-	if t != bsontype.Array {
+	t := bson.Type(b)
+	if t != bson.TypeArray {
 		return fmt.Errorf("invalid bson value type '%s'", t.String())
 	}
 
@@ -141,18 +145,4 @@ func (r *IpRange) UnmarshalBSONValue(t bsontype.Type, value []byte) error {
 	}
 	*r = ipRange
 	return nil
-}
-
-// TODO: backward compatibility; remove when v1 is removed
-type IpRangeV2 struct {
-	IpRange `bson:",inline"`
-}
-
-func (r *IpRangeV2) UnmarshalBSONValue(t byte, value []byte) error {
-	return r.IpRange.UnmarshalBSONValue(bsontype.Type(t), value)
-}
-
-func (r *IpRangeV2) MarshalBSONValue() (byte, []byte, error) {
-	t, data, err := r.IpRange.MarshalBSONValue()
-	return byte(t), data, err
 }
