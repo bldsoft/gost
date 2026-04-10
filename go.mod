@@ -16,6 +16,7 @@ require (
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/jwtauth v1.2.0
 	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/go-test/deep v1.0.1
 	github.com/golang-migrate/migrate/v4 v4.15.1
 	github.com/golang/mock v1.6.0
 	github.com/gorilla/schema v1.2.0
@@ -120,7 +121,6 @@ require (
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/square/mongo-lock v0.0.0-20230808145049-cfcf499f6bf0
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.2.0 // indirect

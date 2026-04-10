@@ -116,7 +116,7 @@ func (db *Storage) runMigrations(dbname string) error {
 
 	// golang-migrate's MongoDB driver currently depends on the v1 mongo-driver.
 	// Use a temporary v1 client for running migrations while the main storage uses v2.
-	v1Client, _, err := db.LegacyClient()
+	v1Client, _, err := db.legacyClient()
 	if err != nil {
 		return fmt.Errorf("migration client failed: %w", err)
 	}
@@ -143,9 +143,7 @@ func (db *Storage) runMigrations(dbname string) error {
 	return nil
 }
 
-// Some packages still rely on the v1 driver impl
-// e.g. migrate and mongo-lock
-func (db *Storage) LegacyClient() (*mongoV1.Client, *mongoV1.Database, error) {
+func (db *Storage) legacyClient() (*mongoV1.Client, *mongoV1.Database, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	cli, err := mongoV1.Connect(ctx, mongoV1Options.Client().ApplyURI(db.config.Server.String()))
