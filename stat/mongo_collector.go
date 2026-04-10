@@ -6,12 +6,8 @@ import (
 	"github.com/bldsoft/gost/mongo"
 )
 
-type MongoStatsProvider interface {
-	Stats(ctx context.Context) (interface{}, error)
-}
-
 type MongoCollector struct {
-	db MongoStatsProvider
+	db *mongo.Storage
 }
 
 func NewMongoCollector(db *mongo.Storage) *MongoCollector {
