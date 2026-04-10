@@ -92,7 +92,7 @@ func (r *BaseRepository[T, U]) FindOne(ctx context.Context, filter interface{}, 
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, repository.ErrNotFound
 	}
-	return &result, err
+	return &result, wrapErr(err)
 }
 
 func (r *BaseRepository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
@@ -114,7 +114,7 @@ func (r *BaseRepository[T, U]) findByRawIDs(ctx context.Context, ids []interface
 
 	entities, err := r.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, options...)
 	if err != nil || !preserveOrder {
-		return entities, err
+		return entities, wrapErr(err)
 	}
 
 	entityById := make(map[any]U, len(entities))
@@ -151,17 +151,18 @@ func (r *BaseRepository[T, U]) Find(ctx context.Context, filter interface{}, opt
 
 	cur, err := r.Collection().Find(ctx, r.where(filter, opt...), findOpt)
 	if err != nil {
-		return nil, err
+		return nil, wrapErr(err)
 	}
 	results := make([]U, 0)
 	if err = cur.All(ctx, &results); err != nil {
-		return nil, err
+		return nil, wrapErr(err)
 	}
 	return results, nil
 }
 
 func (r *BaseRepository[T, U]) Count(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (int64, error) {
-	return r.Collection().CountDocuments(ctx, r.where(filter, opt...))
+	count, err := r.Collection().CountDocuments(ctx, r.where(filter, opt...))
+	return count, wrapErr(err)
 }
 
 func (r *BaseRepository[T, U]) sort(opt repository.SortOpt) bson.D {
@@ -177,7 +178,8 @@ func (r *BaseRepository[T, U]) sort(opt repository.SortOpt) bson.D {
 }
 
 func (r *BaseRepository[T, U]) GetAll(ctx context.Context, options ...*repository.QueryOptions) ([]U, error) {
-	return r.Find(ctx, bson.M{}, options...)
+	res, err := r.Find(ctx, bson.M{}, options...)
+	return res, wrapErr(err)
 }
 
 func (r *BaseRepository[T, U]) prepareInsertEntity(ctx context.Context, entity U) {
@@ -237,7 +239,7 @@ func (r *BaseRepository[T, U]) UpdateMany(ctx context.Context, entities []U) err
 		return mongo.ErrNoDocuments
 	}
 
-	return err
+	return wrapErr(err)
 }
 
 func (r *BaseRepository[T, U]) UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*repository.QueryOptions) error {
@@ -272,7 +274,7 @@ func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntit
 }
 
 func (r *BaseRepository[T, U]) Upsert(ctx context.Context, entity U, opt ...*repository.QueryOptions) error {
-	return r.UpsertOne(ctx, r.where(bson.M{"_id": entity.RawID()}, opt...), entity)
+	return wrapErr(r.UpsertOne(ctx, r.where(bson.M{"_id": entity.RawID()}, opt...), entity))
 }
 
 func (r *BaseRepository[T, U]) UpsertMany(ctx context.Context, entities []U, opt ...*repository.QueryOptions) error {
@@ -395,7 +397,7 @@ func (r *BaseRepository[T, U]) where(filter interface{}, options ...*repository.
 func (r *BaseRepository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.Pipeline, entity interface{}) error {
 	cursor, err := r.Collection().Aggregate(ctx, pipeline)
 	if err != nil {
-		return err
+		return wrapErr(err)
 	}
 	defer cursor.Close(ctx)
 
@@ -406,11 +408,21 @@ func (r *BaseRepository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.
 }
 
 func wrapErr(err error) error {
+	if err == nil {
+		return nil
+	}
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		return repository.ErrNotFound
 	}
 	if mongo.IsDuplicateKeyError(err) {
 		return fmt.Errorf("%w: %w", repository.ErrAlreadyExists, err)
+	}
+
+	if _, ok := errors.AsType[mongo.BulkWriteException](err); ok {
+		return fmt.Errorf("mongo bulk write: %w", err)
+	}
+	if _, ok := errors.AsType[mongo.WriteException](err); ok {
+		return fmt.Errorf("mongo write: %w", err)
 	}
 	return err
 }

@@ -7,11 +7,8 @@ import (
 	"net"
 	"strings"
 
-	// "go.mongodb.org/mongo-driver/bson/bsontype"
-
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/x/bsonx/bsoncore"
-	// "go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
 var invalidBsonValue = fmt.Errorf("invalid bson string value")
