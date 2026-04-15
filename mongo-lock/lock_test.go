@@ -27,8 +27,7 @@ func getRandomString() string {
 
 var testDb *mongo.Client
 
-// before running the tests in this file, change the testDbURI to the MongoDB URI you want to use
-// make sure the db "test" exists
+// NOTE: before running the tests in this file, change the testDbURI to the MongoDB URI you want to use
 const (
 	testDbURI = "mongodb://localhost:27017"
 )

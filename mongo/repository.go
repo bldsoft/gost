@@ -417,12 +417,5 @@ func wrapErr(err error) error {
 	if mongo.IsDuplicateKeyError(err) {
 		return fmt.Errorf("%w: %w", repository.ErrAlreadyExists, err)
 	}
-
-	if _, ok := errors.AsType[mongo.BulkWriteException](err); ok {
-		return fmt.Errorf("mongo bulk write: %w", err)
-	}
-	if _, ok := errors.AsType[mongo.WriteException](err); ok {
-		return fmt.Errorf("mongo write: %w", err)
-	}
 	return err
 }
