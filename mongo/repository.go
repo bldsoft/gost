@@ -19,10 +19,8 @@ var (
 	}
 )
 
-type contextKey string
-
 // UserEntryCtxKey is the context.Context key to store the user entry. It's used for setting UpdateUserID, CreateUserID fields
-var UserEntryCtxKey contextKey = "UserEntry"
+var UserEntryCtxKey interface{} = "UserEntry"
 
 func WithUserEntry(ctx context.Context, user repository.IEntityID) context.Context {
 	return context.WithValue(ctx, UserEntryCtxKey, user)
@@ -122,7 +120,7 @@ func (r *BaseRepository[T, U]) findByRawIDs(ctx context.Context, ids []interface
 		entityById[ent.RawID()] = ent
 	}
 
-	res := make([]U, len(ids))
+	res := make([]U, 0, len(ids))
 	for _, id := range ids {
 		if ent, ok := entityById[id]; ok {
 			res = append(res, ent)
