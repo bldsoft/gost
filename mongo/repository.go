@@ -51,7 +51,7 @@ func (r *BaseRepository[T, U]) Name() string {
 }
 
 func (r *BaseRepository[T, U]) Collection() *mongo.Collection {
-	if r.dbcollection == nil && r.db.IsReady() {
+	if r.dbcollection == nil {
 		return r.db.Db.Collection(r.collectionName)
 	}
 	return r.dbcollection

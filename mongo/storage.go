@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/bldsoft/gost/log"
@@ -32,7 +31,6 @@ type Storage struct {
 	dbOnce          sync.Once
 	migrations      *source.Migrations
 	migrationReadyC chan struct{}
-	ready           atomic.Bool
 }
 
 func NewStorage(config Config) *Storage {
@@ -66,7 +64,6 @@ func (db *Storage) Connect() {
 		log.PanicWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB v2 ping failed")
 	}
 
-	db.ready.Store(true)
 	<-db.migrationReadyC
 }
 
@@ -75,7 +72,6 @@ func (db *Storage) Disconnect(ctx context.Context) error {
 		return errors.Wrap(err, "MongoDB v2 disconnect failed")
 	}
 	log.Info("MongoDB v2 disconnected.")
-	db.ready.Store(false)
 	return nil
 }
 
@@ -103,10 +99,6 @@ func (db *Storage) poolEventMonitor(ev *event.PoolEvent) {
 		}
 	default:
 	}
-}
-
-func (db *Storage) IsReady() bool {
-	return db.ready.Load()
 }
 
 func (db *Storage) runMigrations(dbname string) error {
