@@ -87,9 +87,6 @@ func (r *BaseRepository[T, U]) FindOne(ctx context.Context, filter interface{}, 
 	var result T
 	findOneOpt := options.FindOne().SetProjection(r.projection(opt...))
 	err := r.Collection().FindOne(ctx, r.where(filter, opt...), findOneOpt).Decode(&result)
-	if errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, repository.ErrNotFound
-	}
 	return &result, wrapErr(err)
 }
 
@@ -266,7 +263,7 @@ func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntit
 	}
 	var result T
 	if err := res.Decode(&result); err != nil {
-		return nil, err
+		return nil, wrapErr(err)
 	}
 	return &result, nil
 }
@@ -348,7 +345,7 @@ func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.I
 				options.FindOne().SetProjection(projection))
 
 			var entity EntityTimeStamp
-			if err := result.Decode(&entity); err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+			if err := wrapErr(result.Decode(&entity)); err != nil && !errors.Is(err, repository.ErrNotFound) {
 				log.FromContext(ctx).InfoWithFields(log.Fields{
 					"err": err,
 					"id":  e.RawID(),
@@ -402,7 +399,7 @@ func (r *BaseRepository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.
 	if !cursor.Next(ctx) {
 		return repository.ErrNotFound
 	}
-	return cursor.Decode(entity)
+	return wrapErr(cursor.Decode(entity))
 }
 
 func wrapErr(err error) error {
