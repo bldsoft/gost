@@ -101,6 +101,10 @@ func (db *Storage) poolEventMonitor(ev *event.PoolEvent) {
 	}
 }
 
+func (db *Storage) IsReady() bool {
+	return true
+}
+
 func (db *Storage) runMigrations(dbname string) error {
 	if _, ok := db.migrations.First(); !ok {
 		return nil
