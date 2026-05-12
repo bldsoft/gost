@@ -316,6 +316,39 @@ func (r *BaseRepository[T, U]) DeleteMany(ctx context.Context, filter interface{
 	return err
 }
 
+func (r *BaseRepository[T, U]) FindOneAndDelete(ctx context.Context, filter interface{}, queryOpt ...*repository.QueryOptions) (U, error) {
+	projection := r.projection(queryOpt...)
+
+	if queryOpt != nil && !queryOpt[0].Archived {
+		findOneAndDeleteOpt := options.FindOneAndDelete().SetProjection(projection)
+		res := r.Collection().FindOneAndDelete(ctx, filter, findOneAndDeleteOpt)
+		return r.decodeFindOneResult(res)
+	}
+
+	updateOpts := options.FindOneAndUpdate().
+		SetReturnDocument(options.Before).
+		SetProjection(projection)
+	res := r.Collection().FindOneAndUpdate(ctx, filter,
+		bson.M{"$set": bson.M{BsonFieldNameDeleteTime: time.Now(), BsonFieldNameArchived: true}},
+		updateOpts)
+	return r.decodeFindOneResult(res)
+}
+
+func (r *BaseRepository[T, U]) decodeFindOneResult(res *mongo.SingleResult) (U, error) {
+	switch {
+	case res.Err() == mongo.ErrNoDocuments:
+		return nil, repository.ErrNotFound
+	case res.Err() != nil:
+		return nil, res.Err()
+	default:
+		var result T
+		if err := res.Decode(&result); err != nil {
+			return nil, err
+		}
+		return &result, nil
+	}
+}
+
 func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.IEntityID, fillCreateTime bool) {
 	if entityTimestamp, ok := e.(IEntityTimeStamp); ok {
 		now := time.Now().UTC()
