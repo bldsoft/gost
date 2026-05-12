@@ -3,6 +3,8 @@ package mongo
 import (
 	"context"
 	"reflect"
+	"slices"
+	"sync"
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
@@ -16,18 +18,38 @@ type WatchedRepositoryOptions struct {
 	WarmUp         bool
 }
 
+// watcherEntry wraps a registered watcher so subscriptions can be identified
+// by pointer. This avoids relying on interface equality, which panics for
+// watchers whose dynamic type is not comparable (e.g. the default
+// repository.NewWatcher implementation that holds function fields).
+type watcherEntry[T any, U repository.IEntityIDPtr[T]] struct {
+	w repository.Watcher[T, U]
+}
+
+type watcherActionType uint8
+
+const (
+	watcherActionSubscribe watcherActionType = iota
+	watcherActionUnsubscribe
+)
+
+type watcherAction[T any, U repository.IEntityIDPtr[T]] struct {
+	action watcherActionType
+	entry  *watcherEntry[T, U]
+}
+
 // WatchedRepository is a helper wrapper for Repository, that allows you to monitor changes via Watcher
 type WatchedRepository[T any, U repository.IEntityIDPtr[T]] struct {
 	Repository[T, U]
 	mongoWatcher *Watcher
-	handlers     []repository.Watcher[T, U]
-	handlerC     chan repository.Watcher[T, U]
+	handlers     []*watcherEntry[T, U]
+	watcherOpsC  chan watcherAction[T, U]
 }
 
 func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, watchers ...repository.Watcher[T, U]) *WatchedRepository[T, U] {
 	rep := &WatchedRepository[T, U]{
-		Repository: NewRepository[T, U](db, collectionName),
-		handlerC:   make(chan repository.Watcher[T, U]),
+		Repository:  NewRepository[T, U](db, collectionName),
+		watcherOpsC: make(chan watcherAction[T, U]),
 	}
 	rep.init()
 	for _, w := range watchers {
@@ -36,8 +58,22 @@ func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, coll
 	return rep
 }
 
-func (r *WatchedRepository[T, U]) AddWatcher(w repository.Watcher[T, U]) {
-	r.handlerC <- w
+func (r *WatchedRepository[T, U]) AddWatcher(w repository.Watcher[T, U]) (unsubscribe func()) {
+	entry := &watcherEntry[T, U]{w: w}
+	r.watcherOpsC <- watcherAction[T, U]{
+		action: watcherActionSubscribe,
+		entry:  entry,
+	}
+
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			r.watcherOpsC <- watcherAction[T, U]{
+				action: watcherActionUnsubscribe,
+				entry:  entry,
+			}
+		})
+	}
 }
 
 func (r *WatchedRepository[T, U]) init() {
@@ -66,16 +102,28 @@ func (r *WatchedRepository[T, U]) init() {
 	go func() {
 		for {
 			select {
-			case handler := <-r.handlerC:
-				if err := handler.WarmUp(context.Background(), r.Repository); err != nil {
-					log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.Name()}, "Failed to warm up")
-				} else {
-					log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.Name()}, "Warmed up")
+			case watcherOp := <-r.watcherOpsC:
+				if watcherOp.action == watcherActionSubscribe {
+					if err := watcherOp.entry.w.WarmUp(context.Background(), r.Repository); err != nil {
+						log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.Name()}, "Failed to warm up")
+					} else {
+						log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.Name()}, "Warmed up")
+					}
+					r.handlers = append(r.handlers, watcherOp.entry)
+					continue
 				}
-				r.handlers = append(r.handlers, handler)
+
+				if watcherOp.action != watcherActionUnsubscribe {
+					log.Logger.ErrorWithFields(log.Fields{"action": watcherOp.action, "collection": r.Repository.Name()}, "Unknown watcher action")
+					continue
+				}
+
+				r.handlers = slices.DeleteFunc(r.handlers, func(e *watcherEntry[T, U]) bool {
+					return e == watcherOp.entry
+				})
 			case upd := <-updateC:
 				for _, handler := range r.handlers {
-					handler.OnEvent(upd)
+					handler.w.OnEvent(upd)
 				}
 			}
 		}
