@@ -117,10 +117,10 @@ func (r *BaseRepository[T, U]) findByRawIDs(ctx context.Context, ids []interface
 		entityById[ent.RawID()] = ent
 	}
 
-	res := make([]U, 0, len(ids))
-	for _, id := range ids {
+	res := make([]U, len(ids))
+	for i, id := range ids {
 		if ent, ok := entityById[id]; ok {
-			res = append(res, ent)
+			res[i] = ent
 		}
 	}
 
