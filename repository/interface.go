@@ -22,6 +22,7 @@ type Repository[T any, U IEntityIDPtr[T]] interface {
 	Upsert(ctx context.Context, entity U, opt ...*QueryOptions) error
 	UpsertMany(ctx context.Context, entities []U, opt ...*QueryOptions) error
 	UpsertOne(ctx context.Context, filter interface{}, update U) error
+	FindOneAndDelete(ctx context.Context, filter interface{}, opt ...*QueryOptions) (U, error)
 	Delete(ctx context.Context, id interface{}, options ...*QueryOptions) error
 	DeleteMany(ctx context.Context, filter interface{}, options ...*QueryOptions) error
 }
