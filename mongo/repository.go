@@ -86,8 +86,12 @@ func (r *BaseRepository[T, U]) projection(opt ...*repository.QueryOptions) inter
 func (r *BaseRepository[T, U]) FindOne(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (U, error) {
 	var result T
 	findOneOpt := options.FindOne().SetProjection(r.projection(opt...))
-	err := r.Collection().FindOne(ctx, r.where(filter, opt...), findOneOpt).Decode(&result)
-	return &result, wrapErr(err)
+	err := wrapErr(r.Collection().FindOne(ctx, r.where(filter, opt...), findOneOpt).Decode(&result))
+	if errors.Is(err, repository.ErrNotFound) {
+		return nil, err
+	}
+
+	return &result, err
 }
 
 func (r *BaseRepository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
