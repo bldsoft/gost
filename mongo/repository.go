@@ -107,13 +107,12 @@ func (r *BaseRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{},
 }
 
 func (r *BaseRepository[T, U]) findByRawIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
-	if len(ids) == 0 {
-		return []U{}, nil
-	}
-
 	entities, err := r.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, options...)
-	if err != nil || !preserveOrder {
-		return entities, wrapErr(err)
+	if err != nil {
+		return nil, wrapErr(err)
+	}
+	if !preserveOrder {
+		return entities, nil
 	}
 
 	entityById := make(map[any]U, len(entities))
@@ -123,9 +122,7 @@ func (r *BaseRepository[T, U]) findByRawIDs(ctx context.Context, ids []interface
 
 	res := make([]U, len(ids))
 	for i, id := range ids {
-		if ent, ok := entityById[id]; ok {
-			res[i] = ent
-		}
+		res[i] = entityById[id]
 	}
 
 	return res, nil
