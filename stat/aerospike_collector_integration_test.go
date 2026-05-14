@@ -13,14 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Run against a reachable Aerospike cluster (CI/Jenkins-safe: omitted from default builds).
-//
-//	AEROSPIKE_INTEGRATION=1 \
-//	AEROSPIKE_INTEGRATION_NAMESPACE=<ns> \
-//	go test -tags=aerospike_integration -count=1 -v ./repository/rep_factory -run Integration
-//
-// Optional: AEROSPIKE_INTEGRATION_HOST (default 127.0.0.1), AEROSPIKE_INTEGRATION_PORT (default 3000).
-
 func integrationAerospikeCfg(t *testing.T) gost_aerospike.Config {
 	t.Helper()
 
@@ -81,18 +73,18 @@ func TestAerospikeDistrStatIntegration_Stat(t *testing.T) {
 
 	pl, ok := out.Stat.(map[string]any)
 	require.True(t, ok)
-	require.Contains(t, pl, aerospikeKeyPool)
-	require.Contains(t, pl, aerospikeKeyMemUtilization)
-	require.Contains(t, pl, aerospikeKeyMemUtilOK)
+	require.Contains(t, pl, AerospikeKeyPool)
+	require.Contains(t, pl, AerospikeKeyMemUtilization)
+	require.Contains(t, pl, AerospikeKeyMemUtilOK)
 
-	pool := pl[aerospikeKeyPool]
+	pool := pl[AerospikeKeyPool]
 	require.NotNil(t, pool)
 
-	_, gotMemOk := pl[aerospikeKeyMemUtilOK].(bool)
+	_, gotMemOk := pl[AerospikeKeyMemUtilOK].(bool)
 	require.True(t, gotMemOk, "mem_utilization_ok should be a bool")
 
-	memU, gotMemU := pl[aerospikeKeyMemUtilization].(float64)
-	require.True(t, gotMemU, "mem_utilization should decode as float64: got %T", pl[aerospikeKeyMemUtilization])
+	memU, gotMemU := pl[AerospikeKeyMemUtilization].(float64)
+	require.True(t, gotMemU, "mem_utilization should decode as float64: got %T", pl[AerospikeKeyMemUtilization])
 	require.GreaterOrEqual(t, memU, 0.0)
 	require.LessOrEqual(t, memU, 1.0)
 }
@@ -110,10 +102,10 @@ func TestAerospikeDistrStatIntegration_MemUtilDisabledWhenNamespaceEmpty(t *test
 	require.Empty(t, out.Err)
 
 	pl := out.Stat.(map[string]any)
-	memOk, ok := pl[aerospikeKeyMemUtilOK].(bool)
+	memOk, ok := pl[AerospikeKeyMemUtilOK].(bool)
 	require.True(t, ok)
 	require.False(t, memOk)
 
-	memU := pl[aerospikeKeyMemUtilization].(float64)
+	memU := pl[AerospikeKeyMemUtilization].(float64)
 	require.InDelta(t, 0, memU, 1e-9)
 }

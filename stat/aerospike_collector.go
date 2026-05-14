@@ -11,16 +11,16 @@ import (
 )
 
 const (
-	aerospikeKeyPool           = "pool"
-	aerospikeKeyMemUtilization = "mem_utilization"
-	aerospikeKeyMemUtilOK      = "mem_utilization_ok"
+	AerospikeKeyPool           = "pool"
+	AerospikeKeyMemUtilization = "mem_utilization"
+	AerospikeKeyMemUtilOK      = "mem_utilization_ok"
 )
 
-func aerospikePayload(pool any, memUtilization float64, memUtilizationOK bool) map[string]any {
+func AerospikePayload(pool any, memUtilization float64, memUtilizationOK bool) map[string]any {
 	return map[string]any{
-		aerospikeKeyPool:           pool,
-		aerospikeKeyMemUtilization: memUtilization,
-		aerospikeKeyMemUtilOK:      memUtilizationOK,
+		AerospikeKeyPool:           pool,
+		AerospikeKeyMemUtilization: memUtilization,
+		AerospikeKeyMemUtilOK:      memUtilizationOK,
 	}
 }
 
@@ -39,7 +39,7 @@ func (c *AerospikeCollector) Stat(_ context.Context) Stat {
 	if err == nil {
 		memU, memOK = c.namespaceMaxUtilization()
 	}
-	pl := aerospikePayload(poolStats, memU, memOK)
+	pl := AerospikePayload(poolStats, memU, memOK)
 	return NewStat("aerospike", pl, err)
 }
 
