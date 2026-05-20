@@ -23,6 +23,13 @@ type Repository[T any, U IEntityIDPtr[T]] interface {
 	UpsertMany(ctx context.Context, entities []U, opt ...*QueryOptions) error
 	UpsertOne(ctx context.Context, filter interface{}, update U) error
 	FindOneAndDelete(ctx context.Context, filter interface{}, opt ...*QueryOptions) (U, error)
+
+	Replace(ctx context.Context, replacement U, options ...*QueryOptions) error
+	ReplaceOne(ctx context.Context, filter any, replacement U, options ...*QueryOptions) error
+	InsertOrReplace(ctx context.Context, entity U) (inserted bool, _ error)
+	InsertOrReplaceOne(ctx context.Context, filter any, replacement U, options ...*QueryOptions) (inserted bool, _ error)
+	InsertOrReplaceMany(ctx context.Context, entities []U) error
+
 	Delete(ctx context.Context, id interface{}, options ...*QueryOptions) error
 	DeleteMany(ctx context.Context, filter interface{}, options ...*QueryOptions) error
 }
