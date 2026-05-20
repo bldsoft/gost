@@ -13,6 +13,10 @@ func (e *EntityID) RawID() interface{} {
 }
 
 func (e *EntityID) SetIDFromString(id string) error {
+	if id == "" {
+		e.ID = primitive.NilObjectID
+		return nil
+	}
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err == nil {
 		e.ID = objID
