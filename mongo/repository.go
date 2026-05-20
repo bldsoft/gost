@@ -240,6 +240,66 @@ func (r *BaseRepository[T, U]) UpdateOne(ctx context.Context, filter interface{}
 	return err
 }
 
+func (r *BaseRepository[T, U]) Replace(ctx context.Context, replacement U, options ...*repository.QueryOptions) error {
+	return r.ReplaceOne(ctx, bson.M{"_id": replacement.RawID()}, replacement, options...)
+}
+
+func (r *BaseRepository[T, U]) ReplaceOne(ctx context.Context, filter any, update U, options ...*repository.QueryOptions) error {
+	result, err := r.Collection().ReplaceOne(ctx, filter, update)
+	if err == nil && result.MatchedCount == 0 {
+		return repository.ErrNotFound
+	}
+	return err
+}
+
+func (r *BaseRepository[T, U]) InsertOrReplace(ctx context.Context, entity U) (inserted bool, _ error) {
+	if entity.IsZeroID() {
+		err := r.Insert(ctx, entity)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+
+	return r.InsertOrReplaceOne(ctx, bson.M{"_id": entity.RawID()}, entity)
+}
+
+func (r *BaseRepository[T, U]) InsertOrReplaceOne(ctx context.Context, filter any, replacement U, opt ...*repository.QueryOptions) (inserted bool, _ error) {
+	replaceOpt := options.Replace().SetUpsert(true)
+	result, err := r.Collection().ReplaceOne(ctx, r.where(filter, opt...), replacement, replaceOpt)
+	if err != nil {
+		return false, err
+	}
+	return result.MatchedCount == 0, err
+}
+
+func (r *BaseRepository[T, U]) InsertOrReplaceMany(ctx context.Context, entities []U) error {
+	if len(entities) == 0 {
+		return nil
+	}
+	if len(entities) == 1 {
+		_, err := r.InsertOrReplace(ctx, entities[0])
+		return err
+	}
+	docs := make([]mongo.WriteModel, 0, len(entities))
+	for _, entity := range entities {
+		if entity.IsZeroID() {
+			r.fillTimeStamp(ctx, entity, true)
+			docs = append(docs, mongo.NewInsertOneModel().SetDocument(entity))
+			continue
+		}
+
+		r.fillTimeStamp(ctx, entity, false)
+		docs = append(docs, mongo.NewReplaceOneModel().
+			SetFilter(bson.M{"_id": entity.RawID()}).
+			SetReplacement(entity).
+			SetUpsert(false))
+	}
+	opt := options.BulkWrite().SetOrdered(false)
+	_, err := r.Collection().BulkWrite(ctx, docs, opt)
+	return err
+}
+
 func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, queryOpt ...*repository.QueryOptions) (U, error) {
 	opt := options.FindOneAndUpdate()
 	if returnNewDocument {
@@ -422,3 +482,5 @@ func (r *BaseRepository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.
 	}
 	return cursor.Decode(entity)
 }
+
+var _ repository.Repository[EntityID, *EntityID] = &BaseRepository[EntityID, *EntityID]{}
