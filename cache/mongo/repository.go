@@ -8,9 +8,9 @@ import (
 	"github.com/bldsoft/gost/cache"
 	"github.com/bldsoft/gost/log"
 	gost_mongo "github.com/bldsoft/gost/mongo"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 const (
@@ -68,7 +68,7 @@ func (mc *MongoCache) SetFor(key string, value []byte, ttl time.Duration) error 
 		}},
 	}
 
-	opts := options.Update().SetUpsert(true)
+	opts := options.UpdateOne().SetUpsert(true)
 	_, err := mc.collection.UpdateOne(mc.ctx, filter, update, opts)
 	return err
 }

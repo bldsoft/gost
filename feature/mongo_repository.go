@@ -3,7 +3,7 @@ package feature
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 
 	config "github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/log"

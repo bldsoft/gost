@@ -10,7 +10,7 @@ import (
 	"github.com/bldsoft/gost/cache"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type cacheWatcher[T any, U repository.IEntityIDPtr[T]] struct {
@@ -121,15 +121,13 @@ type CachedRepositoryOptions struct {
 	Unmarshal      func(data []byte, v any) error // gob if nil
 }
 
-// CachedRepository is a wrapper for Repository, that keeps the entire collection in cache, updating it with Watcher.
-// Only FindByID, FindByStringIDs, FindByIDs return cached results
 type CachedRepository[T any, U repository.IEntityIDPtr[T]] struct {
 	*WatchedRepository[T, U]
 	cache *cacheWatcher[T, U]
 }
 
 func NewCachedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string, cache cache.ILocalCacheRepository, opt ...CachedRepositoryOptions) *CachedRepository[T, U] {
-	gob.Register(primitive.NilObjectID)
+	gob.Register(bson.NilObjectID)
 	var options CachedRepositoryOptions
 	if len(opt) > 0 {
 		options = opt[0]

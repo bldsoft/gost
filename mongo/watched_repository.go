@@ -6,7 +6,7 @@ import (
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 const updateChanBufferSize = 12500
@@ -16,7 +16,6 @@ type WatchedRepositoryOptions struct {
 	WarmUp         bool
 }
 
-// WatchedRepository is a helper wrapper for Repository, that allows you to monitor changes via Watcher
 type WatchedRepository[T any, U repository.IEntityIDPtr[T]] struct {
 	Repository[T, U]
 	mongoWatcher *Watcher

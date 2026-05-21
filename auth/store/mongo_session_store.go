@@ -13,10 +13,10 @@ import (
 	"github.com/bldsoft/gost/utils"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var MongoSessionStoreCollectionName = "session"
@@ -213,7 +213,6 @@ func (mstore *MongoDBStore) ensureIndexTTL() error {
 	}
 	indexOpts := options.Index().
 		SetExpireAfterSeconds(int32(mstore.options.MaxAge)).
-		SetBackground(true).
 		SetSparse(true).
 		SetName(indexName)
 

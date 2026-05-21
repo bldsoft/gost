@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync/atomic"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type OperationType = string
@@ -23,7 +23,6 @@ type IWatcher interface {
 	watch(ctx context.Context, collection *mongo.Collection, handler WatchHandler)
 }
 
-// Watcher is used for watching collection.
 type Watcher struct {
 	collection *mongo.Collection
 	cancel     context.CancelFunc
@@ -31,12 +30,10 @@ type Watcher struct {
 	isActive   int32
 }
 
-// NewWatcher creates new MongoPoolWatcher.
 func NewWatcher(collection *mongo.Collection) *Watcher {
 	return &Watcher{collection: collection}
 }
 
-// SetHandler sets handler for watch method. opType is "update",
 func (w *Watcher) SetHandler(handler func(fullDocument bson.Raw, opType OperationType)) {
 	w.handler = handler
 }
@@ -45,7 +42,6 @@ func (w *Watcher) canStart() bool {
 	return atomic.CompareAndSwapInt32(&w.isActive, 0, 1)
 }
 
-// Start starts watching collection.
 func (w *Watcher) Start() {
 	if w == nil {
 		return
@@ -80,10 +76,8 @@ func (w *Watcher) watch() {
 		w.handler(fullDocument, opType)
 	})
 	reserveWatcher.watch(ctx, w.collection, w.handler)
-
 }
 
-// Stop stops watching collection.
 func (w *Watcher) Stop() {
 	if w == nil {
 		return
