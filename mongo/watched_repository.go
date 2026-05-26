@@ -85,7 +85,7 @@ func (r *WatchedRepository[T, U]) EnablePreAndPostImages(ctx context.Context) er
 		{Key: "collMod", Value: coll.Name()},
 		{Key: "changeStreamPreAndPostImages", Value: bson.M{"enabled": true}},
 	}
-	return wrapErr(coll.Database().RunCommand(ctx, cmd).Err())
+	return WrapErr(coll.Database().RunCommand(ctx, cmd).Err())
 }
 
 func (r *WatchedRepository[T, U]) init() {

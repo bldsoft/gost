@@ -86,7 +86,7 @@ func (r *BaseRepository[T, U]) projection(opt ...*repository.QueryOptions) inter
 func (r *BaseRepository[T, U]) FindOne(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (U, error) {
 	var result T
 	findOneOpt := options.FindOne().SetProjection(r.projection(opt...))
-	err := wrapErr(r.Collection().FindOne(ctx, r.where(filter, opt...), findOneOpt).Decode(&result))
+	err := WrapErr(r.Collection().FindOne(ctx, r.where(filter, opt...), findOneOpt).Decode(&result))
 	if errors.Is(err, repository.ErrNotFound) {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (r *BaseRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{},
 func (r *BaseRepository[T, U]) findByRawIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	entities, err := r.Find(ctx, bson.M{"_id": bson.M{"$in": ids}}, options...)
 	if err != nil {
-		return nil, wrapErr(err)
+		return nil, WrapErr(err)
 	}
 	if !preserveOrder {
 		return entities, nil
@@ -147,18 +147,18 @@ func (r *BaseRepository[T, U]) Find(ctx context.Context, filter interface{}, opt
 
 	cur, err := r.Collection().Find(ctx, r.where(filter, opt...), findOpt)
 	if err != nil {
-		return nil, wrapErr(err)
+		return nil, WrapErr(err)
 	}
 	results := make([]U, 0)
 	if err = cur.All(ctx, &results); err != nil {
-		return nil, wrapErr(err)
+		return nil, WrapErr(err)
 	}
 	return results, nil
 }
 
 func (r *BaseRepository[T, U]) Count(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (int64, error) {
 	count, err := r.Collection().CountDocuments(ctx, r.where(filter, opt...))
-	return count, wrapErr(err)
+	return count, WrapErr(err)
 }
 
 func (r *BaseRepository[T, U]) sort(opt repository.SortOpt) bson.D {
@@ -175,7 +175,7 @@ func (r *BaseRepository[T, U]) sort(opt repository.SortOpt) bson.D {
 
 func (r *BaseRepository[T, U]) GetAll(ctx context.Context, options ...*repository.QueryOptions) ([]U, error) {
 	res, err := r.Find(ctx, bson.M{}, options...)
-	return res, wrapErr(err)
+	return res, WrapErr(err)
 }
 
 func (r *BaseRepository[T, U]) prepareInsertEntity(ctx context.Context, entity U) {
@@ -188,7 +188,7 @@ func (r *BaseRepository[T, U]) prepareInsertEntity(ctx context.Context, entity U
 func (r *BaseRepository[T, U]) Insert(ctx context.Context, entity U) error {
 	r.prepareInsertEntity(ctx, entity)
 	_, err := r.Collection().InsertOne(ctx, entity)
-	return wrapErr(err)
+	return WrapErr(err)
 }
 
 func (r *BaseRepository[T, U]) InsertMany(ctx context.Context, entities []U) error {
@@ -201,14 +201,14 @@ func (r *BaseRepository[T, U]) InsertMany(ctx context.Context, entities []U) err
 		docs = append(docs, entity)
 	}
 	_, err := r.Collection().InsertMany(ctx, docs)
-	return wrapErr(err)
+	return WrapErr(err)
 }
 
 func (r *BaseRepository[T, U]) Update(ctx context.Context, entity U, options ...*repository.QueryOptions) error {
 	r.fillTimeStamp(ctx, entity, false)
 	result, err := r.Collection().ReplaceOne(ctx, r.where(bson.M{"_id": entity.RawID()}, options...), entity)
 	if err != nil {
-		return wrapErr(err)
+		return WrapErr(err)
 	}
 	if result.MatchedCount == 0 {
 		return repository.ErrNotFound
@@ -232,7 +232,7 @@ func (r *BaseRepository[T, U]) UpdateMany(ctx context.Context, entities []U) err
 
 	res, err := r.Collection().BulkWrite(ctx, ops)
 	if err != nil {
-		return wrapErr(err)
+		return WrapErr(err)
 	}
 	if res.MatchedCount == 0 {
 		return repository.ErrNotFound
@@ -243,7 +243,7 @@ func (r *BaseRepository[T, U]) UpdateMany(ctx context.Context, entities []U) err
 func (r *BaseRepository[T, U]) UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*repository.QueryOptions) error {
 	result, err := r.Collection().UpdateOne(ctx, r.where(filter, options...), update)
 	if err != nil {
-		return wrapErr(err)
+		return WrapErr(err)
 	}
 	if result.MatchedCount == 0 {
 		return repository.ErrNotFound
@@ -258,7 +258,7 @@ func (r *BaseRepository[T, U]) Replace(ctx context.Context, replacement U, optio
 func (r *BaseRepository[T, U]) ReplaceOne(ctx context.Context, filter any, update U, options ...*repository.QueryOptions) error {
 	result, err := r.Collection().ReplaceOne(ctx, filter, update)
 	if err != nil {
-		return wrapErr(err)
+		return WrapErr(err)
 	}
 	if result.MatchedCount == 0 {
 		return repository.ErrNotFound
@@ -282,7 +282,7 @@ func (r *BaseRepository[T, U]) InsertOrReplaceOne(ctx context.Context, filter an
 	replaceOpt := options.Replace().SetUpsert(true)
 	result, err := r.Collection().ReplaceOne(ctx, r.where(filter, opt...), replacement, replaceOpt)
 	if err != nil {
-		return false, wrapErr(err)
+		return false, WrapErr(err)
 	}
 	return result.MatchedCount == 0, nil
 }
@@ -311,7 +311,7 @@ func (r *BaseRepository[T, U]) InsertOrReplaceMany(ctx context.Context, entities
 	}
 	opt := options.BulkWrite().SetOrdered(false)
 	_, err := r.Collection().BulkWrite(ctx, docs, opt)
-	return wrapErr(err)
+	return WrapErr(err)
 }
 
 func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, queryOpt ...*repository.QueryOptions) (U, error) {
@@ -324,18 +324,18 @@ func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntit
 	r.fillTimeStamp(ctx, updateEntity, false)
 
 	res := r.Collection().FindOneAndUpdate(ctx, r.where(bson.M{"_id": updateEntity.RawID()}, queryOpt...), bson.M{"$set": updateEntity}, opt)
-	if err := wrapErr(res.Err()); err != nil {
+	if err := WrapErr(res.Err()); err != nil {
 		return nil, err
 	}
 	var result T
 	if err := res.Decode(&result); err != nil {
-		return nil, wrapErr(err)
+		return nil, WrapErr(err)
 	}
 	return &result, nil
 }
 
 func (r *BaseRepository[T, U]) Upsert(ctx context.Context, entity U, opt ...*repository.QueryOptions) error {
-	return wrapErr(r.UpsertOne(ctx, r.where(bson.M{"_id": entity.RawID()}, opt...), entity))
+	return WrapErr(r.UpsertOne(ctx, r.where(bson.M{"_id": entity.RawID()}, opt...), entity))
 }
 
 func (r *BaseRepository[T, U]) UpsertMany(ctx context.Context, entities []U, opt ...*repository.QueryOptions) error {
@@ -348,14 +348,14 @@ func (r *BaseRepository[T, U]) UpsertMany(ctx context.Context, entities []U, opt
 		docs = append(docs, mongo.NewUpdateOneModel().SetFilter(bson.M{"_id": entity.RawID()}).SetUpdate(bson.M{"$set": entity}).SetUpsert(true))
 	}
 	_, err := r.Collection().BulkWrite(ctx, docs)
-	return wrapErr(err)
+	return WrapErr(err)
 }
 
 func (r *BaseRepository[T, U]) UpsertOne(ctx context.Context, filter interface{}, update U) error {
 	opts := options.UpdateOne().SetUpsert(true)
 	result, err := r.Collection().UpdateOne(ctx, filter, bson.M{"$set": update}, opts)
 	if err != nil {
-		return wrapErr(err)
+		return WrapErr(err)
 	}
 	if result.MatchedCount+result.UpsertedCount == 0 {
 		return repository.ErrNotFound
@@ -370,7 +370,7 @@ func (r *BaseRepository[T, U]) Delete(ctx context.Context, id interface{}, optio
 	if options != nil {
 		if !options[0].Archived {
 			_, err := r.Collection().DeleteOne(ctx, bson.M{"_id": id})
-			return wrapErr(err)
+			return WrapErr(err)
 		}
 	}
 
@@ -382,11 +382,11 @@ func (r *BaseRepository[T, U]) DeleteMany(ctx context.Context, filter interface{
 	if options != nil {
 		if !options[0].Archived {
 			_, err := r.Collection().DeleteMany(ctx, filter)
-			return wrapErr(err)
+			return WrapErr(err)
 		}
 	}
 	_, err := r.Collection().UpdateMany(ctx, filter, bson.M{"$set": bson.M{BsonFieldNameDeleteTime: time.Now(), BsonFieldNameArchived: true}})
-	return wrapErr(err)
+	return WrapErr(err)
 }
 
 func (r *BaseRepository[T, U]) FindOneAndDelete(ctx context.Context, filter interface{}, queryOpt ...*repository.QueryOptions) (U, error) {
@@ -408,12 +408,12 @@ func (r *BaseRepository[T, U]) FindOneAndDelete(ctx context.Context, filter inte
 }
 
 func (r *BaseRepository[T, U]) decodeFindOneResult(res *mongo.SingleResult) (U, error) {
-	if err := wrapErr(res.Err()); err != nil {
+	if err := WrapErr(res.Err()); err != nil {
 		return nil, err
 	}
 	var result T
 	if err := res.Decode(&result); err != nil {
-		return nil, wrapErr(err)
+		return nil, WrapErr(err)
 	}
 	return &result, nil
 }
@@ -440,7 +440,7 @@ func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.I
 				options.FindOne().SetProjection(projection))
 
 			var entity EntityTimeStamp
-			if err := wrapErr(result.Decode(&entity)); err != nil && !errors.Is(err, repository.ErrNotFound) {
+			if err := WrapErr(result.Decode(&entity)); err != nil && !errors.Is(err, repository.ErrNotFound) {
 				log.FromContext(ctx).InfoWithFields(log.Fields{
 					"err": err,
 					"id":  e.RawID(),
@@ -487,17 +487,17 @@ func (r *BaseRepository[T, U]) where(filter interface{}, options ...*repository.
 func (r *BaseRepository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.Pipeline, entity interface{}) error {
 	cursor, err := r.Collection().Aggregate(ctx, pipeline)
 	if err != nil {
-		return wrapErr(err)
+		return WrapErr(err)
 	}
 	defer cursor.Close(ctx)
 
 	if !cursor.Next(ctx) {
 		return repository.ErrNotFound
 	}
-	return wrapErr(cursor.Decode(entity))
+	return WrapErr(cursor.Decode(entity))
 }
 
-func wrapErr(err error) error {
+func WrapErr(err error) error {
 	if err == nil {
 		return nil
 	}
