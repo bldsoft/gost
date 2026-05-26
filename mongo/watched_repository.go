@@ -76,6 +76,18 @@ func (r *WatchedRepository[T, U]) AddWatcher(w repository.Watcher[T, U]) (unsubs
 	}
 }
 
+// EnablePreAndPostImages turns on changeStreamPreAndPostImages for the underlying collection
+// so that change stream delete events carry the document state prior to the change
+// (fullDocumentBeforeChange). Without this, delete events arrive with only the document key.
+func (r *WatchedRepository[T, U]) EnablePreAndPostImages(ctx context.Context) error {
+	coll := r.Repository.Collection()
+	cmd := bson.D{
+		{Key: "collMod", Value: coll.Name()},
+		{Key: "changeStreamPreAndPostImages", Value: bson.M{"enabled": true}},
+	}
+	return wrapErr(coll.Database().RunCommand(ctx, cmd).Err())
+}
+
 func (r *WatchedRepository[T, U]) init() {
 	updateC := make(chan repository.Event[T, U], updateChanBufferSize)
 
