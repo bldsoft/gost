@@ -231,11 +231,13 @@ func (r *BaseRepository[T, U]) UpdateMany(ctx context.Context, entities []U) err
 	}
 
 	res, err := r.Collection().BulkWrite(ctx, ops)
-	if err == nil && res.MatchedCount == 0 {
-		return mongo.ErrNoDocuments
+	if err != nil {
+		return wrapErr(err)
 	}
-
-	return wrapErr(err)
+	if res.MatchedCount == 0 {
+		return repository.ErrNotFound
+	}
+	return nil
 }
 
 func (r *BaseRepository[T, U]) UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*repository.QueryOptions) error {
@@ -255,10 +257,13 @@ func (r *BaseRepository[T, U]) Replace(ctx context.Context, replacement U, optio
 
 func (r *BaseRepository[T, U]) ReplaceOne(ctx context.Context, filter any, update U, options ...*repository.QueryOptions) error {
 	result, err := r.Collection().ReplaceOne(ctx, filter, update)
-	if err == nil && result.MatchedCount == 0 {
+	if err != nil {
+		return wrapErr(err)
+	}
+	if result.MatchedCount == 0 {
 		return repository.ErrNotFound
 	}
-	return err
+	return nil
 }
 
 func (r *BaseRepository[T, U]) InsertOrReplace(ctx context.Context, entity U) (inserted bool, _ error) {
@@ -277,9 +282,9 @@ func (r *BaseRepository[T, U]) InsertOrReplaceOne(ctx context.Context, filter an
 	replaceOpt := options.Replace().SetUpsert(true)
 	result, err := r.Collection().ReplaceOne(ctx, r.where(filter, opt...), replacement, replaceOpt)
 	if err != nil {
-		return false, err
+		return false, wrapErr(err)
 	}
-	return result.MatchedCount == 0, err
+	return result.MatchedCount == 0, nil
 }
 
 func (r *BaseRepository[T, U]) InsertOrReplaceMany(ctx context.Context, entities []U) error {
@@ -306,7 +311,7 @@ func (r *BaseRepository[T, U]) InsertOrReplaceMany(ctx context.Context, entities
 	}
 	opt := options.BulkWrite().SetOrdered(false)
 	_, err := r.Collection().BulkWrite(ctx, docs, opt)
-	return err
+	return wrapErr(err)
 }
 
 func (r *BaseRepository[T, U]) UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, queryOpt ...*repository.QueryOptions) (U, error) {
@@ -403,18 +408,14 @@ func (r *BaseRepository[T, U]) FindOneAndDelete(ctx context.Context, filter inte
 }
 
 func (r *BaseRepository[T, U]) decodeFindOneResult(res *mongo.SingleResult) (U, error) {
-	switch {
-	case res.Err() == mongo.ErrNoDocuments:
-		return nil, repository.ErrNotFound
-	case res.Err() != nil:
-		return nil, res.Err()
-	default:
-		var result T
-		if err := res.Decode(&result); err != nil {
-			return nil, err
-		}
-		return &result, nil
+	if err := wrapErr(res.Err()); err != nil {
+		return nil, err
 	}
+	var result T
+	if err := res.Decode(&result); err != nil {
+		return nil, wrapErr(err)
+	}
+	return &result, nil
 }
 
 func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.IEntityID, fillCreateTime bool) {

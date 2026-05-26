@@ -13,7 +13,6 @@ import (
 	"github.com/bldsoft/gost/repository"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const testCollection = "test_collection"
@@ -373,7 +372,7 @@ func TestBaseRepository_InsertOrReplace_InsertWithIDForUnknownDocument(t *testin
 	ctx, rep := testRepository(t)
 
 	entity := &testEntity{Field: "preset_id"}
-	entity.ID = primitive.NewObjectID()
+	entity.GenerateID()
 
 	inserted, err := rep.InsertOrReplace(ctx, entity)
 	assert.NoError(t, err)
