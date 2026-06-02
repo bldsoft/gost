@@ -1,6 +1,7 @@
 package memcached
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"time"
@@ -22,9 +23,8 @@ func NewStorage(servers []string, cfg Config) *Storage {
 	if cfg.TimeoutMs != 0 {
 		client.Timeout = time.Duration(cfg.TimeoutMs) * time.Millisecond
 	}
-	if cfg.MaxIdleConns != 0 {
-		client.MaxIdleConns = cfg.MaxIdleConns
-	}
+	client.MaxIdleConns = cmp.Or(cfg.MaxIdleConns, DefaultMaxIdleConns)
+
 	if err := client.Ping(); err != nil {
 		log.Panicf("Memcached connection failed: %v", err)
 	}

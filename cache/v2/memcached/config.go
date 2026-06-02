@@ -1,5 +1,9 @@
 package memcached
 
+const (
+	DefaultMaxIdleConns = 10
+)
+
 type Config struct {
 	Servers         []string `mapstructure:"SERVERS"`
 	ReadOnlyServers []string `mapstructure:"READONLY_SERVERS" description:"alternate memcached instace for GET operations"`
@@ -12,6 +16,7 @@ type Config struct {
 func (c *Config) SetDefaults() {
 	c.Servers = []string{"172.17.0.1:11211"}
 	c.TimeoutMs = 0
+	c.MaxIdleConns = DefaultMaxIdleConns
 }
 
 // Validate ...
