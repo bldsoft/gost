@@ -45,7 +45,11 @@ func (h *cacheWatcher[T, U]) OnEvent(upd repository.Event[T, U]) {
 	case repository.EventTypeCreate:
 		fallthrough
 	case repository.EventTypeUpdate:
-		if err := h.CacheSet(upd.Entity); err != nil {
+		if withArchived, ok := any(upd.Entity).(IEntityArchived); ok && withArchived.IsArchived() {
+			if err := h.CacheDelete(upd.Entity.StringID()); err != nil {
+				log.Logger.DebugWithFields(log.Fields{"err": err, "cache key": h.cacheKey(upd.Entity.StringID())}, "failed to evict archived entity from cache")
+			}
+		} else if err := h.CacheSet(upd.Entity); err != nil {
 			log.Logger.ErrorWithFields(log.Fields{"err": err, "entity": upd.Entity}, "failed to update cache value")
 		}
 	case repository.EventTypeDelete:
@@ -89,6 +93,9 @@ func (h cacheWatcher[T, U]) cacheKey(id string) string {
 func (h cacheWatcher[T, U]) CacheSet(entities ...U) error {
 	for _, e := range entities {
 		if e == nil {
+			continue
+		}
+		if withArchived, ok := any(e).(IEntityArchived); ok && withArchived.IsArchived() {
 			continue
 		}
 		data, err := h.cacheMarshal(e)
