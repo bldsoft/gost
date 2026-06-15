@@ -6,8 +6,8 @@ import (
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
+	lock "github.com/bldsoft/gost/mongo-lock"
 	"github.com/bldsoft/gost/utils"
-	lock "github.com/square/mongo-lock"
 )
 
 const (
@@ -33,7 +33,6 @@ type mongoDistLock struct {
 
 func NewMongoDistLock(db *mongo.Storage, lockID string, ttl time.Duration) DistrMutex {
 	col := db.Db.Collection(collName)
-
 	client := lock.NewClient(col)
 
 	ctx := context.Background()

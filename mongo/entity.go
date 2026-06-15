@@ -1,11 +1,11 @@
 package mongo
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type EntityID struct {
-	ID primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	ID bson.ObjectID `json:"id" bson:"_id,omitempty"`
 }
 
 func (e *EntityID) RawID() interface{} {
@@ -13,7 +13,7 @@ func (e *EntityID) RawID() interface{} {
 }
 
 func (e *EntityID) SetIDFromString(id string) error {
-	objID, err := primitive.ObjectIDFromHex(id)
+	objID, err := bson.ObjectIDFromHex(id)
 	if err == nil {
 		e.ID = objID
 	}
@@ -21,7 +21,7 @@ func (e *EntityID) SetIDFromString(id string) error {
 }
 
 func (e *EntityID) GenerateID() {
-	e.ID = primitive.NewObjectID()
+	e.ID = bson.NewObjectID()
 }
 
 func (e *EntityID) StringID() string {
@@ -29,5 +29,5 @@ func (e *EntityID) StringID() string {
 }
 
 func (e *EntityID) IsZeroID() bool {
-	return e.ID == primitive.NilObjectID
+	return e.ID == bson.NilObjectID
 }
