@@ -82,7 +82,7 @@ func namespaceUtilizationFromInfo(info string) (util float64, ok bool) {
 	if kv == nil {
 		return 0, false
 	}
-	if kv["stop-writes"] == "true" {
+	if kv["stop_writes"] == "true" {
 		return 1, true
 	}
 
@@ -99,23 +99,17 @@ func namespaceUtilizationFromInfo(info string) (util float64, ok bool) {
 		}
 	}
 
-	if v := kv["free-pct-memory"]; v != "" {
+	if v := kv["memory_free_pct"]; v != "" {
 		if pct, err := strconv.ParseFloat(v, 64); err == nil {
 			takeMax(1-pct/100, true)
 		}
 	}
-	if v := kv["free-pct-disk"]; v != "" {
+	if v := kv["device_free_pct"]; v != "" {
 		if pct, err := strconv.ParseFloat(v, 64); err == nil {
 			takeMax(1-pct/100, true)
 		}
 	}
-	if u, o := byteRatio(kv["used-bytes-memory"], kv["memory-size"]); o {
-		takeMax(u, true)
-	}
-	if u, o := byteRatio(kv["used-bytes-disk"], kv["device_total_bytes"]); o {
-		takeMax(u, true)
-	}
-	if u, o := byteRatio(kv["used-bytes-disk"], kv["total-bytes-disk"]); o {
+	if u, o := byteRatio(kv["device_used_bytes"], kv["device_total_bytes"]); o {
 		takeMax(u, true)
 	}
 
