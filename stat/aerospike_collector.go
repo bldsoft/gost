@@ -2,9 +2,9 @@ package stat
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
-	"time"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/bldsoft/gost/cache/v2/aerospike"
@@ -34,6 +34,10 @@ func NewAerospikeCollector(cache *aerospike.Storage, namespace string) *Aerospik
 }
 
 func (c *AerospikeCollector) Stat(_ context.Context) Stat {
+	if c.cache == nil {
+		return NewStat("aerospike", nil, errors.New("aerospike: cache is nil"))
+	}
+
 	poolStats, err := c.cache.Stat()
 	memU, memOK := 0.0, false
 	if err == nil {
@@ -44,14 +48,11 @@ func (c *AerospikeCollector) Stat(_ context.Context) Stat {
 }
 
 func (c *AerospikeCollector) namespaceMaxUtilization() (maxUtil float64, valid bool) {
-	if c.namespace == "" || c.cache == nil {
+	if c.namespace == "" {
 		return 0, false
 	}
 	nsKey := "namespace/" + c.namespace
 	policy := aero.NewInfoPolicy()
-	if policy.Timeout <= 0 {
-		policy.Timeout = 2 * time.Second
-	}
 
 	for _, node := range c.cache.GetNodes() {
 		if node == nil {
@@ -130,7 +131,7 @@ func byteRatio(usedStr, totalStr string) (float64, bool) {
 
 func parseSemicolonKV(s string) map[string]string {
 	out := make(map[string]string)
-	for _, part := range strings.Split(s, ";") {
+	for part := range strings.SplitSeq(s, ";") {
 		part = strings.TrimSpace(part)
 		if part == "" {
 			continue
