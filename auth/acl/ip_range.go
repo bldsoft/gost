@@ -7,6 +7,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/bldsoft/gost/utils"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/x/bsonx/bsoncore"
 )
@@ -16,6 +17,8 @@ var invalidBsonValue = fmt.Errorf("invalid bson string value")
 type IpRange struct {
 	Ip   []net.IP
 	Cidr []*net.IPNet
+
+	tree *utils.IPTreeSet
 }
 
 func MustIpRangeFromStrings(strs ...string) IpRange {
@@ -42,6 +45,7 @@ func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
 			res.Ip = append(res.Ip, ip)
 		}
 	}
+	res.tree = utils.NewIPTreeSet(res.Strings()...)
 	return res, nil
 }
 
@@ -83,7 +87,7 @@ func (r IpRange) isInSubnets(ip net.IP, subs []*net.IPNet) bool {
 }
 
 func (r IpRange) Contains(ip net.IP) bool {
-	return r.isInSubnets(ip, r.Cidr) || r.isInIPs(ip, r.Ip)
+	return r.tree.Match(ip)
 }
 
 func (r IpRange) MarshalJSON() ([]byte, error) {
