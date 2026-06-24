@@ -34,6 +34,7 @@ func (l *DefaultFormatter) NewLogEntry(r *http.Request) (middleware.LogEntry, *h
 	}
 
 	logFields["uri"] = fmt.Sprintf("%s://%s%s", scheme, r.Host, r.URL.RequestURI())
+	logFields["in_uri"] = r.URL.String()
 	logFields["pr"] = r.Proto
 	logFields["mt"] = r.Method
 	logFields["from"] = r.RemoteAddr
