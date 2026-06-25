@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"net"
 	"net/netip"
 	"strings"
 
@@ -38,28 +37,8 @@ func ipKeyToPrefix(ip string) (netip.Prefix, error) {
 	return netip.PrefixFrom(addr, addr.BitLen()), nil
 }
 
-func (s *IPTreeSet) Match(ip net.IP) bool {
-	if len(ip) == 4 {
-		addr := netip.AddrFrom4([4]byte(ip))
-		return s.items.Lookup(addr)
-	}
-
-	var (
-		addr netip.Addr
-		ok   bool
-	)
-
-	if v4 := ip.To4(); v4 != nil {
-		addr, ok = netip.AddrFromSlice(v4)
-	} else {
-		v6 := ip.To16()
-		addr, ok = netip.AddrFromSlice(v6)
-	}
-	if !ok {
-		return false
-	}
-
-	return s.items.Lookup(addr)
+func (s *IPTreeSet) Match(ip netip.Addr) bool {
+	return s.items.Lookup(ip)
 }
 
 func (s *IPTreeSet) Len() int {

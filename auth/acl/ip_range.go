@@ -2,9 +2,8 @@ package acl
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net"
+	"net/netip"
 	"strings"
 	"sync"
 
@@ -16,8 +15,8 @@ import (
 var invalidBsonValue = fmt.Errorf("invalid bson string value")
 
 type IpRange struct {
-	ips   []net.IP
-	cidrs []*net.IPNet
+	ips   []netip.Addr
+	cidrs []netip.Prefix
 
 	mu   *sync.RWMutex
 	tree *utils.IPTreeSet
@@ -34,15 +33,15 @@ func MustIpRangeFromStrings(strs ...string) IpRange {
 func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
 	for _, s := range strs {
 		if strings.Contains(s, "/") {
-			_, network, err := net.ParseCIDR(s)
+			network, err := netip.ParsePrefix(s)
 			if err != nil {
 				return res, err
 			}
 			res.cidrs = append(res.cidrs, network)
 		} else {
-			ip := net.ParseIP(s)
-			if ip == nil {
-				return res, errors.New("unable to parse IP address")
+			ip, err := netip.ParseAddr(s)
+			if err != nil {
+				return res, err
 			}
 			res.ips = append(res.ips, ip)
 		}
@@ -55,20 +54,20 @@ func (r IpRange) Empty() bool {
 	return len(r.ips) == 0 && len(r.cidrs) == 0
 }
 
-func (r *IpRange) IPs() []net.IP {
+func (r *IpRange) IPs() []netip.Addr {
 	return r.ips
 }
 
-func (r *IpRange) CIDRs() []*net.IPNet {
+func (r *IpRange) CIDRs() []netip.Prefix {
 	return r.cidrs
 }
 
-func (r *IpRange) SetIPs(ips []net.IP) {
+func (r *IpRange) SetIPs(ips []netip.Addr) {
 	r.ips = ips
 	r.buildTree()
 }
 
-func (r *IpRange) SetCIDRs(cidrs []*net.IPNet) {
+func (r *IpRange) SetCIDRs(cidrs []netip.Prefix) {
 	r.cidrs = cidrs
 	r.buildTree()
 }
@@ -97,7 +96,7 @@ func (r *IpRange) buildTree() {
 	r.tree = utils.NewIPTreeSet(r.Strings()...)
 }
 
-func (r *IpRange) Contains(ip net.IP) bool {
+func (r *IpRange) Contains(ip netip.Addr) bool {
 	if r.mu == nil {
 		r.buildTree()
 	}
