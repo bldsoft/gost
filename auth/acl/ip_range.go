@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 
 	"github.com/bldsoft/gost/utils"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -15,9 +16,10 @@ import (
 var invalidBsonValue = fmt.Errorf("invalid bson string value")
 
 type IpRange struct {
-	Ip   []net.IP
-	Cidr []*net.IPNet
+	ips   []net.IP
+	cidrs []*net.IPNet
 
+	mu   *sync.RWMutex
 	tree *utils.IPTreeSet
 }
 
@@ -36,38 +38,47 @@ func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
 			if err != nil {
 				return res, err
 			}
-			res.Cidr = append(res.Cidr, network)
+			res.cidrs = append(res.cidrs, network)
 		} else {
 			ip := net.ParseIP(s)
 			if ip == nil {
 				return res, errors.New("unable to parse IP address")
 			}
-			res.Ip = append(res.Ip, ip)
+			res.ips = append(res.ips, ip)
 		}
 	}
-	res.tree = utils.NewIPTreeSet(res.Strings()...)
+	res.buildTree()
 	return res, nil
 }
 
 func (r IpRange) Empty() bool {
-	return len(r.Ip) == 0 && len(r.Cidr) == 0
+	return len(r.ips) == 0 && len(r.cidrs) == 0
 }
 
-func (r IpRange) isInIPs(client net.IP, ips []net.IP) bool {
-	for _, ip := range ips {
-		if client.Equal(ip) {
-			return true
-		}
-	}
-	return false
+func (r *IpRange) IPs() []net.IP {
+	return r.ips
+}
+
+func (r *IpRange) CIDRs() []*net.IPNet {
+	return r.cidrs
+}
+
+func (r *IpRange) SetIPs(ips []net.IP) {
+	r.ips = ips
+	r.buildTree()
+}
+
+func (r *IpRange) SetCIDRs(cidrs []*net.IPNet) {
+	r.cidrs = cidrs
+	r.buildTree()
 }
 
 func (r *IpRange) Strings() []string {
-	res := make([]string, 0, len(r.Ip)+len(r.Cidr))
-	for _, ip := range r.Ip {
+	res := make([]string, 0, len(r.ips)+len(r.cidrs))
+	for _, ip := range r.ips {
 		res = append(res, ip.String())
 	}
-	for _, cidr := range r.Cidr {
+	for _, cidr := range r.cidrs {
 		res = append(res, cidr.String())
 	}
 	return res
@@ -77,16 +88,21 @@ func (r *IpRange) String() string {
 	return strings.Join(r.Strings(), ",")
 }
 
-func (r IpRange) isInSubnets(ip net.IP, subs []*net.IPNet) bool {
-	for _, subnet := range subs {
-		if subnet.Contains(ip) {
-			return true
-		}
+func (r *IpRange) buildTree() {
+	if r.mu == nil {
+		r.mu = &sync.RWMutex{}
 	}
-	return false
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.tree = utils.NewIPTreeSet(r.Strings()...)
 }
 
-func (r IpRange) Contains(ip net.IP) bool {
+func (r *IpRange) Contains(ip net.IP) bool {
+	if r.mu == nil {
+		r.buildTree()
+	}
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	return r.tree.Match(ip)
 }
 

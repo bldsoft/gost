@@ -44,6 +44,26 @@ func TestIpRangeBson(t *testing.T) {
 	assert.False(t, acl.ACL.Contains(net.ParseIP("192.168.0.2")))
 }
 
+// Legacy method
+func (r IpRange) isInIPs(client net.IP, ips []net.IP) bool {
+	for _, ip := range ips {
+		if client.Equal(ip) {
+			return true
+		}
+	}
+	return false
+}
+
+// Legacy method
+func (r IpRange) isInSubnets(ip net.IP, subs []*net.IPNet) bool {
+	for _, subnet := range subs {
+		if subnet.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
 type ipBenchCase struct {
 	name        string
 	generatorFn func(n int) IpRange
@@ -106,7 +126,7 @@ func BenchmarkIPRangeContains(b *testing.B) {
 	compareFns := map[string]func(IpRange) func(net.IP) bool{
 		"Legacy": func(r IpRange) func(ip net.IP) bool {
 			return func(ip net.IP) bool {
-				return r.isInSubnets(ip, r.Cidr) || r.isInIPs(ip, r.Ip)
+				return r.isInSubnets(ip, r.cidrs) || r.isInIPs(ip, r.ips)
 			}
 		},
 		"New": func(r IpRange) func(ip net.IP) bool {
@@ -171,6 +191,8 @@ func makeIPBenchTarget(items IpRange, pos int) net.IP {
 		res = fmt.Sprintf("10.%d.0.55", octet)
 	} else if pos%5 == 0 {
 		res = fmt.Sprintf("2001:db8:%x::1", pos)
+	} else {
+		res = fmt.Sprintf("172.%d.%d.%d", (pos*7)%256, (pos*13)%256, (pos*19)%256)
 	}
 	return net.ParseIP(res)
 }
