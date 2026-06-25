@@ -89,13 +89,13 @@ func benchmarkIPRangeCases() []ipBenchCase {
 	}
 
 	var cases []ipBenchCase
-	for _, n := range []int{10, 50, 100, 1000} {
+	for _, n := range []int{10, 50, 100} {
 		for _, sc := range mixedScenarios {
 			cases = append(cases, ipBenchCase{sc.name, makeIPRangeBench, n, sc.target})
 		}
-	}
-	for _, sc := range cidrScenarios {
-		cases = append(cases, ipBenchCase{sc.name, makeIPRangeBenchCIDROnly, 40, sc.target})
+		for _, sc := range cidrScenarios {
+			cases = append(cases, ipBenchCase{sc.name, makeIPRangeBenchCIDROnly, n, sc.target})
+		}
 	}
 	return cases
 }
