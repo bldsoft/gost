@@ -47,7 +47,15 @@ func MiddlewareFromConfig(cfg Config) func(next http.Handler) http.Handler {
 }
 
 func (m Acl) getIP(r *http.Request) (netip.Addr, error) {
-	return netip.ParseAddr(r.RemoteAddr)
+	addrPort, err := netip.ParseAddrPort(r.RemoteAddr)
+	if err == nil {
+		return addrPort.Addr().Unmap(), nil
+	}
+	addr, err := netip.ParseAddr(r.RemoteAddr)
+	if err != nil {
+		return netip.Addr{}, err
+	}
+	return addr.Unmap(), nil
 }
 
 func (m Acl) enabled() bool {

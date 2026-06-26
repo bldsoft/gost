@@ -37,13 +37,14 @@ func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
 			if err != nil {
 				return res, err
 			}
-			res.cidrs = append(res.cidrs, network)
+			unmappedAddr := network.Addr().Unmap()
+			res.cidrs = append(res.cidrs, netip.PrefixFrom(unmappedAddr, network.Bits()))
 		} else {
 			ip, err := netip.ParseAddr(s)
 			if err != nil {
 				return res, err
 			}
-			res.ips = append(res.ips, ip)
+			res.ips = append(res.ips, ip.Unmap())
 		}
 	}
 	res.buildTree()
@@ -63,12 +64,19 @@ func (r *IpRange) CIDRs() []netip.Prefix {
 }
 
 func (r *IpRange) SetIPs(ips []netip.Addr) {
-	r.ips = ips
+	r.ips = make([]netip.Addr, len(ips))
+	for i, ip := range ips {
+		r.ips[i] = ip.Unmap()
+	}
 	r.buildTree()
 }
 
 func (r *IpRange) SetCIDRs(cidrs []netip.Prefix) {
-	r.cidrs = cidrs
+	r.cidrs = make([]netip.Prefix, len(cidrs))
+	for i, cidr := range cidrs {
+		unmappedAddr := cidr.Addr().Unmap()
+		r.cidrs[i] = netip.PrefixFrom(unmappedAddr, cidr.Bits())
+	}
 	r.buildTree()
 }
 

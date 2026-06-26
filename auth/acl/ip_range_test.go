@@ -45,6 +45,31 @@ func TestIpRangeBson(t *testing.T) {
 	assert.False(t, acl.ACL.Contains(netip.MustParseAddr("192.168.0.2")))
 }
 
+func TestIpRangeIPv4MappedIPv6(t *testing.T) {
+	t.Run("IPv4 stored, IPv4-mapped IPv6 lookup", func(t *testing.T) {
+		ipRange := MustIpRangeFromStrings("192.168.0.1", "10.0.0.0/24")
+		assert.True(t, ipRange.Contains(netip.MustParseAddr("::ffff:192.168.0.1")))
+		assert.True(t, ipRange.Contains(netip.MustParseAddr("::ffff:10.0.0.50")))
+		assert.False(t, ipRange.Contains(netip.MustParseAddr("::ffff:192.168.0.2")))
+	})
+
+	t.Run("IPv4-mapped IPv6 stored, IPv4 lookup", func(t *testing.T) {
+		ipRange := MustIpRangeFromStrings("::ffff:192.168.0.1")
+		assert.True(t, ipRange.Contains(netip.MustParseAddr("192.168.0.1")))
+		assert.False(t, ipRange.Contains(netip.MustParseAddr("192.168.0.2")))
+	})
+
+	t.Run("Mixed storage and lookup", func(t *testing.T) {
+		ipRange := MustIpRangeFromStrings("192.168.1.1", "::ffff:192.168.2.1", "10.0.0.0/24")
+		assert.True(t, ipRange.Contains(netip.MustParseAddr("192.168.1.1")))
+		assert.True(t, ipRange.Contains(netip.MustParseAddr("::ffff:192.168.1.1")))
+		assert.True(t, ipRange.Contains(netip.MustParseAddr("192.168.2.1")))
+		assert.True(t, ipRange.Contains(netip.MustParseAddr("::ffff:192.168.2.1")))
+		assert.True(t, ipRange.Contains(netip.MustParseAddr("10.0.0.100")))
+		assert.True(t, ipRange.Contains(netip.MustParseAddr("::ffff:10.0.0.100")))
+	})
+}
+
 // Legacy method
 func (r IpRange) isInIPs(client netip.Addr, ips []netip.Addr) bool {
 	return slices.Contains(ips, client)
