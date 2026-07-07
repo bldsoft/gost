@@ -1,4 +1,4 @@
-package alert
+package timedqueue
 
 import (
 	"context"
@@ -14,31 +14,30 @@ type item[T any] struct {
 	next  time.Time
 }
 
-type queue[T any] struct {
+type TimedQueue[T any] struct {
 	heap   *heap.Heap[item[T]]
 	mtx    sync.RWMutex
 	pushed chan struct{}
 	closed bool
 }
 
-func newQueue[T any]() *queue[T] {
-	return &queue[T]{
+func New[T any]() *TimedQueue[T] {
+	return &TimedQueue[T]{
 		heap: heap.NewHeap(func(a, b item[T]) bool {
 			return a.next.Before(b.next)
 		}),
-		mtx:    sync.RWMutex{},
 		pushed: make(chan struct{}, 1),
 	}
 }
 
-func (q *queue[T]) notify() {
+func (q *TimedQueue[T]) notify() {
 	select {
 	case q.pushed <- struct{}{}:
 	default:
 	}
 }
 
-func (q *queue[T]) Push(value T, next time.Time) {
+func (q *TimedQueue[T]) Push(value T, next time.Time) {
 	q.mtx.Lock()
 	defer q.mtx.Unlock()
 	if q.closed {
@@ -48,11 +47,11 @@ func (q *queue[T]) Push(value T, next time.Time) {
 	q.notify()
 }
 
-func (q *queue[T]) popAndWait(ctx context.Context) *item[T] {
+func (q *TimedQueue[T]) popAndWait(ctx context.Context) *item[T] {
 	for {
 		v := q.topWait(ctx)
 		if v == nil {
-			return nil // closed
+			return nil
 		}
 
 		select {
@@ -80,16 +79,17 @@ func (q *queue[T]) popAndWait(ctx context.Context) *item[T] {
 	}
 }
 
-func (q *queue[T]) RemoveFirstFunc(f func(value T) bool) {
+func (q *TimedQueue[T]) RemoveFirstFunc(f func(value T) bool) (found bool) {
 	q.mtx.Lock()
 	defer q.mtx.Unlock()
-	q.heap.RemoveFirstFunc(func(item item[T]) bool {
+	found = q.heap.RemoveFirstFunc(func(item item[T]) bool {
 		return f(item.value)
 	})
 	q.notify()
+	return found
 }
 
-func (q *queue[T]) topWait(ctx context.Context) *item[T] {
+func (q *TimedQueue[T]) topWait(ctx context.Context) *item[T] {
 	item, closed := q.top()
 	for item == nil {
 		if closed {
@@ -105,7 +105,7 @@ func (q *queue[T]) topWait(ctx context.Context) *item[T] {
 	return item
 }
 
-func (q *queue[T]) top() (item *item[T], closed bool) {
+func (q *TimedQueue[T]) top() (item *item[T], closed bool) {
 	q.mtx.RLock()
 	defer q.mtx.RUnlock()
 	if q.heap.Empty() {
@@ -115,7 +115,7 @@ func (q *queue[T]) top() (item *item[T], closed bool) {
 	return &res, false
 }
 
-func (q *queue[T]) SyncSeq(ctx context.Context) iter.Seq[T] {
+func (q *TimedQueue[T]) SyncSeq(ctx context.Context) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for item := q.popAndWait(ctx); item != nil; item = q.popAndWait(ctx) {
 			if !yield(item.value) {
@@ -125,7 +125,7 @@ func (q *queue[T]) SyncSeq(ctx context.Context) iter.Seq[T] {
 	}
 }
 
-func (q *queue[T]) SyncSeq2(ctx context.Context) iter.Seq2[int, T] {
+func (q *TimedQueue[T]) SyncSeq2(ctx context.Context) iter.Seq2[int, T] {
 	return func(yield func(int, T) bool) {
 		i := 0
 		for item := range q.SyncSeq(ctx) {
@@ -137,7 +137,7 @@ func (q *queue[T]) SyncSeq2(ctx context.Context) iter.Seq2[int, T] {
 	}
 }
 
-func (q *queue[T]) Close() {
+func (q *TimedQueue[T]) Close() {
 	q.mtx.Lock()
 	defer q.mtx.Unlock()
 	if q.closed {
