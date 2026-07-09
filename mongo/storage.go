@@ -164,7 +164,7 @@ func (db *Storage) Stats(ctx context.Context) (interface{}, error) {
 
 	dbStat := make(map[string]interface{})
 	if err := res.Decode(&dbStat); err != nil {
-		return nil, wrapErr(err)
+		return nil, WrapErr(err)
 	}
 	stats = append(stats, dbStat)
 
@@ -175,7 +175,7 @@ func (db *Storage) Stats(ctx context.Context) (interface{}, error) {
 		}
 		colStat := make(map[string]interface{})
 		if err := res.Decode(&colStat); err != nil {
-			return nil, wrapErr(err)
+			return nil, WrapErr(err)
 		}
 		stats = append(stats, colStat)
 	}
