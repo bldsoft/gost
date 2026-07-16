@@ -196,6 +196,58 @@ func TestBaseRepository_InsertOrReplaceMany(t *testing.T) {
 		assert.EqualValues(t, 2, count)
 	})
 
+	t.Run("new entities with pre-set id are inserted", func(t *testing.T) {
+		ctx, rep := testRepository(t)
+
+		entities := []*testEntity{
+			{Field: "preset_a"},
+			{Field: "preset_b"},
+		}
+		for _, e := range entities {
+			e.GenerateID()
+		}
+
+		err := rep.InsertOrReplaceMany(ctx, entities)
+		assert.NoError(t, err)
+
+		for _, e := range entities {
+			got, err := rep.FindByID(ctx, e.StringID())
+			assert.NoError(t, err)
+			assert.Equal(t, e.Field, got.Field)
+		}
+
+		count, err := rep.Collection().CountDocuments(ctx, bson.M{})
+		assert.NoError(t, err)
+		assert.EqualValues(t, 2, count)
+	})
+
+	t.Run("mix of new entities with pre-set id and existing entities", func(t *testing.T) {
+		ctx, rep := testRepository(t)
+
+		existing := &testEntity{Field: "existing"}
+		assert.NoError(t, rep.Insert(ctx, existing))
+
+		newWithID := &testEntity{Field: "new_with_id"}
+		newWithID.GenerateID()
+
+		existing.Field = "existing_updated"
+
+		err := rep.InsertOrReplaceMany(ctx, []*testEntity{newWithID, existing})
+		assert.NoError(t, err)
+
+		gotExisting, err := rep.FindByID(ctx, existing.StringID())
+		assert.NoError(t, err)
+		assert.Equal(t, "existing_updated", gotExisting.Field)
+
+		gotNew, err := rep.FindByID(ctx, newWithID.StringID())
+		assert.NoError(t, err)
+		assert.Equal(t, "new_with_id", gotNew.Field)
+
+		count, err := rep.Collection().CountDocuments(ctx, bson.M{})
+		assert.NoError(t, err)
+		assert.EqualValues(t, 2, count)
+	})
+
 	t.Run("insert and replace multiple entities", func(t *testing.T) {
 		ctx, rep := testRepository(t)
 
