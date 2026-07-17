@@ -12,7 +12,7 @@ import (
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
 	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 const testCollection = "test_collection"
