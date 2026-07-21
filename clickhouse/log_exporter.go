@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -116,16 +115,8 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 		where = append(where, sq.Eq{LevelColumName: int8Levels})
 	}
 
-	switch len(filter.RequestIDs) {
-	case 0:
-	case 1:
-		where = append(where, sq.Like{ReqIDColumnName: fmt.Sprintf("%%%s%%", filter.RequestIDs[0])})
-	default:
-		match := fmt.Sprintf("match(%s, (?))", ReqIDColumnName)
-		for i := range filter.RequestIDs {
-			filter.RequestIDs[i] = regexp.QuoteMeta(filter.RequestIDs[i])
-		}
-		where = append(where, sq.Expr(match, strings.Join(filter.RequestIDs, "|")))
+	if len(filter.RequestIDs) > 0 {
+		where = append(where, sq.Expr(fmt.Sprintf("multiSearchAny(%s, ?)", ReqIDColumnName), filter.RequestIDs))
 	}
 
 	if len(filter.Instances) > 0 {
