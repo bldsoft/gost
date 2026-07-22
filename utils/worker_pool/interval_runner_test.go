@@ -262,3 +262,160 @@ func TestIntervalRunner_LastWins_RemoveThenAdd(t *testing.T) {
 		require.Equal(t, int64(10), got, "last Add should win after Remove")
 	})
 }
+
+func TestIntervalRunner_ContextCancelledOnRemove(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		runner := NewIntervalRunner(1)
+		started := make(chan struct{})
+		unblocked := make(chan struct{})
+
+		runner.Add("task1", time.Second, func(ctx context.Context) {
+			close(started)
+			<-ctx.Done()
+			close(unblocked)
+		})
+
+		ctx, cancel := context.WithCancel(context.Background())
+		go runner.Run(ctx)
+
+		<-started
+		runner.Remove("task1")
+
+		select {
+		case <-unblocked:
+		case <-time.After(2 * time.Second):
+			t.Fatal("task context was not cancelled on Remove")
+		}
+
+		cancel()
+		synctest.Wait()
+	})
+}
+
+func TestIntervalRunner_ContextCancelledOnReplace(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		runner := NewIntervalRunner(1)
+		oldStarted := make(chan struct{})
+		oldUnblocked := make(chan struct{})
+		newStarted := make(chan struct{})
+		var newContextFresh atomic.Bool
+
+		runner.Add("task1", time.Second, func(ctx context.Context) {
+			close(oldStarted)
+			<-ctx.Done()
+			close(oldUnblocked)
+		})
+
+		ctx, cancel := context.WithCancel(context.Background())
+		go runner.Run(ctx)
+
+		<-oldStarted
+		runner.Add("task1", time.Second, func(ctx context.Context) {
+			newContextFresh.Store(ctx.Err() == nil)
+			close(newStarted)
+		})
+
+		select {
+		case <-oldUnblocked:
+		case <-time.After(2 * time.Second):
+			t.Fatal("old task context was not cancelled on replace")
+		}
+
+		select {
+		case <-newStarted:
+		case <-time.After(2 * time.Second):
+			t.Fatal("new task did not start after replace")
+		}
+
+		require.True(t, newContextFresh.Load(), "new task should receive a non-cancelled context")
+
+		cancel()
+		synctest.Wait()
+	})
+}
+
+func TestIntervalRunner_ContextCancelledOnShutdown(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		runner := NewIntervalRunner(1)
+		started := make(chan struct{})
+		unblocked := make(chan struct{})
+
+		runner.Add("task1", time.Second, func(ctx context.Context) {
+			close(started)
+			<-ctx.Done()
+			close(unblocked)
+		})
+
+		ctx, cancel := context.WithCancel(context.Background())
+		go runner.Run(ctx)
+
+		<-started
+		cancel()
+
+		select {
+		case <-unblocked:
+		case <-time.After(2 * time.Second):
+			t.Fatal("task context was not cancelled on runner shutdown")
+		}
+	})
+}
+
+func TestIntervalRunner_NewTaskGetsOwnContext(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		runner := NewIntervalRunner(1)
+		var newContextFresh atomic.Bool
+		checked := make(chan struct{})
+
+		runner.Add("task1", time.Second, func(ctx context.Context) {
+			<-ctx.Done()
+		})
+		runner.Add("task1", time.Second, func(ctx context.Context) {
+			newContextFresh.Store(ctx.Err() == nil)
+			close(checked)
+		})
+
+		ctx, cancel := context.WithCancel(context.Background())
+		go runner.Run(ctx)
+
+		select {
+		case <-checked:
+		case <-time.After(2 * time.Second):
+			t.Fatal("replaced task did not run")
+		}
+
+		require.True(t, newContextFresh.Load(), "replaced task should receive a fresh non-cancelled context")
+
+		cancel()
+		synctest.Wait()
+	})
+}
+
+func TestIntervalRunner_AddAfterRun(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		var count atomic.Int64
+		runner := NewIntervalRunner(1)
+		started := make(chan struct{})
+
+		runner.Add("setup", time.Hour, func(ctx context.Context) {
+			close(started)
+		})
+
+		ctx, cancel := context.WithCancel(context.Background())
+		done := make(chan struct{})
+		go func() {
+			runner.Run(ctx)
+			close(done)
+		}()
+
+		<-started
+		cancel()
+		<-done
+
+		runner.Add("task1", time.Second, func(ctx context.Context) {
+			count.Add(1)
+		})
+
+		time.Sleep(2 * time.Second)
+		require.Equal(t, int64(0), count.Load(), "task added after Run exits should not execute")
+	})
+}

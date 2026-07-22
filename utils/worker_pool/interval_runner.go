@@ -11,26 +11,38 @@ import (
 )
 
 type scheduledTask struct {
-	id  string
-	gen uint64
+	id string
 
 	interval time.Duration
 	do       func(ctx context.Context)
+
+	ctx    context.Context
+	cancel context.CancelFunc
+}
+
+func newScheduledTask(id string, interval time.Duration, f func(ctx context.Context)) *scheduledTask {
+	ctx, cancel := context.WithCancel(context.Background())
+	return &scheduledTask{
+		id:       id,
+		interval: interval,
+		do:       f,
+		ctx:      ctx,
+		cancel:   cancel,
+	}
 }
 
 type IntervalRunner struct {
-	queue     *timedqueue.TimedQueue[scheduledTask]
-	wp        *WorkerPool
-	gen       uint64
-	taskToGen map[string]uint64
-	mtx       sync.Mutex
+	queue    *timedqueue.TimedQueue[*scheduledTask]
+	wp       *WorkerPool
+	idToTask map[string]*scheduledTask
+	mtx      sync.Mutex
 }
 
 func NewIntervalRunner(workerN int) *IntervalRunner {
 	return &IntervalRunner{
-		queue:     timedqueue.New[scheduledTask](),
-		wp:        new(WorkerPool).SetWorkerN(int64(workerN)),
-		taskToGen: make(map[string]uint64),
+		queue:    timedqueue.New[*scheduledTask](),
+		wp:       new(WorkerPool).SetWorkerN(int64(workerN)),
+		idToTask: make(map[string]*scheduledTask),
 	}
 }
 
@@ -42,20 +54,13 @@ func (r *IntervalRunner) Add(id string, interval time.Duration, f func(ctx conte
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
-	_, alreadyExists := r.taskToGen[id]
-
-	gen := r.nextGen()
-	r.taskToGen[id] = gen
-	task := scheduledTask{
-		id:       id,
-		gen:      gen,
-		interval: interval,
-		do:       f,
+	if existingTask := r.idToTask[id]; existingTask != nil {
+		r.queue.RemoveFirstFunc(func(t *scheduledTask) bool { return t.id == id })
+		existingTask.cancel()
 	}
 
-	if alreadyExists {
-		r.queue.RemoveFirstFunc(func(t scheduledTask) bool { return t.id == id })
-	}
+	task := newScheduledTask(id, interval, f)
+	r.idToTask[id] = task
 	r.queue.Push(task, time.Now())
 }
 
@@ -63,13 +68,14 @@ func (r *IntervalRunner) Remove(id string) {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
-	_, exists := r.taskToGen[id]
+	task, exists := r.idToTask[id]
 	if !exists {
 		return
 	}
 
-	r.queue.RemoveFirstFunc(func(t scheduledTask) bool { return t.id == id })
-	delete(r.taskToGen, id)
+	r.queue.RemoveFirstFunc(func(t *scheduledTask) bool { return t.id == id })
+	task.cancel()
+	delete(r.idToTask, id)
 }
 
 func (r *IntervalRunner) Run(ctx context.Context) {
@@ -78,11 +84,11 @@ func (r *IntervalRunner) Run(ctx context.Context) {
 			defer func() {
 				r.mtx.Lock()
 				defer r.mtx.Unlock()
-				gen, exists := r.taskToGen[task.id]
+				currentTask, exists := r.idToTask[task.id]
 				if !exists {
 					return
 				}
-				if gen != task.gen {
+				if currentTask != task {
 					return
 				}
 				r.queue.Push(task, time.Now().Add(task.interval))
@@ -95,14 +101,14 @@ func (r *IntervalRunner) Run(ctx context.Context) {
 					}, "IntervalRunner task panicked")
 				}
 			}()
-
-			task.do(ctx)
+			task.do(task.ctx)
 		}
 	}
-	r.wp.CloseAndWait()
-}
 
-func (r *IntervalRunner) nextGen() uint64 {
-	r.gen++
-	return r.gen
+	r.mtx.Lock()
+	for _, task := range r.idToTask {
+		task.cancel()
+	}
+	r.mtx.Unlock()
+	r.wp.CloseAndWait()
 }
