@@ -262,3 +262,83 @@ func TestIntervalRunner_LastWins_RemoveThenAdd(t *testing.T) {
 		require.Equal(t, int64(10), got, "last Add should win after Remove")
 	})
 }
+
+func TestIntervalRunner_ReplaceTaskCancelsContext(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		runner := NewIntervalRunner(2)
+		var oldCancelled atomic.Bool
+		var newRan atomic.Bool
+		started := make(chan struct{})
+
+		runner.Add("task1", time.Hour, func(ctx context.Context) {
+			close(started)
+			<-ctx.Done()
+			oldCancelled.Store(true)
+		})
+
+		ctx, cancel := context.WithCancel(context.Background())
+		go runner.Run(ctx)
+
+		<-started
+		runner.Add("task1", time.Hour, func(ctx context.Context) {
+			newRan.Store(true)
+		})
+
+		time.Sleep(time.Second)
+		require.True(t, oldCancelled.Load(), "old task context should be cancelled on replace")
+		require.True(t, newRan.Load(), "replacement task should run")
+
+		cancel()
+		time.Sleep(time.Second)
+	})
+}
+
+func TestIntervalRunner_RemoveTaskCancelsContext(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		runner := NewIntervalRunner(2)
+		var cancelled atomic.Bool
+		started := make(chan struct{})
+
+		runner.Add("task1", time.Hour, func(ctx context.Context) {
+			close(started)
+			<-ctx.Done()
+			cancelled.Store(true)
+		})
+
+		ctx, cancel := context.WithCancel(context.Background())
+		go runner.Run(ctx)
+
+		<-started
+		runner.Remove("task1")
+
+		time.Sleep(time.Second)
+		require.True(t, cancelled.Load(), "task context should be cancelled on remove")
+
+		cancel()
+		time.Sleep(time.Second)
+	})
+}
+
+func TestIntervalRunner_NormalTaskContextLives(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		runner := NewIntervalRunner(2)
+		var startLive atomic.Bool
+		var endLive atomic.Bool
+
+		runner.Add("task1", time.Hour, func(ctx context.Context) {
+			startLive.Store(ctx.Err() == nil)
+			time.Sleep(100 * time.Millisecond)
+			endLive.Store(ctx.Err() == nil)
+		})
+
+		ctx, cancel := context.WithCancel(context.Background())
+		go runner.Run(ctx)
+
+		time.Sleep(time.Second)
+		require.True(t, startLive.Load(), "task context should be live at start")
+		require.True(t, endLive.Load(), "task context should be live at end")
+
+		cancel()
+		time.Sleep(time.Second)
+	})
+}

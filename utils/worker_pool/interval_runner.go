@@ -19,18 +19,20 @@ type scheduledTask struct {
 }
 
 type IntervalRunner struct {
-	queue     *timedqueue.TimedQueue[scheduledTask]
-	wp        *WorkerPool
-	gen       uint64
-	taskToGen map[string]uint64
-	mtx       sync.Mutex
+	queue        *timedqueue.TimedQueue[scheduledTask]
+	wp           *WorkerPool
+	gen          uint64
+	taskToGen    map[string]uint64
+	taskToCancel map[string]context.CancelFunc
+	mtx          sync.Mutex
 }
 
 func NewIntervalRunner(workerN int) *IntervalRunner {
 	return &IntervalRunner{
-		queue:     timedqueue.New[scheduledTask](),
-		wp:        new(WorkerPool).SetWorkerN(int64(workerN)),
-		taskToGen: make(map[string]uint64),
+		queue:        timedqueue.New[scheduledTask](),
+		wp:           new(WorkerPool).SetWorkerN(int64(workerN)),
+		taskToGen:    make(map[string]uint64),
+		taskToCancel: make(map[string]context.CancelFunc),
 	}
 }
 
@@ -43,6 +45,7 @@ func (r *IntervalRunner) Add(id string, interval time.Duration, f func(ctx conte
 	defer r.mtx.Unlock()
 
 	_, alreadyExists := r.taskToGen[id]
+	r.cancelTaskContext(id)
 
 	gen := r.nextGen()
 	r.taskToGen[id] = gen
@@ -68,6 +71,7 @@ func (r *IntervalRunner) Remove(id string) {
 		return
 	}
 
+	r.cancelTaskContext(id)
 	r.queue.RemoveFirstFunc(func(t scheduledTask) bool { return t.id == id })
 	delete(r.taskToGen, id)
 }
@@ -75,16 +79,26 @@ func (r *IntervalRunner) Remove(id string) {
 func (r *IntervalRunner) Run(ctx context.Context) {
 	for task := range r.queue.SyncSeq(ctx) {
 		r.wp.In() <- func() {
+			r.mtx.Lock()
+			taskCtx, taskCancel := context.WithCancel(ctx)
+			r.taskToCancel[task.id] = taskCancel
+			r.mtx.Unlock()
+
 			defer func() {
+				taskCancel()
 				r.mtx.Lock()
 				defer r.mtx.Unlock()
 				gen, exists := r.taskToGen[task.id]
 				if !exists {
+					delete(r.taskToCancel, task.id)
 					return
 				}
+
 				if gen != task.gen {
 					return
 				}
+				delete(r.taskToCancel, task.id)
+
 				r.queue.Push(task, time.Now().Add(task.interval))
 			}()
 			defer func() {
@@ -96,13 +110,24 @@ func (r *IntervalRunner) Run(ctx context.Context) {
 				}
 			}()
 
-			task.do(ctx)
+			task.do(taskCtx)
 		}
 	}
 	r.wp.CloseAndWait()
+
+	r.mtx.Lock()
+	clear(r.taskToCancel)
+	r.mtx.Unlock()
 }
 
 func (r *IntervalRunner) nextGen() uint64 {
 	r.gen++
 	return r.gen
+}
+
+func (r *IntervalRunner) cancelTaskContext(id string) {
+	if cancel, ok := r.taskToCancel[id]; ok {
+		cancel()
+		delete(r.taskToCancel, id)
+	}
 }
