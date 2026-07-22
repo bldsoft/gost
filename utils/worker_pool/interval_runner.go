@@ -90,14 +90,14 @@ func (r *IntervalRunner) Run(ctx context.Context) {
 				defer r.mtx.Unlock()
 				gen, exists := r.taskToGen[task.id]
 				if !exists {
+					delete(r.taskToCancel, task.id)
 					return
 				}
 
 				if gen != task.gen {
 					return
-				} else {
-					delete(r.taskToCancel, task.id)
 				}
+				delete(r.taskToCancel, task.id)
 
 				r.queue.Push(task, time.Now().Add(task.interval))
 			}()
@@ -114,6 +114,10 @@ func (r *IntervalRunner) Run(ctx context.Context) {
 		}
 	}
 	r.wp.CloseAndWait()
+
+	r.mtx.Lock()
+	clear(r.taskToCancel)
+	r.mtx.Unlock()
 }
 
 func (r *IntervalRunner) nextGen() uint64 {

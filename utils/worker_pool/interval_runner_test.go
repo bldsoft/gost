@@ -327,6 +327,7 @@ func TestIntervalRunner_NormalTaskContextLives(t *testing.T) {
 
 		runner.Add("task1", time.Hour, func(ctx context.Context) {
 			startLive.Store(ctx.Err() == nil)
+			time.Sleep(100 * time.Millisecond)
 			endLive.Store(ctx.Err() == nil)
 		})
 
