@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	json_utils "github.com/bldsoft/gost/utils/json"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 const FieldNameType = "type"

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/utils/timedqueue"
 	wp "github.com/bldsoft/gost/utils/worker_pool"
 )
 
@@ -22,13 +23,13 @@ type Config struct {
 }
 
 type Manager struct {
-	queue *queue[Processor]
+	queue *timedqueue.TimedQueue[Processor]
 	wp    *wp.WorkerPool
 }
 
 func NewManager(cfg Config) *Manager {
 	return &Manager{
-		queue: newQueue[Processor](),
+		queue: timedqueue.New[Processor](),
 		wp:    new(wp.WorkerPool).SetWorkerN(int64(cfg.WorkerN)),
 	}
 }
