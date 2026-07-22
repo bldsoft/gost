@@ -2,11 +2,11 @@ package acl
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net"
+	"net/netip"
 	"strings"
 
+	"github.com/bldsoft/gost/utils"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/x/bsonx/bsoncore"
 )
@@ -14,8 +14,11 @@ import (
 var invalidBsonValue = fmt.Errorf("invalid bson string value")
 
 type IpRange struct {
-	Ip   []net.IP
-	Cidr []*net.IPNet
+	ips   []netip.Addr
+	cidrs []netip.Prefix
+
+	// in case of adding ips/cidrs setters, make sure to update the tree
+	tree *utils.IPTreeSet
 }
 
 func MustIpRangeFromStrings(strs ...string) IpRange {
@@ -29,41 +32,42 @@ func MustIpRangeFromStrings(strs ...string) IpRange {
 func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
 	for _, s := range strs {
 		if strings.Contains(s, "/") {
-			_, network, err := net.ParseCIDR(s)
+			network, err := netip.ParsePrefix(s)
 			if err != nil {
 				return res, err
 			}
-			res.Cidr = append(res.Cidr, network)
+			unmappedAddr := network.Addr().Unmap()
+			res.cidrs = append(res.cidrs, netip.PrefixFrom(unmappedAddr, network.Bits()))
 		} else {
-			ip := net.ParseIP(s)
-			if ip == nil {
-				return res, errors.New("unable to parse IP address")
+			ip, err := netip.ParseAddr(s)
+			if err != nil {
+				return res, err
 			}
-			res.Ip = append(res.Ip, ip)
+			res.ips = append(res.ips, ip.Unmap())
 		}
 	}
+	res.buildTree()
 	return res, nil
 }
 
 func (r IpRange) Empty() bool {
-	return len(r.Ip) == 0 && len(r.Cidr) == 0
+	return len(r.ips) == 0 && len(r.cidrs) == 0
 }
 
-func (r IpRange) isInIPs(client net.IP, ips []net.IP) bool {
-	for _, ip := range ips {
-		if client.Equal(ip) {
-			return true
-		}
-	}
-	return false
+func (r *IpRange) IPs() []netip.Addr {
+	return r.ips
+}
+
+func (r *IpRange) CIDRs() []netip.Prefix {
+	return r.cidrs
 }
 
 func (r *IpRange) Strings() []string {
-	res := make([]string, 0, len(r.Ip)+len(r.Cidr))
-	for _, ip := range r.Ip {
+	res := make([]string, 0, len(r.ips)+len(r.cidrs))
+	for _, ip := range r.ips {
 		res = append(res, ip.String())
 	}
-	for _, cidr := range r.Cidr {
+	for _, cidr := range r.cidrs {
 		res = append(res, cidr.String())
 	}
 	return res
@@ -73,17 +77,12 @@ func (r *IpRange) String() string {
 	return strings.Join(r.Strings(), ",")
 }
 
-func (r IpRange) isInSubnets(ip net.IP, subs []*net.IPNet) bool {
-	for _, subnet := range subs {
-		if subnet.Contains(ip) {
-			return true
-		}
-	}
-	return false
+func (r *IpRange) buildTree() {
+	r.tree = utils.NewIPTreeSet(r.Strings()...)
 }
 
-func (r IpRange) Contains(ip net.IP) bool {
-	return r.isInSubnets(ip, r.Cidr) || r.isInIPs(ip, r.Ip)
+func (r *IpRange) Contains(ip netip.Addr) bool {
+	return r.tree.Match(ip)
 }
 
 func (r IpRange) MarshalJSON() ([]byte, error) {

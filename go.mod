@@ -12,6 +12,7 @@ require (
 	github.com/dmarkham/enumer v1.6.3
 	github.com/evanphx/json-patch v4.9.0+incompatible
 	github.com/felixge/httpsnoop v1.0.4
+	github.com/gaissmai/bart v0.28.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/jwtauth v1.2.0

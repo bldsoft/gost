@@ -1,9 +1,8 @@
 package acl
 
 import (
-	"errors"
-	"net"
 	"net/http"
+	"net/netip"
 
 	"github.com/bldsoft/gost/controller"
 	"github.com/bldsoft/gost/log"
@@ -47,13 +46,16 @@ func MiddlewareFromConfig(cfg Config) func(next http.Handler) http.Handler {
 	return Acl{Allow: cfg.allow, Deny: cfg.deny}.Middleware
 }
 
-func (m Acl) getIP(r *http.Request) (net.IP, error) {
-	ret := net.ParseIP(r.RemoteAddr)
-	if ret == nil {
-		return nil, errors.New("acl: unable to parse address")
+func (m Acl) getIP(r *http.Request) (netip.Addr, error) {
+	addrPort, err := netip.ParseAddrPort(r.RemoteAddr)
+	if err == nil {
+		return addrPort.Addr().Unmap(), nil
 	}
-
-	return ret, nil
+	addr, err := netip.ParseAddr(r.RemoteAddr)
+	if err != nil {
+		return netip.Addr{}, err
+	}
+	return addr.Unmap(), nil
 }
 
 func (m Acl) enabled() bool {
