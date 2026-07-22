@@ -12,21 +12,21 @@ type IPTreeSet struct {
 }
 
 func NewIPTreeSet(ipCidrs ...string) *IPTreeSet {
-	res := &IPTreeSet{
+	s := &IPTreeSet{
 		items: new(bart.Lite),
 	}
 	for _, ipCidr := range ipCidrs {
-		pfx, err := ipKeyToPrefix(ipCidr)
+		pfx, err := s.ipKeyToPrefix(ipCidr)
 		if err != nil {
 			continue
 		}
-		res.items.Insert(pfx)
+		s.items.Insert(pfx)
 	}
 
-	return res
+	return s
 }
 
-func ipKeyToPrefix(ip string) (netip.Prefix, error) {
+func (s *IPTreeSet) ipKeyToPrefix(ip string) (netip.Prefix, error) {
 	if strings.Contains(ip, "/") {
 		pfx, err := netip.ParsePrefix(ip)
 		if err != nil {
@@ -39,6 +39,28 @@ func ipKeyToPrefix(ip string) (netip.Prefix, error) {
 		return netip.Prefix{}, err
 	}
 	return netip.PrefixFrom(addr.Unmap(), addr.Unmap().BitLen()), nil
+}
+
+func (s *IPTreeSet) Put(ipCidrs ...string) error {
+	for _, ipCidr := range ipCidrs {
+		pfx, err := s.ipKeyToPrefix(ipCidr)
+		if err != nil {
+			return err
+		}
+		s.items.Insert(pfx)
+	}
+	return nil
+}
+
+func (s *IPTreeSet) Delete(ipCidrs ...string) error {
+	for _, ipCidr := range ipCidrs {
+		pfx, err := s.ipKeyToPrefix(ipCidr)
+		if err != nil {
+			return err
+		}
+		s.items.Delete(pfx)
+	}
+	return nil
 }
 
 func (s *IPTreeSet) Match(ip netip.Addr) bool {

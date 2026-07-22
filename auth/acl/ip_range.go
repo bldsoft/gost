@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/netip"
 	"strings"
-	"sync"
 
 	"github.com/bldsoft/gost/utils"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -18,7 +17,7 @@ type IpRange struct {
 	ips   []netip.Addr
 	cidrs []netip.Prefix
 
-	mu   *sync.RWMutex
+	// in case of adding ips/cidrs setters, make sure to update the tree
 	tree *utils.IPTreeSet
 }
 
@@ -63,23 +62,6 @@ func (r *IpRange) CIDRs() []netip.Prefix {
 	return r.cidrs
 }
 
-func (r *IpRange) SetIPs(ips []netip.Addr) {
-	r.ips = make([]netip.Addr, len(ips))
-	for i, ip := range ips {
-		r.ips[i] = ip.Unmap()
-	}
-	r.buildTree()
-}
-
-func (r *IpRange) SetCIDRs(cidrs []netip.Prefix) {
-	r.cidrs = make([]netip.Prefix, len(cidrs))
-	for i, cidr := range cidrs {
-		unmappedAddr := cidr.Addr().Unmap()
-		r.cidrs[i] = netip.PrefixFrom(unmappedAddr, cidr.Bits())
-	}
-	r.buildTree()
-}
-
 func (r *IpRange) Strings() []string {
 	res := make([]string, 0, len(r.ips)+len(r.cidrs))
 	for _, ip := range r.ips {
@@ -96,20 +78,10 @@ func (r *IpRange) String() string {
 }
 
 func (r *IpRange) buildTree() {
-	if r.mu == nil {
-		r.mu = &sync.RWMutex{}
-	}
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	r.tree = utils.NewIPTreeSet(r.Strings()...)
 }
 
 func (r *IpRange) Contains(ip netip.Addr) bool {
-	if r.mu == nil {
-		r.buildTree()
-	}
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 	return r.tree.Match(ip)
 }
 
