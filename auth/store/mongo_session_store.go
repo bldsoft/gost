@@ -278,8 +278,38 @@ func (mstore *MongoDBStore) AllSessions(ctx context.Context, name string, offset
 	return res, nil
 }
 
+func (mstore *MongoDBStore) SessionByIDs(ctx context.Context, name string, ids ...string) ([]*sessions.Session, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	rawIDs := repository.StringsToRawIDs[sessionDoc](ids)
+	cur, err := mstore.rep.Collection().Find(ctx, bson.M{"_id": bson.M{"$in": rawIDs}})
+	if err != nil {
+		return nil, err
+	}
+
+	sessDocs := make([]sessionDoc, 0)
+	if err = cur.All(ctx, &sessDocs); err != nil {
+		return nil, err
+	}
+
+	res := make([]*sessions.Session, 0, len(sessDocs))
+	for _, sessDoc := range sessDocs {
+		sess := sessions.NewSession(mstore, name)
+		sess.ID = sessDoc.StringID()
+		err = securecookie.DecodeMulti(name, sessDoc.Data, &sess.Values, mstore.codecs...)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, sess)
+	}
+
+	return res, nil
+}
+
 func (mstore *MongoDBStore) KillSessions(ctx context.Context, ids ...string) error {
-	rawIDs := repository.StringsToRawIDs[sessionDoc, *sessionDoc](ids)
+	rawIDs := repository.StringsToRawIDs[sessionDoc](ids)
 	filter := bson.M{"_id": bson.M{"$in": rawIDs}}
 	return mstore.rep.DeleteMany(ctx, filter, &repository.QueryOptions{Archived: false})
 }
