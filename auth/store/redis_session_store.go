@@ -61,25 +61,45 @@ func (s *RedisSessionStore) AllSessions(ctx context.Context, name string, offset
 	}
 	keys = keys[offset:limit]
 
-	res := make([]*sessions.Session, 0, len(keys))
-	for _, key := range keys {
+	return s.sessionsFromKeys(name, keys)
+}
+
+func (s *RedisSessionStore) SessionByIDs(ctx context.Context, name string, ids ...string) ([]*sessions.Session, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	keys := make([]string, len(ids))
+	for i, id := range ids {
+		keys[i] = s.keyPrefix + id
+	}
+
+	return s.sessionsFromKeys(name, keys)
+}
+
+func (s *RedisSessionStore) sessionsFromKeys(name string, keys []string) ([]*sessions.Session, error) {
+	vals, err := s.client.MGet(keys...).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]*sessions.Session, 0, len(vals))
+	for i, val := range vals {
+		if val == nil {
+			continue
+		}
+
+		b, ok := val.(string)
+		if !ok {
+			continue
+		}
+
 		session := sessions.NewSession(s, name)
-
-		cmd := s.client.Get(key)
-		if cmd.Err() != nil {
-			return nil, cmd.Err()
-		}
-
-		b, err := cmd.Bytes()
-		if err != nil {
+		if err := s.serializer.Deserialize([]byte(b), session); err != nil {
 			return nil, err
 		}
 
-		if err := s.serializer.Deserialize(b, session); err != nil {
-			return nil, err
-		}
-
-		session.ID = strings.TrimPrefix(key, s.keyPrefix)
+		session.ID = strings.TrimPrefix(keys[i], s.keyPrefix)
 		res = append(res, session)
 	}
 

@@ -41,6 +41,11 @@ func (r *ChangeLogRepository) Insert(ctx context.Context, record *Record) error 
 	return err
 }
 
+func (r *ChangeLogRepository) InsertMany(ctx context.Context, records []*Record) error {
+	_, err := r.rep.Collection().InsertMany(ctx, records)
+	return err
+}
+
 func (r *ChangeLogRepository) FindByID(ctx context.Context, id string, options ...*repository.QueryOptions) (*changelog.Record, error) {
 	record, err := r.rep.FindByID(ctx, id, options...)
 	if err != nil {
