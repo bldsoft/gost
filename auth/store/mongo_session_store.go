@@ -13,7 +13,6 @@ import (
 	"github.com/bldsoft/gost/utils"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -145,7 +144,7 @@ func (mstore *MongoDBStore) Save(r *http.Request, w http.ResponseWriter, session
 	}
 
 	if session.ID == "" {
-		session.ID = primitive.NewObjectID().Hex()
+		session.ID = bson.NewObjectID().Hex()
 	}
 	encoded, err := securecookie.EncodeMulti(session.Name(), session.Values, mstore.codecs...)
 	if err != nil {

@@ -279,6 +279,7 @@ func (r *BaseRepository[T, U]) InsertOrReplace(ctx context.Context, entity U) (i
 }
 
 func (r *BaseRepository[T, U]) InsertOrReplaceOne(ctx context.Context, filter any, replacement U, opt ...*repository.QueryOptions) (inserted bool, _ error) {
+	r.fillTimeStamp(ctx, replacement, false)
 	replaceOpt := options.Replace().SetUpsert(true)
 	result, err := r.Collection().ReplaceOne(ctx, r.where(filter, opt...), replacement, replaceOpt)
 	if err != nil {
@@ -307,7 +308,7 @@ func (r *BaseRepository[T, U]) InsertOrReplaceMany(ctx context.Context, entities
 		docs = append(docs, mongo.NewReplaceOneModel().
 			SetFilter(bson.M{"_id": entity.RawID()}).
 			SetReplacement(entity).
-			SetUpsert(false))
+			SetUpsert(true))
 	}
 	opt := options.BulkWrite().SetOrdered(false)
 	_, err := r.Collection().BulkWrite(ctx, docs, opt)
