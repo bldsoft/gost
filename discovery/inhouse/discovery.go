@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"sort"
 	"strings"
 	"sync"
@@ -17,11 +18,23 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const joinRetryInterval = 10 * time.Second
+const (
+	joinRetryInterval   = 10 * time.Second
+	defaultLeaveTimeout = time.Second
+	updateNodeTimeout   = time.Second
+)
 
 type instanceKey struct {
 	serviceName string
 	instanceID  string
+}
+
+type memberList interface {
+	Leave(timeout time.Duration) error
+	Shutdown() error
+	UpdateNode(timeout time.Duration) error
+	LocalNode() *memberlist.Node
+	Join(existing []string) (int, error)
 }
 
 type Discovery struct {
@@ -29,7 +42,7 @@ type Discovery struct {
 	server.AsyncRunner
 
 	cfg  Config
-	list *memberlist.Memberlist
+	list memberList
 
 	services                  map[string]*discovery.ServiceInfo
 	instanceIDToDownTimestamp map[instanceKey]time.Time
@@ -65,8 +78,13 @@ func (d *Discovery) memberlistConfig() (*memberlist.Config, error) {
 	memberlistCfg.Name = d.ServiceInfo.ID
 	memberlistCfg.BindAddr = d.cfg.BindAddress.Host()
 	memberlistCfg.BindPort = d.cfg.BindAddress.PortInt()
-	memberlistCfg.AdvertiseAddr = d.ServiceInfo.Address.Host()
+	advertiseHost := d.ServiceInfo.Address.Host()
+	if ip := net.ParseIP(advertiseHost); ip != nil && ip.IsUnspecified() {
+		advertiseHost = ""
+	}
+	memberlistCfg.AdvertiseAddr = advertiseHost
 	memberlistCfg.AdvertisePort = d.ServiceInfo.Address.PortInt()
+	memberlistCfg.DeadNodeReclaimTime = memberlistCfg.ProbeInterval
 	memberlistCfg.SecretKey = []byte(d.cfg.SecretKey.String())
 	if d.transport != nil {
 		memberlistCfg.Transport = d.transport
@@ -91,6 +109,7 @@ func (d *Discovery) run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create memberlist: %w", err)
 	}
+	d.addService(d.list.LocalNode(), true)
 	d.join(ctx, true, d.cfg.ClusterMembers...)
 
 	checkExpiredInterval := min(d.cfg.DeregisterServiceAfter/2, 5*time.Minute)
@@ -219,13 +238,30 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 }
 
 func (d *Discovery) Stop(ctx context.Context) error {
-	if deadline, ok := ctx.Deadline(); ok {
-		if timeout := time.Until(deadline); timeout > 0 {
-			err := d.list.Leave(timeout)
-			log.Logger.InfoOrError(err, "Discovery: leaving from the cluster")
+	if d.list != nil {
+		timeout := defaultLeaveTimeout
+		if deadline, ok := ctx.Deadline(); ok {
+			if remaining := time.Until(deadline); remaining > 0 {
+				timeout = remaining
+			}
+		}
+		err := d.list.Leave(timeout)
+		log.Logger.InfoOrError(err, "Discovery: leaving from the cluster")
+		if err := d.list.Shutdown(); err != nil {
+			_ = d.AsyncRunner.Stop(ctx)
+			return err
 		}
 	}
-	return d.list.Shutdown()
+	return d.AsyncRunner.Stop(ctx)
+}
+
+func (d *Discovery) SetMetadata(key, value string) {
+	d.BaseDiscovery.SetMetadata(key, value)
+	if d.list != nil {
+		if err := d.list.UpdateNode(updateNodeTimeout); err != nil {
+			log.Logger.ErrorWithFields(log.Fields{"err": err}, "Discovery: failed to update node metadata")
+		}
+	}
 }
 
 func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, error) {
@@ -259,7 +295,6 @@ func (d *Discovery) Mount(r chi.Router) {
 
 // Delegates
 
-// Limit argument is currently ignored.
 // NodeMeta is used to retrieve meta-data about the current node
 // when broadcasting an alive message. It's length is limited to
 // the given byte size. This metadata is available in the Node structure.
@@ -267,6 +302,10 @@ func (d *Discovery) NodeMeta(limit int) []byte {
 	res, err := json.Marshal(d.BaseDiscovery.ServiceInfo)
 	if err != nil {
 		log.Error("Discovery: failed to encode service info: %w")
+		return nil
+	}
+	if len(res) > limit {
+		log.Errorf("Discovery: node meta exceeds limit (%d > %d)", len(res), limit)
 		return nil
 	}
 	return res
@@ -277,6 +316,9 @@ func (d *Discovery) parseMeta(node *memberlist.Node) (*discovery.ServiceInstance
 
 	if err := json.Unmarshal(node.Meta, &meta); err != nil {
 		return nil, fmt.Errorf("Discovery: failed to decode service info: %w", err)
+	}
+	if meta.ServiceName == "" || meta.ID == "" {
+		return nil, fmt.Errorf("Discovery: service info missing ServiceName or ID")
 	}
 	return &meta, nil
 }
@@ -330,15 +372,19 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 		return
 	}
 
-	d.servicesMtx.RLock()
-	defer d.servicesMtx.RUnlock()
-	instances := d.services[serviceInfo.ServiceName].Instances
-	for i := range instances {
-		if instances[i].ID == serviceInfo.ID {
-			instances[i].Healthy = false
+	d.servicesMtx.Lock()
+	svc, ok := d.services[serviceInfo.ServiceName]
+	if !ok {
+		d.servicesMtx.Unlock()
+		return
+	}
+	for i := range svc.Instances {
+		if svc.Instances[i].ID == serviceInfo.ID {
+			svc.Instances[i].Healthy = false
 			break
 		}
 	}
+	d.servicesMtx.Unlock()
 
 	gracefullyStopped := node.State == memberlist.StateLeft
 	if gracefullyStopped {

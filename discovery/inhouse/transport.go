@@ -14,6 +14,7 @@ import (
 	"github.com/bldsoft/memberlist"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
+	sockaddr "github.com/hashicorp/go-sockaddr"
 )
 
 const (
@@ -118,17 +119,39 @@ func (t *Transport) udpListen(udpLn *net.UDPConn) {
 // might be empty) and returns the desired IP and port to advertise to
 // the rest of the cluster.
 func (t *Transport) FinalAdvertiseAddr(ip string, port int) (net.IP, int, error) {
-	// If they've supplied an address, use that.
-	advertiseAddr := net.ParseIP(ip)
-	if advertiseAddr == nil {
-		resolvedIPs, err := net.LookupIP(ip)
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to parse advertise address %q", ip)
+	var advertiseAddr net.IP
+	if ip != "" {
+		advertiseAddr = net.ParseIP(ip)
+		if advertiseAddr == nil {
+			resolvedIPs, err := net.LookupIP(ip)
+			if err != nil || len(resolvedIPs) == 0 {
+				return nil, 0, fmt.Errorf("failed to parse advertise address %q", ip)
+			}
+			advertiseAddr = resolvedIPs[0]
 		}
-		advertiseAddr = resolvedIPs[0]
 	}
 
-	// Ensure IPv4 conversion if necessary.
+	if advertiseAddr == nil || advertiseAddr.IsUnspecified() {
+		if t.udpListener != nil {
+			if ua, ok := t.udpListener.LocalAddr().(*net.UDPAddr); ok && ua.IP != nil && !ua.IP.IsUnspecified() {
+				advertiseAddr = ua.IP
+			}
+		}
+		if advertiseAddr == nil || advertiseAddr.IsUnspecified() {
+			privateIP, err := sockaddr.GetPrivateIP()
+			if err != nil {
+				return nil, 0, fmt.Errorf("failed to get interface addresses: %w", err)
+			}
+			if privateIP == "" {
+				return nil, 0, fmt.Errorf("no private IP address found, and explicit IP not provided")
+			}
+			advertiseAddr = net.ParseIP(privateIP)
+			if advertiseAddr == nil {
+				return nil, 0, fmt.Errorf("failed to parse advertise address: %q", privateIP)
+			}
+		}
+	}
+
 	if ip4 := advertiseAddr.To4(); ip4 != nil {
 		advertiseAddr = ip4
 	}

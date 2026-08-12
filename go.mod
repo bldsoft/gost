@@ -26,6 +26,7 @@ require (
 	github.com/grobie/gomemcache v0.0.0-20201204163352-08d7c80fcac6
 	github.com/hashicorp/consul/api v1.20.0
 	github.com/hashicorp/go-multierror v1.1.1
+	github.com/hashicorp/go-sockaddr v1.0.8-0.20250219041811-d46bd783c3f7
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/lestrrat-go/jwx v1.2.18
 	github.com/mattn/go-colorable v0.1.13
@@ -52,7 +53,6 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/go-msgpack/v2 v2.1.3 // indirect
-	github.com/hashicorp/go-sockaddr v1.0.8-0.20250219041811-d46bd783c3f7 // indirect
 	github.com/hashicorp/memberlist v0.5.3 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/iancoleman/strcase v0.2.0 // indirect
