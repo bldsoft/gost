@@ -61,12 +61,13 @@ func (h *Heap[T]) Top() T {
 	return h.innerHeap.Peak()
 }
 
-func (h *Heap[T]) RemoveFirstFunc(f func(T) bool) {
+func (h *Heap[T]) RemoveFirstFunc(f func(T) bool) (found bool) {
 	idx := slices.IndexFunc(h.innerHeap.slice, f)
 	if idx == -1 {
 		return
 	}
 	_ = heap.Remove(&h.innerHeap, idx)
+	return true
 }
 
 func (h *Heap[T]) Push(items ...T) {

@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	bson "go.mongodb.org/mongo-driver/bson"
+	bson "go.mongodb.org/mongo-driver/v2/bson"
 
 	mock "github.com/stretchr/testify/mock"
 

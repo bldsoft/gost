@@ -111,8 +111,15 @@ func (r *Repository) get(key string) (*cache.Item, uint32, error) {
 		if err != nil {
 			return nil, 0, err
 		}
-		for _, c := range continuations {
-			res.Value = append(res.Value, c.Bins[valueBinKey].([]byte)...)
+		for i, c := range continuations {
+			if c == nil || c.Bins == nil {
+				return nil, 0, fmt.Errorf("%w: aerospike: invalid continuation record #%v for %s (no_key: %v, no_bins: %v)", cache.ErrCacheMiss, i, key, c == nil, c.Bins == nil)
+			}
+			val, ok := c.Bins[valueBinKey].([]byte)
+			if !ok {
+				return nil, 0, fmt.Errorf("%w: aerospike: invalid value type in continuation record #%v for %s", cache.ErrCacheMiss, i, key)
+			}
+			res.Value = append(res.Value, val...)
 		}
 	}
 
