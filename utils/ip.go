@@ -10,19 +10,17 @@ const ipv4MappedPrefixBits = 96
 
 var ErrInvalidIP = errors.New("invalid IP")
 
-// CanonicalAddr returns the IPv4 form of an IPv4-mapped IPv6 address.
+// CanonicalAddr returns the IPv4 form of an IPv4-mapped IPv6 address
+// and strips any IPv6 zone.
 func CanonicalAddr(addr netip.Addr) netip.Addr {
-	if !addr.IsValid() {
-		return addr
-	}
-	return addr.Unmap()
+	return addr.Unmap().WithZone("")
 }
 
 func CanonicalPrefix(pfx netip.Prefix) (netip.Prefix, error) {
 	if !pfx.IsValid() {
 		return netip.Prefix{}, ErrInvalidIP
 	}
-	addr := pfx.Addr().Unmap()
+	addr := CanonicalAddr(pfx.Addr())
 	bits := pfx.Bits()
 	if pfx.Addr().Is4In6() {
 		bits -= ipv4MappedPrefixBits
@@ -30,7 +28,23 @@ func CanonicalPrefix(pfx netip.Prefix) (netip.Prefix, error) {
 			return netip.Prefix{}, ErrInvalidIP
 		}
 	}
-	return netip.PrefixFrom(addr, bits), nil
+	out := netip.PrefixFrom(addr, bits)
+	if !out.IsValid() {
+		return netip.Prefix{}, ErrInvalidIP
+	}
+	return out.Masked(), nil
+}
+
+func hostPrefix(addr netip.Addr) (netip.Prefix, error) {
+	addr = CanonicalAddr(addr)
+	if !addr.IsValid() {
+		return netip.Prefix{}, ErrInvalidIP
+	}
+	pfx := netip.PrefixFrom(addr, addr.BitLen())
+	if !pfx.IsValid() {
+		return netip.Prefix{}, ErrInvalidIP
+	}
+	return pfx, nil
 }
 
 func IPKeyToPrefix(ip string) (netip.Prefix, error) {
@@ -45,6 +59,5 @@ func IPKeyToPrefix(ip string) (netip.Prefix, error) {
 	if err != nil {
 		return netip.Prefix{}, err
 	}
-	addr = CanonicalAddr(addr)
-	return netip.PrefixFrom(addr, addr.BitLen()), nil
+	return hostPrefix(addr)
 }

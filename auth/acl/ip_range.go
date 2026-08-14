@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/netip"
+	"slices"
 	"strings"
 
 	"github.com/bldsoft/gost/utils"
@@ -49,7 +50,9 @@ func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
 			res.ips = append(res.ips, utils.CanonicalAddr(ip))
 		}
 	}
-	res.buildTree()
+	if err := res.buildTree(); err != nil {
+		return res, err
+	}
 	return res, nil
 }
 
@@ -58,11 +61,11 @@ func (r IpRange) Empty() bool {
 }
 
 func (r *IpRange) IPs() []netip.Addr {
-	return r.ips
+	return slices.Clone(r.ips)
 }
 
 func (r *IpRange) CIDRs() []netip.Prefix {
-	return r.cidrs
+	return slices.Clone(r.cidrs)
 }
 
 func (r *IpRange) Strings() []string {
@@ -80,11 +83,18 @@ func (r *IpRange) String() string {
 	return strings.Join(r.Strings(), ",")
 }
 
-func (r *IpRange) buildTree() {
-	r.tree = utils.NewIPTreeSet(r.Strings()...)
+func (r *IpRange) buildTree() error {
+	r.tree = utils.NewIPTreeSet()
+	if err := r.tree.PutIPs(r.ips...); err != nil {
+		return err
+	}
+	return r.tree.PutPrefixes(r.cidrs...)
 }
 
 func (r *IpRange) Contains(ip netip.Addr) bool {
+	if r.tree == nil {
+		return false
+	}
 	return r.tree.Match(ip)
 }
 

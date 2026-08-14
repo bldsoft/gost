@@ -6,6 +6,7 @@ import (
 
 	"github.com/bldsoft/gost/controller"
 	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/utils"
 )
 
 type Config struct {
@@ -49,13 +50,13 @@ func MiddlewareFromConfig(cfg Config) func(next http.Handler) http.Handler {
 func (m Acl) getIP(r *http.Request) (netip.Addr, error) {
 	addrPort, err := netip.ParseAddrPort(r.RemoteAddr)
 	if err == nil {
-		return addrPort.Addr().Unmap(), nil
+		return utils.CanonicalAddr(addrPort.Addr()), nil
 	}
 	addr, err := netip.ParseAddr(r.RemoteAddr)
 	if err != nil {
 		return netip.Addr{}, err
 	}
-	return addr.Unmap(), nil
+	return utils.CanonicalAddr(addr), nil
 }
 
 func (m Acl) enabled() bool {
@@ -77,7 +78,7 @@ func (m Acl) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if m.Deny.Contains(ip) {
+		if !m.Deny.Empty() && m.Deny.Contains(ip) {
 			log.FromContext(ctx).Debugf("ACL: %s denied", ip.String())
 			m.controller.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
