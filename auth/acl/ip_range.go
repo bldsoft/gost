@@ -36,14 +36,17 @@ func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
 			if err != nil {
 				return res, err
 			}
-			unmappedAddr := network.Addr().Unmap()
-			res.cidrs = append(res.cidrs, netip.PrefixFrom(unmappedAddr, network.Bits()))
+			pfx, err := utils.CanonicalPrefix(network)
+			if err != nil {
+				return res, err
+			}
+			res.cidrs = append(res.cidrs, pfx)
 		} else {
 			ip, err := netip.ParseAddr(s)
 			if err != nil {
 				return res, err
 			}
-			res.ips = append(res.ips, ip.Unmap())
+			res.ips = append(res.ips, utils.CanonicalAddr(ip))
 		}
 	}
 	res.buildTree()
