@@ -37,10 +37,8 @@ func TestHealthCheckerNoExtraChecks(t *testing.T) {
 	goN := 10
 	var wg sync.WaitGroup
 	start, stop := make(chan struct{}), make(chan struct{})
-	for i := 0; i < goN; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range goN {
+		wg.Go(func() {
 			<-start
 			for {
 				select {
@@ -50,7 +48,7 @@ func TestHealthCheckerNoExtraChecks(t *testing.T) {
 					require.NoError(t, healthChecker.HealthCheck(context.Background(), svr.URL))
 				}
 			}
-		}()
+		})
 	}
 
 	waitTime := time.Second

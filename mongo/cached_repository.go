@@ -170,7 +170,7 @@ func (r *CachedRepository[T, U]) cacheFindByIDs(ctx context.Context, ids []strin
 	return cachedRes
 }
 
-func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
+func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id any, options ...*repository.QueryOptions) (U, error) {
 	if e := r.cacheFindByID(ctx, repository.ToStringID[T, U](id)); e != nil {
 		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Name()}, "cache hit")
 		return e, nil
@@ -206,7 +206,7 @@ func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []stri
 	return res, nil
 }
 
-func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
+func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []any, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, repository.ToStringIDs[T, U](ids)); cachedRes != nil {
 		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Name()}, "cache hit")
 		return cachedRes, nil
@@ -224,7 +224,7 @@ func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{
 	return res, nil
 }
 
-func (r *CachedRepository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
+func (r *CachedRepository[T, U]) Delete(ctx context.Context, id any, options ...*repository.QueryOptions) error {
 	strID := repository.ToStringID[T, U](id)
 	if err := r.cache.CacheDelete(strID); err != nil {
 		log.Logger.DebugWithFields(log.Fields{"err": err, "cache key": id}, "failed to delete cache value")

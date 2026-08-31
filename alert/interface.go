@@ -24,7 +24,7 @@ type Alert struct {
 
 	Severity  SeverityLevel                `bson:"severity" json:"severity"`
 	From      time.Time                    `bson:"from" json:"from"`
-	To        time.Time                    `bson:"to,omitempty" json:"to,omitempty"`
+	To        time.Time                    `bson:"to,omitempty" json:"to"`
 	Receivers []poly.Poly[notify.Receiver] `bson:"receivers" json:"receivers"`
 
 	MetaData map[string]any `bson:"metadata" json:"metadata"`

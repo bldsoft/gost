@@ -58,7 +58,7 @@ var _ exporter.Data[int] = (*exporterBatch[int])(nil)
 func columnNames[T any]() []string {
 	var zero T
 	t := reflect.TypeOf(zero)
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	return columnNamesFromType(t)
@@ -67,8 +67,7 @@ func columnNames[T any]() []string {
 // https://github.com/ClickHouse/clickhouse-go/blob/main/struct_map.go
 func columnNamesFromType(t reflect.Type) []string {
 	var keys []string
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
+	for f := range t.Fields() {
 		name := f.Name
 
 		if tn := f.Tag.Get("ch"); len(tn) != 0 {
@@ -78,7 +77,7 @@ func columnNamesFromType(t reflect.Type) []string {
 			continue
 		}
 
-		if f.Anonymous && f.Type.Kind() != reflect.Ptr {
+		if f.Anonymous && f.Type.Kind() != reflect.Pointer {
 			subKeys := columnNamesFromType(f.Type)
 			keys = append(keys, subKeys...)
 		} else {

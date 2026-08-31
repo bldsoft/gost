@@ -33,7 +33,7 @@ func NewBatch(conn driver.Conn, insertStatement string) (*Batch, error) {
 	}, nil
 }
 
-func (b *Batch) Append(val interface{}) error {
+func (b *Batch) Append(val any) error {
 	if b.batch.IsSent() {
 		if err := b.reset(); err != nil {
 			return err

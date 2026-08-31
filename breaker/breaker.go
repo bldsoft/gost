@@ -159,7 +159,7 @@ func (cb *CircuitBreaker) Counts() Counts {
 // Otherwise, Execute returns the result of the request.
 // If a panic occurs in the request, the CircuitBreaker handles it as an error
 // and causes the same panic again.
-func (cb *CircuitBreaker) Execute(req func() (interface{}, error)) (interface{}, error) {
+func (cb *CircuitBreaker) Execute(req func() (any, error)) (any, error) {
 	generation, err := cb.beforeRequest()
 	if err != nil {
 		return nil, err

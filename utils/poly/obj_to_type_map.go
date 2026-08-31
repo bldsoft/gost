@@ -22,7 +22,7 @@ func (b *objToTypeMap[V, I]) Add(obj V, valueExample I) error {
 
 func (m *objToTypeMap[V, I]) Keys() []V {
 	var res []V
-	m.objToConcreteType.Range(func(key, value interface{}) bool {
+	m.objToConcreteType.Range(func(key, value any) bool {
 		res = append(res, key.(V))
 		return true
 	})
@@ -51,7 +51,7 @@ func (b *objToTypeMap[V, I]) allocValue(obj V) (ptr, val reflect.Value, err erro
 	}
 
 	v := reflect.New(typ).Elem()
-	if v.Type().Kind() == reflect.Ptr {
+	if v.Type().Kind() == reflect.Pointer {
 		v.Set(reflect.New(v.Type().Elem()))
 		return v, v, nil
 	}
