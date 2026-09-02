@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -13,7 +14,6 @@ import (
 	"github.com/bldsoft/gost/storage"
 	"github.com/golang-migrate/migrate/v4"
 	mm "github.com/golang-migrate/migrate/v4/database/clickhouse"
-	"github.com/pkg/errors"
 
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/stub"
@@ -26,7 +26,7 @@ type Storage struct {
 
 	Db      *sql.DB
 	native  driver.Conn
-	isReady int32
+	isReady atomic.Int32
 	doOnce  sync.Once
 
 	migrations  *source.Migrations
@@ -87,7 +87,7 @@ func (db *Storage) Connect() {
 	db.Db = connect
 	db.native = native
 
-	atomic.StoreInt32(&db.isReady, 1)
+	db.isReady.Store(1)
 
 	log.InfoWithFields(log.Fields{"dsn": &db.cfg.Dsn}, "Clickhouse connected!")
 }
@@ -104,14 +104,14 @@ func (db *Storage) RunMigrations() {
 func (db *Storage) Disconnect(ctx context.Context) error {
 	err := db.Db.Close()
 	if err != nil {
-		return errors.Wrap(err, "Clickhouse disconnect failed")
+		return fmt.Errorf("Clickhouse disconnect failed: %w", err)
 	}
 	log.Info("Clickhouse disconnected.")
 	return nil
 }
 
 func (db *Storage) IsReady() bool {
-	return atomic.LoadInt32(&db.isReady) == 1
+	return db.isReady.Load() == 1
 }
 
 func (db *Storage) LogError(err error) {
@@ -151,8 +151,9 @@ func (db *Storage) runMigrations(dbname string) error {
 	return nil
 }
 
-func (db *Storage) Stats(ctx context.Context) (map[string]interface{}, error) {
-	metrics := make(map[string]interface{})
+func (db *Storage) Stats(ctx context.Context) (map[string]any, error) {
+	metrics := make(map[string]any)
+	var errs error
 	for _, query := range []string{
 		"SELECT event, value FROM system.events",
 		"SELECT metric, value FROM system.asynchronous_metrics",
@@ -171,9 +172,10 @@ func (db *Storage) Stats(ctx context.Context) (map[string]interface{}, error) {
 			}
 			metrics[metricName] = metricValue
 		}
+		errs = errors.Join(errs, rows.Err())
 	}
 
-	return metrics, nil
+	return metrics, errs
 }
 
 func (db *Storage) PrepareBatch(q string) (driver.Batch, error) {

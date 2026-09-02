@@ -150,19 +150,19 @@ func (db *Storage) legacyClient() (*mongoV1.Client, *mongoV1.Database, error) {
 	return cli, dbV1, nil
 }
 
-func (db *Storage) Stats(ctx context.Context) (interface{}, error) {
+func (db *Storage) Stats(ctx context.Context) (any, error) {
 	collections, err := db.Db.ListCollectionNames(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
 
-	stats := make([]interface{}, 0, len(collections)+1)
+	stats := make([]any, 0, len(collections)+1)
 	res := db.Db.RunCommand(ctx, bson.M{"dbStats": 1})
 	if err := res.Err(); err != nil {
 		return nil, err
 	}
 
-	dbStat := make(map[string]interface{})
+	dbStat := make(map[string]any)
 	if err := res.Decode(&dbStat); err != nil {
 		return nil, WrapErr(err)
 	}
@@ -173,7 +173,7 @@ func (db *Storage) Stats(ctx context.Context) (interface{}, error) {
 		if err := res.Err(); err != nil {
 			return nil, err
 		}
-		colStat := make(map[string]interface{})
+		colStat := make(map[string]any)
 		if err := res.Decode(&colStat); err != nil {
 			return nil, WrapErr(err)
 		}

@@ -9,9 +9,7 @@ import (
 )
 
 func DBConnectAsync(wg *sync.WaitGroup, connect func(), n int, sleepPeriod time.Duration) {
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for i := 1; (i != n+1) || (n < 0); i++ {
 			err := func() (err error) {
 				defer func() {
@@ -31,5 +29,5 @@ func DBConnectAsync(wg *sync.WaitGroup, connect func(), n int, sleepPeriod time.
 
 			return
 		}
-	}()
+	})
 }

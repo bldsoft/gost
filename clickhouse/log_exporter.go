@@ -511,7 +511,7 @@ type chLogRecord struct {
 	Service        string    `json:"service,omitempty"        ch:"service"`
 	ServiceVersion string    `json:"serviceVersion,omitempty" ch:"service_version"`
 	Instance       string    `json:"instance,omitempty"       ch:"instanse"`
-	Timestamp      time.Time `json:"timestamp,omitempty"      ch:"timestamp"`
+	Timestamp      time.Time `json:"timestamp"      ch:"timestamp"`
 	Level          int8      `json:"level,string,omitempty"   ch:"level"`
 	ReqID          string    `json:"reqID,omitempty"          ch:"req_id"`
 	Msg            string    `json:"msg,omitempty"            ch:"msg"`

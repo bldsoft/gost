@@ -17,7 +17,7 @@ import (
 type ExportFormatter[T any, P RequestInfoPtr[T]] struct {
 	requestExporter   exporter.Exporter[P]
 	instanceName      string
-	requestInfoCtxKey interface{}
+	requestInfoCtxKey any
 }
 
 func NewExportFormatter[T any, P RequestInfoPtr[T]](requestExporter exporter.Exporter[P], instanceName string) *ExportFormatter[T, P] {
@@ -28,7 +28,7 @@ func ExportRequestLogger[T any, P RequestInfoPtr[T]](requestExporter exporter.Ex
 	return NewRequestLogger(NewExportFormatter(requestExporter, instanseName))
 }
 
-func (f *ExportFormatter[T, P]) SetRequestInfoContextKey(key interface{}) {
+func (f *ExportFormatter[T, P]) SetRequestInfoContextKey(key any) {
 	f.requestInfoCtxKey = key
 }
 
@@ -79,7 +79,7 @@ type ContextExportFormatterLoggerEntry[T any, P RequestInfoPtr[T]] struct {
 	req             *http.Request
 }
 
-func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
+func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, header http.Header, elapsed time.Duration, extra any) {
 	duration := elapsed.Microseconds()
 
 	if l.requestInfo != nil {
@@ -100,4 +100,4 @@ func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, heade
 	}
 }
 
-func (l *ContextExportFormatterLoggerEntry[T, P]) Panic(v interface{}, stack []byte) {}
+func (l *ContextExportFormatterLoggerEntry[T, P]) Panic(v any, stack []byte) {}

@@ -1,12 +1,12 @@
 package stat
 
 type Stat struct {
-	ServiceType string      `json:"type"`
-	Stat        interface{} `json:"stat"`
-	Err         string      `json:"error,omitempty"`
+	ServiceType string `json:"type"`
+	Stat        any    `json:"stat"`
+	Err         string `json:"error,omitempty"`
 }
 
-func NewStat(serviceType string, stat interface{}, err error) Stat {
+func NewStat(serviceType string, stat any, err error) Stat {
 	var errMsg string
 	if err != nil {
 		stat = "UNAVAILABLE"

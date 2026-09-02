@@ -73,10 +73,8 @@ func (wp *WorkerPool) In() chan<- func() {
 }
 
 func (wp *WorkerPool) startWorker() {
-	wp.wg.Add(1)
 
-	go func() {
-		defer wp.wg.Done()
+	wp.wg.Go(func() {
 		for {
 			select {
 			case <-wp.stopWorkerC:
@@ -88,7 +86,7 @@ func (wp *WorkerPool) startWorker() {
 				f()
 			}
 		}
-	}()
+	})
 }
 
 func (wp *WorkerPool) CloseAndWait() {
