@@ -116,7 +116,7 @@ func Trace(msg string) {
 }
 
 // Tracef logs a message at level Trace on the default logger.
-func Tracef(format string, v ...interface{}) {
+func Tracef(format string, v ...any) {
 	Logger.Tracef(format, v...)
 }
 
@@ -126,7 +126,7 @@ func TraceWithFields(fields Fields, msg string) {
 }
 
 // TracefWithFields logs a message at level Trace on the default logger.
-func TracefWithFields(fields Fields, format string, v ...interface{}) {
+func TracefWithFields(fields Fields, format string, v ...any) {
 	Logger.TracefWithFields(fields, format, v...)
 }
 
@@ -136,7 +136,7 @@ func Debug(msg string) {
 }
 
 // Debugf logs a message at level Debug on the default logger.
-func Debugf(format string, v ...interface{}) {
+func Debugf(format string, v ...any) {
 	Logger.Debugf(format, v...)
 }
 
@@ -146,7 +146,7 @@ func DebugWithFields(fields Fields, msg string) {
 }
 
 // DebugfWithFields logs a message at level Debug on the default logger.
-func DebugfWithFields(fields Fields, format string, v ...interface{}) {
+func DebugfWithFields(fields Fields, format string, v ...any) {
 	Logger.DebugfWithFields(fields, format, v...)
 }
 
@@ -156,7 +156,7 @@ func DebugOrError(err error, msg string) {
 }
 
 // DebugOrErrorf logs a message at level Error if err is not nil or Debug otherwise on the default logger.
-func DebugOrErrorf(err error, format string, v ...interface{}) {
+func DebugOrErrorf(err error, format string, v ...any) {
 	Logger.DebugOrErrorf(err, format, v...)
 }
 
@@ -166,7 +166,7 @@ func DebugOrErrorWithFields(err error, fields Fields, msg string) {
 }
 
 // DebugOrErrorfWithFields logs a message at level Error if err is not nil or Debug otherwise on the default logger.
-func DebugOrErrorfWithFields(err error, fields Fields, format string, v ...interface{}) {
+func DebugOrErrorfWithFields(err error, fields Fields, format string, v ...any) {
 	Logger.DebugOrErrorfWithFields(err, fields, format, v...)
 }
 
@@ -176,7 +176,7 @@ func Info(msg string) {
 }
 
 // Infof logs a message at level Info on the default logger.
-func Infof(format string, v ...interface{}) {
+func Infof(format string, v ...any) {
 	Logger.Infof(format, v...)
 }
 
@@ -186,7 +186,7 @@ func InfoWithFields(fields Fields, msg string) {
 }
 
 // InfofWithFields logs a message at level Info on the default logger.
-func InfofWithFields(fields Fields, format string, v ...interface{}) {
+func InfofWithFields(fields Fields, format string, v ...any) {
 	Logger.InfofWithFields(fields, format, v...)
 }
 
@@ -196,7 +196,7 @@ func InfoOrError(err error, msg string) {
 }
 
 // InfoOrErrorf logs a message at level Error if err is not nil or Info otherwise on the default logger.
-func InfoOrErrorf(err error, format string, v ...interface{}) {
+func InfoOrErrorf(err error, format string, v ...any) {
 	Logger.InfoOrErrorf(err, format, v...)
 }
 
@@ -206,7 +206,7 @@ func InfoOrErrorWithFields(err error, fields Fields, msg string) {
 }
 
 // InfoOrErrorfWithFields logs a message at level Error if err is not nil or Info otherwise on the default logger.
-func InfoOrErrorfWithFields(err error, fields Fields, format string, v ...interface{}) {
+func InfoOrErrorfWithFields(err error, fields Fields, format string, v ...any) {
 	Logger.InfoOrErrorfWithFields(err, fields, format, v...)
 }
 
@@ -216,7 +216,7 @@ func Warn(msg string) {
 }
 
 // Warnf logs a message at level Warn on the default logger.
-func Warnf(format string, v ...interface{}) {
+func Warnf(format string, v ...any) {
 	Logger.Warnf(format, v...)
 }
 
@@ -226,7 +226,7 @@ func WarnWithFields(fields Fields, msg string) {
 }
 
 // WarnfWithFields logs a message at level Warn on the default logger.
-func WarnfWithFields(fields Fields, format string, v ...interface{}) {
+func WarnfWithFields(fields Fields, format string, v ...any) {
 	Logger.WarnfWithFields(fields, format, v...)
 }
 
@@ -236,7 +236,7 @@ func Error(msg string) {
 }
 
 // Errorf logs a message at level Error on the default logger.
-func Errorf(format string, v ...interface{}) {
+func Errorf(format string, v ...any) {
 	Logger.Errorf(format, v...)
 }
 
@@ -246,12 +246,12 @@ func ErrorWithFields(fields Fields, msg string) {
 }
 
 // ErrorWithFields logs a message at level Error on the default logger.
-func ErrorfWithErrs(errs []error, format string, v ...interface{}) {
+func ErrorfWithErrs(errs []error, format string, v ...any) {
 	Logger.ErrorfWithErrs(errs, format, v...)
 }
 
 // ErrorfWithFields logs a message at level Error on the default logger.
-func ErrorfWithFields(fields Fields, format string, v ...interface{}) {
+func ErrorfWithFields(fields Fields, format string, v ...any) {
 	Logger.ErrorfWithFields(fields, format, v...)
 }
 
@@ -261,7 +261,7 @@ func Fatal(msg string) {
 }
 
 // Fatalf logs a message at level Fatal on the default logger.
-func Fatalf(format string, v ...interface{}) {
+func Fatalf(format string, v ...any) {
 	Logger.Fatalf(format, v...)
 }
 
@@ -271,7 +271,7 @@ func FatalWithFields(fields Fields, msg string) {
 }
 
 // FatalfWithFields logs a message at level Fatal on the default logger.
-func FatalfWithFields(fields Fields, format string, v ...interface{}) {
+func FatalfWithFields(fields Fields, format string, v ...any) {
 	Logger.FatalfWithFields(fields, format, v...)
 }
 
@@ -281,7 +281,7 @@ func Panic(msg string) {
 }
 
 // Panicf logs a message at level Panic on the default logger.
-func Panicf(format string, v ...interface{}) {
+func Panicf(format string, v ...any) {
 	Logger.Panicf(format, v...)
 }
 
@@ -291,7 +291,7 @@ func PanicWithFields(fields Fields, msg string) {
 }
 
 // PanicfWithFields logs a message at level Panic on the default logger.
-func PanicfWithFields(fields Fields, format string, v ...interface{}) {
+func PanicfWithFields(fields Fields, format string, v ...any) {
 	Logger.PanicfWithFields(fields, format, v...)
 }
 
@@ -301,7 +301,7 @@ func Log(msg string) {
 }
 
 // Logf logs a message at any level on the default logger.
-func Logf(format string, v ...interface{}) {
+func Logf(format string, v ...any) {
 	Logger.Logf(format, v...)
 }
 
@@ -311,6 +311,6 @@ func LogWithFields(fields Fields, msg string) {
 }
 
 // LogfWithFields logs a message at any level on the default logger.
-func LogfWithFields(fields Fields, format string, v ...interface{}) {
+func LogfWithFields(fields Fields, format string, v ...any) {
 	Logger.LogfWithFields(fields, format, v...)
 }

@@ -46,12 +46,12 @@ func GetPingHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce text/yaml
 // @Success 200 {string} string "OK"
 // @Router /env [get]
-func GetEnvHandler(cfg config.IConfig, features interface{}) http.HandlerFunc {
+func GetEnvHandler(cfg config.IConfig, features any) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(config.FormatEnv(cfg)))
 
 		yamlFeatures, _ := yaml.Marshal(struct {
-			Features interface{}
+			Features any
 		}{
 			Features: features,
 		})

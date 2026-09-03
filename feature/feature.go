@@ -31,7 +31,7 @@ func (f *Feature) WithGroups(groups ...string) *Feature {
 	return f
 }
 
-func (f *Feature) RawID() interface{} {
+func (f *Feature) RawID() any {
 	return f.ID
 }
 

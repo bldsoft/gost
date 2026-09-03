@@ -126,7 +126,6 @@ func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, err
 	var eg errgroup.Group
 	serviceInfoC := make(chan discovery.ServiceInfo, len(services))
 	for service := range services {
-		service := service
 		eg.Go(func() (err error) {
 			nodes, _, err := d.ApiClient().Health().Service(service, "", false, &api.QueryOptions{})
 			if err != nil {
@@ -165,7 +164,6 @@ func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, err
 
 	res := make([]*discovery.ServiceInfo, 0, len(services))
 	for info := range serviceInfoC {
-		info := info
 		res = append(res, &info)
 	}
 	sort.Slice(res, func(i, j int) bool {
