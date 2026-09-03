@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/jwtauth"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/lestrrat-go/jwx/jwt"
+	jwtauth "github.com/go-chi/jwtauth/v5"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 )
 
 type JwtConfig struct {
@@ -52,9 +52,14 @@ func JwtAuthMiddlewareFromConfig(cfg JwtConfig) func(next http.Handler) http.Han
 // JwtAuthMiddleware accepts either a raw key (e.g. rsa.PrivateKey, ecdsa.PrivateKey, etc)
 // or a jwk.Key, and the name of the algorithm that should be used to sign the token.
 func JwtAuthMiddleware(alg string, signKey interface{}) func(next http.Handler) http.Handler {
-	return chi.Chain(jwtauth.Verifier(jwtauth.New(alg, signKey, nil)), jwtauth.Authenticator).Handler
+	ja := jwtauth.New(alg, signKey, nil)
+	return chi.Chain(jwtauth.Verifier(ja), jwtauth.Authenticator(ja)).Handler
 }
 
 func SignToken(token jwt.Token, cfg JwtConfig) (signed []byte, err error) {
-	return jwt.Sign(token, jwa.SignatureAlgorithm(cfg.Alg), cfg.PrivateKey())
+	alg, ok := jwa.LookupSignatureAlgorithm(cfg.Alg)
+	if !ok {
+		return nil, fmt.Errorf("unknown jwt alg %q", cfg.Alg)
+	}
+	return jwt.Sign(token, jwt.WithKey(alg, cfg.PrivateKey()))
 }
