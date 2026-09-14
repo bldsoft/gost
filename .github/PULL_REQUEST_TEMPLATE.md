@@ -2,9 +2,7 @@
 
 <!-- 1–3 bullets: what changed and why. -->
 
--
-
-Architectural review: <!-- file path or PR link, e.g. backend/docs/architecture/shared_extensions.md -->
+- [Architectural review](<!-- file path or PR link, e.g. backend/docs/architecture/shared_extensions.md; remove if not applicable -->)
 
 ## Related ticket
 
@@ -17,7 +15,7 @@ Architectural review: <!-- file path or PR link, e.g. backend/docs/architecture/
 - [ ] New feature
 - [ ] Architectural review
 - [ ] Refactor
-- [ ] CI / tooling
+- [ x] CI / tooling
 - [ ] Other
 
 
