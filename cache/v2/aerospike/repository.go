@@ -83,8 +83,8 @@ func (r *Repository) get(key string) (*cache.Item, uint32, error) {
 		return res, item.Generation, nil
 	}
 
-	continuationKeys := make([]*aero.Key, len(item.Bins[continuationBinKey].([]interface{})))
-	for i, k := range item.Bins[continuationBinKey].([]interface{}) {
+	continuationKeys := make([]*aero.Key, len(item.Bins[continuationBinKey].([]any)))
+	for i, k := range item.Bins[continuationBinKey].([]any) {
 		asKey, err := r.key(k.(string))
 		if err != nil {
 			return nil, 0, err
@@ -152,7 +152,7 @@ func (r *Repository) Delete(key string) error {
 	}
 
 	if item != nil && item.Bins[continuationBinKey] != nil {
-		continuationKeys := item.Bins[continuationBinKey].([]interface{})
+		continuationKeys := item.Bins[continuationBinKey].([]any)
 		if len(continuationKeys) > 0 {
 			keys := make([]*aero.Key, 0, len(continuationKeys))
 			for _, k := range continuationKeys {
@@ -197,7 +197,7 @@ func (r *Repository) CompareAndSwap(
 	handler func(value *cache.Item) (*cache.Item, error),
 	sleepDur ...time.Duration,
 ) error {
-	for i := 0; i < casRetryLimit; i++ {
+	for range casRetryLimit {
 		data, generation, err := r.get(key)
 		if err != nil {
 			return err

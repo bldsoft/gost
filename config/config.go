@@ -57,8 +57,8 @@ func FormatEnv(config IConfig) string {
 	)
 }
 
-func foreachConfig(config interface{}, f func(cfg IConfig) error) error {
-	return iterateFields(config, "", nil, nil, func(cfg interface{}) error {
+func foreachConfig(config any, f func(cfg IConfig) error) error {
+	return iterateFields(config, "", nil, nil, func(cfg any) error {
 		if c, ok := cfg.(IConfig); ok {
 			return f(c)
 		}
@@ -68,7 +68,7 @@ func foreachConfig(config interface{}, f func(cfg IConfig) error) error {
 
 // SetDefaults sets default values of config and all nested IConfig structs
 // SetDefaults method of nested IConfig is called before its parent. So you can rewrite default values of the child config in the parent if nessesary
-func SetDefaults(config interface{}) error {
+func SetDefaults(config any) error {
 	return foreachConfig(config, func(cfg IConfig) error {
 		cfg.SetDefaults()
 		return nil
@@ -76,7 +76,7 @@ func SetDefaults(config interface{}) error {
 }
 
 // Validate validates config and all nested IConfig structs
-func Validate(config interface{}) error {
+func Validate(config any) error {
 	return foreachConfig(config, func(cfg IConfig) error {
 		return cfg.Validate()
 	})
@@ -92,7 +92,7 @@ func addPrefix(name string, prefix string) string {
 // ReadFromEnv reads config from environment variable
 // The name of environment variable is set via "mapstructure" tag. If tag isn't set, the env name is the struct field name.
 // Prefix for the env variable name consists of envPrefix and "mapstructure" values of all parent structs joined together with "_" (see example)
-func ReadFromEnv(config interface{}, envPrefix string) error {
+func ReadFromEnv(config any, envPrefix string) error {
 	v := viper.NewWithOptions(
 		viper.KeyDelimiter("."),
 	)
@@ -100,13 +100,13 @@ func ReadFromEnv(config interface{}, envPrefix string) error {
 	v.AllowEmptyEnv(true)
 
 	var tagToEnvKeyStack [][]string
-	return iterateFields(config, envPrefix, func(cfg interface{}) error {
+	return iterateFields(config, envPrefix, func(cfg any) error {
 		tagToEnvKeyStack = append(tagToEnvKeyStack, nil) // push
 		return nil
 	}, func(envVarName, envNamePrefix string, _ reflect.StructField, _ reflect.Value) error {
 		tagToEnvKeyStack[len(tagToEnvKeyStack)-1] = append(tagToEnvKeyStack[len(tagToEnvKeyStack)-1], envVarName, addPrefix(envVarName, envNamePrefix))
 		return v.BindEnv(envVarName)
-	}, func(cfg interface{}) error {
+	}, func(cfg any) error {
 		top := tagToEnvKeyStack[len(tagToEnvKeyStack)-1]
 		v.SetEnvKeyReplacer(strings.NewReplacer(top...))
 		tagToEnvKeyStack = tagToEnvKeyStack[:len(tagToEnvKeyStack)-1] // pop
@@ -115,17 +115,17 @@ func ReadFromEnv(config interface{}, envPrefix string) error {
 }
 
 type fieldCallback func(envVarName string, envNamePrefix string, field reflect.StructField, value reflect.Value) error
-type structCallback func(cfg interface{}) error
+type structCallback func(cfg any) error
 
 // iterateFields is a helper function for ReadFrom and WriteConfigDescription.
 // The function traverses config and its nested structs using DFS algorythm, calling fieldCallback for each list field.
 // Before processing a struct the function calls startSructCb, after - finishStructCb
 // A "mapstructure" tag of struct appends envNamePrefix for all internal fields
-func iterateFields(config interface{}, prefix string, startSructCb structCallback, fieldCb fieldCallback, finishStructCb structCallback) error {
+func iterateFields(config any, prefix string, startSructCb structCallback, fieldCb fieldCallback, finishStructCb structCallback) error {
 	value := reflect.ValueOf(config)
 	configType := reflect.Indirect(value).Type()
 
-	if value.Kind() != reflect.Ptr || configType.Kind() != reflect.Struct {
+	if value.Kind() != reflect.Pointer || configType.Kind() != reflect.Struct {
 		return errors.New("Not struct ptr")
 	}
 

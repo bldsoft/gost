@@ -15,15 +15,15 @@ const (
 )
 
 type (
-	Fields = map[string]interface{}
+	Fields = map[string]any
 	Logger interface {
-		TraceOrErrorfWithFields(err error, fields Fields, format string, v ...interface{})
+		TraceOrErrorfWithFields(err error, fields Fields, format string, v ...any)
 	}
 )
 
 type nullLogger struct{}
 
-func (nullLogger) TraceOrErrorfWithFields(err error, fields Fields, format string, v ...interface{}) {
+func (nullLogger) TraceOrErrorfWithFields(err error, fields Fields, format string, v ...any) {
 	// do nothing
 }
 
@@ -140,7 +140,7 @@ func (be *BufferedExporter[T]) flush() (n int, err error) {
 
 func (be *BufferedExporter[T]) fillExportedData() error {
 	pullN := min(be.ringBuf.Len(), be.MaxBatchSize()-be.batch.Len())
-	for i := 0; i < pullN; i++ {
+	for range pullN {
 		item, _ := be.ringBuf.Top()
 		if _, err := be.batch.Add(item); err != nil {
 			return err

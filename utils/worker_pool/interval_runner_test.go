@@ -161,9 +161,7 @@ func TestIntervalRunner_ConcurrentAddRemove(t *testing.T) {
 	const iterations = 100
 
 	for g := range goroutines {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			id := "shared-task"
 			for i := range iterations {
 				if (g+i)%3 == 0 {
@@ -174,7 +172,7 @@ func TestIntervalRunner_ConcurrentAddRemove(t *testing.T) {
 					})
 				}
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

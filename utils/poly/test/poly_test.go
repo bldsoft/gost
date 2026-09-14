@@ -51,7 +51,7 @@ type Container struct {
 func TestPolyJSONMarshal(t *testing.T) {
 
 	testCases := []struct {
-		value interface{}
+		value any
 		data  string
 	}{
 		{poly.Poly[SomeInterface]{A{AField: "AValue"}}, `{"type":"A","AField":"AValue"}`},

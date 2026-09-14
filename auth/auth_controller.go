@@ -14,11 +14,11 @@ import (
 const SessionUserKey = "user"
 
 var (
-	UserEntryCtxKey    interface{} = "UserEntry"
-	SessionEntryCtxKey interface{} = "SessionEntry"
+	UserEntryCtxKey    any = "UserEntry"
+	SessionEntryCtxKey any = "SessionEntry"
 )
 
-func requestContextAdd(r *http.Request, key, value interface{}) *http.Request {
+func requestContextAdd(r *http.Request, key, value any) *http.Request {
 	r = r.WithContext(context.WithValue(r.Context(), key, value))
 	return r
 }
@@ -43,7 +43,7 @@ func SessionFromContext(ctx context.Context) *Session {
 }
 
 // UserFromContext returns the User entry for a request.
-func UserFromContext(ctx context.Context) interface{} {
+func UserFromContext(ctx context.Context) any {
 	return ctx.Value(UserEntryCtxKey)
 }
 

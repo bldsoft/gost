@@ -18,7 +18,7 @@ func (l *ServiceLogger) AddExporter(exporter LogExporter, isOn *feature.Bool) {
 }
 
 // Fields struct
-type Fields = map[string]interface{}
+type Fields = map[string]any
 
 // WithFields creates a new logger with given fields
 func (l *ServiceLogger) WithFields(fields Fields) *ServiceLogger {
@@ -40,7 +40,7 @@ func (l *ServiceLogger) Trace(msg string) {
 }
 
 // Tracef logs a message at level Trace on the default logger.
-func (l *ServiceLogger) Tracef(format string, v ...interface{}) {
+func (l *ServiceLogger) Tracef(format string, v ...any) {
 	l.logger.Trace().Msgf(format, v...)
 }
 
@@ -50,7 +50,7 @@ func (l *ServiceLogger) TraceWithFields(fields Fields, msg string) {
 }
 
 // TracefWithFields logs a message at level Trace on the default logger.
-func (l *ServiceLogger) TracefWithFields(fields Fields, format string, v ...interface{}) {
+func (l *ServiceLogger) TracefWithFields(fields Fields, format string, v ...any) {
 	l.logger.Trace().Fields(fields).Msgf(format, v...)
 }
 
@@ -63,7 +63,7 @@ func (l *ServiceLogger) TraceOrErrorWithFields(err error, fields Fields, msg str
 }
 
 // TraceOrErrorfWithFields logs a message at level Error if err is not nil or Debug otherwise on the default logger.
-func (l *ServiceLogger) TraceOrErrorfWithFields(err error, fields Fields, format string, v ...interface{}) {
+func (l *ServiceLogger) TraceOrErrorfWithFields(err error, fields Fields, format string, v ...any) {
 	if err == nil {
 		l.logger.Trace().Fields(fields).Msgf(format, v...)
 	} else {
@@ -77,7 +77,7 @@ func (l *ServiceLogger) Debug(msg string) {
 }
 
 // Debugf logs a message at level Debug on the default logger.
-func (l *ServiceLogger) Debugf(format string, v ...interface{}) {
+func (l *ServiceLogger) Debugf(format string, v ...any) {
 	l.logger.Debug().Msgf(format, v...)
 }
 
@@ -87,7 +87,7 @@ func (l *ServiceLogger) DebugWithFields(fields Fields, msg string) {
 }
 
 // DebugfWithFields logs a message at level Debug on the default logger.
-func (l *ServiceLogger) DebugfWithFields(fields Fields, format string, v ...interface{}) {
+func (l *ServiceLogger) DebugfWithFields(fields Fields, format string, v ...any) {
 	l.logger.Debug().Fields(fields).Msgf(format, v...)
 }
 
@@ -101,7 +101,7 @@ func (l *ServiceLogger) DebugOrError(err error, msg string) {
 }
 
 // DebugOrErrorf logs a message at level Error if err is not nil or Debug otherwise on the default logger.
-func (l *ServiceLogger) DebugOrErrorf(err error, format string, v ...interface{}) {
+func (l *ServiceLogger) DebugOrErrorf(err error, format string, v ...any) {
 	if err == nil {
 		l.logger.Debug().Msgf(format, v...)
 	} else {
@@ -119,7 +119,7 @@ func (l *ServiceLogger) DebugOrErrorWithFields(err error, fields Fields, msg str
 }
 
 // DebugOrErrorfWithFields logs a message at level Error if err is not nil or Debug otherwise on the default logger.
-func (l *ServiceLogger) DebugOrErrorfWithFields(err error, fields Fields, format string, v ...interface{}) {
+func (l *ServiceLogger) DebugOrErrorfWithFields(err error, fields Fields, format string, v ...any) {
 	if err == nil {
 		l.logger.Debug().Fields(fields).Msgf(format, v...)
 	} else {
@@ -133,7 +133,7 @@ func (l *ServiceLogger) Info(msg string) {
 }
 
 // Infof logs a message at level Info on the default logger.
-func (l *ServiceLogger) Infof(format string, v ...interface{}) {
+func (l *ServiceLogger) Infof(format string, v ...any) {
 	l.logger.Info().Msgf(format, v...)
 }
 
@@ -143,7 +143,7 @@ func (l *ServiceLogger) InfoWithFields(fields Fields, msg string) {
 }
 
 // InfofWithFields logs a message at level Info on the default logger.
-func (l *ServiceLogger) InfofWithFields(fields Fields, format string, v ...interface{}) {
+func (l *ServiceLogger) InfofWithFields(fields Fields, format string, v ...any) {
 	l.logger.Info().Fields(fields).Msgf(format, v...)
 }
 
@@ -153,7 +153,7 @@ func (l *ServiceLogger) InfoOrError(err error, msg string) {
 }
 
 // InfoOrErrorf logs a message at level Error if err is not nil or Info otherwise on the default logger.
-func (l *ServiceLogger) InfoOrErrorf(err error, format string, v ...interface{}) {
+func (l *ServiceLogger) InfoOrErrorf(err error, format string, v ...any) {
 	l.logger.Err(err).Msgf(format, v...)
 }
 
@@ -163,7 +163,7 @@ func (l *ServiceLogger) InfoOrErrorWithFields(err error, fields Fields, msg stri
 }
 
 // InfoOrErrorfWithFields logs a message at level Error if err is not nil or Info otherwise on the default logger.
-func (l *ServiceLogger) InfoOrErrorfWithFields(err error, fields Fields, format string, v ...interface{}) {
+func (l *ServiceLogger) InfoOrErrorfWithFields(err error, fields Fields, format string, v ...any) {
 	l.logger.Err(err).Fields(fields).Msgf(format, v...)
 }
 
@@ -173,7 +173,7 @@ func (l *ServiceLogger) Warn(msg string) {
 }
 
 // Warnf logs a message at level Warn on the default logger.
-func (l *ServiceLogger) Warnf(format string, v ...interface{}) {
+func (l *ServiceLogger) Warnf(format string, v ...any) {
 	l.logger.Warn().Msgf(format, v...)
 }
 
@@ -183,7 +183,7 @@ func (l *ServiceLogger) WarnWithFields(fields Fields, msg string) {
 }
 
 // WarnfWithFields logs a message at level Warn on the default logger.
-func (l *ServiceLogger) WarnfWithFields(fields Fields, format string, v ...interface{}) {
+func (l *ServiceLogger) WarnfWithFields(fields Fields, format string, v ...any) {
 	l.logger.Warn().Fields(fields).Msgf(format, v...)
 }
 
@@ -193,7 +193,7 @@ func (l *ServiceLogger) Error(msg string) {
 }
 
 // Errorf logs a message at level Error on the default logger.
-func (l *ServiceLogger) Errorf(format string, v ...interface{}) {
+func (l *ServiceLogger) Errorf(format string, v ...any) {
 	l.logger.Error().Msgf(format, v...)
 }
 
@@ -203,12 +203,12 @@ func (l *ServiceLogger) ErrorWithFields(fields Fields, msg string) {
 }
 
 // ErrorfWithFields logs a message at level Error on the default logger.
-func (l *ServiceLogger) ErrorfWithFields(fields Fields, format string, v ...interface{}) {
+func (l *ServiceLogger) ErrorfWithFields(fields Fields, format string, v ...any) {
 	l.logger.Error().Fields(fields).Msgf(format, v...)
 }
 
 // ErrorfWithErrs logs a message at level Error on the default logger.
-func (l *ServiceLogger) ErrorfWithErrs(errs []error, format string, v ...interface{}) {
+func (l *ServiceLogger) ErrorfWithErrs(errs []error, format string, v ...any) {
 	l.logger.Error().Errs("errors", errs).Msgf(format, v...)
 }
 
@@ -218,7 +218,7 @@ func (l *ServiceLogger) Fatal(msg string) {
 }
 
 // Fatalf logs a message at level Fatal on the default logger.
-func (l *ServiceLogger) Fatalf(format string, v ...interface{}) {
+func (l *ServiceLogger) Fatalf(format string, v ...any) {
 	l.logger.Fatal().Msgf(format, v...)
 }
 
@@ -228,7 +228,7 @@ func (l *ServiceLogger) FatalWithFields(fields Fields, msg string) {
 }
 
 // FatalfWithFields logs a message at level Fatal on the default logger.
-func (l *ServiceLogger) FatalfWithFields(fields Fields, format string, v ...interface{}) {
+func (l *ServiceLogger) FatalfWithFields(fields Fields, format string, v ...any) {
 	l.logger.Fatal().Fields(fields).Msgf(format, v...)
 }
 
@@ -238,7 +238,7 @@ func (l *ServiceLogger) Panic(msg string) {
 }
 
 // Panicf logs a message at level Panic on the default logger.
-func (l *ServiceLogger) Panicf(format string, v ...interface{}) {
+func (l *ServiceLogger) Panicf(format string, v ...any) {
 	l.logger.Panic().Msgf(format, v...)
 }
 
@@ -248,7 +248,7 @@ func (l *ServiceLogger) PanicWithFields(fields Fields, msg string) {
 }
 
 // PanicfWithFields logs a message at level Panic on the default logger.
-func (l *ServiceLogger) PanicfWithFields(fields Fields, format string, v ...interface{}) {
+func (l *ServiceLogger) PanicfWithFields(fields Fields, format string, v ...any) {
 	l.logger.Panic().Fields(fields).Msgf(format, v...)
 }
 
@@ -258,7 +258,7 @@ func (l *ServiceLogger) Log(msg string) {
 }
 
 // Panicf logs a message at level Panic on the default logger.
-func (l *ServiceLogger) Logf(format string, v ...interface{}) {
+func (l *ServiceLogger) Logf(format string, v ...any) {
 	l.logger.Log().Msgf(format, v...)
 }
 
@@ -268,7 +268,7 @@ func (l *ServiceLogger) LogWithFields(fields Fields, msg string) {
 }
 
 // PanicfWithFields logs a message at level Panic on the default logger.
-func (l *ServiceLogger) LogfWithFields(fields Fields, format string, v ...interface{}) {
+func (l *ServiceLogger) LogfWithFields(fields Fields, format string, v ...any) {
 	l.logger.Log().Fields(fields).Msgf(format, v...)
 }
 

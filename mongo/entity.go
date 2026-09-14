@@ -8,7 +8,7 @@ type EntityID struct {
 	ID bson.ObjectID `json:"id" bson:"_id,omitempty"`
 }
 
-func (e *EntityID) RawID() interface{} {
+func (e *EntityID) RawID() any {
 	return e.ID
 }
 

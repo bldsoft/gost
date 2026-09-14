@@ -122,7 +122,7 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value []byt
 	var err error
 	key = r.cache.PrepareKey(key)
 
-	for i := 0; i < casRetryLimit; i++ {
+	for range casRetryLimit {
 		item, err := r.cache.Get(key)
 
 		if err != nil || item == nil {

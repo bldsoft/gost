@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -147,11 +148,20 @@ func (s *Server) probesOnlyRouter() http.Handler {
 func (s *Server) newRouter(isAppRouter bool) chi.Router {
 	r := chi.NewMux()
 	r.Use(s.commonMiddlewares...)
-	r.Mount("/debug", middleware.Profiler())
+	r.Mount("/debug", profiler())
 	if s.needHealthProbes {
 		r.Route("/probes", newProbesController().SetReady(isAppRouter).Mount)
 	}
 	return r
+}
+
+// TODO: drop once chi/v5 registers the goroutineleak profile itself.
+func profiler() http.Handler {
+	h := middleware.Profiler()
+	if r, ok := h.(chi.Router); ok {
+		r.Handle("/pprof/goroutineleak", pprof.Handler("goroutineleak"))
+	}
+	return h
 }
 
 func (s *Server) Start() {

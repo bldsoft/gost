@@ -41,7 +41,7 @@ func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err erro
 		return err
 	}
 
-	_, err = r.Repository.WithTransaction(ctx, func(ctx context.Context) (interface{}, error) {
+	_, err = r.Repository.WithTransaction(ctx, func(ctx context.Context) (any, error) {
 		entity.SetChangeID(rec.StringID())
 		if err := r.Repository.Insert(ctx, entity); err != nil {
 			return nil, err
@@ -76,7 +76,7 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U, opt ...*r
 		return err
 	}
 
-	_, err = r.Repository.WithTransaction(ctx, func(ctx context.Context) (interface{}, error) {
+	_, err = r.Repository.WithTransaction(ctx, func(ctx context.Context) (any, error) {
 		entity.SetChangeID(rec.StringID())
 		oldEntity, err := r.Repository.UpdateAndGetByID(ctx, entity, false, opt...)
 		if err != nil {
@@ -95,13 +95,13 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U, opt ...*r
 	return err
 }
 
-func (r *LoggedRepository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
+func (r *LoggedRepository[T, U]) Delete(ctx context.Context, id any, options ...*repository.QueryOptions) error {
 	rec, err := NewRecord(ctx, r.Name(), changelog.Delete)
 	if err != nil {
 		return err
 	}
 
-	_, err = r.Repository.WithTransaction(ctx, func(ctx context.Context) (interface{}, error) {
+	_, err = r.Repository.WithTransaction(ctx, func(ctx context.Context) (any, error) {
 		if err := r.Repository.Delete(ctx, id, options...); err != nil {
 			return nil, err
 		}

@@ -67,7 +67,7 @@ func (w *ExportLogWriter) allOff() bool {
 }
 
 func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
-	var event map[string]interface{}
+	var event map[string]any
 	d := json.NewDecoder(bytes.NewReader(p))
 	d.UseNumber()
 	err := d.Decode(&event)

@@ -34,13 +34,13 @@ type MultiContextLogEntry struct {
 	contextLoggerEntries []middleware.LogEntry
 }
 
-func (e *MultiContextLogEntry) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
+func (e *MultiContextLogEntry) Write(status, bytes int, header http.Header, elapsed time.Duration, extra any) {
 	for _, entry := range e.contextLoggerEntries {
 		entry.Write(status, bytes, header, elapsed, extra)
 	}
 }
 
-func (e *MultiContextLogEntry) Panic(v interface{}, stack []byte) {
+func (e *MultiContextLogEntry) Panic(v any, stack []byte) {
 	for _, entry := range e.contextLoggerEntries {
 		entry.Panic(v, stack)
 	}

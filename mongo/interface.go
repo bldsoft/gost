@@ -12,9 +12,9 @@ import (
 type Repository[T any, U repository.IEntityIDPtr[T]] interface {
 	Name() string
 	Collection() *mongo.Collection
-	WithTransaction(ctx context.Context, f func(ctx context.Context) (interface{}, error)) (interface{}, error)
+	WithTransaction(ctx context.Context, f func(ctx context.Context) (any, error)) (any, error)
 
 	repository.Repository[T, U]
 
-	AggregateOne(ctx context.Context, pipeline mongo.Pipeline, entity interface{}) error
+	AggregateOne(ctx context.Context, pipeline mongo.Pipeline, entity any) error
 }

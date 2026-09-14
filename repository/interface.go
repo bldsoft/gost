@@ -5,24 +5,24 @@ import (
 )
 
 type Repository[T any, U IEntityIDPtr[T]] interface {
-	FindOne(ctx context.Context, filter interface{}, opts ...*QueryOptions) (U, error)
-	FindByID(ctx context.Context, id interface{}, options ...*QueryOptions) (U, error)
+	FindOne(ctx context.Context, filter any, opts ...*QueryOptions) (U, error)
+	FindByID(ctx context.Context, id any, options ...*QueryOptions) (U, error)
 	FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*QueryOptions) ([]U, error)
-	FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*QueryOptions) ([]U, error)
-	Find(ctx context.Context, filter interface{}, opt ...*QueryOptions) ([]U, error)
-	Count(ctx context.Context, filter interface{}, opt ...*QueryOptions) (int64, error)
+	FindByIDs(ctx context.Context, ids []any, preserveOrder bool, options ...*QueryOptions) ([]U, error)
+	Find(ctx context.Context, filter any, opt ...*QueryOptions) ([]U, error)
+	Count(ctx context.Context, filter any, opt ...*QueryOptions) (int64, error)
 	GetAll(ctx context.Context, options ...*QueryOptions) ([]U, error)
 
 	Insert(ctx context.Context, entity U) error
 	InsertMany(ctx context.Context, entities []U) error
 	Update(ctx context.Context, entity U, options ...*QueryOptions) error
 	UpdateMany(ctx context.Context, entities []U) error
-	UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*QueryOptions) error
+	UpdateOne(ctx context.Context, filter any, update any, options ...*QueryOptions) error
 	UpdateAndGetByID(ctx context.Context, updateEntity U, returnNewDocument bool, queryOpt ...*QueryOptions) (U, error)
 	Upsert(ctx context.Context, entity U, opt ...*QueryOptions) error
 	UpsertMany(ctx context.Context, entities []U, opt ...*QueryOptions) error
-	UpsertOne(ctx context.Context, filter interface{}, update U) error
-	FindOneAndDelete(ctx context.Context, filter interface{}, opt ...*QueryOptions) (U, error)
+	UpsertOne(ctx context.Context, filter any, update U) error
+	FindOneAndDelete(ctx context.Context, filter any, opt ...*QueryOptions) (U, error)
 
 	Replace(ctx context.Context, replacement U, options ...*QueryOptions) error
 	ReplaceOne(ctx context.Context, filter any, replacement U, options ...*QueryOptions) error
@@ -30,8 +30,8 @@ type Repository[T any, U IEntityIDPtr[T]] interface {
 	InsertOrReplaceOne(ctx context.Context, filter any, replacement U, options ...*QueryOptions) (inserted bool, _ error)
 	InsertOrReplaceMany(ctx context.Context, entities []U) error
 
-	Delete(ctx context.Context, id interface{}, options ...*QueryOptions) error
-	DeleteMany(ctx context.Context, filter interface{}, options ...*QueryOptions) error
+	Delete(ctx context.Context, id any, options ...*QueryOptions) error
+	DeleteMany(ctx context.Context, filter any, options ...*QueryOptions) error
 }
 
 //go:generate go run github.com/abice/go-enum -f=$GOFILE
