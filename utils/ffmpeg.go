@@ -23,6 +23,7 @@ func probeCall(ctx context.Context, filename string, args args) (string, error) 
 	if err != nil {
 		return "", err
 	}
+
 	return buf.String(), nil
 }
 
@@ -33,6 +34,7 @@ func Probe(ctx context.Context, path string, args map[string]interface{}) (*FFMp
 	}
 	var res FFMpegProbe
 	err = json.Unmarshal([]byte(probeRaw), &res)
+
 	return &res, err
 }
 
@@ -101,5 +103,6 @@ func (a args) toCmdArgs() []string {
 			args = append(args, fmt.Sprintf("%v", a))
 		}
 	}
+
 	return args
 }

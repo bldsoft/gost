@@ -4,14 +4,15 @@ import (
 	"context"
 	"time"
 
-	"github.com/bldsoft/gost/changelog"
-	"github.com/bldsoft/gost/log"
-	"github.com/bldsoft/gost/mongo"
-	"github.com/bldsoft/gost/repository"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	driver "go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
+	"github.com/bldsoft/gost/changelog"
+	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/mongo"
+	"github.com/bldsoft/gost/repository"
 )
 
 type ChangeLogRepository struct {
@@ -38,11 +39,13 @@ func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
 
 func (r *ChangeLogRepository) Insert(ctx context.Context, record *Record) error {
 	_, err := r.rep.Collection().InsertOne(ctx, record)
+
 	return err
 }
 
 func (r *ChangeLogRepository) InsertMany(ctx context.Context, records []*Record) error {
 	_, err := r.rep.Collection().InsertMany(ctx, records)
+
 	return err
 }
 
@@ -51,6 +54,7 @@ func (r *ChangeLogRepository) FindByID(ctx context.Context, id string, options .
 	if err != nil {
 		return nil, err
 	}
+
 	return record.Record, nil
 }
 
@@ -62,6 +66,7 @@ func (r *ChangeLogRepository) FindByIDs(ctx context.Context, ids []string, prese
 	for _, record := range records {
 		res = append(res, record.Record)
 	}
+
 	return res, nil
 }
 
@@ -82,7 +87,7 @@ func (r *ChangeLogRepository) GetRecords(ctx context.Context, params *changelog.
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 	if err := cursor.All(ctx, &res.Records); err != nil {
 		return nil, err
 	}
@@ -91,6 +96,7 @@ func (r *ChangeLogRepository) GetRecords(ctx context.Context, params *changelog.
 	if err != nil {
 		return nil, err
 	}
+
 	return &res, nil
 }
 
@@ -155,6 +161,7 @@ func (r *ChangeLogRepository) recordsSort(sort changelog.Sort) bson.D {
 	if sort.Order == repository.SortOrderDESC {
 		order = -1
 	}
+
 	return bson.D{{Key: fieldName, Value: order}}
 }
 

@@ -143,6 +143,7 @@ func (cb *CircuitBreaker) State() State {
 
 	now := time.Now()
 	state, _ := cb.currentState(now)
+
 	return state
 }
 
@@ -180,6 +181,7 @@ func (cb *CircuitBreaker) Execute(req func() (interface{}, error)) (interface{},
 	}
 
 	cb.afterRequest(generation, err == nil)
+
 	return result, err
 }
 
@@ -197,6 +199,7 @@ func (cb *CircuitBreaker) beforeRequest() (uint64, error) {
 	}
 
 	cb.counts.onRequest()
+
 	return generation, nil
 }
 
@@ -252,6 +255,7 @@ func (cb *CircuitBreaker) currentState(now time.Time) (State, uint64) {
 			cb.setState(StateHalfOpen, now)
 		}
 	}
+
 	return cb.state, cb.generation
 }
 

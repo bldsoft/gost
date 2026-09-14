@@ -56,6 +56,7 @@ func (m Acl) getIP(r *http.Request) (netip.Addr, error) {
 	if err != nil {
 		return netip.Addr{}, err
 	}
+
 	return utils.CanonicalAddr(addr), nil
 }
 
@@ -75,22 +76,26 @@ func (m Acl) Middleware(next http.Handler) http.Handler {
 		if err != nil {
 			log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "ACL: failed to get IP")
 			m.controller.ResponseError(w, err.Error(), http.StatusInternalServerError)
+
 			return
 		}
 
 		if !m.Deny.Empty() && m.Deny.Contains(ip) {
 			log.FromContext(ctx).Debugf("ACL: %s denied", ip.String())
 			m.controller.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+
 			return
 		}
 
 		if !m.Allow.Empty() && !m.Allow.Contains(ip) {
 			log.FromContext(ctx).Debugf("ACL: %s isn't allowed", ip.String())
 			m.controller.ResponseError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+
 			return
 		}
 
 		next.ServeHTTP(w, r)
 	}
+
 	return http.HandlerFunc(fn)
 }

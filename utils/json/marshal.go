@@ -34,5 +34,6 @@ func MarshalJsonAndJoin(objects ...interface{}) ([]byte, error) {
 		}
 		marshalled[i] = b
 	}
+
 	return bytes.Join(marshalled, []byte{','}), nil
 }

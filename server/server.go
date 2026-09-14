@@ -10,10 +10,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bldsoft/gost/log"
-	gost_middleware "github.com/bldsoft/gost/server/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/bldsoft/gost/log"
+	gost_middleware "github.com/bldsoft/gost/server/middleware"
 )
 
 type Router = chi.Router
@@ -57,6 +58,7 @@ func NewServer(config Config, microservices ...IMicroservice) *Server {
 		srv: &http.Server{
 			ConnContext: func(ctx context.Context, c net.Conn) context.Context {
 				ctx = context.WithValue(ctx, connContextKey{}, c)
+
 				return ctx
 			},
 			Handler:      nil,
@@ -69,42 +71,50 @@ func NewServer(config Config, microservices ...IMicroservice) *Server {
 		config:            config,
 	}
 	middleware.DefaultLogger = DefaultLogger
+
 	return &srv
 }
 
 func (s *Server) UseDefaultMiddlewares() *Server {
 	s.commonMiddlewares = defaultMiddlewares()
+
 	return s
 }
 
 func (s *Server) AppendMiddlewares(middlewares ...func(http.Handler) http.Handler) *Server {
 	s.commonMiddlewares = append(s.commonMiddlewares, middlewares...)
+
 	return s
 }
 
 func (s *Server) SetMiddlewares(middlewares ...func(http.Handler) http.Handler) *Server {
 	s.commonMiddlewares = middlewares
+
 	return s
 }
 
 func (s *Server) SetRouterWrapper(middleware func(http.Handler) http.Handler) *Server {
 	s.routerWrapper = middleware
+
 	return s
 }
 
 func (s *Server) WithHealthProbes(v bool) *Server {
 	s.needHealthProbes = v
+
 	return s
 }
 
 func (s *Server) AddAsyncRunners(runners ...AsyncRunner) *Server {
 	s.runnerManager.Append(runners...)
+
 	return s
 }
 
 func (s *Server) init() {
 	if !s.needHealthProbes {
 		http.Handle("/", s.appRouter())
+
 		return
 	}
 
@@ -137,6 +147,7 @@ func (s *Server) appRouter() http.Handler {
 	if s.routerWrapper != nil {
 		return s.routerWrapper(appRouter)
 	}
+
 	return appRouter
 }
 
@@ -151,6 +162,7 @@ func (s *Server) newRouter(isAppRouter bool) chi.Router {
 	if s.needHealthProbes {
 		r.Route("/probes", newProbesController().SetReady(isAppRouter).Mount)
 	}
+
 	return r
 }
 

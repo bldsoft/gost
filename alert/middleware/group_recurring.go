@@ -52,6 +52,7 @@ func NewGroupMiddleware(groupID string, groupRep GroupRepository, groupPeriod ti
 
 func (m *GroupMiddleware) WithCheckExpiredGroupPeriod(checkExpiredGroupPeriod time.Duration) *GroupMiddleware {
 	m.checkExpiredGroupPeriod = checkExpiredGroupPeriod
+
 	return m
 }
 
@@ -63,7 +64,7 @@ func (m *GroupMiddleware) Middleware() (_ alert.Middleware, close func()) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				m.run(ctx, next)
+				_ = m.run(ctx, next)
 			}()
 
 			return alert.HandlerFunc(func(ctx context.Context, alerts ...alert.Alert) {
@@ -73,6 +74,7 @@ func (m *GroupMiddleware) Middleware() (_ alert.Middleware, close func()) {
 					passedAlerts, err := m.processAlert(ctx, a)
 					if err != nil {
 						logger.ErrorWithFields(log.Fields{"err": err}, "failed to process alert")
+
 						continue
 					}
 					passed = append(passed, passedAlerts...)
@@ -120,6 +122,7 @@ func (m *GroupMiddleware) processAlert(ctx context.Context, a alert.Alert) (pass
 		if err = m.groupRep.CreateGroup(ctx, group); err != nil {
 			return nil, fmt.Errorf("failed to create group: %w", err)
 		}
+
 		return nil, nil
 	}
 
@@ -140,6 +143,7 @@ func (m *GroupMiddleware) processAlert(ctx context.Context, a alert.Alert) (pass
 	if err = m.groupRep.CreateGroup(ctx, group); err != nil {
 		return nil, fmt.Errorf("failed to create group: %w", err)
 	}
+
 	return nil, nil
 }
 
@@ -156,8 +160,10 @@ func (m *GroupMiddleware) passAlert(ctx context.Context, group *Group) bool {
 
 	if len(group.Alerts) == 2 && group.Alerts[0].To.IsZero() && !group.Alerts[1].To.IsZero() {
 		log.FromContext(ctx).DebugWithFields(log.Fields{"start": group.Alerts[0], "finish": group.Alerts[1]}, "finish first alert in group")
+
 		return true
 	}
+
 	return false
 }
 
@@ -170,6 +176,7 @@ func (m *GroupMiddleware) run(ctx context.Context, next alert.Handler) error {
 		select {
 		case <-ctx.Done():
 			m.handleGroups(ctx, time.Now().Add(m.groupPeriod), next)
+
 			return nil
 		case now := <-ticker.C:
 			m.handleGroups(ctx, now, next)
@@ -184,6 +191,7 @@ func (m *GroupMiddleware) handleGroups(ctx context.Context, now time.Time, next 
 	})
 	if err != nil {
 		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "failed to get alert groups")
+
 		return
 	}
 	if len(groups) == 0 {
@@ -201,7 +209,7 @@ func (m *GroupMiddleware) handleGroups(ctx context.Context, now time.Time, next 
 		next.Handle(ctx, alerts...)
 	}
 
-	m.groupRep.Delete(ctx, GroupFilter{
+	_ = m.groupRep.Delete(ctx, GroupFilter{
 		IDs:         []string{m.groupID},
 		ExpNotAfter: now,
 	})
@@ -210,6 +218,7 @@ func (m *GroupMiddleware) handleGroups(ctx context.Context, now time.Time, next 
 
 func (m *GroupMiddleware) WithAlertMergeFunc(alertMergeFunc func(alerts ...alert.Alert) alert.Alert) *GroupMiddleware {
 	m.alertMergeFunc = alertMergeFunc
+
 	return m
 }
 
@@ -217,6 +226,7 @@ func (m *GroupMiddleware) mergeAlerts(alerts ...alert.Alert) alert.Alert {
 	if m.alertMergeFunc != nil {
 		return m.alertMergeFunc(alerts...)
 	}
+
 	return m.defaultAlertMergeFunc(alerts...)
 }
 
@@ -240,5 +250,6 @@ func (m *GroupMiddleware) defaultAlertMergeFunc(alerts ...alert.Alert) alert.Ale
 	if res.To.IsZero() {
 		count++
 	}
+
 	return res.AddMetaData("count", strconv.Itoa(count))
 }

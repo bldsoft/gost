@@ -22,7 +22,7 @@ func (m *AsyncJobManager) Append(runners ...AsyncRunner) {
 }
 
 func (m *AsyncJobManager) Start() {
-	m.jobGroup.Run()
+	_ = m.jobGroup.Run()
 }
 
 func (m *AsyncJobManager) Stop(ctx context.Context) error {

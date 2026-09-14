@@ -76,10 +76,12 @@ func (m *DistrMutex) TryLock() bool {
 	err := m.cache.Add(m.lockKey, m.uniqueID, WithTTL(m.unlockTime))
 	if err != nil {
 		log.DebugWithFields(log.Fields{"error": err}, "Failed to lock memcached mutex")
+
 		return false
 	}
 	m.ticker = time.NewTicker(m.unlockTime / 2)
 	go m.updateLock()
+
 	return true
 }
 
@@ -91,6 +93,7 @@ func (m *DistrMutex) getOwner() lockOwner {
 	if bytes.Equal(it.Value, m.uniqueID) {
 		return me
 	}
+
 	return notme
 }
 
@@ -105,11 +108,13 @@ func (m *DistrMutex) updateLock() {
 			}
 		case notme:
 			m.stop()
+
 			return
 		case nobody:
 			if !m.TryLock() {
 				m.stop()
 			}
+
 			return
 		}
 	}
@@ -131,6 +136,6 @@ func (m *DistrMutex) Unlock() {
 		m.ticker.Stop()
 	}
 	if m.getOwner() == me {
-		m.cache.Delete(m.lockKey)
+		_ = m.cache.Delete(m.lockKey)
 	}
 }

@@ -24,5 +24,6 @@ func (c *Config) Validate() error {
 	if _, err := ParseDiscoveryType(string(c.DiscoveryType)); err != nil {
 		return err
 	}
+
 	return nil
 }

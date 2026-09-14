@@ -5,7 +5,6 @@ package mongolock
 import (
 	"context"
 	"sort"
-
 	"testing"
 	"time"
 )

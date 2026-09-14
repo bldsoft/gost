@@ -25,6 +25,7 @@ func ToRawID[T any, U IEntityIDPtr[T]](id interface{}) interface{} {
 		if err := U(&e).SetIDFromString(v); err == nil {
 			return U(&e).RawID()
 		}
+
 		return v
 	case IEntityID:
 		return v.RawID()
@@ -54,6 +55,7 @@ func StringsToRawIDs[T any, U IEntityIDPtr[T]](ids []string) []interface{} {
 	for _, id := range ids {
 		rawIDs = append(rawIDs, ToRawID[T, U](id))
 	}
+
 	return rawIDs
 }
 
@@ -62,6 +64,7 @@ func ToRawIDs[T any, U IEntityIDPtr[T]](ids []interface{}) []interface{} {
 	for _, id := range ids {
 		rawIDs = append(rawIDs, ToRawID[T, U](id))
 	}
+
 	return rawIDs
 }
 
@@ -70,5 +73,6 @@ func ToStringIDs[T any, U IEntityIDPtr[T]](ids []interface{}) []string {
 	for _, id := range ids {
 		stringIDs = append(stringIDs, ToStringID[T, U](id))
 	}
+
 	return stringIDs
 }

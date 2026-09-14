@@ -9,11 +9,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/websocket"
+
 	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/memberlist"
-	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/websocket"
 )
 
 const (
@@ -54,7 +55,7 @@ func NewTransport(bindAddress config.Address) (*Transport, error) {
 	// Clean up listeners if there's an error.
 	defer func() {
 		if !ok {
-			t.Shutdown()
+			_ = t.Shutdown()
 		}
 	}()
 
@@ -72,6 +73,7 @@ func NewTransport(bindAddress config.Address) (*Transport, error) {
 	}
 
 	ok = true
+
 	return t, nil
 }
 
@@ -79,6 +81,7 @@ func (t *Transport) Run() error {
 	t.wg.Add(1)
 	defer t.wg.Done()
 	t.udpListen(t.udpListener)
+
 	return nil
 }
 
@@ -95,6 +98,7 @@ func (t *Transport) udpListen(udpLn *net.UDPConn) {
 			}
 
 			log.Logger.Errorf("Discovery: memberlist: error reading UDP packet: %v", err)
+
 			continue
 		}
 
@@ -102,6 +106,7 @@ func (t *Transport) udpListen(udpLn *net.UDPConn) {
 		// proper message.
 		if n < 1 {
 			log.Logger.Errorf("Discovery: memberlist: UDP packet too short (%d bytes) %s", len(buf), addr.String())
+
 			continue
 		}
 
@@ -132,6 +137,7 @@ func (t *Transport) FinalAdvertiseAddr(ip string, port int) (net.IP, int, error)
 	if ip4 := advertiseAddr.To4(); ip4 != nil {
 		advertiseAddr = ip4
 	}
+
 	return advertiseAddr, port, nil
 }
 
@@ -147,6 +153,7 @@ func (t *Transport) FinalAdvertiseAddr(ip string, port int) (net.IP, int, error)
 // in the form of "host:port".
 func (t *Transport) WriteTo(b []byte, addr string) (time.Time, error) {
 	a := memberlist.Address{Addr: addr, Name: ""}
+
 	return t.WriteToAddress(b, a)
 }
 
@@ -156,6 +163,7 @@ func (t *Transport) WriteToAddress(b []byte, a memberlist.Address) (time.Time, e
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		log.ErrorWithFields(log.Fields{"err": err, "addr": addr}, "Discovery: ResolveUDPAddr")
+
 		return time.Time{}, err
 	}
 
@@ -167,6 +175,7 @@ func (t *Transport) WriteToAddress(b []byte, a memberlist.Address) (time.Time, e
 	if err != nil {
 		log.ErrorWithFields(log.Fields{"err": err, "addr": addr}, "Discovery: udp write")
 	}
+
 	return time.Now(), err
 }
 
@@ -189,6 +198,7 @@ func (t *Transport) DialTimeout(addr string, timeout time.Duration) (net.Conn, e
 	if err != nil {
 		return nil, err
 	}
+
 	return c.UnderlyingConn(), nil
 }
 
@@ -209,11 +219,12 @@ func (t *Transport) Shutdown() error {
 	t.shutdown.Store(1)
 
 	if t.udpListener != nil {
-		t.udpListener.Close()
+		_ = t.udpListener.Close()
 	}
 
 	// Block until the listener has died.
 	t.wg.Wait()
+
 	return nil
 }
 
@@ -229,6 +240,7 @@ func setUDPRecvBuf(c *net.UDPConn) error {
 		}
 		size = size / 2
 	}
+
 	return err
 }
 
@@ -237,6 +249,7 @@ func (t *Transport) Handler(w http.ResponseWriter, r *http.Request) {
 	c, err := wsUpgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "Discovery: ws: failed to upgrade")
+
 		return
 	}
 	t.streamCh <- c.UnderlyingConn()

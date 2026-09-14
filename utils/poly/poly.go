@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"reflect"
 
-	json_utils "github.com/bldsoft/gost/utils/json"
 	"go.mongodb.org/mongo-driver/v2/bson"
+
+	json_utils "github.com/bldsoft/gost/utils/json"
 )
 
 const FieldNameType = "type"
@@ -25,6 +26,7 @@ func (f *Poly[T]) typesMap() *typeBijection[T, string] {
 	if !ok {
 		panic(fmt.Errorf("poly: unregistered interface %s: register it with poly.Register", f.interfaceString()))
 	}
+
 	return typeNamesI.(*typeBijection[T, string])
 }
 
@@ -37,6 +39,7 @@ func (f *Poly[T]) Type() string {
 	if !ok {
 		panic(fmt.Errorf("poly: unregistered type %T for interface %s", f.Value, f.interfaceString()))
 	}
+
 	return typeString
 }
 
@@ -65,6 +68,7 @@ func (f *Poly[T]) UnmarshalJSON(data []byte) error {
 	}
 
 	f.Value = res.Interface().(T)
+
 	return nil
 }
 
@@ -92,6 +96,7 @@ func (f *Poly[T]) UnmarshalBSON(data []byte) error {
 	}
 
 	f.Value = res.Interface().(T)
+
 	return nil
 }
 
@@ -104,6 +109,7 @@ func (f *Poly[T]) toBsonMap(e interface{}) (m bson.M, err error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return m, nil
 }
 
@@ -116,6 +122,7 @@ func (f *Poly[T]) addTypeAndMashalBson(v T, typeName string) ([]byte, error) {
 		}
 
 		m[FieldNameType] = typeName
+
 		return bson.Marshal(m)
 	}
 

@@ -36,5 +36,6 @@ func (s *AuthService[PT, T]) Login(ctx context.Context, username, password strin
 	if err := s.passwordHasher.VerifyPassword(user.Password(), password); err != nil {
 		return nil, ErrWrongPassword
 	}
+
 	return user, nil
 }

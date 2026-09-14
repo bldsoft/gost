@@ -68,6 +68,7 @@ func (m *Manager) Run(ctx context.Context) {
 				log.FromContext(ctx).ErrorfWithFields(log.Fields{
 					"error": err,
 				}, "Failed to evaluate alerts")
+
 				return
 			}
 

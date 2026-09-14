@@ -29,6 +29,7 @@ func init() {
 		return strconv.FormatInt(v.Interface().(time.Time).Unix(), 10)
 	}, func(s string) reflect.Value {
 		ts, _ := strconv.ParseInt(s, 10, 64)
+
 		return reflect.ValueOf(time.Unix(ts, 0))
 	})
 
@@ -36,6 +37,7 @@ func init() {
 		return time.Duration(v.Int()).String()
 	}, func(s string) reflect.Value {
 		dur, _ := time.ParseDuration(s)
+
 		return reflect.ValueOf(dur)
 	})
 }
@@ -46,6 +48,7 @@ func FromRequest[T any](r *http.Request) (*T, error) {
 
 func FromQuery[T any](query url.Values) (*T, error) {
 	var obj T
+
 	return &obj, decoder.Decode(&obj, query)
 }
 
@@ -54,5 +57,6 @@ func Query[T any](obj T) url.Values {
 	if err := encoder.Encode(obj, query); err != nil {
 		panic(err)
 	}
+
 	return query
 }

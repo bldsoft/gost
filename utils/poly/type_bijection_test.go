@@ -3,8 +3,9 @@ package poly
 import (
 	"testing"
 
-	"github.com/bldsoft/gost/utils"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/bldsoft/gost/utils"
 )
 
 func TestTypeBijectionCollision(t *testing.T) {
@@ -37,20 +38,20 @@ func TestTypeBijectionCollision(t *testing.T) {
 
 	t.Run("alloc value", func(t *testing.T) {
 		var b typeBijection[interface{}, string]
-		s, err := b.AllocValue("not existing")
+		_, err := b.AllocValue("not existing")
 		assert.ErrorIs(t, utils.ErrObjectNotFound, err)
 
 		assert.NoError(t, b.Add("", "string"))
-		s, err = b.AllocValue("string")
+		s, _ := b.AllocValue("string")
 		assert.Equal(t, s, "")
 
 		assert.NoError(t, b.Add(0, "int"))
-		i, err := b.AllocValue("int")
+		i, _ := b.AllocValue("int")
 		assert.Equal(t, i, 0)
 
 		var iptr *int
 		assert.NoError(t, b.Add(iptr, "*int"))
-		ptri, err := b.AllocValue("*int")
+		ptri, _ := b.AllocValue("*int")
 		assert.Equal(t, *ptri.(*int), 0)
 
 	})

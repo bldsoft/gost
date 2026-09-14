@@ -39,10 +39,12 @@ func TestProbe(t *testing.T) {
 			got, err := Probe(context.TODO(), tt.args.path, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Probe() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if val, _ := got.Duration(); val != tt.want.Duration {
 				t.Errorf("Probe() duration = %v, want.Duration %v", val, tt.want.Duration)
+
 				return
 			}
 		})

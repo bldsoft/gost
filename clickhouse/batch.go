@@ -39,11 +39,12 @@ func (b *Batch) Append(val interface{}) error {
 			return err
 		}
 	}
+
 	return b.batch.AppendStruct(val)
 }
 
 func (b *Batch) Send() error {
-	defer b.reset()
+	defer func() { _ = b.reset() }()
 
 	return b.batch.Send()
 }

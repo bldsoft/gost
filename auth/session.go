@@ -24,11 +24,13 @@ func (s *Session) Set(key, value interface{}) {
 func (s *Session) Get(key string) (value interface{}) {
 	s.mtx.RLock()
 	defer s.mtx.RUnlock()
+
 	return s.session.Values[key]
 }
 
 func (s *Session) LockAndUpdate(f func(values map[interface{}]interface{}) error) error {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
+
 	return f(s.session.Values)
 }

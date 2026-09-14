@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5/middleware"
+
 	"github.com/bldsoft/gost/utils"
 	"github.com/bldsoft/gost/utils/exporter"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 // To customize request info put RequestInfo in your structure and use it as T.
@@ -34,6 +35,7 @@ func (f *ExportFormatter[T, P]) SetRequestInfoContextKey(key interface{}) {
 
 func (f *ExportFormatter[T, P]) GetRequestInfo(ctx context.Context) P {
 	requestInfo, _ := ctx.Value(f.requestInfoCtxKey).(P)
+
 	return requestInfo
 }
 
@@ -64,6 +66,7 @@ func (f *ExportFormatter[T, P]) NewLogEntry(r *http.Request) (middleware.LogEntr
 
 	ctx := context.WithValue(r.Context(), f.requestInfoCtxKey, requestInfoPtr)
 	r = r.WithContext(ctx)
+
 	return &ContextExportFormatterLoggerEntry[T, P]{
 		requestExporter: f.requestExporter,
 		errBuf:          LogRequestErrBufferFromContext(r.Context()),
@@ -96,7 +99,7 @@ func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, heade
 
 		baseRequestInfo.UserAgent = l.req.UserAgent()
 
-		l.requestExporter.Export(l.requestInfo)
+		_, _ = l.requestExporter.Export(l.requestInfo)
 	}
 }
 

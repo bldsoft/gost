@@ -11,8 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bldsoft/gost/log"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/bldsoft/gost/cache"
+	"github.com/bldsoft/gost/log"
 )
 
 const lockKey = "lock:test"
@@ -23,8 +25,8 @@ var (
 
 func TestMain(m *testing.M) {
 	log.SetLogLevel("")
-	storage := NewStorage(Config{[]string{"127.0.0.1:11211"}})
-	rep = NewMemcacheRepository(storage, 2)
+	storage := NewStorage([]string{"127.0.0.1:11211"}, Config{})
+	rep = NewMemcacheRepository(storage, 2*time.Minute)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
@@ -41,7 +43,7 @@ func decrCounter(t *testing.T, id string, counter *int32) {
 }
 
 func routine(t *testing.T, id string, counter *int32, unlockTime time.Duration, stopGoroutine chan struct{}) {
-	mtx := NewMemcachedMutex(rep, lockKey, unlockTime)
+	mtx := cache.NewDistrMutex(rep, lockKey, unlockTime)
 	for {
 		t.Logf("%s is waiting for lock", id)
 		mtx.Lock(context.Background())
@@ -119,7 +121,7 @@ func TestAtomicIncrement(t *testing.T) {
 	var increment = func(n int) {
 		defer wg.Done()
 
-		mtx := NewMemcachedMutex(rep, lockKey, time.Second)
+		mtx := cache.NewDistrMutex(rep, lockKey, time.Second)
 		mtx.TryLockInterval = time.Millisecond
 
 		wg.Done()

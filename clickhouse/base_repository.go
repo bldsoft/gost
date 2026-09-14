@@ -7,6 +7,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+
 	"github.com/bldsoft/gost/entity/stat"
 	"github.com/bldsoft/gost/log"
 )
@@ -29,6 +30,7 @@ func (r *BaseRepository) Storage() *Storage {
 
 func (r *BaseRepository) RunSelect(ctx context.Context, query sq.SelectBuilder) (*sql.Rows, error) {
 	r.LogQuery(ctx, query)
+
 	return query.RunWith(r.Storage().Db).QueryContext(ctx)
 }
 
@@ -48,6 +50,7 @@ func (r *BaseRepository) buildChartValues(start, end time.Time, step time.Durati
 			times, values = times[1:], values[1:]
 		}
 	}
+
 	return res
 }
 
@@ -65,7 +68,7 @@ func (r *BaseRepository) getCustomChartValues(ctx context.Context, query sq.Sele
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var (
@@ -79,6 +82,7 @@ func (r *BaseRepository) getCustomChartValues(ctx context.Context, query sq.Sele
 		lv.Data = r.buildChartValues(from, to, step, times, values)
 		data.Values = append(data.Values, &lv)
 	}
+
 	return data, nil
 }
 

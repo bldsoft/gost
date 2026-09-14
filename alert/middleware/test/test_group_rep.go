@@ -19,11 +19,13 @@ func newTestGroupRepository() *testGroupRepository {
 
 func (r *testGroupRepository) CreateGroup(ctx context.Context, group *middleware.Group) error {
 	r.groups[group.ID] = group
+
 	return nil
 }
 
 func (r *testGroupRepository) UpdateGroup(ctx context.Context, group *middleware.Group) error {
 	r.groups[group.ID] = group
+
 	return nil
 }
 
@@ -38,6 +40,7 @@ func (r *testGroupRepository) FindGroups(ctx context.Context, filter middleware.
 		}
 		groups = append(groups, group)
 	}
+
 	return groups, nil
 }
 
@@ -49,5 +52,6 @@ func (r *testGroupRepository) Delete(ctx context.Context, filter middleware.Grou
 	for _, group := range groups {
 		delete(r.groups, group.ID)
 	}
+
 	return nil
 }

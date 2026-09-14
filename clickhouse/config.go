@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/churl"
+
 	gost "github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/utils"
 )
@@ -28,6 +29,7 @@ func (c *Config) Validate() (err error) {
 	}
 
 	c.options, err = clickhouse.ParseDSN(c.Dsn.String())
+
 	return err
 }
 
@@ -51,5 +53,6 @@ func (c *Config) prepareDsn() error {
 
 		c.Dsn = gost.ConnectionString(url.String())
 	}
+
 	return nil
 }

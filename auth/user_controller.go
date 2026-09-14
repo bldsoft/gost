@@ -4,10 +4,11 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/bldsoft/gost/controller"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/utils"
-	"github.com/go-chi/chi/v5"
 )
 
 var ErrForbidden = errors.New("forbidden")
@@ -76,7 +77,7 @@ func (c *UserController[PT, T]) PutHandler(w http.ResponseWriter, r *http.Reques
 	if !c.GetObjectFromBody(w, r, &user) {
 		return
 	}
-	PT(&user).SetIDFromString(chi.URLParam(r, "id"))
+	_ = PT(&user).SetIDFromString(chi.URLParam(r, "id"))
 	err := c.service.Update(r.Context(), &user)
 	switch {
 	case err == nil:

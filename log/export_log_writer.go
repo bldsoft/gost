@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
+	"github.com/rs/zerolog"
+
 	"github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/utils"
 	"github.com/bldsoft/gost/version"
-	"github.com/hashicorp/go-multierror"
-	"github.com/rs/zerolog"
 )
 
 type Level = zerolog.Level
@@ -37,6 +38,7 @@ func (r *LogRecord) UnmarshalJSON(data []byte) error {
 		Msg            string        `json:"msg,omitempty"`
 		Fields         []byte        `json:"fields,omitempty"` // json
 	}
+
 	return json.Unmarshal(data, (*Record)(r))
 }
 
@@ -63,6 +65,7 @@ func (w *ExportLogWriter) allOff() bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -114,6 +117,7 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &rec, nil
 }
 
@@ -127,6 +131,7 @@ func (w *ExportLogWriter) export(rec *LogRecord) error {
 			multiErr = multierror.Append(multiErr, err)
 		}
 	}
+
 	return multiErr
 }
 

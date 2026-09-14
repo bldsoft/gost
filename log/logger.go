@@ -1,9 +1,10 @@
 package log
 
 import (
+	"github.com/rs/zerolog"
+
 	"github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/utils"
-	"github.com/rs/zerolog"
 )
 
 type ServiceLogger struct {
@@ -275,6 +276,7 @@ func (l *ServiceLogger) LogfWithFields(fields Fields, format string, v ...interf
 // WithFuncDuration runs f and returns logger with field with its execution time
 func (l *ServiceLogger) WithFuncDuration(f func()) *ServiceLogger {
 	d := utils.TimeTrack(f)
+
 	return l.WithFields(Fields{"time_ms": d})
 }
 
@@ -284,5 +286,6 @@ func (l *ServiceLogger) WithOptFuncDuration(f func()) *ServiceLogger {
 		return l.WithFuncDuration(f)
 	}
 	f()
+
 	return l
 }

@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bldsoft/gost/log"
-	"github.com/bldsoft/gost/storage"
 	"github.com/golang-migrate/migrate/v4"
 	mm "github.com/golang-migrate/migrate/v4/database/mongodb"
 	"github.com/golang-migrate/migrate/v4/source"
@@ -20,6 +18,9 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
+
+	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/storage"
 )
 
 type Storage struct {
@@ -72,6 +73,7 @@ func (db *Storage) Disconnect(ctx context.Context) error {
 		return errors.Wrap(err, "MongoDB v2 disconnect failed")
 	}
 	log.Info("MongoDB v2 disconnected.")
+
 	return nil
 }
 
@@ -116,7 +118,7 @@ func (db *Storage) runMigrations(dbname string) error {
 	if err != nil {
 		return fmt.Errorf("migration client failed: %w", err)
 	}
-	defer v1Client.Disconnect(context.Background())
+	defer func() { _ = v1Client.Disconnect(context.Background()) }()
 
 	config := &mm.Config{DatabaseName: dbname, MigrationsCollection: db.config.MigrationCollection}
 	driver, err := mm.WithInstance(v1Client, config)
@@ -136,6 +138,7 @@ func (db *Storage) runMigrations(dbname string) error {
 	if err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("process failed: %w", err)
 	}
+
 	return nil
 }
 
@@ -147,6 +150,7 @@ func (db *Storage) legacyClient() (*mongoV1.Client, *mongoV1.Database, error) {
 		return nil, nil, err
 	}
 	dbV1 := cli.Database(db.config.DbName)
+
 	return cli, dbV1, nil
 }
 
@@ -179,5 +183,6 @@ func (db *Storage) Stats(ctx context.Context) (interface{}, error) {
 		}
 		stats = append(stats, colStat)
 	}
+
 	return stats, err
 }

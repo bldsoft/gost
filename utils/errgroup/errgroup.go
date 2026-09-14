@@ -60,6 +60,7 @@ func (w *panicWrapper) Error() string {
 func NewPanic(skip int, value any) panicWrapper {
 	var callers [64]uintptr
 	n := runtime.Callers(skip, callers[:])
+
 	return panicWrapper{
 		Value:   value,
 		Callers: callers[:n],

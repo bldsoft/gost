@@ -153,6 +153,7 @@ func (c *Client) CreateIndexes(ctx context.Context) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -199,6 +200,7 @@ func (c *Client) XLock(ctx context.Context, resourceName, lockId string, ld Lock
 		if isDup(err) {
 			return ErrAlreadyLocked
 		}
+
 		return err
 	}
 
@@ -261,6 +263,7 @@ func (c *Client) SLock(ctx context.Context, resourceName, lockId string, ld Lock
 		if isDup(err) {
 			return ErrAlreadyLocked
 		}
+
 		return err
 	}
 
@@ -307,6 +310,7 @@ func (c *Client) Unlock(ctx context.Context, lockId string) ([]LockStatus, error
 				// what we want.
 				continue
 			}
+
 			return unlocked, err
 		}
 		unlocked = append(unlocked, lock)
@@ -445,7 +449,7 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 		return []LockStatus{}, err
 	}
 
-	defer cur.Close(ctx)
+	defer func() { _ = cur.Close(ctx) }()
 
 	for cur.Next(ctx) {
 		var result resource
@@ -583,6 +587,7 @@ func (c *Client) Renew(ctx context.Context, lockId string, ttl uint) ([]LockStat
 			if len(doc) == 0 {
 				return statuses, ErrLockNotFound
 			}
+
 			return statuses, err
 		}
 
@@ -628,6 +633,7 @@ func (c *Client) xUnlock(ctx context.Context, resourceName, lockId string) error
 		if len(doc) == 0 {
 			return ErrLockNotFound
 		}
+
 		return err
 	}
 
@@ -673,6 +679,7 @@ func (c *Client) sUnlock(ctx context.Context, resourceName, lockId string) error
 		if len(doc) == 0 {
 			return ErrLockNotFound
 		}
+
 		return err
 	}
 
@@ -750,6 +757,7 @@ func calcTTL(expiresAt *time.Time) int64 {
 	if ttl < 0 {
 		return 0
 	}
+
 	return ttl
 }
 
@@ -778,5 +786,6 @@ func isDup(err error) bool {
 			}
 		}
 	}
+
 	return false
 }

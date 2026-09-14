@@ -24,6 +24,7 @@ func (s *MultiSource) AddSource(source ...Source) *MultiSource {
 	for _, source := range source {
 		s.sourceToNextTime = append(s.sourceToNextTime, sourceWithNextTime{source, now})
 	}
+
 	return s
 }
 
@@ -42,6 +43,7 @@ func (s *MultiSource) EvaluateAlerts(ctx context.Context) ([]Alert, time.Time, e
 
 		if nextTime.After(now) {
 			minNextTime = s.minTime(minNextTime, nextTime)
+
 			continue
 		}
 
@@ -54,6 +56,7 @@ func (s *MultiSource) EvaluateAlerts(ctx context.Context) ([]Alert, time.Time, e
 		minNextTime = s.minTime(minNextTime, nextTime)
 		res = append(res, alerts...)
 	}
+
 	return res, minNextTime, errs
 }
 
@@ -61,5 +64,6 @@ func (s *MultiSource) minTime(a time.Time, b time.Time) time.Time {
 	if a.Before(b) {
 		return a
 	}
+
 	return b
 }

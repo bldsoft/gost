@@ -22,9 +22,11 @@ func NewClient(c *http.Client, settings Settings) *Client {
 			if resp.StatusCode >= 500 {
 				return fmt.Errorf("%d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 			}
+
 			return nil
 		}
 	}
+
 	return &Client{Client: c, circuitBreaker: NewCircuitBreaker(settings)}
 }
 
@@ -35,6 +37,7 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return resp.(*http.Response), err
 }
 
@@ -45,6 +48,7 @@ func (c *Client) Get(url string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return resp.(*http.Response), err
 }
 
@@ -55,6 +59,7 @@ func (c *Client) Head(url string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return resp.(*http.Response), err
 }
 
@@ -65,6 +70,7 @@ func (c *Client) Post(url string, contentType string, body io.Reader) (*http.Res
 	if err != nil {
 		return nil, err
 	}
+
 	return resp.(*http.Response), err
 }
 
@@ -75,5 +81,6 @@ func (c *Client) PostForm(url string, data url.Values) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return resp.(*http.Response), err
 }

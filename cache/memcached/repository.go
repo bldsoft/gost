@@ -4,8 +4,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/bldsoft/gost/cache"
 	"github.com/bradfitz/gomemcache/memcache"
+
+	"github.com/bldsoft/gost/cache"
 )
 
 const (
@@ -21,6 +22,7 @@ type MemcacheRepository struct {
 func NewMemcacheRepository(storage *Storage, liveTime time.Duration) *MemcacheRepository {
 	rep := &MemcacheRepository{cache: storage}
 	rep.SetLiveTimeMin(liveTime)
+
 	return rep
 }
 
@@ -32,6 +34,7 @@ func (r *MemcacheRepository) Get(key string) ([]byte, error) {
 	if err != nil || item == nil {
 		return nil, r.mapError(err)
 	}
+
 	return item.Value, err
 }
 
@@ -41,6 +44,7 @@ func (r *MemcacheRepository) GetWithFlags(key string) (data []byte, flags uint32
 	if err != nil || item == nil {
 		return nil, 0, r.mapError(err)
 	}
+
 	return item.Value, item.Flags, err
 }
 
@@ -51,6 +55,7 @@ func (r *MemcacheRepository) GetMulti(keys []string) (map[string][]byte, error) 
 	for key, item := range items {
 		m[key] = item.Value
 	}
+
 	return m, err
 }
 
@@ -69,28 +74,33 @@ func (r *MemcacheRepository) truncExpiration(d time.Duration) int32 {
 	if d > maxDuration {
 		return int32(maxDuration.Seconds())
 	}
+
 	return int32(d.Seconds())
 }
 
 // SetFor writes the given item, unconditionally.
 func (r *MemcacheRepository) SetFor(key string, value []byte, expiration time.Duration) error {
 	key = r.cache.PrepareKey(key)
+
 	return r.cache.Set(&memcache.Item{Key: key, Value: value, Expiration: r.truncExpiration(expiration)})
 }
 
 func (r *MemcacheRepository) SetWithFlags(key string, value []byte, flags uint32) error {
 	key = r.cache.PrepareKey(key)
+
 	return r.cache.Set(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: int32(r.liveTime.Seconds())})
 }
 
 func (r *MemcacheRepository) SetForWithFlags(key string, value []byte, flags uint32, expiration time.Duration) error {
 	key = r.cache.PrepareKey(key)
+
 	return r.cache.Set(&memcache.Item{Key: key, Value: value, Flags: flags, Expiration: r.truncExpiration(expiration)})
 }
 
 // Exist checks if the key exists
 func (r *MemcacheRepository) Exist(key string) bool {
 	key = r.cache.PrepareKey(key)
+
 	return r.cache.Touch(key, int32(r.liveTime.Seconds())) == nil
 }
 
@@ -104,25 +114,27 @@ func (r *MemcacheRepository) Add(key string, value []byte) error {
 // key. ErrNotStored is returned if that condition is not met.
 func (r *MemcacheRepository) AddFor(key string, value []byte, expiration time.Duration) error {
 	key = r.cache.PrepareKey(key)
+
 	return r.cache.Add(&memcache.Item{Key: key, Value: value, Expiration: r.truncExpiration(expiration)})
 }
 
 // Delete deletes the item with the provided key.
 func (r *MemcacheRepository) Delete(key string) error {
 	key = r.cache.PrepareKey(key)
+
 	return r.mapError(r.cache.Delete(key))
 }
 
 // Reset ...
 func (r *MemcacheRepository) Reset() {
-	r.cache.FlushAll()
+	_ = r.cache.FlushAll()
 }
 
 func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error {
 	var err error
 	key = r.cache.PrepareKey(key)
 
-	for i := 0; i < casRetryLimit; i++ {
+	for range casRetryLimit {
 		item, err := r.cache.Get(key)
 
 		if err != nil || item == nil {
@@ -138,8 +150,8 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value []byt
 		item.Value = data
 		err = r.cache.CompareAndSwap(item)
 
-		switch err {
-		case memcache.ErrCASConflict:
+		switch {
+		case errors.Is(err, memcache.ErrCASConflict):
 			time.Sleep(casSleepTime * time.Millisecond)
 		default:
 			return err

@@ -9,12 +9,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"golang.org/x/exp/slices"
+
 	"github.com/bldsoft/gost/discovery"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/memberlist"
-	"github.com/go-chi/chi/v5"
-	"golang.org/x/exp/slices"
 )
 
 const joinRetryInterval = 10 * time.Second
@@ -73,6 +74,7 @@ func (d *Discovery) memberlistConfig() (*memberlist.Config, error) {
 	}
 	memberlistCfg.Delegate = d
 	memberlistCfg.Events = d
+
 	return memberlistCfg, nil
 }
 
@@ -84,7 +86,7 @@ func (d *Discovery) run(ctx context.Context) error {
 	}
 
 	if d.transport != nil {
-		go d.transport.Run()
+		go func() { _ = d.transport.Run() }()
 	}
 
 	d.list, err = memberlist.Create(cfg)
@@ -182,6 +184,7 @@ func (d *Discovery) addService(node *memberlist.Node, withLock bool) {
 	meta, err := d.parseMeta(node)
 	if err != nil {
 		log.Error(err.Error())
+
 		return
 	}
 
@@ -225,6 +228,7 @@ func (d *Discovery) Stop(ctx context.Context) error {
 			log.Logger.InfoOrError(err, "Discovery: leaving from the cluster")
 		}
 	}
+
 	return d.list.Shutdown()
 }
 
@@ -238,6 +242,7 @@ func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, err
 	sort.Slice(res, func(i, j int) bool {
 		return res[i].Name < res[j].Name
 	})
+
 	return res, nil
 }
 
@@ -248,6 +253,7 @@ func (d *Discovery) ServiceByName(ctx context.Context, name string) (*discovery.
 	if !ok {
 		return nil, discovery.NotFound
 	}
+
 	return s, nil
 }
 
@@ -264,11 +270,13 @@ func (d *Discovery) Mount(r chi.Router) {
 // when broadcasting an alive message. It's length is limited to
 // the given byte size. This metadata is available in the Node structure.
 func (d *Discovery) NodeMeta(limit int) []byte {
-	res, err := json.Marshal(d.BaseDiscovery.ServiceInfo)
+	res, err := json.Marshal(d.ServiceInfo)
 	if err != nil {
 		log.Error("Discovery: failed to encode service info: %w")
+
 		return nil
 	}
+
 	return res
 }
 
@@ -278,6 +286,7 @@ func (d *Discovery) parseMeta(node *memberlist.Node) (*discovery.ServiceInstance
 	if err := json.Unmarshal(node.Meta, &meta); err != nil {
 		return nil, fmt.Errorf("Discovery: failed to decode service info: %w", err)
 	}
+
 	return &meta, nil
 }
 
@@ -327,6 +336,7 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 	serviceInfo, err := d.parseMeta(node)
 	if err != nil {
 		log.Error(err.Error())
+
 		return
 	}
 
@@ -336,6 +346,7 @@ func (d *Discovery) NotifyLeave(node *memberlist.Node) {
 	for i := range instances {
 		if instances[i].ID == serviceInfo.ID {
 			instances[i].Healthy = false
+
 			break
 		}
 	}
