@@ -15,12 +15,14 @@ func (e *EntityID) RawID() interface{} {
 func (e *EntityID) SetIDFromString(id string) error {
 	if id == "" {
 		e.ID = bson.NilObjectID
+
 		return nil
 	}
 	objID, err := bson.ObjectIDFromHex(id)
 	if err == nil {
 		e.ID = objID
 	}
+
 	return err
 }
 

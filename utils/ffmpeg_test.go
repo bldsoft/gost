@@ -2,11 +2,20 @@ package utils
 
 import (
 	"context"
+	"os/exec"
 	"reflect"
 	"testing"
 )
 
+func skipIfNoFFProbe(t *testing.T) {
+	t.Helper()
+	if _, err := exec.LookPath("ffprobe"); err != nil {
+		t.Skip("ffprobe not found in PATH")
+	}
+}
+
 func TestProbe(t *testing.T) {
+	skipIfNoFFProbe(t)
 	type tmp struct {
 		Duration float64 `json:"duration"`
 	}
@@ -39,10 +48,12 @@ func TestProbe(t *testing.T) {
 			got, err := Probe(context.TODO(), tt.args.path, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Probe() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if val, _ := got.Duration(); val != tt.want.Duration {
 				t.Errorf("Probe() duration = %v, want.Duration %v", val, tt.want.Duration)
+
 				return
 			}
 		})
@@ -50,6 +61,7 @@ func TestProbe(t *testing.T) {
 }
 
 func TestProbeInto(t *testing.T) {
+	skipIfNoFFProbe(t)
 	type ffprobeRes struct {
 		Format struct {
 			Duration string `json:"duration"`

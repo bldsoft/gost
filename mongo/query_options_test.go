@@ -3,8 +3,9 @@ package mongo
 import (
 	"testing"
 
-	"github.com/bldsoft/gost/repository"
 	"go.mongodb.org/mongo-driver/v2/bson"
+
+	"github.com/bldsoft/gost/repository"
 )
 
 func TestParseQueryOptions(t *testing.T) {
@@ -50,6 +51,7 @@ func TestParseQueryOptions(t *testing.T) {
 						&testString,
 					},
 				}
+
 				return args{
 					q: &repository.QueryOptions{
 						Filter: f,

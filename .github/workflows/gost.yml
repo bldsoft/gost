@@ -1,0 +1,80 @@
+name: gost
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - '**/*.go'
+      - go.mod
+      - go.sum
+      - Makefile
+      - .golangci.yml
+      - .mockery.yml
+      - .github/workflows/gost.yml
+  pull_request:
+    paths:
+      - '**/*.go'
+      - go.mod
+      - go.sum
+      - Makefile
+      - .golangci.yml
+      - .mockery.yml
+      - .github/workflows/gost.yml
+
+concurrency:
+  group: gost-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.13.2
+
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_SERVER: mongodb://127.0.0.1:27017/?replicaSet=rs0&directConnection=true
+      DATABASE_DBNAME: test
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Start MongoDB replica set
+        run: |
+          wait_for() {
+            for _ in $(seq 1 60); do
+              if docker exec mongo mongosh --quiet --eval "$1" 2>/dev/null | grep -q "$2"; then
+                return 0
+              fi
+              sleep 1
+            done
+            echo "::error::$3"
+            docker logs mongo
+            return 1
+          }
+          docker run -d --name mongo -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
+          wait_for 'db.runCommand({ ping: 1 }).ok' 1 'mongod did not become ready'
+          docker exec mongo mongosh --quiet --eval 'rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "127.0.0.1:27017" }] })'
+          wait_for 'db.hello().isWritablePrimary' true 'replica set did not elect a primary'
+      - name: Start Memcached
+        run: docker run -d --name memcached -p 11211:11211 memcached:1.6
+      - name: Start Consul
+        run: docker run -d --name consul -p 8500:8500 hashicorp/consul:1.20 agent -dev -client=0.0.0.0
+      - name: Install ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v2
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@v1.12.3
+      - name: Test
+        run: gotestsum --format=testname -- -race -tags=integration_test ./...

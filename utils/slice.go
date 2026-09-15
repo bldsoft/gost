@@ -6,5 +6,6 @@ func IsIn[T comparable](first T, slice ...T) bool {
 			return true
 		}
 	}
+
 	return false
 }

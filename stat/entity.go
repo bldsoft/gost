@@ -12,6 +12,7 @@ func NewStat(serviceType string, stat interface{}, err error) Stat {
 		stat = "UNAVAILABLE"
 		errMsg = err.Error()
 	}
+
 	return Stat{
 		ServiceType: serviceType,
 		Stat:        stat,

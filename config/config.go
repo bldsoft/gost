@@ -9,9 +9,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/bldsoft/gost/utils"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/viper"
+
+	"github.com/bldsoft/gost/utils"
 )
 
 type IConfig interface {
@@ -36,7 +37,7 @@ func ReadConfig(config IConfig, envPrefix string) {
 
 	path := os.Getenv("CONFIG_DESCRIPTION_PATH")
 	if len(path) > 0 {
-		WriteMarkdownDescription(path, config, envPrefix)
+		_ = WriteMarkdownDescription(path, config, envPrefix)
 	}
 
 	if err := ReadFromEnv(config, envPrefix); err != nil {
@@ -51,6 +52,7 @@ func ReadConfig(config IConfig, envPrefix string) {
 // FormatEnv formats all environment variables in yaml
 func FormatEnv(config IConfig) string {
 	d, _ := yaml.Marshal(config)
+
 	return fmt.Sprintf("GOMAXPROCS: %d\n%s",
 		runtime.GOMAXPROCS(0),
 		string(d),
@@ -62,6 +64,7 @@ func foreachConfig(config interface{}, f func(cfg IConfig) error) error {
 		if c, ok := cfg.(IConfig); ok {
 			return f(c)
 		}
+
 		return nil
 	})
 }
@@ -71,6 +74,7 @@ func foreachConfig(config interface{}, f func(cfg IConfig) error) error {
 func SetDefaults(config interface{}) error {
 	return foreachConfig(config, func(cfg IConfig) error {
 		cfg.SetDefaults()
+
 		return nil
 	})
 }
@@ -86,6 +90,7 @@ func addPrefix(name string, prefix string) string {
 	if name != "" && prefix != "" {
 		return fmt.Sprintf("%s_%s", prefix, name)
 	}
+
 	return prefix + name
 }
 
@@ -100,16 +105,20 @@ func ReadFromEnv(config interface{}, envPrefix string) error {
 	v.AllowEmptyEnv(true)
 
 	var tagToEnvKeyStack [][]string
+
 	return iterateFields(config, envPrefix, func(cfg interface{}) error {
 		tagToEnvKeyStack = append(tagToEnvKeyStack, nil) // push
+
 		return nil
 	}, func(envVarName, envNamePrefix string, _ reflect.StructField, _ reflect.Value) error {
 		tagToEnvKeyStack[len(tagToEnvKeyStack)-1] = append(tagToEnvKeyStack[len(tagToEnvKeyStack)-1], envVarName, addPrefix(envVarName, envNamePrefix))
+
 		return v.BindEnv(envVarName)
 	}, func(cfg interface{}) error {
 		top := tagToEnvKeyStack[len(tagToEnvKeyStack)-1]
 		v.SetEnvKeyReplacer(strings.NewReplacer(top...))
 		tagToEnvKeyStack = tagToEnvKeyStack[:len(tagToEnvKeyStack)-1] // pop
+
 		return v.Unmarshal(&cfg)
 	})
 }
@@ -145,6 +154,7 @@ func iterateFields(config interface{}, prefix string, startSructCb structCallbac
 			if err := iterateFields(field.Addr().Interface(), addPrefix(tagValue, prefix), startSructCb, fieldCb, finishStructCb); err != nil {
 				return err
 			}
+
 			continue
 		}
 
@@ -165,6 +175,7 @@ func iterateFields(config interface{}, prefix string, startSructCb structCallbac
 	if finishStructCb != nil {
 		return finishStructCb(config)
 	}
+
 	return nil
 }
 

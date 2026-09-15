@@ -4,8 +4,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/bldsoft/gost/cache/v2"
 	"github.com/bradfitz/gomemcache/memcache"
+
+	"github.com/bldsoft/gost/cache/v2"
 )
 
 const (
@@ -23,6 +24,7 @@ type MemcacheRepository struct {
 func NewMemcacheRepository(storage *Storage, liveTime time.Duration) *MemcacheRepository {
 	rep := &MemcacheRepository{cache: storage}
 	rep.SetLiveTimeMin(liveTime)
+
 	return rep
 }
 
@@ -34,6 +36,7 @@ func (r *MemcacheRepository) Get(key string) (*cache.Item, error) {
 	if err != nil || item == nil {
 		return nil, r.mapError(err)
 	}
+
 	return &cache.Item{
 		Value: item.Value,
 		TTL:   r.itemExpirationToDuration(item.Expiration),
@@ -43,6 +46,7 @@ func (r *MemcacheRepository) Get(key string) (*cache.Item, error) {
 
 func (r *MemcacheRepository) Exist(key string) bool {
 	key = r.cache.PrepareKey(key)
+
 	return r.cache.Touch(key, int32(r.liveTime.Seconds())) == nil
 }
 
@@ -68,12 +72,13 @@ func (r *MemcacheRepository) Add(key string, val []byte, item ...cache.ItemF) er
 // Delete deletes the item with the provided key.
 func (r *MemcacheRepository) Delete(key string) error {
 	key = r.cache.PrepareKey(key)
+
 	return r.mapError(r.cache.Delete(key))
 }
 
 // Reset ...
 func (r *MemcacheRepository) Reset() {
-	r.cache.FlushAll()
+	_ = r.cache.FlushAll()
 }
 
 func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value *cache.Item) (*cache.Item, error), sleepDur ...time.Duration) error {
@@ -126,6 +131,7 @@ func (r *MemcacheRepository) AddOrGet(key string, val []byte, opts ...cache.Item
 
 	if err := r.Add(key, val, opts...); errors.Is(err, cache.ErrExists) {
 		i, err := r.Get(key)
+
 		return i, false, err
 	}
 
@@ -164,6 +170,7 @@ func (r *MemcacheRepository) item(key string, val []byte, itemFs ...cache.ItemF)
 	if cIt.TTL != 0 {
 		it.Expiration = truncExpiration(cIt.TTL)
 	}
+
 	return &it
 }
 
@@ -183,6 +190,7 @@ func truncExpiration(d time.Duration) int32 {
 	if d > maxDuration {
 		return int32(maxDuration.Seconds())
 	}
+
 	return int32(d.Seconds())
 }
 

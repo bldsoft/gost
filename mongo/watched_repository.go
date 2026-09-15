@@ -6,9 +6,10 @@ import (
 	"slices"
 	"sync"
 
+	"go.mongodb.org/mongo-driver/v2/bson"
+
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
-	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 const updateChanBufferSize = 12500
@@ -55,6 +56,7 @@ func NewWatchedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, coll
 	for _, w := range watchers {
 		rep.AddWatcher(w)
 	}
+
 	return rep
 }
 
@@ -66,6 +68,7 @@ func (r *WatchedRepository[T, U]) AddWatcher(w repository.Watcher[T, U]) (unsubs
 	}
 
 	var once sync.Once
+
 	return func() {
 		once.Do(func() {
 			r.watcherOpsC <- watcherAction[T, U]{
@@ -80,11 +83,12 @@ func (r *WatchedRepository[T, U]) AddWatcher(w repository.Watcher[T, U]) (unsubs
 // so that change stream delete events carry the document state prior to the change
 // (fullDocumentBeforeChange). Without this, delete events arrive with only the document key.
 func (r *WatchedRepository[T, U]) EnablePreAndPostImages(ctx context.Context) error {
-	coll := r.Repository.Collection()
+	coll := r.Collection()
 	cmd := bson.D{
 		{Key: "collMod", Value: coll.Name()},
 		{Key: "changeStreamPreAndPostImages", Value: bson.M{"enabled": true}},
 	}
+
 	return WrapErr(coll.Database().RunCommand(ctx, cmd).Err())
 }
 
@@ -97,7 +101,7 @@ func (r *WatchedRepository[T, U]) init() {
 		Delete: repository.EventTypeDelete,
 	}
 
-	r.mongoWatcher = NewWatcher(r.Repository.Collection())
+	r.mongoWatcher = NewWatcher(r.Collection())
 	r.mongoWatcher.SetHandler(func(fullDocument bson.Raw, opType OperationType) {
 		var e T
 		if err := bson.Unmarshal(fullDocument, &e); err != nil {
@@ -117,16 +121,18 @@ func (r *WatchedRepository[T, U]) init() {
 			case watcherOp := <-r.watcherOpsC:
 				if watcherOp.action == watcherActionSubscribe {
 					if err := watcherOp.entry.w.WarmUp(context.Background(), r.Repository); err != nil {
-						log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Repository.Name()}, "Failed to warm up")
+						log.Logger.ErrorWithFields(log.Fields{"err": err, "collection": r.Name()}, "Failed to warm up")
 					} else {
-						log.Logger.DebugWithFields(log.Fields{"collection": r.Repository.Name()}, "Warmed up")
+						log.Logger.DebugWithFields(log.Fields{"collection": r.Name()}, "Warmed up")
 					}
 					r.handlers = append(r.handlers, watcherOp.entry)
+
 					continue
 				}
 
 				if watcherOp.action != watcherActionUnsubscribe {
-					log.Logger.ErrorWithFields(log.Fields{"action": watcherOp.action, "collection": r.Repository.Name()}, "Unknown watcher action")
+					log.Logger.ErrorWithFields(log.Fields{"action": watcherOp.action, "collection": r.Name()}, "Unknown watcher action")
+
 					continue
 				}
 

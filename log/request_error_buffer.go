@@ -7,8 +7,9 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/bldsoft/gost/utils"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/bldsoft/gost/utils"
 )
 
 var requestErrorBufferCtxKey = &utils.ContextKey{Name: "RequestErrorBuf"}
@@ -30,7 +31,8 @@ type hijackWriterLogErr struct {
 }
 
 func (w *hijackWriterLogErr) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	hj := w.wrapResponseWriterLogErr.WrapResponseWriter.(http.Hijacker)
+	hj := w.WrapResponseWriter.(http.Hijacker)
+
 	return hj.Hijack()
 }
 
@@ -79,6 +81,7 @@ func LogRequestErrBufferFromContext(ctx context.Context) *bytes.Buffer {
 			return buf
 		}
 	}
+
 	return nil
 }
 
@@ -90,5 +93,6 @@ func WithLogRequestErrBuffer(next http.Handler) http.Handler {
 		r = r.WithContext(context.WithValue(r.Context(), requestErrorBufferCtxKey, ww.ErrBuffer()))
 		next.ServeHTTP(ww, r)
 	}
+
 	return http.HandlerFunc(fn)
 }

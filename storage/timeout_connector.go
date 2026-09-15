@@ -20,12 +20,14 @@ func DBConnectAsync(wg *sync.WaitGroup, connect func(), n int, sleepPeriod time.
 					}
 				}()
 				connect()
+
 				return
 			}()
 
 			if err != nil {
 				log.ErrorWithFields(log.Fields{"error": err}, "error connecting to db")
 				time.Sleep(sleepPeriod)
+
 				continue
 			}
 

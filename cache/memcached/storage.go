@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bldsoft/gost/log"
 	"github.com/bradfitz/gomemcache/memcache"
 	stat_client "github.com/grobie/gomemcache/memcache"
 	"github.com/mitchellh/mapstructure"
+
+	"github.com/bldsoft/gost/log"
 )
 
 type Storage struct {
@@ -33,6 +34,7 @@ func NewStorage(servers []string, cfg Config) *Storage {
 	if err != nil {
 		log.Logger.WarnWithFields(log.Fields{"err": err}, "failed to create stat memcached client")
 	}
+
 	return &Storage{
 		Client:     client,
 		statClient: statClient,
@@ -54,6 +56,7 @@ func (s *Storage) Stats(ctx context.Context) ([]*Stats, error) {
 		stat.Instance = key.String()
 		res = append(res, &stat)
 	}
+
 	return res, nil
 }
 
@@ -61,6 +64,7 @@ func (s *Storage) PrepareKey(key string) string {
 	if len(s.keyPrefix) == 0 {
 		return key
 	}
+
 	return s.keyPrefix + key
 }
 
@@ -73,5 +77,6 @@ func (s *Storage) PrepareKeys(keys []string) []string {
 	for i, k := range keys {
 		newKeys[i] = s.PrepareKey(k)
 	}
+
 	return newKeys
 }

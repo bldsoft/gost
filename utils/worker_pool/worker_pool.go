@@ -47,6 +47,7 @@ func (wp *WorkerPool) SetWorkerN(n int64) *WorkerPool {
 		}
 	}
 	atomic.StoreInt64(&wp.workerN, n)
+
 	return wp
 }
 
@@ -60,6 +61,7 @@ func (wp *WorkerPool) taskChan() chan func() {
 			wp.taskC = make(chan func(), workPoolTaskChannelSize)
 		}
 	})
+
 	return wp.taskC
 }
 

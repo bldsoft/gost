@@ -16,6 +16,7 @@ type Webhook struct {
 
 func NewWebhook(cfg Config) *Webhook {
 	cfg = prepareWebhookConfig(cfg)
+
 	return &Webhook{
 		Cfg: cfg,
 	}
@@ -38,14 +39,16 @@ func (w *Webhook) Send(ctx context.Context, receiver Receiver, msg channel.Messa
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 300 {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
+
 		return fmt.Errorf("%d: %s", resp.StatusCode, string(body))
 	}
+
 	return nil
 }

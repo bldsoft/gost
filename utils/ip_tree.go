@@ -33,6 +33,7 @@ func (s *IPTreeSet) Put(ipCidrs ...string) error {
 			if err := s.PutPrefixes(pfx); err != nil {
 				return err
 			}
+
 			continue
 		}
 		addr, err := netip.ParseAddr(ipCidr)
@@ -43,6 +44,7 @@ func (s *IPTreeSet) Put(ipCidrs ...string) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -55,6 +57,7 @@ func (s *IPTreeSet) PutIPs(ips ...netip.Addr) error {
 		}
 		s.items.Insert(pfx)
 	}
+
 	return nil
 }
 
@@ -67,6 +70,7 @@ func (s *IPTreeSet) PutPrefixes(pfxs ...netip.Prefix) error {
 		}
 		s.items.Insert(canon)
 	}
+
 	return nil
 }
 
@@ -81,6 +85,7 @@ func (s *IPTreeSet) Delete(ipCidrs ...string) error {
 		}
 		s.items.Delete(pfx)
 	}
+
 	return nil
 }
 
@@ -88,6 +93,7 @@ func (s *IPTreeSet) Match(ip netip.Addr) bool {
 	if s == nil || s.items == nil {
 		return false
 	}
+
 	return s.items.Lookup(CanonicalAddr(ip))
 }
 
@@ -95,6 +101,7 @@ func (s *IPTreeSet) Len() int {
 	if s == nil || s.items == nil {
 		return 0
 	}
+
 	return s.items.Size()
 }
 
@@ -120,12 +127,14 @@ func (t *IPTree[V]) Insert(ipCidr string, val V) error {
 		if err != nil {
 			return err
 		}
+
 		return t.PutPrefixes(val, pfx)
 	}
 	addr, err := netip.ParseAddr(ipCidr)
 	if err != nil {
 		return err
 	}
+
 	return t.PutIPs(val, addr)
 }
 
@@ -138,6 +147,7 @@ func (t *IPTree[V]) PutIPs(val V, ips ...netip.Addr) error {
 		}
 		t.table.Insert(pfx, val)
 	}
+
 	return nil
 }
 
@@ -150,6 +160,7 @@ func (t *IPTree[V]) PutPrefixes(val V, pfxs ...netip.Prefix) error {
 		}
 		t.table.Insert(canon, val)
 	}
+
 	return nil
 }
 
@@ -162,6 +173,7 @@ func (t *IPTree[V]) Delete(ipCidr string) error {
 		return err
 	}
 	t.table.Delete(pfx)
+
 	return nil
 }
 
@@ -170,6 +182,7 @@ func (t *IPTree[V]) Lookup(ip netip.Addr) (V, bool) {
 	if t == nil || t.table == nil {
 		return zero, false
 	}
+
 	return t.table.Lookup(CanonicalAddr(ip))
 }
 
@@ -177,7 +190,9 @@ func (t *IPTree[V]) LookupString(ip string) (V, bool) {
 	addr, err := netip.ParseAddr(ip)
 	if err != nil {
 		var zero V
+
 		return zero, false
 	}
+
 	return t.Lookup(addr)
 }

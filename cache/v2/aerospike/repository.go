@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bldsoft/gost/cache/v2"
-	"github.com/bldsoft/gost/log"
-
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	aeroTypes "github.com/aerospike/aerospike-client-go/v8/types"
+
+	"github.com/bldsoft/gost/cache/v2"
+	"github.com/bldsoft/gost/log"
 )
 
 const (
@@ -38,6 +38,7 @@ func NewRepository(cache *Storage, liveTime time.Duration, setName string) *Repo
 		itemSizeLimit: defaultItemSizeLimit,
 	}
 	rep.SetLiveTimeMin(liveTime)
+
 	return rep
 }
 
@@ -53,6 +54,7 @@ func (r *Repository) SetItemSizeLimit(limit int) {
 
 func (r *Repository) Get(key string) (*cache.Item, error) {
 	res, _, err := r.get(key)
+
 	return res, err
 }
 
@@ -66,6 +68,7 @@ func (r *Repository) get(key string) (*cache.Item, uint32, error) {
 		if errors.Is(err, aero.ErrKeyNotFound) {
 			return nil, 0, cache.ErrCacheMiss
 		}
+
 		return nil, 0, err
 	}
 
@@ -80,6 +83,7 @@ func (r *Repository) get(key string) (*cache.Item, uint32, error) {
 
 	if item.Bins[continuationBinKey] == nil {
 		res.Value = mainValue
+
 		return res, item.Generation, nil
 	}
 
@@ -132,6 +136,7 @@ func (r *Repository) Exist(key string) bool {
 		return false
 	}
 	exists, _ := r.cache.Exists(nil, asKey)
+
 	return exists
 }
 
@@ -159,6 +164,7 @@ func (r *Repository) Delete(key string) error {
 				asKey, err := r.key(k.(string))
 				if err != nil {
 					log.WarnWithFields(log.Fields{"key": k, "err": err}, "failed to create key for continuation deletion")
+
 					continue
 				}
 				keys = append(keys, asKey)
@@ -185,6 +191,7 @@ func (r *Repository) Add(key string, val []byte, item ...cache.ItemF) error {
 	if errors.As(err, &asErr) && asErr.ResultCode == aeroTypes.KEY_EXISTS_ERROR {
 		return cache.ErrExists
 	}
+
 	return err
 }
 
@@ -216,6 +223,7 @@ func (r *Repository) CompareAndSwap(
 		var asErr *aero.AerospikeError
 		if errors.As(err, &asErr) && asErr.ResultCode == aeroTypes.GENERATION_ERROR {
 			time.Sleep(casSleepTime * time.Millisecond)
+
 			continue
 		}
 		if err != nil {
@@ -239,6 +247,7 @@ func (r *Repository) AddOrGet(key string, val []byte, opts ...cache.ItemF) (*cac
 
 	if err := r.Add(key, val, opts...); errors.Is(err, cache.ErrExists) {
 		i, err := r.Get(key)
+
 		return i, false, err
 	}
 
@@ -261,6 +270,7 @@ func (r *Repository) put(replace bool, key string, val []byte, generation *uint3
 	if err != nil {
 		return err
 	}
+
 	return r.cache.BatchOperate(bop, batchWrites)
 }
 
@@ -335,6 +345,7 @@ func (r *Repository) split(key string, val []byte) ([]byte, []continuation) {
 			Value: val[i : i+min(r.itemSizeLimit, len(val)-i)],
 		})
 	}
+
 	return val[:r.itemSizeLimit], continuations
 }
 
@@ -343,6 +354,7 @@ func truncExpiration(d time.Duration) uint32 {
 	if d > maxDuration {
 		return uint32(maxDuration.Seconds())
 	}
+
 	return uint32(d.Seconds())
 }
 

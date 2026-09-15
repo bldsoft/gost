@@ -32,6 +32,7 @@ func CanonicalPrefix(pfx netip.Prefix) (netip.Prefix, error) {
 	if !out.IsValid() {
 		return netip.Prefix{}, ErrInvalidIP
 	}
+
 	return out.Masked(), nil
 }
 
@@ -44,6 +45,7 @@ func hostPrefix(addr netip.Addr) (netip.Prefix, error) {
 	if !pfx.IsValid() {
 		return netip.Prefix{}, ErrInvalidIP
 	}
+
 	return pfx, nil
 }
 
@@ -53,11 +55,13 @@ func IPKeyToPrefix(ip string) (netip.Prefix, error) {
 		if err != nil {
 			return netip.Prefix{}, err
 		}
+
 		return CanonicalPrefix(pfx)
 	}
 	addr, err := netip.ParseAddr(ip)
 	if err != nil {
 		return netip.Prefix{}, err
 	}
+
 	return hostPrefix(addr)
 }

@@ -40,6 +40,7 @@ func (m *AsyncJobGroup) runParallel(f func(r AsyncRunner) error) error {
 			return f(r)
 		})
 	}
+
 	return errGroup.Wait()
 }
 
@@ -52,6 +53,7 @@ func (m *AsyncJobGroup) Run() error {
 		}()
 		err := r.Run()
 		log.DebugOrErrorf(err, "%s job ended ", getType(r))
+
 		return err
 	})
 }
@@ -60,6 +62,7 @@ func (m *AsyncJobGroup) Stop(ctx context.Context) error {
 		if err := r.Stop(ctx); err != nil {
 			return fmt.Errorf("%s: %w", getType(r), err)
 		}
+
 		return nil
 	})
 }

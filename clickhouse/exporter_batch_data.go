@@ -20,6 +20,7 @@ func newExporterBatch[T any](storage *Storage, table string) *exporterBatch[T] {
 	if err != nil {
 		panic(err)
 	}
+
 	return &exporterBatch[T]{batch: batch}
 }
 
@@ -28,6 +29,7 @@ func (e *exporterBatch[T]) Send() error {
 		return err
 	}
 	e.n = 0
+
 	return nil
 }
 
@@ -42,6 +44,7 @@ func (e *exporterBatch[T]) Add(items ...T) (n int, err error) {
 		}
 		e.n++
 	}
+
 	return len(items), nil
 }
 
@@ -50,6 +53,7 @@ func (e *exporterBatch[T]) Reset() error {
 		return err
 	}
 	e.n = 0
+
 	return nil
 }
 
@@ -61,14 +65,14 @@ func columnNames[T any]() []string {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
+
 	return columnNamesFromType(t)
 }
 
 // https://github.com/ClickHouse/clickhouse-go/blob/main/struct_map.go
 func columnNamesFromType(t reflect.Type) []string {
 	var keys []string
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
+	for f := range t.Fields() {
 		name := f.Name
 
 		if tn := f.Tag.Get("ch"); len(tn) != 0 {
@@ -85,5 +89,6 @@ func columnNamesFromType(t reflect.Type) []string {
 			keys = append(keys, name)
 		}
 	}
+
 	return keys
 }

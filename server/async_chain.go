@@ -21,6 +21,7 @@ func (c *AsyncJobChain) Run() error {
 			return err
 		}
 	}
+
 	return nil
 }
 

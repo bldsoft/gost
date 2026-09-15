@@ -43,6 +43,7 @@ func (l *paramList) WriteTo(formatter Formatter) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -56,6 +57,7 @@ func formatValue(v reflect.Value) string {
 		for i := 0; i < v.Len(); i++ {
 			sb.WriteString(fmt.Sprintf("%v,", v.Index(i)))
 		}
+
 		return sb.String()[:sb.Len()-1]
 	default:
 		return fmt.Sprintf("%v", v)
@@ -75,6 +77,7 @@ func WriteConfigDescription(config interface{}, envPrefix string, formatter Form
 		if description := field.Tag.Get(DescriptionTagName); description != "-" {
 			list.Add(addPrefix(envVarName, envNamePrefix), formatValue(value), description)
 		}
+
 		return nil
 	}, nil); err != nil {
 		return err
@@ -88,6 +91,7 @@ func WriteMarkdownDescription(filename string, config interface{}, envPrefix str
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
+
 	return WriteConfigDescription(config, envPrefix, NewMarkdownFormatter(file, true))
 }

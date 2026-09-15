@@ -5,10 +5,10 @@ import (
 	"time"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
-	"github.com/bldsoft/gost/log"
-
 	// logger "github.com/aerospike/aerospike-client-go/v8/logger"
 	"github.com/mitchellh/mapstructure"
+
+	"github.com/bldsoft/gost/log"
 )
 
 type Storage struct {
@@ -48,6 +48,7 @@ func NewStorage(cfg Config) (*Storage, error) {
 	if _, err := client.WarmUp(0); err != nil {
 		log.WarnWithFields(log.Fields{"err": err}, "failed to warm up aerospike client")
 	}
+
 	return &Storage{
 		Client:    client,
 		namespace: cfg.Namespace,
@@ -64,24 +65,8 @@ func (s *Storage) Stat() (*Stats, error) {
 	if err := mapstructure.WeakDecode(stats, &stat); err != nil {
 		return nil, fmt.Errorf("failed to decode aerospike stats: %w", err)
 	}
-	return &stat, nil
-}
 
-func (s *Storage) getWritePolicy(generation uint32, expiration uint32) *aero.WritePolicy {
-	wp := aero.NewWritePolicy(generation, expiration)
-	if s.cfg.WritePolicy.TotalTimeoutMs > 0 {
-		wp.TotalTimeout = time.Duration(s.cfg.WritePolicy.TotalTimeoutMs) * time.Millisecond
-	}
-	if s.cfg.WritePolicy.MaxRetries > 0 {
-		wp.MaxRetries = s.cfg.WritePolicy.MaxRetries
-	}
-	if s.cfg.WritePolicy.SleepBetweenRetriesMs > 0 {
-		wp.SleepBetweenRetries = time.Duration(s.cfg.WritePolicy.SleepBetweenRetriesMs) * time.Millisecond
-	}
-	if s.cfg.WritePolicy.SocketTimeoutMs > 0 {
-		wp.SocketTimeout = time.Duration(s.cfg.WritePolicy.SocketTimeoutMs) * time.Millisecond
-	}
-	return wp
+	return &stat, nil
 }
 
 func (s *Storage) getBatchWritePolicy() *aero.BatchPolicy {
@@ -98,6 +83,7 @@ func (s *Storage) getBatchWritePolicy() *aero.BatchPolicy {
 	if s.cfg.WritePolicy.SocketTimeoutMs > 0 {
 		bp.SocketTimeout = time.Duration(s.cfg.WritePolicy.SocketTimeoutMs) * time.Millisecond
 	}
+
 	return bp
 }
 
@@ -115,5 +101,6 @@ func (s *Storage) getReadPolicy() *aero.BasePolicy {
 	if s.cfg.ReadPolicy.SocketTimeoutMs > 0 {
 		rp.SocketTimeout = time.Duration(s.cfg.ReadPolicy.SocketTimeoutMs) * time.Millisecond
 	}
+
 	return rp
 }

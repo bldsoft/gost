@@ -25,6 +25,7 @@ func pseudoSleep(cb *CircuitBreaker, period time.Duration) {
 
 func succeed(cb *CircuitBreaker) error {
 	_, err := cb.Execute(func() (interface{}, error) { return nil, nil })
+
 	return err
 }
 
@@ -33,10 +34,12 @@ func succeedLater(cb *CircuitBreaker, delay time.Duration) <-chan error {
 	go func() {
 		_, err := cb.Execute(func() (interface{}, error) {
 			time.Sleep(delay)
+
 			return nil, nil
 		})
 		ch <- err
 	}()
+
 	return ch
 }
 
@@ -47,6 +50,7 @@ func succeed2Step(cb *TwoStepCircuitBreaker) error {
 	}
 
 	done(true)
+
 	return nil
 }
 
@@ -56,6 +60,7 @@ func fail(cb *CircuitBreaker) error {
 	if err == failErr {
 		return nil
 	}
+
 	return err
 }
 
@@ -66,11 +71,13 @@ func fail2Step(cb *TwoStepCircuitBreaker) error {
 	}
 
 	done(false)
+
 	return nil
 }
 
 func causePanic(cb *CircuitBreaker) error {
 	_, err := cb.Execute(func() (interface{}, error) { panic("oops"); return nil, nil })
+
 	return err
 }
 
@@ -84,6 +91,7 @@ func newCustom() *CircuitBreaker {
 			numReqs := counts.Requests
 			failureRatio := float64(counts.TotalFailures) / float64(numReqs)
 			counts.clear() // no effect on customCB.counts
+
 			return numReqs >= 3 && failureRatio >= 0.6
 		},
 		OnStateChange: func(name string, from State, to State) {
@@ -102,7 +110,6 @@ func newNegativeDurationCB() *CircuitBreaker {
 
 var defaultCB = NewCircuitBreaker(Settings{})
 var customCB = newCustom()
-var negativeDurationCB = newNegativeDurationCB()
 
 func TestStateConstants(t *testing.T) {
 	assert.Equal(t, State(0), StateClosed)
@@ -153,7 +160,7 @@ func TestNewCircuitBreaker(t *testing.T) {
 func TestDefaultCircuitBreaker(t *testing.T) {
 	assert.Equal(t, "", defaultCB.Name())
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		assert.Nil(t, fail(defaultCB))
 	}
 	assert.Equal(t, StateClosed, defaultCB.State())
@@ -168,7 +175,7 @@ func TestDefaultCircuitBreaker(t *testing.T) {
 	assert.Equal(t, Counts{7, 1, 6, 0, 1}, defaultCB.counts)
 
 	// StateClosed to StateOpen
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		assert.Nil(t, fail(defaultCB)) // 6 consecutive failures
 	}
 	assert.Equal(t, StateOpen, defaultCB.State())
@@ -208,7 +215,7 @@ func TestDefaultCircuitBreaker(t *testing.T) {
 func TestCustomCircuitBreaker(t *testing.T) {
 	assert.Equal(t, "cb", customCB.Name())
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		assert.Nil(t, succeed(customCB))
 		assert.Nil(t, fail(customCB))
 	}
@@ -247,7 +254,7 @@ func TestCustomCircuitBreaker(t *testing.T) {
 	// StateHalfOpen to StateClosed
 	ch := succeedLater(customCB, time.Duration(100)*time.Millisecond) // 3 consecutive successes
 	time.Sleep(time.Duration(50) * time.Millisecond)
-	assert.Equal(t, Counts{3, 2, 0, 2, 0}, customCB.counts)
+	assert.Equal(t, Counts{3, 2, 0, 2, 0}, customCB.Counts())
 	assert.Error(t, succeed(customCB)) // over MaxRequests
 	assert.Nil(t, <-ch)
 	assert.Equal(t, StateClosed, customCB.State())
@@ -262,7 +269,7 @@ func TestTwoStepCircuitBreaker(t *testing.T) {
 	})
 	assert.Equal(t, "tscb", tscb.Name())
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		assert.Nil(t, fail2Step(tscb))
 	}
 
@@ -278,7 +285,7 @@ func TestTwoStepCircuitBreaker(t *testing.T) {
 	assert.Equal(t, Counts{7, 1, 6, 0, 1}, tscb.cb.counts)
 
 	// StateClosed to StateOpen
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		assert.Nil(t, fail2Step(tscb)) // 6 consecutive failures
 	}
 	assert.Equal(t, StateOpen, tscb.State())
@@ -316,7 +323,7 @@ func TestTwoStepCircuitBreaker(t *testing.T) {
 }
 
 func TestPanicInRequest(t *testing.T) {
-	assert.Panics(t, func() { causePanic(defaultCB) })
+	assert.Panics(t, func() { _ = causePanic(defaultCB) })
 	assert.Equal(t, Counts{1, 0, 1, 0, 1}, defaultCB.counts)
 }
 
@@ -325,7 +332,7 @@ func TestGeneration(t *testing.T) {
 	assert.Nil(t, succeed(customCB))
 	ch := succeedLater(customCB, time.Duration(1500)*time.Millisecond)
 	time.Sleep(time.Duration(500) * time.Millisecond)
-	assert.Equal(t, Counts{2, 1, 0, 1, 0}, customCB.counts)
+	assert.Equal(t, Counts{2, 1, 0, 1, 0}, customCB.Counts())
 
 	time.Sleep(time.Duration(500) * time.Millisecond) // over Interval
 	assert.Equal(t, StateClosed, customCB.State())
@@ -342,7 +349,7 @@ func TestCustomIsSuccessful(t *testing.T) {
 	}
 	cb := NewCircuitBreaker(Settings{IsSuccessful: isSuccessful})
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		assert.Nil(t, fail(cb))
 	}
 	assert.Equal(t, StateClosed, cb.State())
@@ -353,7 +360,7 @@ func TestCustomIsSuccessful(t *testing.T) {
 	cb.isSuccessful = func(res any, err error) error {
 		return err
 	}
-	for i := 0; i < 6; i++ {
+	for range 6 {
 		assert.Nil(t, fail(cb))
 	}
 	assert.Equal(t, StateOpen, cb.State())
@@ -367,20 +374,20 @@ func TestCircuitBreakerInParallel(t *testing.T) {
 
 	const numReqs = 10000
 	routine := func() {
-		for i := 0; i < numReqs; i++ {
+		for range numReqs {
 			ch <- succeed(customCB)
 		}
 	}
 
 	const numRoutines = 10
-	for i := 0; i < numRoutines; i++ {
+	for range numRoutines {
 		go routine()
 	}
 
 	total := uint32(numReqs * numRoutines)
-	for i := uint32(0); i < total; i++ {
+	for range total {
 		err := <-ch
 		assert.Nil(t, err)
 	}
-	assert.Equal(t, Counts{total, total, 0, total, 0}, customCB.counts)
+	assert.Equal(t, Counts{total, total, 0, total, 0}, customCB.Counts())
 }

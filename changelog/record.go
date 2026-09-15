@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/go-chi/chi/v5/middleware"
+
 	"github.com/bldsoft/gost/auth"
 	"github.com/bldsoft/gost/repository"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 const BsonFieldNameUserID = "userID"
@@ -71,7 +72,7 @@ func NewRecord(ctx context.Context, collectionName string, op Operation, entity 
 	}
 
 	if entity != nil {
-		rec.SetData(entity)
+		_ = rec.SetData(entity)
 		rec.EntityID = entity.StringID()
 	}
 
@@ -84,6 +85,7 @@ func (r *Record) SetData(entity interface{}) error {
 		return err
 	}
 	r.Data = string(data)
+
 	return nil
 }
 

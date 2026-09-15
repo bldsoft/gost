@@ -9,14 +9,14 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
-	"github.com/bldsoft/gost/log"
-	"github.com/bldsoft/gost/storage"
 	"github.com/golang-migrate/migrate/v4"
 	mm "github.com/golang-migrate/migrate/v4/database/clickhouse"
-	"github.com/pkg/errors"
-
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/stub"
+	"github.com/pkg/errors"
+
+	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/storage"
 )
 
 type Auth = clickhouse.Auth
@@ -43,6 +43,7 @@ func (s *Storage) Auth() Auth {
 
 func (s *Storage) InCluster(clusterName string) *Storage {
 	s.clusterName = clusterName
+
 	return s
 }
 
@@ -55,6 +56,7 @@ func (s *Storage) IsReplicationEnabled() bool {
 		return true
 	}
 	_, err := s.Db.Exec("SELECT * FROM system.zookeeper WHERE path = '/' LIMIT 0")
+
 	return err == nil
 }
 
@@ -68,12 +70,14 @@ func (db *Storage) Connect() {
 	connect := clickhouse.OpenDB(db.cfg.options)
 	if err := connect.Ping(); err != nil {
 		db.LogError(err)
+
 		return
 	}
 
 	native, err := clickhouse.Open(db.cfg.options)
 	if err != nil {
 		db.LogError(err)
+
 		return
 	}
 
@@ -107,6 +111,7 @@ func (db *Storage) Disconnect(ctx context.Context) error {
 		return errors.Wrap(err, "Clickhouse disconnect failed")
 	}
 	log.Info("Clickhouse disconnected.")
+
 	return nil
 }
 

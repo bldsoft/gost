@@ -21,6 +21,7 @@ func (r *contextAsyncRunner) Run() error {
 	r.ctx, r.stop = context.WithCancel(context.Background())
 	r.stopped = make(chan struct{})
 	defer close(r.stopped)
+
 	return r.run(r.ctx)
 }
 

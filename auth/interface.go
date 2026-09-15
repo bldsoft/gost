@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/bldsoft/gost/repository"
 	"github.com/gorilla/sessions"
+
+	"github.com/bldsoft/gost/repository"
 )
 
-//go:generate mockery --case=camel --all --with-expecter=true
+//go:generate mockery
 
 var ErrUnauthorized = errors.New("unauthorized")
 

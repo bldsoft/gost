@@ -4,12 +4,11 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/bldsoft/gost/changelog"
 	jsonpatch "github.com/evanphx/json-patch"
 
+	"github.com/bldsoft/gost/changelog"
 	"github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
-	// "go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type LoggedEntity[T any] interface {
@@ -32,6 +31,7 @@ func NewLoggedRepository[T any, U LoggedEntity[T]](db *mongo.Storage, collection
 func WrapRepository[T any, U LoggedEntity[T]](repo mongo.Repository[T, U], changeLogRepo *ChangeLogRepository) *LoggedRepository[T, U] {
 	db := repo.Collection().Database()
 	_ = db.CreateCollection(context.Background(), repo.Collection().Name())
+
 	return &LoggedRepository[T, U]{repo, changeLogRepo}
 }
 
@@ -41,15 +41,17 @@ func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err erro
 		return err
 	}
 
-	_, err = r.Repository.WithTransaction(ctx, func(ctx context.Context) (interface{}, error) {
+	_, err = r.WithTransaction(ctx, func(ctx context.Context) (interface{}, error) {
 		entity.SetChangeID(rec.StringID())
 		if err := r.Repository.Insert(ctx, entity); err != nil {
 			return nil, err
 		}
 		rec.Record.EntityID = entity.StringID()
-		rec.SetData(entity)
+		_ = rec.SetData(entity)
+
 		return nil, r.changeLogRep.Insert(ctx, rec)
 	})
+
 	return err
 }
 
@@ -67,6 +69,7 @@ func (r *LoggedRepository[T, U]) getDiff(old U, new U) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return patch, nil
 }
 
@@ -76,9 +79,9 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U, opt ...*r
 		return err
 	}
 
-	_, err = r.Repository.WithTransaction(ctx, func(ctx context.Context) (interface{}, error) {
+	_, err = r.WithTransaction(ctx, func(ctx context.Context) (interface{}, error) {
 		entity.SetChangeID(rec.StringID())
-		oldEntity, err := r.Repository.UpdateAndGetByID(ctx, entity, false, opt...)
+		oldEntity, err := r.UpdateAndGetByID(ctx, entity, false, opt...)
 		if err != nil {
 			return nil, err
 		}
@@ -89,9 +92,11 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U, opt ...*r
 		if err != nil {
 			return nil, err
 		}
-		rec.Record.Data = string(data)
+		rec.Data = string(data)
+
 		return nil, r.changeLogRep.Insert(ctx, rec)
 	})
+
 	return err
 }
 
@@ -101,20 +106,22 @@ func (r *LoggedRepository[T, U]) Delete(ctx context.Context, id interface{}, opt
 		return err
 	}
 
-	_, err = r.Repository.WithTransaction(ctx, func(ctx context.Context) (interface{}, error) {
+	_, err = r.WithTransaction(ctx, func(ctx context.Context) (interface{}, error) {
 		if err := r.Repository.Delete(ctx, id, options...); err != nil {
 			return nil, err
 		}
 
 		rec.Record.EntityID = repository.ToStringID[T, U](id)
-		if entity, err := r.Repository.FindByID(ctx, id); err == nil {
+		if entity, err := r.FindByID(ctx, id); err == nil {
 			entity.SetChangeID(rec.StringID())
 			if err := r.Repository.Update(ctx, entity); err != nil {
 				return nil, err
 			}
-			rec.Record.SetData(entity)
+			_ = rec.SetData(entity)
 		}
+
 		return nil, r.changeLogRep.Insert(ctx, rec)
 	})
+
 	return err
 }

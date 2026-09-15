@@ -24,6 +24,7 @@ func (c *JwtConfig) PrivateKey() jwk.Key {
 
 func (c *JwtConfig) PublicKey() jwk.Key {
 	public, _ := c.key.PublicKey()
+
 	return public
 }
 
@@ -42,6 +43,7 @@ func (c *JwtConfig) Validate() (err error) {
 			return fmt.Errorf("failed to parse jwt key: %w", err)
 		}
 	}
+
 	return nil
 }
 
