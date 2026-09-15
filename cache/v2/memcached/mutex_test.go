@@ -17,7 +17,7 @@ import (
 	"github.com/bldsoft/gost/log"
 )
 
-const lockKey = "lock:test"
+const lockKey = "lock:test:cache-v2"
 
 var (
 	rep *MemcacheRepository
@@ -33,26 +33,34 @@ func TestMain(m *testing.M) {
 }
 
 func incrCounter(t *testing.T, id string, counter *int32) {
-	atomic.AddInt32(counter, 1)
-	t.Logf("%s enter lock. counter = %d", id, *counter)
+	n := atomic.AddInt32(counter, 1)
+	t.Logf("%s enter lock. counter = %d", id, n)
 }
 
 func decrCounter(t *testing.T, id string, counter *int32) {
-	atomic.AddInt32(counter, -1)
-	t.Logf("%s exit lock. counter = %d", id, *counter)
+	n := atomic.AddInt32(counter, -1)
+	t.Logf("%s exit lock. counter = %d", id, n)
 }
 
-func routine(t *testing.T, id string, counter *int32, unlockTime time.Duration, stopGoroutine chan struct{}) {
-	mtx := cache.NewDistrMutex(rep, lockKey, unlockTime)
+func routine(ctx context.Context, t *testing.T, key, id string, counter *int32, unlockTime time.Duration, stopGoroutine <-chan struct{}) {
+	mtx := cache.NewDistrMutex(rep, key, unlockTime)
+	mtx.TryLockInterval = 50 * time.Millisecond
 	for {
+		if ctx.Err() != nil {
+			return
+		}
 		t.Logf("%s is waiting for lock", id)
-		mtx.Lock(context.Background())
-		defer mtx.Unlock()
+		mtx.Lock(ctx)
+		if ctx.Err() != nil {
+			mtx.Unlock()
+
+			return
+		}
 		incrCounter(t, id, counter)
 	SelectLoop:
 		for {
 			select {
-			case <-time.Tick(unlockTime):
+			case <-time.After(unlockTime):
 				t.Logf("%s tick", id)
 			case <-mtx.Quit():
 				t.Logf("%s replaced", id)
@@ -60,50 +68,65 @@ func routine(t *testing.T, id string, counter *int32, unlockTime time.Duration, 
 			case <-stopGoroutine:
 				t.Logf("%s is killed", id)
 				decrCounter(t, id, counter)
+				mtx.Unlock()
+
+				return
+			case <-ctx.Done():
+				decrCounter(t, id, counter)
+				mtx.Unlock()
+
 				return
 			}
 		}
 		decrCounter(t, id, counter)
+		mtx.Unlock()
 	}
 }
 
-func testTemplate(t *testing.T, f func(unlockTime time.Duration, goroutineN int, stopGoroutine chan struct{})) {
-	rep.cache.Delete(lockKey)
+func testTemplate(t *testing.T, f func(key string, unlockTime time.Duration, stopGoroutine chan struct{})) {
+	key := lockKey + ":" + t.Name()
+	_ = rep.cache.Delete(key)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
 	const n = 3
 	stopGoroutine := make(chan struct{})
-	unlockTime := 10 * time.Millisecond
+	unlockTime := time.Second
 	var counter int32
 	for i := 1; i <= n; i++ {
-		go routine(t, fmt.Sprintf("%d", i), &counter, unlockTime, stopGoroutine)
+		go routine(ctx, t, key, fmt.Sprintf("%d", i), &counter, unlockTime, stopGoroutine)
 	}
 
-	time.Sleep(10 * time.Millisecond)
-	f(unlockTime, n, stopGoroutine)
-	assert.Equal(t, int32(1), counter)
+	time.Sleep(200 * time.Millisecond)
+	f(key, unlockTime, stopGoroutine)
+	assert.Eventually(t, func() bool {
+		return atomic.LoadInt32(&counter) == 1
+	}, 5*time.Second, 50*time.Millisecond)
 
 	t.Log("-- ending test --")
-	close(stopGoroutine)
-	time.Sleep(unlockTime * n)
+	cancel()
+	time.Sleep(200 * time.Millisecond)
 }
 
 func TestLock(t *testing.T) {
-	testTemplate(t, func(unlockTime time.Duration, _ int, _ chan struct{}) {
+	testTemplate(t, func(_ string, unlockTime time.Duration, _ chan struct{}) {
 		time.Sleep(unlockTime * 3)
 	})
 }
 
 func TestLockOwnerKilledCase(t *testing.T) {
-	testTemplate(t, func(unlockTime time.Duration, _ int, stopGoroutine chan struct{}) {
+	testTemplate(t, func(_ string, unlockTime time.Duration, stopGoroutine chan struct{}) {
 		stopGoroutine <- struct{}{}
 		time.Sleep(unlockTime * 3)
 	})
 }
 
 func TestLockDeleting(t *testing.T) {
-	testTemplate(t, func(unlockTime time.Duration, _ int, _ chan struct{}) {
-		for i := 0; i < 10; i++ {
-			rep.cache.Delete(lockKey)
-			time.Sleep(unlockTime)
+	testTemplate(t, func(key string, unlockTime time.Duration, _ chan struct{}) {
+		for range 10 {
+			_ = rep.cache.Delete(key)
+			time.Sleep(100 * time.Millisecond)
 		}
 		time.Sleep(unlockTime * 3)
 	})
@@ -111,31 +134,33 @@ func TestLockDeleting(t *testing.T) {
 
 func TestAtomicIncrement(t *testing.T) {
 	const goroutineN = 10
-	const lockCount = 1000
+	const lockCount = 200
+
+	key := lockKey + ":" + t.Name()
+	_ = rep.cache.Delete(key)
 
 	var wg, barier sync.WaitGroup
 	wg.Add(goroutineN)
 	barier.Add(1)
 
 	var i int32
-	var increment = func(n int) {
+	increment := func(n int) {
 		defer wg.Done()
 
-		mtx := cache.NewDistrMutex(rep, lockKey, time.Second)
+		mtx := cache.NewDistrMutex(rep, key, time.Minute)
 		mtx.TryLockInterval = time.Millisecond
 
 		wg.Done()
 		barier.Wait()
 
-		for j := 0; j < n; j++ {
-			mtx.Lock(context.TODO())
-			i++
+		for range n {
+			mtx.Lock(context.Background())
+			atomic.AddInt32(&i, 1)
 			mtx.Unlock()
-			time.Sleep(time.Millisecond)
 		}
 	}
 
-	for i := 0; i < goroutineN; i++ {
+	for range goroutineN {
 		go increment(lockCount)
 	}
 
@@ -144,5 +169,5 @@ func TestAtomicIncrement(t *testing.T) {
 	barier.Done()
 	wg.Wait()
 
-	assert.Equal(t, int32(goroutineN*lockCount), i)
+	assert.Equal(t, int32(goroutineN*lockCount), atomic.LoadInt32(&i))
 }

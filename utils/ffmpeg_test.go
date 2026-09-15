@@ -2,11 +2,20 @@ package utils
 
 import (
 	"context"
+	"os/exec"
 	"reflect"
 	"testing"
 )
 
+func skipIfNoFFProbe(t *testing.T) {
+	t.Helper()
+	if _, err := exec.LookPath("ffprobe"); err != nil {
+		t.Skip("ffprobe not found in PATH")
+	}
+}
+
 func TestProbe(t *testing.T) {
+	skipIfNoFFProbe(t)
 	type tmp struct {
 		Duration float64 `json:"duration"`
 	}
@@ -52,6 +61,7 @@ func TestProbe(t *testing.T) {
 }
 
 func TestProbeInto(t *testing.T) {
+	skipIfNoFFProbe(t)
 	type ffprobeRes struct {
 		Format struct {
 			Duration string `json:"duration"`
