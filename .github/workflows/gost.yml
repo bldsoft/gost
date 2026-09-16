@@ -78,3 +78,32 @@ jobs:
         run: go install gotest.tools/gotestsum@v1.12.3
       - name: Test
         run: gotestsum --format=testname -- -race -tags=integration_test ./...
+
+  benchmark:
+    if: github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'develop')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Install benchstat
+        run: go install golang.org/x/perf/cmd/benchstat@v0.0.0-20260819171926-ebcb4798430d
+      - name: Benchmark merge of PR into ${{ github.base_ref }}
+        run: |
+          set -o pipefail
+          go test -run=^$ -bench=. -benchmem -count=5 ./... | tee "$RUNNER_TEMP/pr.txt"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Benchmark ${{ github.base_ref }}
+        run: |
+          set -o pipefail
+          go test -run=^$ -bench=. -benchmem -count=5 ./... | tee "$RUNNER_TEMP/${{ github.base_ref }}.txt"
+      - name: Compare with benchstat
+        run: benchstat "$RUNNER_TEMP/${{ github.base_ref }}.txt" "$RUNNER_TEMP/pr.txt" | tee -a "$GITHUB_STEP_SUMMARY"
