@@ -194,7 +194,7 @@ func (c *Client) XLock(ctx context.Context, resourceName, lockId string, ld Lock
 		r,
 		options.FindOneAndUpdate().SetUpsert(UPSERT).SetReturnDocument(ReturnDoc))
 
-	rr := map[string]interface{}{}
+	rr := map[string]any{}
 	err := result.Decode(rr)
 	if err != nil {
 		if isDup(err) {
@@ -256,7 +256,7 @@ func (c *Client) SLock(ctx context.Context, resourceName, lockId string, ld Lock
 		change,
 		options.FindOneAndUpdate().SetUpsert(UPSERT).SetReturnDocument(ReturnDoc))
 
-	rr := map[string]interface{}{}
+	rr := map[string]any{}
 	err := result.Decode(rr)
 
 	if err != nil {
@@ -340,7 +340,7 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 			"$lt": f.CreatedBefore,
 		}
 		filterCond = append(filterCond, bson.M{
-			"$lt": []interface{}{"$$lock.createdAt", f.CreatedBefore},
+			"$lt": []any{"$$lock.createdAt", f.CreatedBefore},
 		})
 
 	}
@@ -352,7 +352,7 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 			"$gt": f.CreatedAfter,
 		}
 		filterCond = append(filterCond, bson.M{
-			"$gt": []interface{}{"$$lock.createdAt", f.CreatedAfter},
+			"$gt": []any{"$$lock.createdAt", f.CreatedAfter},
 		})
 	}
 
@@ -368,10 +368,10 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 			"$lt": ttlTime,
 		}
 		filterCond = append(filterCond, bson.M{
-			"$lt": []interface{}{"$$lock.expiresAt", ttlTime},
+			"$lt": []any{"$$lock.expiresAt", ttlTime},
 		}, bson.M{
 			// Exclude locks without a TTL.
-			"$gt": []interface{}{"$$lock.expiresAt", nil},
+			"$gt": []any{"$$lock.expiresAt", nil},
 		})
 	}
 	if f.TTLgte > 0 {
@@ -383,7 +383,7 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 			"$gte": ttlTime,
 		}
 		filterCond = append(filterCond, bson.M{
-			"$gte": []interface{}{"$$lock.expiresAt", ttlTime},
+			"$gte": []any{"$$lock.expiresAt", ttlTime},
 		})
 	}
 
@@ -391,7 +391,7 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 		xQuery["exclusive.lockId"] = f.LockId
 		sQuery["shared.locks.lockId"] = f.LockId
 		filterCond = append(filterCond, bson.M{
-			"$eq": []interface{}{"$$lock.lockId", f.LockId},
+			"$eq": []any{"$$lock.lockId", f.LockId},
 		})
 	}
 
@@ -399,7 +399,7 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 		xQuery["exclusive.owner"] = f.Owner
 		sQuery["shared.locks.owner"] = f.Owner
 		filterCond = append(filterCond, bson.M{
-			"$eq": []interface{}{"$$lock.owner", f.Owner},
+			"$eq": []any{"$$lock.owner", f.Owner},
 		})
 	}
 
@@ -579,7 +579,7 @@ func (c *Client) Renew(ctx context.Context, lockId string, ttl uint) ([]LockStat
 			change,
 			options.FindOneAndUpdate().SetReturnDocument(ReturnDoc))
 
-		doc := map[string]interface{}{}
+		doc := map[string]any{}
 		err = result.Decode(doc)
 
 		if err != nil {
@@ -626,7 +626,7 @@ func (c *Client) xUnlock(ctx context.Context, resourceName, lockId string) error
 		change,
 		options.FindOneAndUpdate().SetReturnDocument(ReturnDoc))
 
-	doc := map[string]interface{}{}
+	doc := map[string]any{}
 	err := result.Decode(doc)
 	if err != nil {
 		if len(doc) == 0 {
@@ -672,7 +672,7 @@ func (c *Client) sUnlock(ctx context.Context, resourceName, lockId string) error
 		change,
 		options.FindOneAndUpdate().SetReturnDocument(ReturnDoc))
 
-	doc := map[string]interface{}{}
+	doc := map[string]any{}
 	err := result.Decode(doc)
 	if err != nil {
 		if len(doc) == 0 {
@@ -771,14 +771,12 @@ func (ls LockStatusesByCreatedAtDesc) Less(i, j int) bool {
 func (ls LockStatusesByCreatedAtDesc) Swap(i, j int) { ls[i], ls[j] = ls[j], ls[i] }
 
 func isDup(err error) bool {
-	var ce mongo.CommandError
-	if errors.As(err, &ce) {
+	if ce, ok := errors.AsType[mongo.CommandError](err); ok {
 		if ce.Code == 11000 {
 			return true
 		}
 	}
-	var e mongo.WriteException
-	if errors.As(err, &e) {
+	if e, ok := errors.AsType[mongo.WriteException](err); ok {
 		for _, we := range e.WriteErrors {
 			if we.Code == 11000 {
 				return true

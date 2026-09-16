@@ -31,7 +31,7 @@ func NewClient(c *http.Client, settings Settings) *Client {
 }
 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
-	resp, err := c.circuitBreaker.Execute(func() (interface{}, error) {
+	resp, err := c.circuitBreaker.Execute(func() (any, error) {
 		return c.Client.Do(req)
 	})
 	if err != nil {
@@ -42,7 +42,7 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 }
 
 func (c *Client) Get(url string) (*http.Response, error) {
-	resp, err := c.circuitBreaker.Execute(func() (interface{}, error) {
+	resp, err := c.circuitBreaker.Execute(func() (any, error) {
 		return c.Client.Get(url)
 	})
 	if err != nil {
@@ -53,7 +53,7 @@ func (c *Client) Get(url string) (*http.Response, error) {
 }
 
 func (c *Client) Head(url string) (*http.Response, error) {
-	resp, err := c.circuitBreaker.Execute(func() (interface{}, error) {
+	resp, err := c.circuitBreaker.Execute(func() (any, error) {
 		return c.Client.Head(url)
 	})
 	if err != nil {
@@ -64,7 +64,7 @@ func (c *Client) Head(url string) (*http.Response, error) {
 }
 
 func (c *Client) Post(url string, contentType string, body io.Reader) (*http.Response, error) {
-	resp, err := c.circuitBreaker.Execute(func() (interface{}, error) {
+	resp, err := c.circuitBreaker.Execute(func() (any, error) {
 		return c.Client.Post(url, contentType, body)
 	})
 	if err != nil {
@@ -75,7 +75,7 @@ func (c *Client) Post(url string, contentType string, body io.Reader) (*http.Res
 }
 
 func (c *Client) PostForm(url string, data url.Values) (*http.Response, error) {
-	resp, err := c.circuitBreaker.Execute(func() (interface{}, error) {
+	resp, err := c.circuitBreaker.Execute(func() (any, error) {
 		return c.Client.PostForm(url, data)
 	})
 	if err != nil {

@@ -61,11 +61,9 @@ func (m *GroupMiddleware) Middleware() (_ alert.Middleware, close func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return func(next alert.Handler) alert.Handler {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				_ = m.run(ctx, next)
-			}()
+			})
 
 			return alert.HandlerFunc(func(ctx context.Context, alerts ...alert.Alert) {
 				logger := log.FromContext(ctx).WithFields(log.Fields{"component": "alerts group middleware"})

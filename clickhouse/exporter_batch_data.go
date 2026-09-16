@@ -62,7 +62,7 @@ var _ exporter.Data[int] = (*exporterBatch[int])(nil)
 func columnNames[T any]() []string {
 	var zero T
 	t := reflect.TypeOf(zero)
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 
@@ -82,7 +82,7 @@ func columnNamesFromType(t reflect.Type) []string {
 			continue
 		}
 
-		if f.Anonymous && f.Type.Kind() != reflect.Ptr {
+		if f.Anonymous && f.Type.Kind() != reflect.Pointer {
 			subKeys := columnNamesFromType(f.Type)
 			keys = append(keys, subKeys...)
 		} else {

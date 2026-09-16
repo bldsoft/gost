@@ -12,7 +12,7 @@ func TestRingBuf(t *testing.T) {
 	type args struct {
 		capacity  int
 		overwrite bool
-		actions   []interface{}
+		actions   []any
 	}
 	type push struct {
 		items         []int
@@ -32,7 +32,7 @@ func TestRingBuf(t *testing.T) {
 			args: args{
 				capacity:  10,
 				overwrite: false,
-				actions: []interface{}{
+				actions: []any{
 					push{
 						items:       nil,
 						expectedLen: 0,
@@ -45,7 +45,7 @@ func TestRingBuf(t *testing.T) {
 			args: args{
 				capacity:  10,
 				overwrite: false,
-				actions: []interface{}{
+				actions: []any{
 					pull{
 						expectedRead: []int{0, 0, 0, 0, 0},
 						expectedLen:  0,
@@ -58,7 +58,7 @@ func TestRingBuf(t *testing.T) {
 			args: args{
 				capacity:  10,
 				overwrite: false,
-				actions: []interface{}{
+				actions: []any{
 					push{
 						items:         []int{1, 2, 3, 4, 5},
 						expectedPushN: 5,
@@ -76,7 +76,7 @@ func TestRingBuf(t *testing.T) {
 			args: args{
 				capacity:  5,
 				overwrite: false,
-				actions: []interface{}{
+				actions: []any{
 					push{
 						items:         []int{1, 2, 3, 4, 5},
 						expectedPushN: 5,
@@ -94,7 +94,7 @@ func TestRingBuf(t *testing.T) {
 			args: args{
 				capacity:  5,
 				overwrite: false,
-				actions: []interface{}{
+				actions: []any{
 					push{
 						items:         []int{1, 2, 3, 4, 5, 6, 7},
 						expectedPushN: 5,
@@ -112,7 +112,7 @@ func TestRingBuf(t *testing.T) {
 			args: args{
 				capacity:  5,
 				overwrite: false,
-				actions: []interface{}{
+				actions: []any{
 					push{
 						items:         []int{1, 2, 3, 4, 5},
 						expectedPushN: 5,
@@ -139,7 +139,7 @@ func TestRingBuf(t *testing.T) {
 			args: args{
 				capacity:  5,
 				overwrite: true,
-				actions: []interface{}{
+				actions: []any{
 					push{
 						items:         []int{1, 2, 3, 4, 5, 6, 7},
 						expectedPushN: 7,
@@ -164,7 +164,6 @@ func TestRingBuf(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			ringBuf := ringbuf.New[int](tt.args.capacity).WithOverwrite(tt.args.overwrite)
@@ -249,7 +248,6 @@ func TestRingBufCopy(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			dst := make([]int, len(tt.expected))

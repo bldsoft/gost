@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 )
 
-func MarshalJsonAndJoin(objects ...interface{}) ([]byte, error) {
+func MarshalJsonAndJoin(objects ...any) ([]byte, error) {
 	if len(objects) == 0 {
 		return nil, nil
 	}

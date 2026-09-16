@@ -11,7 +11,7 @@ const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 func RandString(n int) string {
 	var sb strings.Builder
 	sb.Grow(n)
-	for i := 0; i < n; i++ {
+	for range n {
 		sb.WriteByte(letterBytes[rand.Intn(len(letterBytes))])
 	}
 
@@ -24,7 +24,7 @@ func RandToken(n int) (string, error) {
 		return "", err
 	}
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		codes[i] = uint8(48 + (codes[i] % 10))
 	}
 

@@ -102,8 +102,7 @@ func (mc *MongoCache) Reset() {
 }
 
 func hasErrorCode(err error, code int32) bool {
-	var cmdErr mongo.CommandError
-	if errors.As(err, &cmdErr) {
+	if cmdErr, ok := errors.AsType[mongo.CommandError](err); ok {
 		return cmdErr.Code == code
 	}
 

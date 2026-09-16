@@ -21,7 +21,7 @@ type Poly[T comparable] struct {
 }
 
 func (f *Poly[T]) typesMap() *typeBijection[T, string] {
-	interfaceType := reflect.TypeOf((*T)(nil)).Elem()
+	interfaceType := reflect.TypeFor[T]()
 	typeNamesI, ok := interfaceTypeToTypesNames.Load(interfaceType)
 	if !ok {
 		panic(fmt.Errorf("poly: unregistered interface %s: register it with poly.Register", f.interfaceString()))
@@ -31,7 +31,7 @@ func (f *Poly[T]) typesMap() *typeBijection[T, string] {
 }
 
 func (f *Poly[T]) interfaceString() string {
-	return fmt.Sprintln(reflect.TypeOf((*T)(nil)).Elem())
+	return fmt.Sprintln(reflect.TypeFor[T]())
 }
 
 func (f *Poly[T]) Type() string {
@@ -100,7 +100,7 @@ func (f *Poly[T]) UnmarshalBSON(data []byte) error {
 	return nil
 }
 
-func (f *Poly[T]) toBsonMap(e interface{}) (m bson.M, err error) {
+func (f *Poly[T]) toBsonMap(e any) (m bson.M, err error) {
 	data, err := bson.Marshal(e)
 	if err != nil {
 		return nil, err

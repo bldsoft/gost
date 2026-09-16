@@ -5,6 +5,7 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"maps"
 	"slices"
 	"text/template"
 
@@ -84,9 +85,7 @@ func (h *NotifyServiceAdapter) prepareMessage(alert Alert) channel.Message {
 	msg := channel.Message{
 		Data: make(map[string]any),
 	}
-	for k, v := range alert.MetaData {
-		msg.Data[k] = v
-	}
+	maps.Copy(msg.Data, alert.MetaData)
 	msg.Data[FromMsgKey] = alert.From
 	if !alert.To.IsZero() {
 		msg.Data[ToMsgKey] = alert.To

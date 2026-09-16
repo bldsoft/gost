@@ -85,7 +85,7 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value *cach
 	var err error
 	key = r.cache.PrepareKey(key)
 
-	for i := 0; i < casRetryLimit; i++ {
+	for range casRetryLimit {
 		var item *memcache.Item
 		item, err = r.cache.Get(key)
 

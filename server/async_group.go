@@ -24,8 +24,8 @@ func (c *AsyncJobGroup) Append(runner ...AsyncRunner) {
 	c.runners = append(c.runners, runner...)
 }
 
-func getType(myvar interface{}) string {
-	if t := reflect.TypeOf(myvar); t.Kind() == reflect.Ptr {
+func getType(myvar any) string {
+	if t := reflect.TypeOf(myvar); t.Kind() == reflect.Pointer {
 		return t.Elem().Name()
 	} else {
 		return t.Name()

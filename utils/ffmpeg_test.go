@@ -21,7 +21,7 @@ func TestProbe(t *testing.T) {
 	}
 	type args struct {
 		path string
-		args map[string]interface{}
+		args map[string]any
 	}
 	tests := []struct {
 		name    string
@@ -33,7 +33,7 @@ func TestProbe(t *testing.T) {
 			name: "",
 			args: args{
 				path: "test_files/media_test.ts",
-				args: map[string]interface{}{
+				args: map[string]any{
 					"show_entries": "format=duration",
 				},
 			},
@@ -71,7 +71,7 @@ func TestProbeInto(t *testing.T) {
 	type args struct {
 		path string
 		res  *ffprobeRes
-		args map[string]interface{}
+		args map[string]any
 	}
 	tests := []struct {
 		name    string
@@ -84,7 +84,7 @@ func TestProbeInto(t *testing.T) {
 			args: args{
 				path: "test_files/media_test.ts",
 				res:  &ffprobeRes{},
-				args: map[string]interface{}{
+				args: map[string]any{
 					"show_entries": "format=duration",
 				},
 			},

@@ -26,7 +26,7 @@ type Storage struct {
 
 	Db      *sql.DB
 	native  driver.Conn
-	isReady int32
+	isReady atomic.Int32
 	doOnce  sync.Once
 
 	migrations  *source.Migrations
@@ -91,7 +91,7 @@ func (db *Storage) Connect() {
 	db.Db = connect
 	db.native = native
 
-	atomic.StoreInt32(&db.isReady, 1)
+	db.isReady.Store(1)
 
 	log.InfoWithFields(log.Fields{"dsn": &db.cfg.Dsn}, "Clickhouse connected!")
 }
@@ -116,7 +116,7 @@ func (db *Storage) Disconnect(ctx context.Context) error {
 }
 
 func (db *Storage) IsReady() bool {
-	return atomic.LoadInt32(&db.isReady) == 1
+	return db.isReady.Load() == 1
 }
 
 func (db *Storage) LogError(err error) {
@@ -156,8 +156,8 @@ func (db *Storage) runMigrations(dbname string) error {
 	return nil
 }
 
-func (db *Storage) Stats(ctx context.Context) (map[string]interface{}, error) {
-	metrics := make(map[string]interface{})
+func (db *Storage) Stats(ctx context.Context) (map[string]any, error) {
+	metrics := make(map[string]any)
 	for _, query := range []string{
 		"SELECT event, value FROM system.events",
 		"SELECT metric, value FROM system.asynchronous_metrics",

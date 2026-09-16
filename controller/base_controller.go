@@ -20,7 +20,7 @@ func (c BaseController) ResponseOK(w http.ResponseWriter) {
 	_, _ = w.Write([]byte("OK"))
 }
 
-func (c BaseController) ResponseJson(w http.ResponseWriter, r *http.Request, v interface{}, needObjectLog ...bool) {
+func (c BaseController) ResponseJson(w http.ResponseWriter, r *http.Request, v any, needObjectLog ...bool) {
 	w.Header().Set("Content-Type", "application/json")
 	// err := json.NewEncoder(w).Encode(v)
 	body, err := json.Marshal(v)
@@ -33,7 +33,7 @@ func (c BaseController) ResponseJson(w http.ResponseWriter, r *http.Request, v i
 	}
 }
 
-func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request, obj interface{}, needObjectLog ...bool) bool {
+func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request, obj any, needObjectLog ...bool) bool {
 	var bodyBytes []byte
 	if r.Body != nil {
 		if contentlen := r.ContentLength; contentlen <= 0 {
