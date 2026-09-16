@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"golang.org/x/exp/slices"
 
 	"github.com/bldsoft/gost/discovery"
 	"github.com/bldsoft/gost/log"
