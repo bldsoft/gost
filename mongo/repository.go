@@ -450,9 +450,14 @@ func (r *BaseRepository[T, U]) decodeFindOneResult(res *mongo.SingleResult) (U, 
 
 func (r *BaseRepository[T, U]) fillTimeStamp(ctx context.Context, e repository.IEntityID, fillCreateTime bool) {
 	if entityTimestamp, ok := e.(IEntityTimeStamp); ok {
-		now := time.Now().UTC()
-		var userID any
-		if user, ok := ctx.Value(UserEntryCtxKey).(repository.IEntityID); ok {
+		var (
+			now = time.Now().UTC()
+
+			userID any
+			user   repository.IEntityID
+		)
+		user, ok = ctx.Value(UserEntryCtxKey).(repository.IEntityID)
+		if ok {
 			userID = user.RawID()
 		}
 

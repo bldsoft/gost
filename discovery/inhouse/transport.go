@@ -68,7 +68,7 @@ func NewTransport(bindAddress config.Address) (*Transport, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to start UDP listener on %q port %d: %w", addr, port, err)
 	}
-	if err := setUDPRecvBuf(t.udpListener); err != nil {
+	if err = setUDPRecvBuf(t.udpListener); err != nil {
 		return nil, fmt.Errorf("failed to resize UDP buffer: %w", err)
 	}
 

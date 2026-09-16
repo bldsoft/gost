@@ -96,11 +96,11 @@ func (m *DistrMutex) TryLock() bool {
 }
 
 func (m *DistrMutex) getOwner() lockOwner {
-	lockOwner, err := m.cache.Get(m.lockKey)
+	owner, err := m.cache.Get(m.lockKey)
 	if err != nil {
 		return nobody
 	}
-	if bytes.Equal(lockOwner, m.uniqueID) {
+	if bytes.Equal(owner, m.uniqueID) {
 		return me
 	}
 
@@ -109,8 +109,8 @@ func (m *DistrMutex) getOwner() lockOwner {
 
 func (m *DistrMutex) updateLock(ticker *time.Ticker) {
 	for range ticker.C {
-		lockOwner := m.getOwner()
-		switch lockOwner {
+		owner := m.getOwner()
+		switch owner {
 		case me:
 			err := m.cache.SetFor(m.lockKey, m.uniqueID, m.unlockTime)
 			if err != nil {

@@ -96,7 +96,7 @@ func (s *RedisSessionStore) sessionsFromKeys(name string, keys []string) ([]*ses
 		}
 
 		session := sessions.NewSession(s, name)
-		if err := s.serializer.Deserialize([]byte(b), session); err != nil {
+		if err = s.serializer.Deserialize([]byte(b), session); err != nil {
 			return nil, err
 		}
 
@@ -126,9 +126,10 @@ func (s *RedisSessionStore) New(r *http.Request, name string) (*sessions.Session
 	session.ID = c.Value
 
 	err = s.load(session)
-	if err == nil {
+	switch {
+	case err == nil:
 		session.IsNew = false
-	} else if err == redis.Nil {
+	case errors.Is(err, redis.Nil):
 		err = nil // no data stored
 	}
 

@@ -2,9 +2,9 @@ package jwt
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -96,7 +96,7 @@ func TestJwtConfigPrivateKey(t *testing.T) {
 				Alg:     test.Alg,
 				PemPath: filepath.Join(t.TempDir(), "key"),
 			}
-			assert.NoError(t, ioutil.WriteFile(cfg.PemPath, []byte(test.Key), 0666))
+			assert.NoError(t, os.WriteFile(cfg.PemPath, []byte(test.Key), 0666))
 			assert.NoError(t, cfg.Validate())
 			testJwtConfig(t, cfg, cfg)
 		})
@@ -126,7 +126,7 @@ func TestJwtConfigPublicKey(t *testing.T) {
 			} {
 				cfg.jwtCfg.Alg = test.Alg
 				cfg.jwtCfg.PemPath = cfg.pemPath
-				assert.NoError(t, ioutil.WriteFile(cfg.pemPath, []byte(cfg.key), 0666))
+				assert.NoError(t, os.WriteFile(cfg.pemPath, []byte(cfg.key), 0666))
 				assert.NoError(t, cfg.jwtCfg.Validate())
 			}
 			testJwtConfig(t, signerCfg, clientCfg)

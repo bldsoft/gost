@@ -101,7 +101,8 @@ func (w *ExportLogWriter) parseRecord(p []byte) (*LogRecord, error) {
 	}
 
 	if ts, ok := event[zerolog.TimestampFieldName].(json.Number); ok {
-		tt, err := ts.Int64()
+		var tt int64
+		tt, err = ts.Int64()
 		if err != nil {
 			return nil, err
 		}

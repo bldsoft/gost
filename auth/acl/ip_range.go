@@ -13,7 +13,7 @@ import (
 	"github.com/bldsoft/gost/utils"
 )
 
-var invalidBsonValue = fmt.Errorf("invalid bson string value")
+var errInvalidBsonValue = fmt.Errorf("invalid bson string value")
 
 type IpRange struct {
 	ips   []netip.Addr
@@ -35,24 +35,27 @@ func MustIpRangeFromStrings(strs ...string) IpRange {
 func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
 	for _, s := range strs {
 		if strings.Contains(s, "/") {
-			network, err := netip.ParsePrefix(s)
+			var network netip.Prefix
+			network, err = netip.ParsePrefix(s)
 			if err != nil {
 				return res, err
 			}
-			pfx, err := utils.CanonicalPrefix(network)
+			var pfx netip.Prefix
+			pfx, err = utils.CanonicalPrefix(network)
 			if err != nil {
 				return res, err
 			}
 			res.cidrs = append(res.cidrs, pfx)
 		} else {
-			ip, err := netip.ParseAddr(s)
+			var ip netip.Addr
+			ip, err = netip.ParseAddr(s)
 			if err != nil {
 				return res, err
 			}
 			res.ips = append(res.ips, utils.CanonicalAddr(ip))
 		}
 	}
-	if err := res.buildTree(); err != nil {
+	if err = res.buildTree(); err != nil {
 		return res, err
 	}
 
@@ -144,12 +147,12 @@ func (r *IpRange) UnmarshalBSONValue(b byte, value []byte) error {
 
 	arr, _, ok := bsoncore.ReadArray(value)
 	if !ok {
-		return invalidBsonValue
+		return errInvalidBsonValue
 	}
 
 	values, err := arr.Values()
 	if err != nil {
-		return invalidBsonValue
+		return errInvalidBsonValue
 	}
 
 	var strs []string

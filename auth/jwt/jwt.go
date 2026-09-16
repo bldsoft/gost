@@ -2,8 +2,8 @@ package jwt
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
@@ -32,7 +32,8 @@ func (c *JwtConfig) SetDefaults() {}
 
 func (c *JwtConfig) Validate() (err error) {
 	if len(c.PemPath) != 0 {
-		bytes, err := ioutil.ReadFile(c.PemPath)
+		var bytes []byte
+		bytes, err = os.ReadFile(c.PemPath)
 		if err != nil {
 			return fmt.Errorf("failed to read jwt key: %w", err)
 		}

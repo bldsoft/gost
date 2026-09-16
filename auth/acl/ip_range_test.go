@@ -45,17 +45,17 @@ func TestIpRangeJson(t *testing.T) {
 }
 
 func TestIpRangeBson(t *testing.T) {
-	acl := acl{
+	doc := acl{
 		ACL: MustIpRangeFromStrings("127.0.0.0/24", "192.168.0.1"),
 	}
 
-	data, err := bson.Marshal(acl)
+	data, err := bson.Marshal(doc)
 	assert.NoError(t, err)
 
-	assert.NoError(t, bson.Unmarshal(data, &acl))
-	assert.True(t, acl.ACL.Contains(netip.MustParseAddr("127.0.0.1")))
-	assert.True(t, acl.ACL.Contains(netip.MustParseAddr("192.168.0.1")))
-	assert.False(t, acl.ACL.Contains(netip.MustParseAddr("192.168.0.2")))
+	assert.NoError(t, bson.Unmarshal(data, &doc))
+	assert.True(t, doc.ACL.Contains(netip.MustParseAddr("127.0.0.1")))
+	assert.True(t, doc.ACL.Contains(netip.MustParseAddr("192.168.0.1")))
+	assert.False(t, doc.ACL.Contains(netip.MustParseAddr("192.168.0.2")))
 }
 
 func TestIpRangeIPv4MappedIPv6(t *testing.T) {

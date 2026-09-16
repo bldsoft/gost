@@ -86,13 +86,15 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value *cach
 	key = r.cache.PrepareKey(key)
 
 	for i := 0; i < casRetryLimit; i++ {
-		item, err := r.cache.Get(key)
+		var item *memcache.Item
+		item, err = r.cache.Get(key)
 
 		if err != nil || item == nil {
 			return err
 		}
 
-		data, err := handler(&cache.Item{
+		var data *cache.Item
+		data, err = handler(&cache.Item{
 			Value: item.Value,
 			Flags: item.Flags,
 		})
@@ -107,10 +109,9 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value *cach
 		}
 		err = r.cache.CompareAndSwap(item)
 
-		switch err {
-		case memcache.ErrCASConflict:
+		if errors.Is(err, memcache.ErrCASConflict) {
 			time.Sleep(casSleepTime * time.Millisecond)
-		default:
+		} else {
 			return err
 		}
 	}
@@ -129,8 +130,8 @@ func (r *MemcacheRepository) AddOrGet(key string, val []byte, opts ...cache.Item
 		}, false, nil
 	}
 
-	if err := r.Add(key, val, opts...); errors.Is(err, cache.ErrExists) {
-		i, err := r.Get(key)
+	if err = r.Add(key, val, opts...); errors.Is(err, cache.ErrExists) {
+		i, err = r.Get(key)
 
 		return i, false, err
 	}

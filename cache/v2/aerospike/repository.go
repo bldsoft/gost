@@ -89,7 +89,7 @@ func (r *Repository) get(key string) (*cache.Item, uint32, error) {
 
 	continuationKeys := make([]*aero.Key, len(item.Bins[continuationBinKey].([]interface{})))
 	for i, k := range item.Bins[continuationBinKey].([]interface{}) {
-		asKey, err := r.key(k.(string))
+		asKey, err = r.key(k.(string))
 		if err != nil {
 			return nil, 0, err
 		}
@@ -161,7 +161,7 @@ func (r *Repository) Delete(key string) error {
 		if len(continuationKeys) > 0 {
 			keys := make([]*aero.Key, 0, len(continuationKeys))
 			for _, k := range continuationKeys {
-				asKey, err := r.key(k.(string))
+				asKey, err = r.key(k.(string))
 				if err != nil {
 					log.WarnWithFields(log.Fields{"key": k, "err": err}, "failed to create key for continuation deletion")
 
@@ -245,8 +245,8 @@ func (r *Repository) AddOrGet(key string, val []byte, opts ...cache.ItemF) (*cac
 		}, false, nil
 	}
 
-	if err := r.Add(key, val, opts...); errors.Is(err, cache.ErrExists) {
-		i, err := r.Get(key)
+	if err = r.Add(key, val, opts...); errors.Is(err, cache.ErrExists) {
+		i, err = r.Get(key)
 
 		return i, false, err
 	}
@@ -302,7 +302,7 @@ func (r *Repository) prepBatchWrite(replace bool, key string, val []byte, genera
 
 	continuationKeys := make([]string, 0, len(continuations))
 	for _, c := range continuations {
-		asKey, err := r.key(c.Key)
+		asKey, err = r.key(c.Key)
 		if err != nil {
 			return nil, nil, err
 		}

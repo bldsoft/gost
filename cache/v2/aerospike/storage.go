@@ -45,7 +45,7 @@ func NewStorage(cfg Config) (*Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := client.WarmUp(0); err != nil {
+	if _, err = client.WarmUp(0); err != nil {
 		log.WarnWithFields(log.Fields{"err": err}, "failed to warm up aerospike client")
 	}
 

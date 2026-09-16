@@ -50,7 +50,7 @@ func (s *Storage) Stats(ctx context.Context) ([]*Stats, error) {
 	res := make([]*Stats, 0, len(stats))
 	for key, s := range stats {
 		var stat Stats
-		if err := mapstructure.WeakDecode(s.Stats, &stat); err != nil {
+		if err = mapstructure.WeakDecode(s.Stats, &stat); err != nil {
 			return nil, fmt.Errorf("failed to decode memcached stats: %w", err)
 		}
 		stat.Instance = key.String()

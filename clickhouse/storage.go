@@ -84,7 +84,7 @@ func (db *Storage) Connect() {
 	dbname := db.cfg.options.Auth.Database
 
 	use_db := "USE " + dbname + ";"
-	if _, err := connect.Exec(use_db); err != nil {
+	if _, err = connect.Exec(use_db); err != nil {
 		db.LogError(err)
 	}
 
@@ -149,7 +149,7 @@ func (db *Storage) runMigrations(dbname string) error {
 	}
 
 	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("process failed: %w", err)
 	}
 

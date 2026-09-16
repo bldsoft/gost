@@ -62,7 +62,9 @@ func (w *wrapResponseWriterLogErr) Error() string {
 func AsResponseWriterLogErr(w http.ResponseWriter) (WrapResponseWriterLogErr, bool) {
 	for {
 		if wrapW, ok := w.(middleware.WrapResponseWriter); ok {
-			if result, ok := wrapW.(WrapResponseWriterLogErr); ok {
+			var result WrapResponseWriterLogErr
+			result, ok = wrapW.(WrapResponseWriterLogErr)
+			if ok {
 				return result, ok
 			} else {
 				w = wrapW.Unwrap()

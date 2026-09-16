@@ -131,7 +131,7 @@ func (be *BufferedExporter[T]) flush() (n int, err error) {
 		}
 	}()
 
-	if err := be.fillExportedData(); err != nil {
+	if err = be.fillExportedData(); err != nil {
 		return 0, err
 	}
 

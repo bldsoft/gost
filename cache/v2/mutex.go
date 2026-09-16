@@ -110,8 +110,8 @@ func (m *DistrMutex) getOwner() lockOwner {
 
 func (m *DistrMutex) updateLock(ticker *time.Ticker) {
 	for range ticker.C {
-		lockOwner := m.getOwner()
-		switch lockOwner {
+		owner := m.getOwner()
+		switch owner {
 		case me:
 			err := m.cache.Set(m.lockKey, m.uniqueID, WithTTL(m.unlockTime))
 			if err != nil {

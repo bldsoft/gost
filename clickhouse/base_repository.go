@@ -76,7 +76,7 @@ func (r *BaseRepository) getCustomChartValues(ctx context.Context, query sq.Sele
 			times  []time.Time
 			values []float64
 		)
-		if err := rows.Scan(&lv.Label, &times, &values, &lv.Min, &lv.Max, &lv.Avg, &lv.Sum); err != nil {
+		if err = rows.Scan(&lv.Label, &times, &values, &lv.Min, &lv.Max, &lv.Avg, &lv.Sum); err != nil {
 			return nil, err
 		}
 		lv.Data = r.buildChartValues(from, to, step, times, values)

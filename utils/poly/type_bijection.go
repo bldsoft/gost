@@ -11,7 +11,7 @@ type typeBijection[I comparable, V comparable] struct {
 }
 
 func (b *typeBijection[I, V]) AddOrGetObj(valueExample I, obj V) (actual V, err error) {
-	if err := b.objToConcreteType.Add(obj, valueExample); err != nil {
+	if err = b.objToConcreteType.Add(obj, valueExample); err != nil {
 		return actual, err
 	}
 

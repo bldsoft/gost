@@ -32,12 +32,12 @@ func (m *objToTypeMap[V, I]) Keys() []V {
 	return res
 }
 
-func (m *objToTypeMap[V, I]) GetType(obj V) (t reflect.Type, ok bool) {
+func (m *objToTypeMap[V, I]) GetType(obj V) (reflect.Type, bool) {
 	if typ, ok := m.objToConcreteType.Load(obj); ok {
 		return typ.(reflect.Type), true
 	}
 
-	return
+	return nil, false
 }
 
 func (b *objToTypeMap[V, I]) AllocValue(obj V) (val I, err error) {

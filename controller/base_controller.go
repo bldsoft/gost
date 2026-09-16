@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/bldsoft/gost/log"
@@ -38,7 +37,7 @@ func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request
 	var bodyBytes []byte
 	if r.Body != nil {
 		if contentlen := r.ContentLength; contentlen <= 0 {
-			bodyBytes, _ = ioutil.ReadAll(r.Body)
+			bodyBytes, _ = io.ReadAll(r.Body)
 		} else {
 			bodyBytes = make([]byte, contentlen)
 			_, _ = io.ReadFull(r.Body, bodyBytes)

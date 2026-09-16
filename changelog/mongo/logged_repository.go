@@ -43,7 +43,7 @@ func (r *LoggedRepository[T, U]) Insert(ctx context.Context, entity U) (err erro
 
 	_, err = r.WithTransaction(ctx, func(ctx context.Context) (interface{}, error) {
 		entity.SetChangeID(rec.StringID())
-		if err := r.Repository.Insert(ctx, entity); err != nil {
+		if err = r.Repository.Insert(ctx, entity); err != nil {
 			return nil, err
 		}
 		rec.Record.EntityID = entity.StringID()
@@ -81,14 +81,16 @@ func (r *LoggedRepository[T, U]) Update(ctx context.Context, entity U, opt ...*r
 
 	_, err = r.WithTransaction(ctx, func(ctx context.Context) (interface{}, error) {
 		entity.SetChangeID(rec.StringID())
-		oldEntity, err := r.UpdateAndGetByID(ctx, entity, false, opt...)
+		var oldEntity U
+		oldEntity, err = r.UpdateAndGetByID(ctx, entity, false, opt...)
 		if err != nil {
 			return nil, err
 		}
 
 		rec.Record.EntityID = entity.StringID()
 		oldEntity.SetChangeID(rec.StringID())
-		data, err := r.getDiff(oldEntity, entity)
+		var data []byte
+		data, err = r.getDiff(oldEntity, entity)
 		if err != nil {
 			return nil, err
 		}
@@ -107,14 +109,15 @@ func (r *LoggedRepository[T, U]) Delete(ctx context.Context, id interface{}, opt
 	}
 
 	_, err = r.WithTransaction(ctx, func(ctx context.Context) (interface{}, error) {
-		if err := r.Repository.Delete(ctx, id, options...); err != nil {
+		if err = r.Repository.Delete(ctx, id, options...); err != nil {
 			return nil, err
 		}
 
 		rec.Record.EntityID = repository.ToStringID[T, U](id)
-		if entity, err := r.FindByID(ctx, id); err == nil {
+		var entity U
+		if entity, err = r.FindByID(ctx, id); err == nil {
 			entity.SetChangeID(rec.StringID())
-			if err := r.Repository.Update(ctx, entity); err != nil {
+			if err = r.Repository.Update(ctx, entity); err != nil {
 				return nil, err
 			}
 			_ = rec.SetData(entity)

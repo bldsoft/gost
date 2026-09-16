@@ -163,7 +163,7 @@ func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, err
 			return nil
 		})
 	}
-	if err := eg.Wait(); err != nil {
+	if err = eg.Wait(); err != nil {
 		return nil, err
 	}
 	close(serviceInfoC)

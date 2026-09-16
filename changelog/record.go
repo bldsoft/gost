@@ -20,7 +20,9 @@ const BsonFieldNameData = "data"
 
 const BsonFieldDetails = "details"
 
-var CtxDetails struct{}
+type ctxDetailsKey struct{}
+
+var CtxDetails ctxDetailsKey
 
 type Operation int
 
@@ -62,8 +64,7 @@ func NewRecord(ctx context.Context, collectionName string, op Operation, entity 
 		RequestID: middleware.GetReqID(ctx),
 	}
 
-	user, ok := auth.UserFromContext(ctx).(repository.IEntityID)
-	if ok {
+	if user, ok := auth.UserFromContext(ctx).(repository.IEntityID); ok {
 		rec.UserID = user.StringID()
 	}
 

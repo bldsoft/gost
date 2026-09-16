@@ -162,19 +162,19 @@ func RequireEqualAlerts(t *testing.T, expected, actual []alert.Alert, now ...tim
 		var sb strings.Builder
 		for _, alert := range alerts {
 			if len(now) > 0 {
-				sb.WriteString(fmt.Sprintf("%s %s %s %s %s\n",
+				_, _ = fmt.Fprintf(&sb, "%s %s %s %s %s\n",
 					alert.SourceID,
 					alert.Severity,
 					alert.From.Sub(now[0]),
 					alert.To.Sub(now[0]),
-					alert.MetaData))
+					alert.MetaData)
 			} else {
-				sb.WriteString(fmt.Sprintf("%s %s %s %s %s\n",
+				_, _ = fmt.Fprintf(&sb, "%s %s %s %s %s\n",
 					alert.SourceID,
 					alert.Severity,
 					alert.From,
 					alert.To,
-					alert.MetaData))
+					alert.MetaData)
 			}
 		}
 

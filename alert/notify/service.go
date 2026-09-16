@@ -130,7 +130,7 @@ func (ns *Service) Run(ctx context.Context) error {
 					break
 				}
 				ns.wg.In() <- func() {
-					if err := ns.retrySend(ctx, id, *n); err != nil {
+					if err = ns.retrySend(ctx, id, *n); err != nil {
 						log.FromContext(ctx).ErrorfWithFields(log.Fields{
 							"id":           id,
 							"notification": n.Notification,

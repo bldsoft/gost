@@ -336,7 +336,7 @@ func (e *ClickHouseLogExporter) Logs(
 	var logs log.Logs
 	for rows.Next() {
 		var r log.LogRecord
-		if err := rows.Scan(&r.Service, &r.ServiceVersion, &r.Instance, &r.Timestamp, &r.Level, &r.ReqID, &r.Msg, &r.Fields); err != nil {
+		if err = rows.Scan(&r.Service, &r.ServiceVersion, &r.Instance, &r.Timestamp, &r.Level, &r.ReqID, &r.Msg, &r.Fields); err != nil {
 			return nil, err
 		}
 		logs.Records = append(logs.Records, r)
@@ -415,7 +415,7 @@ func (e *ClickHouseLogExporter) distinctValues(
 	var instances []string
 	for rows.Next() {
 		var instance string
-		if err := rows.Scan(&instance); err != nil {
+		if err = rows.Scan(&instance); err != nil {
 			return nil, err
 		}
 		instances = append(instances, instance)
@@ -449,7 +449,7 @@ func (e *ClickHouseLogExporter) RequestIDs(
 
 		for rows.Next() {
 			var requestID string
-			if err := rows.Scan(&requestID); err != nil {
+			if err = rows.Scan(&requestID); err != nil {
 				return err
 			}
 			requestIDs = append(requestIDs, requestID)

@@ -135,7 +135,7 @@ func (db *Storage) runMigrations(dbname string) error {
 		return fmt.Errorf("instance failed: %w", err)
 	}
 	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("process failed: %w", err)
 	}
 
@@ -162,23 +162,23 @@ func (db *Storage) Stats(ctx context.Context) (interface{}, error) {
 
 	stats := make([]interface{}, 0, len(collections)+1)
 	res := db.Db.RunCommand(ctx, bson.M{"dbStats": 1})
-	if err := res.Err(); err != nil {
+	if err = res.Err(); err != nil {
 		return nil, err
 	}
 
 	dbStat := make(map[string]interface{})
-	if err := res.Decode(&dbStat); err != nil {
+	if err = res.Decode(&dbStat); err != nil {
 		return nil, WrapErr(err)
 	}
 	stats = append(stats, dbStat)
 
 	for _, collection := range collections {
-		res := db.Db.RunCommand(ctx, bson.M{"collStats": collection})
-		if err := res.Err(); err != nil {
+		res = db.Db.RunCommand(ctx, bson.M{"collStats": collection})
+		if err = res.Err(); err != nil {
 			return nil, err
 		}
 		colStat := make(map[string]interface{})
-		if err := res.Decode(&colStat); err != nil {
+		if err = res.Decode(&colStat); err != nil {
 			return nil, WrapErr(err)
 		}
 		stats = append(stats, colStat)

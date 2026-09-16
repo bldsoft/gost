@@ -88,7 +88,7 @@ func (r *ChangeLogRepository) GetRecords(ctx context.Context, params *changelog.
 		return nil, err
 	}
 	defer func() { _ = cursor.Close(ctx) }()
-	if err := cursor.All(ctx, &res.Records); err != nil {
+	if err = cursor.All(ctx, &res.Records); err != nil {
 		return nil, err
 	}
 

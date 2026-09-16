@@ -32,7 +32,7 @@ func GetQueryOption[T utils.Parsed](r *http.Request, paramName string, defaultVa
 }
 
 // GetQuerySlice doesn't return error if query param is successfully parsed or not present
-func GetQueryOptionSlice[T utils.Parsed](r *http.Request, paramName string) (result []T, err error) {
+func GetQueryOptionSlice[T utils.Parsed](r *http.Request, paramName string) (result []T, _ error) {
 	if strValues := r.URL.Query().Get(paramName); strValues != "" {
 		values := strings.Split(strValues, ",")
 		for _, strValue := range values {

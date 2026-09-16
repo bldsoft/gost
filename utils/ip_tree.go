@@ -30,7 +30,7 @@ func (s *IPTreeSet) Put(ipCidrs ...string) error {
 			if err != nil {
 				return err
 			}
-			if err := s.PutPrefixes(pfx); err != nil {
+			if err = s.PutPrefixes(pfx); err != nil {
 				return err
 			}
 
@@ -40,7 +40,7 @@ func (s *IPTreeSet) Put(ipCidrs ...string) error {
 		if err != nil {
 			return err
 		}
-		if err := s.PutIPs(addr); err != nil {
+		if err = s.PutIPs(addr); err != nil {
 			return err
 		}
 	}

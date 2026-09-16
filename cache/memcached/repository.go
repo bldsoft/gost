@@ -135,13 +135,15 @@ func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value []byt
 	key = r.cache.PrepareKey(key)
 
 	for range casRetryLimit {
-		item, err := r.cache.Get(key)
+		var item *memcache.Item
+		item, err = r.cache.Get(key)
 
 		if err != nil || item == nil {
 			return err
 		}
 
-		data, err := handler(item.Value)
+		var data []byte
+		data, err = handler(item.Value)
 
 		if err != nil || data == nil {
 			return err

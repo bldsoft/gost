@@ -42,7 +42,7 @@ func (w *Webhook) Send(ctx context.Context, receiver Receiver, msg channel.Messa
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 300 {
-		body, err := io.ReadAll(resp.Body)
+		body, err = io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}

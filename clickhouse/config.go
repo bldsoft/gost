@@ -24,7 +24,7 @@ func (c *Config) Validate() (err error) {
 		return nil
 	}
 
-	if err := c.prepareDsn(); err != nil {
+	if err = c.prepareDsn(); err != nil {
 		return err
 	}
 

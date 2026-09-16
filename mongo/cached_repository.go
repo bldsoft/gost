@@ -106,7 +106,7 @@ func (h cacheWatcher[T, U]) CacheSet(entities ...U) error {
 		if err != nil {
 			return err
 		}
-		if err := h.cache.Set(h.cacheKey(e.StringID()), data); err != nil {
+		if err = h.cache.Set(h.cacheKey(e.StringID()), data); err != nil {
 			return err
 		}
 	}
@@ -192,7 +192,7 @@ func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, o
 		return nil, err
 	}
 
-	if err := r.cache.CacheSet(res); err != nil {
+	if err = r.cache.CacheSet(res); err != nil {
 		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "CachedRepository: failed to cache entity")
 	}
 
@@ -211,7 +211,7 @@ func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []stri
 		return nil, err
 	}
 
-	if err := r.cache.CacheSet(res...); err != nil {
+	if err = r.cache.CacheSet(res...); err != nil {
 		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "CachedRepository: failed to cache entity")
 	}
 
@@ -230,7 +230,7 @@ func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{
 		return nil, err
 	}
 
-	if err := r.cache.CacheSet(res...); err != nil {
+	if err = r.cache.CacheSet(res...); err != nil {
 		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "CachedRepository: failed to cache entity")
 	}
 

@@ -1,6 +1,7 @@
 package breaker
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"testing"
@@ -57,7 +58,7 @@ func succeed2Step(cb *TwoStepCircuitBreaker) error {
 func fail(cb *CircuitBreaker) error {
 	failErr := fmt.Errorf("fail")
 	_, err := cb.Execute(func() (interface{}, error) { return nil, failErr })
-	if err == failErr {
+	if errors.Is(err, failErr) {
 		return nil
 	}
 
@@ -76,7 +77,7 @@ func fail2Step(cb *TwoStepCircuitBreaker) error {
 }
 
 func causePanic(cb *CircuitBreaker) error {
-	_, err := cb.Execute(func() (interface{}, error) { panic("oops"); return nil, nil })
+	_, err := cb.Execute(func() (interface{}, error) { panic("oops") })
 
 	return err
 }
@@ -123,7 +124,7 @@ func TestStateConstants(t *testing.T) {
 }
 
 func TestNewCircuitBreaker(t *testing.T) {
-	defaultCB := NewCircuitBreaker(Settings{})
+	defaultCB = NewCircuitBreaker(Settings{})
 	assert.Equal(t, "", defaultCB.name)
 	assert.Equal(t, uint32(1), defaultCB.maxRequests)
 	assert.Equal(t, time.Duration(0), defaultCB.interval)
@@ -134,7 +135,7 @@ func TestNewCircuitBreaker(t *testing.T) {
 	assert.Equal(t, Counts{0, 0, 0, 0, 0}, defaultCB.counts)
 	assert.True(t, defaultCB.expiry.IsZero())
 
-	customCB := newCustom()
+	customCB = newCustom()
 	assert.Equal(t, "cb", customCB.name)
 	assert.Equal(t, uint32(3), customCB.maxRequests)
 	assert.Equal(t, time.Duration(30)*time.Second, customCB.interval)

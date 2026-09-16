@@ -160,7 +160,8 @@ func (mstore *MongoDBStore) Save(r *http.Request, w http.ResponseWriter, session
 
 	_ = sessDoc.SetIDFromString(session.ID)
 	if val, ok := session.Values["modified"]; ok {
-		modified, ok := val.(time.Time)
+		var modified time.Time
+		modified, ok = val.(time.Time)
 		if !ok {
 			return errors.New("mongodbstore: invalid modified value")
 		}

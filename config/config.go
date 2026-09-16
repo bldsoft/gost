@@ -135,7 +135,7 @@ func iterateFields(config interface{}, prefix string, startSructCb structCallbac
 	configType := reflect.Indirect(value).Type()
 
 	if value.Kind() != reflect.Ptr || configType.Kind() != reflect.Struct {
-		return errors.New("Not struct ptr")
+		return errors.New("not struct ptr")
 	}
 
 	if startSructCb != nil {

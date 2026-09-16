@@ -25,7 +25,7 @@ func (b *typeToObjMap[I, V]) Add(valueExample I, obj V) error {
 	return nil
 }
 
-func (b *typeToObjMap[I, V]) GetObj(valueExample I) (v V, ok bool) {
+func (b *typeToObjMap[I, V]) GetObj(valueExample I) (v V, _ bool) {
 	if obj, ok := b.concreteTypeToObj.Load(reflect.TypeOf(valueExample)); ok {
 		return obj.(V), true
 	}

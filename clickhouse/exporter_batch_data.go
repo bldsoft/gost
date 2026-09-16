@@ -39,7 +39,7 @@ func (e *exporterBatch[T]) Len() int {
 
 func (e *exporterBatch[T]) Add(items ...T) (n int, err error) {
 	for i, item := range items {
-		if err := e.batch.Append(item); err != nil {
+		if err = e.batch.Append(item); err != nil {
 			return i, err
 		}
 		e.n++

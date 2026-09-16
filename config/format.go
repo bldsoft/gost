@@ -55,7 +55,7 @@ func formatValue(v reflect.Value) string {
 		}
 		var sb strings.Builder
 		for i := 0; i < v.Len(); i++ {
-			sb.WriteString(fmt.Sprintf("%v,", v.Index(i)))
+			_, _ = fmt.Fprintf(&sb, "%v,", v.Index(i))
 		}
 
 		return sb.String()[:sb.Len()-1]
