@@ -12,12 +12,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/discovery"
 	"github.com/bldsoft/gost/discovery/consul"
 	"github.com/bldsoft/gost/server"
+	"github.com/stretchr/testify/assert"
 )
 
 func runTestService(t *testing.T, serviceName, serviceID string) (cancel func()) {
@@ -70,16 +69,18 @@ func TestClient(t *testing.T) {
 				return string(data)
 			}
 
-			expected := "111111"
-			if !sticky {
-				expected = "121212"
-			}
-
 			actual := ""
-			for range expected {
+			for range 6 {
 				actual += getResponseBody()
 			}
-			assert.Equal(t, expected, actual)
+
+			// order not guaranteed; underlying map has randomized output.
+			if sticky {
+				assert.Contains(t, []string{"111111", "222222"}, actual)
+
+				return
+			}
+			assert.Contains(t, []string{"121212", "212121"}, actual)
 		})
 	}
 }

@@ -80,6 +80,7 @@ jobs:
         run: gotestsum --format=testname -- -race -tags=integration_test ./...
 
   benchmark:
+    needs: [lint, test]
     if: github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'develop')
     runs-on: ubuntu-latest
     steps:
@@ -88,12 +89,12 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
-      - name: Install benchstat
-        run: go install golang.org/x/perf/cmd/benchstat@v0.0.0-20260819171926-ebcb4798430d
+      - name: Install qbenchstat
+        run: go install github.com/quasilyte/qbenchstat/cmd/qbenchstat@d38378bb2c35d5ed78068dbc4aab1aec1b45020b
       - name: Benchmark merge of PR into ${{ github.base_ref }}
         run: |
           set -o pipefail
-          go test -run=^$ -bench=. -benchmem -count=5 ./... | tee "$RUNNER_TEMP/pr.txt"
+          go test -run=^$ -bench=. -benchmem -count=6 ./... | tee "$RUNNER_TEMP/pr.txt"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.base.sha }}
@@ -104,6 +105,13 @@ jobs:
       - name: Benchmark ${{ github.base_ref }}
         run: |
           set -o pipefail
-          go test -run=^$ -bench=. -benchmem -count=5 ./... | tee "$RUNNER_TEMP/${{ github.base_ref }}.txt"
-      - name: Compare with benchstat
-        run: benchstat "$RUNNER_TEMP/${{ github.base_ref }}.txt" "$RUNNER_TEMP/pr.txt" | tee -a "$GITHUB_STEP_SUMMARY"
+          go test -run=^$ -bench=. -benchmem -count=6 ./... | tee "$RUNNER_TEMP/${{ github.base_ref }}.txt"
+      - name: Compare with qbenchstat
+        run: |
+          {
+            echo '## Benchmark comparison'
+            echo
+            echo '```'
+            qbenchstat "$RUNNER_TEMP/${{ github.base_ref }}.txt" "$RUNNER_TEMP/pr.txt"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
