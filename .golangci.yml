@@ -33,6 +33,8 @@ linters:
     - ineffassign
     - errorlint
     - importas
+    - gosmopolitan
+    - asciicheck
   exclusions:
     generated: lax
     paths:
@@ -55,6 +57,9 @@ linters:
       errorf: false
       asserts: false
       comparison: true
+    gosmopolitan:
+      watch-for-scripts:
+        - Cyrillic
 
 issues:
   max-issues-per-linter: 0
