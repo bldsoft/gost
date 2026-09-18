@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/go-chi/chi/v5/middleware"
+
 	"github.com/bldsoft/gost/auth"
 	"github.com/bldsoft/gost/repository"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 const BsonFieldNameUserID = "userID"
@@ -19,7 +20,9 @@ const BsonFieldNameData = "data"
 
 const BsonFieldDetails = "details"
 
-var CtxDetails struct{}
+type ctxDetailsKey struct{}
+
+var CtxDetails ctxDetailsKey
 
 type Operation int
 
@@ -43,14 +46,14 @@ func (op Operation) String() string {
 }
 
 type Record struct {
-	UserID    string                 `json:"userID,omitempty" bson:"userID,omitempty"`
-	Timestamp int64                  `json:"timestamp" bson:"timestamp"`
-	Operation Operation              `json:"operation" bson:"operation"`
-	Entity    string                 `json:"entity" bson:"entity"`
-	EntityID  string                 `json:"entityID" bson:"entityID"`
-	RequestID string                 `json:"requestID" bson:"requestID"`
-	Data      string                 `json:"data" bson:"data"`
-	Details   map[string]interface{} `json:"details,omitempty" bson:"details,omitempty"`
+	UserID    string         `json:"userID,omitempty" bson:"userID,omitempty"`
+	Timestamp int64          `json:"timestamp" bson:"timestamp"`
+	Operation Operation      `json:"operation" bson:"operation"`
+	Entity    string         `json:"entity" bson:"entity"`
+	EntityID  string         `json:"entityID" bson:"entityID"`
+	RequestID string         `json:"requestID" bson:"requestID"`
+	Data      string         `json:"data" bson:"data"`
+	Details   map[string]any `json:"details,omitempty" bson:"details,omitempty"`
 }
 
 func NewRecord(ctx context.Context, collectionName string, op Operation, entity repository.IEntityID) (*Record, error) {
@@ -61,39 +64,39 @@ func NewRecord(ctx context.Context, collectionName string, op Operation, entity 
 		RequestID: middleware.GetReqID(ctx),
 	}
 
-	user, ok := auth.UserFromContext(ctx).(repository.IEntityID)
-	if ok {
+	if user, ok := auth.UserFromContext(ctx).(repository.IEntityID); ok {
 		rec.UserID = user.StringID()
 	}
 
-	if details, ok := ctx.Value(CtxDetails).(map[string]interface{}); ok && details != nil {
+	if details, ok := ctx.Value(CtxDetails).(map[string]any); ok && details != nil {
 		rec.Details = details
 	}
 
 	if entity != nil {
-		rec.SetData(entity)
+		_ = rec.SetData(entity)
 		rec.EntityID = entity.StringID()
 	}
 
 	return rec, nil
 }
 
-func (r *Record) SetData(entity interface{}) error {
+func (r *Record) SetData(entity any) error {
 	data, err := json.Marshal(entity)
 	if err != nil {
 		return err
 	}
 	r.Data = string(data)
+
 	return nil
 }
 
-func AddContextDetail(ctx context.Context, entry string, value interface{}) context.Context {
+func AddContextDetail(ctx context.Context, entry string, value any) context.Context {
 	if value == nil {
 		return ctx
 	}
-	detail, ok := ctx.Value(CtxDetails).(map[string]interface{})
+	detail, ok := ctx.Value(CtxDetails).(map[string]any)
 	if !ok || detail == nil {
-		detail = map[string]interface{}{}
+		detail = map[string]any{}
 		ctx = context.WithValue(ctx, CtxDetails, detail)
 	}
 

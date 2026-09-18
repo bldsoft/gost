@@ -65,8 +65,10 @@ func (q *TimedQueue[T]) popAndWait(ctx context.Context) *item[T] {
 				res := q.heap.Top()
 				if !res.next.After(v.next) {
 					_ = q.heap.Pop()
+
 					return &res
 				}
+
 				return nil
 			}()
 			if res != nil {
@@ -86,6 +88,7 @@ func (q *TimedQueue[T]) RemoveFirstFunc(f func(value T) bool) (found bool) {
 		return f(item.value)
 	})
 	q.notify()
+
 	return found
 }
 
@@ -102,6 +105,7 @@ func (q *TimedQueue[T]) topWait(ctx context.Context) *item[T] {
 		}
 		item, closed = q.top()
 	}
+
 	return item
 }
 
@@ -112,6 +116,7 @@ func (q *TimedQueue[T]) top() (item *item[T], closed bool) {
 		return nil, q.closed
 	}
 	res := q.heap.Top()
+
 	return &res, false
 }
 

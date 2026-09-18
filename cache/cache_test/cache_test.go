@@ -4,10 +4,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/bldsoft/gost/cache"
 	"github.com/bldsoft/gost/cache/bigcache"
 	"github.com/bldsoft/gost/cache/ristretto"
-	"github.com/stretchr/testify/assert"
 )
 
 var (

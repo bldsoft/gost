@@ -5,10 +5,11 @@ import (
 	"errors"
 	"time"
 
-	"github.com/bldsoft/gost/log"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
+	"github.com/bldsoft/gost/log"
 )
 
 const (
@@ -46,6 +47,7 @@ func NewChangeStreamWatcher(operations ...OperationType) *changeStreamWatcher {
 			operationTypes = append(operationTypes, changeStreamDeleteOp)
 		}
 	}
+
 	return &changeStreamWatcher{
 		operationTypes: operationTypes,
 		recoverTime:    changeStreamRecoverTime,
@@ -87,9 +89,10 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 			w.resumeToken = nil
 		}
 		log.FromContext(ctx).Warnf("Failed to get change stream: %s", err.Error())
+
 		return
 	}
-	defer changeStream.Close(ctx)
+	defer func() { _ = changeStream.Close(ctx) }()
 	log.FromContext(ctx).Debugf("Change stream watcher for \"%s\" started", collection.Name())
 	for changeStream.Next(ctx) {
 		if handler == nil {
@@ -138,5 +141,6 @@ func needResumeTokenReset(err error) bool {
 		return se.HasErrorCode(mongoErrCodeResumeTokenLost) ||
 			se.HasErrorCode(mongoErrCodeChangeStreamFatalError)
 	}
+
 	return false
 }

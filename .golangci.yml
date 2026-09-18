@@ -1,0 +1,66 @@
+version: "2"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - gci
+  settings:
+    gci:
+      custom-order: true
+      sections:
+        - standard
+        - default
+        - prefix(github.com/bldsoft)
+  exclusions:
+    generated: lax
+    paths:
+      - (.*/)?mocks/
+      - (.*/)?mock/
+
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+
+linters:
+  enable:
+    - nlreturn
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - ineffassign
+    - errorlint
+    - importas
+    - gosmopolitan
+    - asciicheck
+  exclusions:
+    generated: lax
+    paths:
+      - (.*/)?mocks/
+      - (.*/)?mock/
+  settings:
+    govet:
+      enable:
+        - shadow
+      disable:
+        - inline
+      settings:
+        shadow:
+          strict: true
+    nlreturn:
+      # Require empty line before return statement only if there are statements before it
+      block-size: 1
+    errorlint:
+      # Enforce errors.Is / errors.As instead of direct comparisons.
+      errorf: false
+      asserts: false
+      comparison: true
+    gosmopolitan:
+      watch-for-scripts:
+        - Cyrillic
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

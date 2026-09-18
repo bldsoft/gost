@@ -7,15 +7,16 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bldsoft/gost/auth"
-	gost_mongo "github.com/bldsoft/gost/mongo"
-	"github.com/bldsoft/gost/repository"
-	"github.com/bldsoft/gost/utils"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
+	"github.com/bldsoft/gost/auth"
+	gost_mongo "github.com/bldsoft/gost/mongo"
+	"github.com/bldsoft/gost/repository"
+	"github.com/bldsoft/gost/utils"
 )
 
 var MongoSessionStoreCollectionName = "session"
@@ -157,8 +158,8 @@ func (mstore *MongoDBStore) Save(r *http.Request, w http.ResponseWriter, session
 		UserID:   session.Values[auth.SessionUserKey].(repository.IIDProvider).StringID(),
 	}
 
-	sessDoc.SetIDFromString(session.ID)
-	if val, ok := session.Values["modified"]; ok {
+	_ = sessDoc.SetIDFromString(session.ID)
+	if val, found := session.Values["modified"]; found {
 		modified, ok := val.(time.Time)
 		if !ok {
 			return errors.New("mongodbstore: invalid modified value")
@@ -274,6 +275,7 @@ func (mstore *MongoDBStore) AllSessions(ctx context.Context, name string, offset
 		}
 		res = append(res, sess)
 	}
+
 	return res, nil
 }
 
@@ -310,6 +312,7 @@ func (mstore *MongoDBStore) SessionByIDs(ctx context.Context, name string, ids .
 func (mstore *MongoDBStore) KillSessions(ctx context.Context, ids ...string) error {
 	rawIDs := repository.StringsToRawIDs[sessionDoc](ids)
 	filter := bson.M{"_id": bson.M{"$in": rawIDs}}
+
 	return mstore.rep.DeleteMany(ctx, filter, &repository.QueryOptions{Archived: false})
 }
 

@@ -2,8 +2,8 @@ package jwt
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
@@ -24,24 +24,25 @@ func (c *JwtConfig) PrivateKey() jwk.Key {
 
 func (c *JwtConfig) PublicKey() jwk.Key {
 	public, _ := c.key.PublicKey()
+
 	return public
 }
 
 func (c *JwtConfig) SetDefaults() {}
 
-func (c *JwtConfig) Validate() (err error) {
+func (c *JwtConfig) Validate() error {
 	if len(c.PemPath) != 0 {
-		bytes, err := ioutil.ReadFile(c.PemPath)
+		bytes, err := os.ReadFile(c.PemPath)
 		if err != nil {
 			return fmt.Errorf("failed to read jwt key: %w", err)
 		}
 
 		c.key, err = jwk.ParseKey(bytes, jwk.WithPEM(true))
-
 		if err != nil {
 			return fmt.Errorf("failed to parse jwt key: %w", err)
 		}
 	}
+
 	return nil
 }
 
@@ -51,7 +52,7 @@ func JwtAuthMiddlewareFromConfig(cfg JwtConfig) func(next http.Handler) http.Han
 
 // JwtAuthMiddleware accepts either a raw key (e.g. rsa.PrivateKey, ecdsa.PrivateKey, etc)
 // or a jwk.Key, and the name of the algorithm that should be used to sign the token.
-func JwtAuthMiddleware(alg string, signKey interface{}) func(next http.Handler) http.Handler {
+func JwtAuthMiddleware(alg string, signKey any) func(next http.Handler) http.Handler {
 	return chi.Chain(jwtauth.Verifier(jwtauth.New(alg, signKey, nil)), jwtauth.Authenticator).Handler
 }
 

@@ -17,6 +17,7 @@ func DefaultDialer(d Discovery) *Dialer {
 		Timeout:   30 * time.Second,
 		KeepAlive: 30 * time.Second,
 	}
+
 	return NewDialer(baseDialer, resolver)
 }
 
@@ -49,5 +50,6 @@ func (d *Dialer) DialContext(ctx context.Context, network, addr string) (net.Con
 			return conn, nil
 		}
 	}
+
 	return nil, err
 }

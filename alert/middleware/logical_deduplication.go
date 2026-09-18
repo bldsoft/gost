@@ -21,6 +21,7 @@ func LogicalDeduplication(duplicatedCache cache.Repository[*alert.Alert], dedupl
 			},
 		}
 	}
+
 	return func(next alert.Handler) alert.Handler {
 		return alert.HandlerFunc(func(ctx context.Context, alerts ...alert.Alert) {
 			logger := log.FromContext(ctx).WithFields(log.Fields{"component": "alerts logical deduplication"})
@@ -29,6 +30,7 @@ func LogicalDeduplication(duplicatedCache cache.Repository[*alert.Alert], dedupl
 			pass := func(cacheKey string, alert alert.Alert) {
 				if err := duplicatedCache.Set(cacheKey, &alert); err != nil {
 					logger.ErrorWithFields(log.Fields{"err": err}, "failed to set alert in cache")
+
 					return
 				}
 				deduplicated = append(deduplicated, alert)
@@ -39,6 +41,7 @@ func LogicalDeduplication(duplicatedCache cache.Repository[*alert.Alert], dedupl
 				prev, err := duplicatedCache.Get(cacheKey)
 				if err != nil && !errors.Is(err, utils.ErrObjectNotFound) {
 					logger.ErrorWithFields(log.Fields{"err": err}, "failed to check if alert already exists in cache")
+
 					continue
 				}
 
@@ -56,6 +59,7 @@ func LogicalDeduplication(duplicatedCache cache.Repository[*alert.Alert], dedupl
 							pass(cacheKey, alert)
 						}
 					}
+
 					continue
 				}
 
