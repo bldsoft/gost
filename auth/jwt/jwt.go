@@ -30,16 +30,14 @@ func (c *JwtConfig) PublicKey() jwk.Key {
 
 func (c *JwtConfig) SetDefaults() {}
 
-func (c *JwtConfig) Validate() (err error) {
+func (c *JwtConfig) Validate() error {
 	if len(c.PemPath) != 0 {
-		var bytes []byte
-		bytes, err = os.ReadFile(c.PemPath)
+		bytes, err := os.ReadFile(c.PemPath)
 		if err != nil {
 			return fmt.Errorf("failed to read jwt key: %w", err)
 		}
 
 		c.key, err = jwk.ParseKey(bytes, jwk.WithPEM(true))
-
 		if err != nil {
 			return fmt.Errorf("failed to parse jwt key: %w", err)
 		}

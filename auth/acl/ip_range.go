@@ -32,30 +32,27 @@ func MustIpRangeFromStrings(strs ...string) IpRange {
 	return ipRange
 }
 
-func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
+func IpRangeFromStrings(strs ...string) (res IpRange, _ error) {
 	for _, s := range strs {
 		if strings.Contains(s, "/") {
-			var network netip.Prefix
-			network, err = netip.ParsePrefix(s)
+			network, err := netip.ParsePrefix(s)
 			if err != nil {
 				return res, err
 			}
-			var pfx netip.Prefix
-			pfx, err = utils.CanonicalPrefix(network)
+			pfx, err := utils.CanonicalPrefix(network)
 			if err != nil {
 				return res, err
 			}
 			res.cidrs = append(res.cidrs, pfx)
 		} else {
-			var ip netip.Addr
-			ip, err = netip.ParseAddr(s)
+			ip, err := netip.ParseAddr(s)
 			if err != nil {
 				return res, err
 			}
 			res.ips = append(res.ips, utils.CanonicalAddr(ip))
 		}
 	}
-	if err = res.buildTree(); err != nil {
+	if err := res.buildTree(); err != nil {
 		return res, err
 	}
 

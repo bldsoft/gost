@@ -131,36 +131,28 @@ func (r *MemcacheRepository) Reset() {
 }
 
 func (r *MemcacheRepository) CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error {
-	var err error
 	key = r.cache.PrepareKey(key)
 
 	for range casRetryLimit {
-		var item *memcache.Item
-		item, err = r.cache.Get(key)
-
+		item, err := r.cache.Get(key)
 		if err != nil || item == nil {
 			return err
 		}
 
-		var data []byte
-		data, err = handler(item.Value)
-
+		data, err := handler(item.Value)
 		if err != nil || data == nil {
 			return err
 		}
 
 		item.Value = data
-		err = r.cache.CompareAndSwap(item)
-
-		switch {
-		case errors.Is(err, memcache.ErrCASConflict):
-			time.Sleep(casSleepTime * time.Millisecond)
-		default:
+		if err = r.cache.CompareAndSwap(item); !errors.Is(err, memcache.ErrCASConflict) {
 			return err
 		}
+
+		time.Sleep(casSleepTime * time.Millisecond)
 	}
 
-	return err
+	return memcache.ErrCASConflict
 }
 
 func (r *MemcacheRepository) mapError(err error) error {
