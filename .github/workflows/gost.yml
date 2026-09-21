@@ -21,6 +21,7 @@ on:
       - .golangci.yml
       - .mockery.yml
       - .github/workflows/gost.yml
+  workflow_dispatch:
 
 concurrency:
   group: gost-${{ github.workflow }}-${{ github.ref }}
@@ -80,7 +81,11 @@ jobs:
 
   benchmark:
     needs: [lint, test]
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    if: >
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'opened' &&
+       github.base_ref == 'main') ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -94,19 +99,33 @@ jobs:
         run: |
           set -o pipefail
           go test -run=^$ -bench=. -benchmem -count=6 ./... | tee "$RUNNER_TEMP/pr.txt"
+      - name: Load benchmarks/main.txt from main
+        id: baseline
+        run: |
+          git fetch --depth=1 origin main
+          if git cat-file -e "origin/main:benchmarks/main.txt"; then
+            git show "origin/main:benchmarks/main.txt" > "$RUNNER_TEMP/main.txt"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::benchmarks/main.txt not found on main; running live baseline benchmarks"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v6
+        if: steps.baseline.outputs.exists != 'true'
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: main
       - uses: actions/setup-go@v6
+        if: steps.baseline.outputs.exists != 'true'
         with:
           go-version-file: go.mod
-          cache-dependency-path: go.sum
-      - name: Benchmark ${{ github.base_ref }}
+          cache: false
+      - name: Benchmark main
+        if: steps.baseline.outputs.exists != 'true'
         run: |
           set -o pipefail
-          go test -run=^$ -bench=. -benchmem -count=6 ./... | tee "$RUNNER_TEMP/${{ github.base_ref }}.txt"
+          go test -run=^$ -bench=. -benchmem -count=6 ./... | tee "$RUNNER_TEMP/main.txt"
       - name: Compare with qbenchstat
         run: |
           {
-            qbenchstat "$RUNNER_TEMP/${{ github.base_ref }}.txt" "$RUNNER_TEMP/pr.txt"
+            qbenchstat "$RUNNER_TEMP/main.txt" "$RUNNER_TEMP/pr.txt"
           } | tee -a "$GITHUB_STEP_SUMMARY"
