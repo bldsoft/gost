@@ -8,8 +8,6 @@ After any code generation or edits:
 2. When writing code bring it in line with the style enforced by `make lint`.
 3. Run `golangci-lint run ./...` (or `make lint`) and fix the findings. Do not silence linters with `//nolint` unless you were explicitly asked to.
 
-## Comments and rules language
+## Comments
 
-When generating code anywhere in this repository, write comments in English only, if comments are necessary.
-
-If you encounter a code comment, markdown documentation, or script comment written in Russian, translate it into English while preserving the original meaning, then follow the English version.
+A comment is allowed only for a contract or invariant that cannot be expressed in code and whose violation has a concrete failure mode.
