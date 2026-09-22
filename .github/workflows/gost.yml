@@ -126,6 +126,41 @@ jobs:
           go test -run=^$ -bench=. -benchmem -count=6 ./... | tee "$RUNNER_TEMP/main.txt"
       - name: Compare with qbenchstat
         run: |
-          {
-            qbenchstat -no-color "$RUNNER_TEMP/main.txt" "$RUNNER_TEMP/pr.txt"
-          } | tee -a "$GITHUB_STEP_SUMMARY"
+          set -o pipefail
+          qbenchstat "$RUNNER_TEMP/main.txt" "$RUNNER_TEMP/pr.txt" | tee "$RUNNER_TEMP/qbenchstat.txt"
+          echo 'Colored output is in the Compare with qbenchstat step log.' >> "$GITHUB_STEP_SUMMARY"
+          filtered=$(sed 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/qbenchstat.txt" | awk '
+            function is_delta(line) { return line ~ /[+-][0-9]+(\.[0-9]+)?%/ }
+            /^name / && / old / {
+              header = $0
+              pkg = ""
+              header_printed = 0
+              pkg_printed = 0
+              next
+            }
+            /^pkg:/ {
+              pkg = $0
+              pkg_printed = 0
+              next
+            }
+            is_delta($0) {
+              if (!header_printed) {
+                if (any) print ""
+                print header
+                header_printed = 1
+              }
+              if (pkg != "" && !pkg_printed) {
+                print pkg
+                pkg_printed = 1
+              }
+              print
+              any = 1
+            }
+          ')
+          if [ -n "$filtered" ]; then
+            {
+              echo '```text'
+              printf '%s\n' "$filtered"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
