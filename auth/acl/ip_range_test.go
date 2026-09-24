@@ -45,17 +45,17 @@ func TestIpRangeJson(t *testing.T) {
 }
 
 func TestIpRangeBson(t *testing.T) {
-	acl := acl{
+	doc := acl{
 		ACL: MustIpRangeFromStrings("127.0.0.0/24", "192.168.0.1"),
 	}
 
-	data, err := bson.Marshal(acl)
+	data, err := bson.Marshal(doc)
 	assert.NoError(t, err)
 
-	assert.NoError(t, bson.Unmarshal(data, &acl))
-	assert.True(t, acl.ACL.Contains(netip.MustParseAddr("127.0.0.1")))
-	assert.True(t, acl.ACL.Contains(netip.MustParseAddr("192.168.0.1")))
-	assert.False(t, acl.ACL.Contains(netip.MustParseAddr("192.168.0.2")))
+	assert.NoError(t, bson.Unmarshal(data, &doc))
+	assert.True(t, doc.ACL.Contains(netip.MustParseAddr("127.0.0.1")))
+	assert.True(t, doc.ACL.Contains(netip.MustParseAddr("192.168.0.1")))
+	assert.False(t, doc.ACL.Contains(netip.MustParseAddr("192.168.0.2")))
 }
 
 func TestIpRangeIPv4MappedIPv6(t *testing.T) {
@@ -167,6 +167,7 @@ func (r IpRange) isInSubnets(ip netip.Addr, subs []netip.Prefix) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -223,6 +224,7 @@ func benchmarkIPRangeCases() []ipBenchCase {
 			cases = append(cases, ipBenchCase{sc.name, makeIPRangeBenchCIDROnly, n, sc.target})
 		}
 	}
+
 	return cases
 }
 
@@ -273,6 +275,7 @@ func makeIPRangeBench(n int) IpRange {
 		}
 		items = append(items, key)
 	}
+
 	return MustIpRangeFromStrings(items...)
 }
 
@@ -287,6 +290,7 @@ func makeIPRangeBenchCIDROnly(n int) IpRange {
 		}
 		items = append(items, key)
 	}
+
 	return MustIpRangeFromStrings(items...)
 }
 
@@ -301,5 +305,6 @@ func makeIPBenchTarget(items IpRange, pos int) netip.Addr {
 		res = fmt.Sprintf("172.%d.%d.%d", (pos*7)%256, (pos*13)%256, (pos*19)%256)
 	}
 	ip, _ := netip.ParseAddr(res)
+
 	return ip
 }

@@ -3,18 +3,19 @@ package mongo
 import (
 	"context"
 
-	"github.com/bldsoft/gost/repository"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+
+	"github.com/bldsoft/gost/repository"
 )
 
-//go:generate go run github.com/vektra/mockery/v2 --all --with-expecter
+//go:generate mockery
 
 type Repository[T any, U repository.IEntityIDPtr[T]] interface {
 	Name() string
 	Collection() *mongo.Collection
-	WithTransaction(ctx context.Context, f func(ctx context.Context) (interface{}, error)) (interface{}, error)
+	WithTransaction(ctx context.Context, f func(ctx context.Context) (any, error)) (any, error)
 
 	repository.Repository[T, U]
 
-	AggregateOne(ctx context.Context, pipeline mongo.Pipeline, entity interface{}) error
+	AggregateOne(ctx context.Context, pipeline mongo.Pipeline, entity any) error
 }

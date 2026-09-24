@@ -153,6 +153,7 @@ func (c *Client) CreateIndexes(ctx context.Context) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -193,12 +194,13 @@ func (c *Client) XLock(ctx context.Context, resourceName, lockId string, ld Lock
 		r,
 		options.FindOneAndUpdate().SetUpsert(UPSERT).SetReturnDocument(ReturnDoc))
 
-	rr := map[string]interface{}{}
+	rr := map[string]any{}
 	err := result.Decode(rr)
 	if err != nil {
 		if isDup(err) {
 			return ErrAlreadyLocked
 		}
+
 		return err
 	}
 
@@ -254,13 +256,14 @@ func (c *Client) SLock(ctx context.Context, resourceName, lockId string, ld Lock
 		change,
 		options.FindOneAndUpdate().SetUpsert(UPSERT).SetReturnDocument(ReturnDoc))
 
-	rr := map[string]interface{}{}
+	rr := map[string]any{}
 	err := result.Decode(rr)
 
 	if err != nil {
 		if isDup(err) {
 			return ErrAlreadyLocked
 		}
+
 		return err
 	}
 
@@ -288,13 +291,12 @@ func (c *Client) Unlock(ctx context.Context, lockId string) ([]LockStatus, error
 	}
 
 	// Sort the lock statuses by most recent CreatedAt date first.
-	var sortedLocks LockStatusesByCreatedAtDesc
-	sortedLocks = locks
+	sortedLocks := LockStatusesByCreatedAtDesc(locks)
 	sort.Sort(sortedLocks)
 
 	unlocked := []LockStatus{}
 	for _, lock := range sortedLocks {
-		var err error
+		err = nil
 		switch lock.Type {
 		case LOCK_TYPE_EXCLUSIVE:
 			err = c.xUnlock(ctx, lock.Resource, lock.LockId)
@@ -302,11 +304,12 @@ func (c *Client) Unlock(ctx context.Context, lockId string) ([]LockStatus, error
 			err = c.sUnlock(ctx, lock.Resource, lock.LockId)
 		}
 		if err != nil {
-			if err == ErrLockNotFound {
+			if errors.Is(err, ErrLockNotFound) {
 				// It's fine if the lock is gone, that's
 				// what we want.
 				continue
 			}
+
 			return unlocked, err
 		}
 		unlocked = append(unlocked, lock)
@@ -337,7 +340,7 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 			"$lt": f.CreatedBefore,
 		}
 		filterCond = append(filterCond, bson.M{
-			"$lt": []interface{}{"$$lock.createdAt", f.CreatedBefore},
+			"$lt": []any{"$$lock.createdAt", f.CreatedBefore},
 		})
 
 	}
@@ -349,7 +352,7 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 			"$gt": f.CreatedAfter,
 		}
 		filterCond = append(filterCond, bson.M{
-			"$gt": []interface{}{"$$lock.createdAt", f.CreatedAfter},
+			"$gt": []any{"$$lock.createdAt", f.CreatedAfter},
 		})
 	}
 
@@ -365,10 +368,10 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 			"$lt": ttlTime,
 		}
 		filterCond = append(filterCond, bson.M{
-			"$lt": []interface{}{"$$lock.expiresAt", ttlTime},
+			"$lt": []any{"$$lock.expiresAt", ttlTime},
 		}, bson.M{
 			// Exclude locks without a TTL.
-			"$gt": []interface{}{"$$lock.expiresAt", nil},
+			"$gt": []any{"$$lock.expiresAt", nil},
 		})
 	}
 	if f.TTLgte > 0 {
@@ -380,7 +383,7 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 			"$gte": ttlTime,
 		}
 		filterCond = append(filterCond, bson.M{
-			"$gte": []interface{}{"$$lock.expiresAt", ttlTime},
+			"$gte": []any{"$$lock.expiresAt", ttlTime},
 		})
 	}
 
@@ -388,7 +391,7 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 		xQuery["exclusive.lockId"] = f.LockId
 		sQuery["shared.locks.lockId"] = f.LockId
 		filterCond = append(filterCond, bson.M{
-			"$eq": []interface{}{"$$lock.lockId", f.LockId},
+			"$eq": []any{"$$lock.lockId", f.LockId},
 		})
 	}
 
@@ -396,7 +399,7 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 		xQuery["exclusive.owner"] = f.Owner
 		sQuery["shared.locks.owner"] = f.Owner
 		filterCond = append(filterCond, bson.M{
-			"$eq": []interface{}{"$$lock.owner", f.Owner},
+			"$eq": []any{"$$lock.owner", f.Owner},
 		})
 	}
 
@@ -445,18 +448,18 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 		return []LockStatus{}, err
 	}
 
-	defer cur.Close(ctx)
+	defer func() { _ = cur.Close(ctx) }()
 
 	for cur.Next(ctx) {
 		var result resource
-		err := cur.Decode(&result)
+		err = cur.Decode(&result)
 		if err != nil {
 			return []LockStatus{}, err
 		}
 
 		resources = append(resources, result)
 	}
-	if err := cur.Err(); err != nil {
+	if err = cur.Err(); err != nil {
 		return []LockStatus{}, err
 	}
 
@@ -576,13 +579,14 @@ func (c *Client) Renew(ctx context.Context, lockId string, ttl uint) ([]LockStat
 			change,
 			options.FindOneAndUpdate().SetReturnDocument(ReturnDoc))
 
-		doc := map[string]interface{}{}
-		err := result.Decode(doc)
+		doc := map[string]any{}
+		err = result.Decode(doc)
 
 		if err != nil {
 			if len(doc) == 0 {
 				return statuses, ErrLockNotFound
 			}
+
 			return statuses, err
 		}
 
@@ -622,12 +626,13 @@ func (c *Client) xUnlock(ctx context.Context, resourceName, lockId string) error
 		change,
 		options.FindOneAndUpdate().SetReturnDocument(ReturnDoc))
 
-	doc := map[string]interface{}{}
+	doc := map[string]any{}
 	err := result.Decode(doc)
 	if err != nil {
 		if len(doc) == 0 {
 			return ErrLockNotFound
 		}
+
 		return err
 	}
 
@@ -667,12 +672,13 @@ func (c *Client) sUnlock(ctx context.Context, resourceName, lockId string) error
 		change,
 		options.FindOneAndUpdate().SetReturnDocument(ReturnDoc))
 
-	doc := map[string]interface{}{}
+	doc := map[string]any{}
 	err := result.Decode(doc)
 	if err != nil {
 		if len(doc) == 0 {
 			return ErrLockNotFound
 		}
+
 		return err
 	}
 
@@ -684,7 +690,7 @@ func (c *Client) sUnlock(ctx context.Context, resourceName, lockId string) error
 func lockFromDetails(lockId string, ld LockDetails) lock {
 	now := time.Now()
 
-	lock := lock{
+	l := lock{
 		LockId:    &lockId,
 		CreatedAt: &now,
 		Acquired:  true,
@@ -692,20 +698,20 @@ func lockFromDetails(lockId string, ld LockDetails) lock {
 	}
 
 	if ld.Owner != "" {
-		lock.Owner = &ld.Owner
+		l.Owner = &ld.Owner
 	}
 	if ld.Host != "" {
-		lock.Host = &ld.Host
+		l.Host = &ld.Host
 	}
 	if ld.Comment != "" {
-		lock.Comment = &ld.Comment
+		l.Comment = &ld.Comment
 	}
 	if ld.TTL > 0 {
 		e := now.Add(time.Duration(ld.TTL) * time.Second)
-		lock.ExpiresAt = &e
+		l.ExpiresAt = &e
 	}
 
-	return lock
+	return l
 }
 
 // statusFromLock creates a LockStatus struct from a lock struct.
@@ -745,11 +751,12 @@ func calcTTL(expiresAt *time.Time) int64 {
 		return -1
 	}
 
-	delta := expiresAt.Sub(time.Now())
+	delta := time.Until(*expiresAt)
 	ttl := int64(delta.Seconds()) // Don't need sub-second granularity.
 	if ttl < 0 {
 		return 0
 	}
+
 	return ttl
 }
 
@@ -764,19 +771,18 @@ func (ls LockStatusesByCreatedAtDesc) Less(i, j int) bool {
 func (ls LockStatusesByCreatedAtDesc) Swap(i, j int) { ls[i], ls[j] = ls[j], ls[i] }
 
 func isDup(err error) bool {
-	var ce mongo.CommandError
-	if errors.As(err, &ce) {
+	if ce, ok := errors.AsType[mongo.CommandError](err); ok {
 		if ce.Code == 11000 {
 			return true
 		}
 	}
-	var e mongo.WriteException
-	if errors.As(err, &e) {
+	if e, ok := errors.AsType[mongo.WriteException](err); ok {
 		for _, we := range e.WriteErrors {
 			if we.Code == 11000 {
 				return true
 			}
 		}
 	}
+
 	return false
 }

@@ -15,6 +15,7 @@ func (logOutput) Write(p []byte) (n int, err error) {
 	submatches := memberlistLogRE.FindSubmatch(p)
 	if len(submatches) != submatchesCount {
 		log.Errorf("Discovery: failed to parse message: %s", p)
+
 		return 0, nil
 	}
 	lvl, msg := string(submatches[1]), string(submatches[2])
@@ -33,5 +34,6 @@ func (logOutput) Write(p []byte) (n int, err error) {
 	default:
 		log.Logger.Debug(msg)
 	}
+
 	return
 }

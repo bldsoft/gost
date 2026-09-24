@@ -12,9 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bldsoft/gost/log"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/sessions"
+
+	"github.com/bldsoft/gost/log"
 )
 
 type RedisSessionStore struct {
@@ -95,7 +96,7 @@ func (s *RedisSessionStore) sessionsFromKeys(name string, keys []string) ([]*ses
 		}
 
 		session := sessions.NewSession(s, name)
-		if err := s.serializer.Deserialize([]byte(b), session); err != nil {
+		if err = s.serializer.Deserialize([]byte(b), session); err != nil {
 			return nil, err
 		}
 
@@ -125,11 +126,13 @@ func (s *RedisSessionStore) New(r *http.Request, name string) (*sessions.Session
 	session.ID = c.Value
 
 	err = s.load(session)
-	if err == nil {
+	switch {
+	case err == nil:
 		session.IsNew = false
-	} else if err == redis.Nil {
+	case errors.Is(err, redis.Nil):
 		err = nil // no data stored
 	}
+
 	return session, err
 }
 
@@ -146,6 +149,7 @@ func (s *RedisSessionStore) Save(r *http.Request, w http.ResponseWriter, session
 			return err
 		}
 		http.SetCookie(w, sessions.NewCookie(session.Name(), "", session.Options))
+
 		return nil
 	}
 
@@ -161,6 +165,7 @@ func (s *RedisSessionStore) Save(r *http.Request, w http.ResponseWriter, session
 	}
 
 	http.SetCookie(w, sessions.NewCookie(session.Name(), session.ID, session.Options))
+
 	return nil
 }
 
@@ -194,6 +199,7 @@ func (s *RedisSessionStore) save(session *sessions.Session) error {
 	if session.IsNew {
 		return s.client.Set(s.keyPrefix+session.ID, b, time.Duration(session.Options.MaxAge)*time.Second).Err()
 	}
+
 	return s.client.SetXX(s.keyPrefix+session.ID, b, time.Duration(session.Options.MaxAge)*time.Second).Err()
 }
 
@@ -221,11 +227,13 @@ func (s *RedisSessionStore) KillSessions(ctx context.Context, sessionIDs ...stri
 	for i, id := range sessionIDs {
 		sessionIDs[i] = s.keyPrefix + id
 	}
+
 	return s.client.Del(sessionIDs...).Err()
 }
 
 func (s *RedisSessionStore) KillUserSessions(_ context.Context, _ string) error {
 	log.Error("kill user sessions is not implemented for redis")
+
 	return nil
 }
 
@@ -245,11 +253,13 @@ func (gs GobSerializer) Serialize(s *sessions.Session) ([]byte, error) {
 	if err == nil {
 		return buf.Bytes(), nil
 	}
+
 	return nil, err
 }
 
 func (gs GobSerializer) Deserialize(d []byte, s *sessions.Session) error {
 	dec := gob.NewDecoder(bytes.NewBuffer(d))
+
 	return dec.Decode(&s.Values)
 }
 
@@ -259,5 +269,6 @@ func generateRandomKey() (string, error) {
 	if _, err := io.ReadFull(rand.Reader, k); err != nil {
 		return "", err
 	}
+
 	return strings.TrimRight(base32.StdEncoding.EncodeToString(k), "="), nil
 }

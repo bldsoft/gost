@@ -3,7 +3,9 @@ package alert
 import (
 	"cmp"
 	"context"
+	_ "embed"
 	"errors"
+	"maps"
 	"slices"
 	"text/template"
 
@@ -11,8 +13,6 @@ import (
 	"github.com/bldsoft/gost/alert/notify/channel"
 	"github.com/bldsoft/gost/utils/poly"
 	"github.com/bldsoft/gost/utils/seq"
-
-	_ "embed"
 )
 
 //go:embed notify_templates/email_subject.tmpl
@@ -46,6 +46,7 @@ func NewNotifyService(cfg NotifyConfig, receivers ...poly.Poly[notify.Receiver])
 	cfg.Dispatcher.Email.MessageTemplate = cmp.Or(cfg.Dispatcher.Email.MessageTemplate, defaultEmailMessageTemplate)
 	cfg.Dispatcher.Email.SubjectTemplate = cmp.Or(cfg.Dispatcher.Email.SubjectTemplate, defaultEmailSubjectTemplate)
 	cfg.Dispatcher.SlackWebhook.MessageTemplate = cmp.Or(cfg.Dispatcher.SlackWebhook.MessageTemplate, defaultSlackMessageTemplate)
+
 	return &NotifyServiceAdapter{
 		cfg:           cfg,
 		notifyService: notify.NewService(cfg),
@@ -59,6 +60,7 @@ func (s *NotifyServiceAdapter) Run(ctx context.Context) error {
 
 func (s *NotifyServiceAdapter) SetQueue(queue notify.Queue) *NotifyServiceAdapter {
 	_ = s.notifyService.SetQueue(queue)
+
 	return s
 }
 
@@ -75,6 +77,7 @@ func (s *NotifyServiceAdapter) Send(ctx context.Context, alert Alert) error {
 		err := s.notifyService.Send(ctx, notification)
 		errs = errors.Join(errs, err)
 	}
+
 	return errs
 }
 
@@ -82,13 +85,12 @@ func (h *NotifyServiceAdapter) prepareMessage(alert Alert) channel.Message {
 	msg := channel.Message{
 		Data: make(map[string]any),
 	}
-	for k, v := range alert.MetaData {
-		msg.Data[k] = v
-	}
+	maps.Copy(msg.Data, alert.MetaData)
 	msg.Data[FromMsgKey] = alert.From
 	if !alert.To.IsZero() {
 		msg.Data[ToMsgKey] = alert.To
 	}
 	msg.Data[SeverityMsgKey] = alert.Severity
+
 	return msg
 }

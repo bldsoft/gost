@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bldsoft/gost/cache/v2"
-	"github.com/bldsoft/gost/log"
-
 	aero "github.com/aerospike/aerospike-client-go/v8"
 	aeroTypes "github.com/aerospike/aerospike-client-go/v8/types"
+
+	"github.com/bldsoft/gost/cache/v2"
+	"github.com/bldsoft/gost/log"
 )
 
 const (
@@ -38,6 +38,7 @@ func NewRepository(cache *Storage, liveTime time.Duration, setName string) *Repo
 		itemSizeLimit: defaultItemSizeLimit,
 	}
 	rep.SetLiveTimeMin(liveTime)
+
 	return rep
 }
 
@@ -53,6 +54,7 @@ func (r *Repository) SetItemSizeLimit(limit int) {
 
 func (r *Repository) Get(key string) (*cache.Item, error) {
 	res, _, err := r.get(key)
+
 	return res, err
 }
 
@@ -66,6 +68,7 @@ func (r *Repository) get(key string) (*cache.Item, uint32, error) {
 		if errors.Is(err, aero.ErrKeyNotFound) {
 			return nil, 0, cache.ErrCacheMiss
 		}
+
 		return nil, 0, err
 	}
 
@@ -80,12 +83,13 @@ func (r *Repository) get(key string) (*cache.Item, uint32, error) {
 
 	if item.Bins[continuationBinKey] == nil {
 		res.Value = mainValue
+
 		return res, item.Generation, nil
 	}
 
-	continuationKeys := make([]*aero.Key, len(item.Bins[continuationBinKey].([]interface{})))
-	for i, k := range item.Bins[continuationBinKey].([]interface{}) {
-		asKey, err := r.key(k.(string))
+	continuationKeys := make([]*aero.Key, len(item.Bins[continuationBinKey].([]any)))
+	for i, k := range item.Bins[continuationBinKey].([]any) {
+		asKey, err = r.key(k.(string))
 		if err != nil {
 			return nil, 0, err
 		}
@@ -132,6 +136,7 @@ func (r *Repository) Exist(key string) bool {
 		return false
 	}
 	exists, _ := r.cache.Exists(nil, asKey)
+
 	return exists
 }
 
@@ -152,13 +157,14 @@ func (r *Repository) Delete(key string) error {
 	}
 
 	if item != nil && item.Bins[continuationBinKey] != nil {
-		continuationKeys := item.Bins[continuationBinKey].([]interface{})
+		continuationKeys := item.Bins[continuationBinKey].([]any)
 		if len(continuationKeys) > 0 {
 			keys := make([]*aero.Key, 0, len(continuationKeys))
 			for _, k := range continuationKeys {
-				asKey, err := r.key(k.(string))
+				asKey, err = r.key(k.(string))
 				if err != nil {
 					log.WarnWithFields(log.Fields{"key": k, "err": err}, "failed to create key for continuation deletion")
+
 					continue
 				}
 				keys = append(keys, asKey)
@@ -185,6 +191,7 @@ func (r *Repository) Add(key string, val []byte, item ...cache.ItemF) error {
 	if errors.As(err, &asErr) && asErr.ResultCode == aeroTypes.KEY_EXISTS_ERROR {
 		return cache.ErrExists
 	}
+
 	return err
 }
 
@@ -197,7 +204,7 @@ func (r *Repository) CompareAndSwap(
 	handler func(value *cache.Item) (*cache.Item, error),
 	sleepDur ...time.Duration,
 ) error {
-	for i := 0; i < casRetryLimit; i++ {
+	for range casRetryLimit {
 		data, generation, err := r.get(key)
 		if err != nil {
 			return err
@@ -216,6 +223,7 @@ func (r *Repository) CompareAndSwap(
 		var asErr *aero.AerospikeError
 		if errors.As(err, &asErr) && asErr.ResultCode == aeroTypes.GENERATION_ERROR {
 			time.Sleep(casSleepTime * time.Millisecond)
+
 			continue
 		}
 		if err != nil {
@@ -237,8 +245,9 @@ func (r *Repository) AddOrGet(key string, val []byte, opts ...cache.ItemF) (*cac
 		}, false, nil
 	}
 
-	if err := r.Add(key, val, opts...); errors.Is(err, cache.ErrExists) {
-		i, err := r.Get(key)
+	if err = r.Add(key, val, opts...); errors.Is(err, cache.ErrExists) {
+		i, err = r.Get(key)
+
 		return i, false, err
 	}
 
@@ -261,6 +270,7 @@ func (r *Repository) put(replace bool, key string, val []byte, generation *uint3
 	if err != nil {
 		return err
 	}
+
 	return r.cache.BatchOperate(bop, batchWrites)
 }
 
@@ -292,7 +302,7 @@ func (r *Repository) prepBatchWrite(replace bool, key string, val []byte, genera
 
 	continuationKeys := make([]string, 0, len(continuations))
 	for _, c := range continuations {
-		asKey, err := r.key(c.Key)
+		asKey, err = r.key(c.Key)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -335,6 +345,7 @@ func (r *Repository) split(key string, val []byte) ([]byte, []continuation) {
 			Value: val[i : i+min(r.itemSizeLimit, len(val)-i)],
 		})
 	}
+
 	return val[:r.itemSizeLimit], continuations
 }
 
@@ -343,6 +354,7 @@ func truncExpiration(d time.Duration) uint32 {
 	if d > maxDuration {
 		return uint32(maxDuration.Seconds())
 	}
+
 	return uint32(d.Seconds())
 }
 

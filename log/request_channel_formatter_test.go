@@ -22,7 +22,7 @@ func (c *testController) Handler(w http.ResponseWriter, r *http.Request) {
 		ww.WriteRequestInfoErr(string(make([]byte, c.ErrorSize)))
 	}
 
-	w.Write(make([]byte, int(c.Size)))
+	_, _ = w.Write(make([]byte, int(c.Size)))
 	w.WriteHeader(c.Code)
 }
 
@@ -95,6 +95,7 @@ func TestChannelFormatterRequestError(t *testing.T) {
 			next.ServeHTTP(w, r)
 			buf.WriteString("3")
 		}
+
 		return http.HandlerFunc(fn)
 	})
 

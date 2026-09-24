@@ -1,0 +1,166 @@
+name: gost
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.go'
+      - go.mod
+      - go.sum
+      - Makefile
+      - .golangci.yml
+      - .mockery.yml
+      - .github/workflows/gost.yml
+  pull_request:
+    paths:
+      - '**/*.go'
+      - go.mod
+      - go.sum
+      - Makefile
+      - .golangci.yml
+      - .mockery.yml
+      - .github/workflows/gost.yml
+  workflow_dispatch:
+
+concurrency:
+  group: gost-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.13.2
+
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_SERVER: mongodb://127.0.0.1:27017/?replicaSet=rs0&directConnection=true
+      DATABASE_DBNAME: test
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Start MongoDB replica set
+        run: |
+          wait_for() {
+            for _ in $(seq 1 60); do
+              if docker exec mongo mongosh --quiet --eval "$1" 2>/dev/null | grep -q "$2"; then
+                return 0
+              fi
+              sleep 1
+            done
+            echo "::error::$3"
+            docker logs mongo
+            return 1
+          }
+          docker run -d --name mongo -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
+          wait_for 'db.runCommand({ ping: 1 }).ok' 1 'mongod did not become ready'
+          docker exec mongo mongosh --quiet --eval 'rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "127.0.0.1:27017" }] })'
+          wait_for 'db.hello().isWritablePrimary' true 'replica set did not elect a primary'
+      - name: Start Memcached
+        run: docker run -d --name memcached -p 11211:11211 memcached:1.6.5
+      - name: Start Consul
+        run: docker run -d --name consul -p 8500:8500 hashicorp/consul:1.15.4 agent -dev -client=0.0.0.0
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@v1.12.3
+      - name: Test
+        run: gotestsum --format=testname -- -race -tags=integration_test ./...
+
+  benchmark:
+    needs: [lint, test]
+    if: >
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'opened' &&
+       github.base_ref == 'main') ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Install qbenchstat
+        run: go install github.com/quasilyte/qbenchstat/cmd/qbenchstat@d38378bb2c35d5ed78068dbc4aab1aec1b45020b
+      - name: Benchmark merge of PR into ${{ github.base_ref }}
+        run: |
+          set -o pipefail
+          go test -run=^$ -bench=. -benchmem -count=6 ./... | tee "$RUNNER_TEMP/pr.txt"
+      - name: Load benchmarks/main.txt from main
+        id: baseline
+        run: |
+          git fetch --depth=1 origin main
+          if git cat-file -e "origin/main:benchmarks/main.txt"; then
+            git show "origin/main:benchmarks/main.txt" > "$RUNNER_TEMP/main.txt"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::benchmarks/main.txt not found on main; running live baseline benchmarks"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v6
+        if: steps.baseline.outputs.exists != 'true'
+        with:
+          ref: main
+      - uses: actions/setup-go@v6
+        if: steps.baseline.outputs.exists != 'true'
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Benchmark main
+        if: steps.baseline.outputs.exists != 'true'
+        run: |
+          set -o pipefail
+          go test -run=^$ -bench=. -benchmem -count=6 ./... | tee "$RUNNER_TEMP/main.txt"
+      - name: Compare with qbenchstat
+        run: |
+          set -o pipefail
+          qbenchstat "$RUNNER_TEMP/main.txt" "$RUNNER_TEMP/pr.txt" | tee "$RUNNER_TEMP/qbenchstat.txt"
+          echo 'Colored output is in the Compare with qbenchstat step log.' >> "$GITHUB_STEP_SUMMARY"
+          filtered=$(sed 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/qbenchstat.txt" | awk '
+            function is_delta(line) { return line ~ /[+-][0-9]+(\.[0-9]+)?%/ }
+            /^name / && / old / {
+              header = $0
+              pkg = ""
+              header_printed = 0
+              pkg_printed = 0
+              next
+            }
+            /^pkg:/ {
+              pkg = $0
+              pkg_printed = 0
+              next
+            }
+            is_delta($0) {
+              if (!header_printed) {
+                if (any) print ""
+                print header
+                header_printed = 1
+              }
+              if (pkg != "" && !pkg_printed) {
+                print pkg
+                pkg_printed = 1
+              }
+              print
+              any = 1
+            }
+          ')
+          if [ -n "$filtered" ]; then
+            {
+              echo '```text'
+              printf '%s\n' "$filtered"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

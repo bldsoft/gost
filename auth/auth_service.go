@@ -29,12 +29,13 @@ func (s *AuthService[PT, T]) Login(ctx context.Context, username, password strin
 		return nil, err
 	}
 
-	if err := user.Active(); err != nil {
+	if err = user.Active(); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrNotActive, err)
 	}
 
-	if err := s.passwordHasher.VerifyPassword(user.Password(), password); err != nil {
+	if err = s.passwordHasher.VerifyPassword(user.Password(), password); err != nil {
 		return nil, ErrWrongPassword
 	}
+
 	return user, nil
 }

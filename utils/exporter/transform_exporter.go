@@ -14,5 +14,6 @@ func (e *TransformExporter[T, U]) Export(items ...T) (n int, err error) {
 	for _, item := range items {
 		exportItems = append(exportItems, e.tranform(item))
 	}
+
 	return e.exporter.Export(exportItems...)
 }

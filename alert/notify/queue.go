@@ -27,6 +27,7 @@ func (q *MemoryQueue) Enqueue(ctx context.Context, n RetriedNotification) error 
 	if pushed := q.ring.Push(n); pushed == 0 {
 		return errors.New("queue is full")
 	}
+
 	return nil
 }
 
@@ -38,6 +39,7 @@ func (q *MemoryQueue) Dequeue(ctx context.Context) (id string, _ *RetriedNotific
 		return "", nil, utils.ErrObjectNotFound
 	}
 	_, _ = q.ring.Pull()
+
 	return "", &n, nil
 }
 

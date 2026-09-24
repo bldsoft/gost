@@ -7,10 +7,11 @@ import (
 	"errors"
 	"fmt"
 
+	"go.mongodb.org/mongo-driver/v2/bson"
+
 	"github.com/bldsoft/gost/cache"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
-	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type cacheWatcher[T any, U repository.IEntityIDPtr[T]] struct {
@@ -37,6 +38,7 @@ func (h *cacheWatcher[T, U]) WarmUp(ctx context.Context, rep repository.Reposito
 	if err != nil {
 		return fmt.Errorf("failed to cache entities: %w", err)
 	}
+
 	return nil
 }
 
@@ -68,6 +70,7 @@ func (h cacheWatcher[T, U]) cacheMarshal(e U) ([]byte, error) {
 	if err := enc.Encode(e); err != nil {
 		return nil, err
 	}
+
 	return buf.Bytes(), nil
 }
 
@@ -83,6 +86,7 @@ func (h cacheWatcher[T, U]) cacheUnmarshal(data []byte) (U, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &e, nil
 }
 
@@ -102,10 +106,11 @@ func (h cacheWatcher[T, U]) CacheSet(entities ...U) error {
 		if err != nil {
 			return err
 		}
-		if err := h.cache.Set(h.cacheKey(e.StringID()), data); err != nil {
+		if err = h.cache.Set(h.cacheKey(e.StringID()), data); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -118,6 +123,7 @@ func (h cacheWatcher[T, U]) CacheGet(id string) (U, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return h.cacheUnmarshal(data)
 }
 
@@ -140,6 +146,7 @@ func NewCachedRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, colle
 		options = opt[0]
 	}
 	cacheWatcher := newCacheWatcher[T, U](cache, options)
+
 	return &CachedRepository[T, U]{
 		WatchedRepository: NewWatchedRepository(db, collectionName, cacheWatcher),
 		cache:             cacheWatcher,
@@ -153,8 +160,10 @@ func (r *CachedRepository[T, U]) cacheFindByID(ctx context.Context, id string) U
 		if !errors.Is(err, cache.ErrCacheMiss) {
 			log.FromContext(ctx).WarnWithFields(log.Fields{"err": err, "collection": r.Name(), "id": strID}, "failed to get entity from cache")
 		}
+
 		return nil
 	}
+
 	return e
 }
 
@@ -167,12 +176,14 @@ func (r *CachedRepository[T, U]) cacheFindByIDs(ctx context.Context, ids []strin
 			return nil
 		}
 	}
+
 	return cachedRes
 }
 
-func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
+func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id any, options ...*repository.QueryOptions) (U, error) {
 	if e := r.cacheFindByID(ctx, repository.ToStringID[T, U](id)); e != nil {
 		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Name()}, "cache hit")
+
 		return e, nil
 	}
 
@@ -181,7 +192,7 @@ func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, o
 		return nil, err
 	}
 
-	if err := r.cache.CacheSet(res); err != nil {
+	if err = r.cache.CacheSet(res); err != nil {
 		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "CachedRepository: failed to cache entity")
 	}
 
@@ -191,6 +202,7 @@ func (r *CachedRepository[T, U]) FindByID(ctx context.Context, id interface{}, o
 func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []string, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, ids); cachedRes != nil {
 		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Name()}, "cache hit")
+
 		return cachedRes, nil
 	}
 
@@ -199,16 +211,17 @@ func (r *CachedRepository[T, U]) FindByStringIDs(ctx context.Context, ids []stri
 		return nil, err
 	}
 
-	if err := r.cache.CacheSet(res...); err != nil {
+	if err = r.cache.CacheSet(res...); err != nil {
 		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "CachedRepository: failed to cache entity")
 	}
 
 	return res, nil
 }
 
-func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
+func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []any, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	if cachedRes := r.cacheFindByIDs(ctx, repository.ToStringIDs[T, U](ids)); cachedRes != nil {
 		log.FromContext(ctx).TraceWithFields(log.Fields{"collection": r.Name()}, "cache hit")
+
 		return cachedRes, nil
 	}
 
@@ -217,14 +230,14 @@ func (r *CachedRepository[T, U]) FindByIDs(ctx context.Context, ids []interface{
 		return nil, err
 	}
 
-	if err := r.cache.CacheSet(res...); err != nil {
+	if err = r.cache.CacheSet(res...); err != nil {
 		log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "CachedRepository: failed to cache entity")
 	}
 
 	return res, nil
 }
 
-func (r *CachedRepository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
+func (r *CachedRepository[T, U]) Delete(ctx context.Context, id any, options ...*repository.QueryOptions) error {
 	strID := repository.ToStringID[T, U](id)
 	if err := r.cache.CacheDelete(strID); err != nil {
 		log.Logger.DebugWithFields(log.Fields{"err": err, "cache key": id}, "failed to delete cache value")

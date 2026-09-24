@@ -23,6 +23,7 @@ func NewDiscovery(cfg server.Config) *Discovery {
 		Name:      cfg.ServiceName,
 		Instances: []discovery.ServiceInstanceInfo{d.ServiceInfo},
 	}
+
 	return d
 }
 
@@ -46,6 +47,7 @@ func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, err
 	sort.Slice(res, func(i, j int) bool {
 		return res[i].Name < res[j].Name
 	})
+
 	return res, nil
 }
 
@@ -56,6 +58,7 @@ func (d *Discovery) ServiceByName(ctx context.Context, name string) (*discovery.
 	if !ok {
 		return nil, discovery.NotFound
 	}
+
 	return s, nil
 }
 
