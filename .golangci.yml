@@ -37,6 +37,10 @@ linters:
     - asciicheck
   exclusions:
     generated: lax
+    rules:
+      - linters:
+          - govet
+        text: 'shadow: declaration of "(err|ctx|ok)" shadows declaration at'
     paths:
       - (.*/)?mocks/
       - (.*/)?mock/
