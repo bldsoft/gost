@@ -15,12 +15,31 @@ import (
 	"github.com/bldsoft/gost/repository"
 )
 
+// NameSortJoin describes the collection that holds the display name of the changelog user.
+// When set, sorting by changelog.SortFieldUser orders records by that name instead of the user ID.
+type NameSortJoin struct {
+	From         string // collection to join, e.g. "user"
+	LocalField   string // field on change_log, e.g. "userID"
+	ForeignField string // field on the joined collection, e.g. "_id"
+	NameField    string // field to sort by, e.g. "name"
+}
+
+func (j NameSortJoin) configured() bool {
+	return j != NameSortJoin{}
+}
+
+const (
+	nameSortJoinAs    = "_sortUser"
+	nameSortNameField = "_sortUserName"
+)
+
 type ChangeLogRepository struct {
-	rep mongo.Repository[Record, *Record]
+	rep          mongo.Repository[Record, *Record]
+	nameSortJoin NameSortJoin
 }
 
 func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
-	r := &ChangeLogRepository{mongo.NewRepository[Record](db, "change_log")}
+	r := &ChangeLogRepository{rep: mongo.NewRepository[Record](db, "change_log")}
 
 	indexes := []driver.IndexModel{
 		{Keys: bson.D{bson.E{Key: changelog.BsonFieldNameUserID, Value: 1}}},
@@ -37,15 +56,18 @@ func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
 	return r
 }
 
+// SetNameSortJoin enables sorting by user name for changelog.SortFieldUser. The zero value disables it.
+func (r *ChangeLogRepository) SetNameSortJoin(join NameSortJoin) {
+	r.nameSortJoin = join
+}
+
 func (r *ChangeLogRepository) Insert(ctx context.Context, record *Record) error {
 	_, err := r.rep.Collection().InsertOne(ctx, record)
-
 	return err
 }
 
 func (r *ChangeLogRepository) InsertMany(ctx context.Context, records []*Record) error {
 	_, err := r.rep.Collection().InsertMany(ctx, records)
-
 	return err
 }
 
@@ -54,7 +76,6 @@ func (r *ChangeLogRepository) FindByID(ctx context.Context, id string, options .
 	if err != nil {
 		return nil, err
 	}
-
 	return record.Record, nil
 }
 
@@ -66,7 +87,6 @@ func (r *ChangeLogRepository) FindByIDs(ctx context.Context, ids []string, prese
 	for _, record := range records {
 		res = append(res, record.Record)
 	}
-
 	return res, nil
 }
 
@@ -76,24 +96,32 @@ func (r *ChangeLogRepository) GetRecords(ctx context.Context, params *changelog.
 		return nil, err
 	}
 
-	opt := options.Find().
-		SetSort(r.recordsSort(params.Sort)).
-		SetSkip(params.Offset).
-		SetLimit(params.Limit)
-
-	var res changelog.Records
-
-	cursor, err := r.rep.Collection().Find(ctx, filter, opt)
+	var cursor *driver.Cursor
+	if params.Sort.Field == changelog.SortFieldUser && r.nameSortJoin.configured() {
+		cursor, err = r.rep.Collection().Aggregate(ctx, r.nameSortPipeline(filter, params),
+			options.Aggregate().SetCollation(&options.Collation{Locale: "en", Strength: 2}))
+	} else {
+		cursor, err = r.rep.Collection().Find(ctx, filter, options.Find().
+			SetSort(r.recordsSort(params.Sort)).
+			SetSkip(params.Offset).
+			SetLimit(params.Limit))
+	}
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = cursor.Close(ctx) }()
-	if err = cursor.All(ctx, &res.Records); err != nil {
+	defer func() {
+		_ = cursor.Close(ctx)
+	}()
+
+	var res changelog.Records
+	if err := cursor.All(ctx, &res.Records); err != nil {
+
 		return nil, err
 	}
 
 	res.TotalCount, err = r.rep.Collection().CountDocuments(ctx, filter)
 	if err != nil {
+
 		return nil, err
 	}
 
@@ -103,6 +131,7 @@ func (r *ChangeLogRepository) GetRecords(ctx context.Context, params *changelog.
 func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, error) {
 	queryFilter := make(bson.M)
 	if filter == nil {
+
 		return queryFilter, nil
 	}
 	if len(filter.EntityID) > 0 {
@@ -163,6 +192,47 @@ func (r *ChangeLogRepository) recordsSort(sort changelog.Sort) bson.D {
 	}
 
 	return bson.D{{Key: fieldName, Value: order}}
+}
+
+// nameSortPipeline must run with a case-insensitive collation.
+func (r *ChangeLogRepository) nameSortPipeline(filter bson.M, params *changelog.RecordsParams) driver.Pipeline {
+	join := r.nameSortJoin
+	order := 1
+	if params.Sort.Order == repository.SortOrderDESC {
+		order = -1
+	}
+
+	pipeline := driver.Pipeline{
+		{{Key: "$match", Value: filter}},
+		{{Key: "$lookup", Value: bson.D{
+			{Key: "from", Value: join.From},
+			{Key: "localField", Value: join.LocalField},
+			{Key: "foreignField", Value: join.ForeignField},
+			{Key: "as", Value: nameSortJoinAs},
+		}}},
+		{{Key: "$addFields", Value: bson.D{
+			{Key: nameSortNameField, Value: bson.D{{Key: "$ifNull", Value: bson.A{
+				bson.D{{Key: "$arrayElemAt", Value: bson.A{"$" + nameSortJoinAs + "." + join.NameField, 0}}},
+				"",
+			}}}},
+		}}},
+		{{Key: "$sort", Value: bson.D{
+			{Key: nameSortNameField, Value: order},
+			{Key: changelog.BsonFieldNameTimestamp, Value: -1},
+			{Key: "_id", Value: -1},
+		}}},
+	}
+	if params.Offset > 0 {
+		pipeline = append(pipeline, bson.D{{Key: "$skip", Value: params.Offset}})
+	}
+	if params.Limit > 0 {
+		pipeline = append(pipeline, bson.D{{Key: "$limit", Value: params.Limit}})
+	}
+
+	return append(pipeline, bson.D{{Key: "$project", Value: bson.D{
+		{Key: nameSortJoinAs, Value: 0},
+		{Key: nameSortNameField, Value: 0},
+	}}})
 }
 
 // Compile time checks to ensure your type satisfies an interface
