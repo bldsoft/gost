@@ -15,13 +15,11 @@ import (
 	"github.com/bldsoft/gost/repository"
 )
 
-// NameSortJoin describes the collection that holds the display name of the changelog user.
-// When set, sorting by changelog.SortFieldUser orders records by that name instead of the user ID.
 type NameSortJoin struct {
-	From         string // collection to join, e.g. "user"
-	LocalField   string // field on change_log, e.g. "userID"
-	ForeignField string // field on the joined collection, e.g. "_id"
-	NameField    string // field to sort by, e.g. "name"
+	From         string
+	LocalField   string
+	ForeignField string
+	NameField    string
 }
 
 func (j NameSortJoin) configured() bool {
@@ -56,7 +54,6 @@ func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
 	return r
 }
 
-// SetNameSortJoin enables sorting by user name for changelog.SortFieldUser. The zero value disables it.
 func (r *ChangeLogRepository) SetNameSortJoin(join NameSortJoin) {
 	r.nameSortJoin = join
 }
@@ -194,7 +191,6 @@ func (r *ChangeLogRepository) recordsSort(sort changelog.Sort) bson.D {
 	return bson.D{{Key: fieldName, Value: order}}
 }
 
-// nameSortPipeline must run with a case-insensitive collation.
 func (r *ChangeLogRepository) nameSortPipeline(filter bson.M, params *changelog.RecordsParams) driver.Pipeline {
 	join := r.nameSortJoin
 	order := 1
