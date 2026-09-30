@@ -10,22 +10,33 @@ func NewContextAsyncRunner(run func(context.Context) error) AsyncRunner {
 	}
 }
 
+type CauseStoppableRunner interface {
+	AsyncRunner
+	StopWithCause(ctx context.Context, cause error) error
+}
+
 type contextAsyncRunner struct {
-	run     func(context.Context) error
+	run func(context.Context) error
+
 	ctx     context.Context
-	stop    func()
+	stop    func(error)
 	stopped chan struct{}
 }
 
 func (r *contextAsyncRunner) Run() error {
-	r.ctx, r.stop = context.WithCancel(context.Background())
+	r.ctx, r.stop = context.WithCancelCause(context.Background())
 	r.stopped = make(chan struct{})
 	defer close(r.stopped)
 	return r.run(r.ctx)
 }
 
 func (r *contextAsyncRunner) Stop(ctx context.Context) error {
-	r.stop()
+	return r.StopWithCause(ctx, context.Canceled)
+}
+
+func (r *contextAsyncRunner) StopWithCause(ctx context.Context, cause error) error {
+	r.stop(cause)
+
 	select {
 	case <-r.stopped:
 		return nil
