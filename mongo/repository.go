@@ -40,6 +40,7 @@ type BaseRepository[T any, U repository.IEntityIDPtr[T]] struct {
 	dbcollection   *mongo.Collection
 	db             *Storage
 	collectionName string
+	sortJoins      map[string]SortJoin
 }
 
 func NewRepository[T any, U repository.IEntityIDPtr[T]](db *Storage, collectionName string) Repository[T, U] {
@@ -129,6 +130,10 @@ func (r *BaseRepository[T, U]) findByRawIDs(ctx context.Context, ids []interface
 }
 
 func (r *BaseRepository[T, U]) Find(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) ([]U, error) {
+	if len(opt) != 0 && r.hasSortJoin(opt[0].Sort) {
+		return r.findWithSortJoin(ctx, filter, opt[0])
+	}
+
 	findOpt := options.Find().
 		SetProjection(r.projection(opt...))
 
