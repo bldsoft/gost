@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
 	"github.com/bldsoft/gost/changelog"
 	"github.com/bldsoft/gost/config"
@@ -90,11 +91,11 @@ func TestChangeLogRepository_SortByUserName(t *testing.T) {
 	db := connectTestStorage(t)
 
 	rep := NewChangeLogRepository(db)
-	rep.SetNameSortJoin(NameSortJoin{
+	rep.SetSortJoin(changelog.SortFieldUser, mongo.SortJoin{
 		From:         sortTestUserCollection,
-		LocalField:   changelog.BsonFieldNameUserID,
 		ForeignField: "_id",
-		NameField:    "name",
+		SortBy:       "name",
+		Collation:    &options.Collation{Locale: "en", Strength: 2},
 	})
 	now := seedSortByUserName(t, ctx, db, rep)
 	repWithoutJoin := NewChangeLogRepository(db)
