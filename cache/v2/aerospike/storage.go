@@ -104,3 +104,20 @@ func (s *Storage) getReadPolicy() *aero.BasePolicy {
 
 	return rp
 }
+
+func (s *Storage) getWritePolicy(generation uint32, expiration uint32) *aero.WritePolicy {
+	wp := aero.NewWritePolicy(generation, expiration)
+	if s.cfg.WritePolicy.TotalTimeoutMs > 0 {
+		wp.TotalTimeout = time.Duration(s.cfg.WritePolicy.TotalTimeoutMs) * time.Millisecond
+	}
+	if s.cfg.WritePolicy.MaxRetries > 0 {
+		wp.MaxRetries = s.cfg.WritePolicy.MaxRetries
+	}
+	if s.cfg.WritePolicy.SleepBetweenRetriesMs > 0 {
+		wp.SleepBetweenRetries = time.Duration(s.cfg.WritePolicy.SleepBetweenRetriesMs) * time.Millisecond
+	}
+	if s.cfg.WritePolicy.SocketTimeoutMs > 0 {
+		wp.SocketTimeout = time.Duration(s.cfg.WritePolicy.SocketTimeoutMs) * time.Millisecond
+	}
+	return wp
+}

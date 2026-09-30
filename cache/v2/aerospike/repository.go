@@ -3,6 +3,7 @@ package aerospike
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	aero "github.com/aerospike/aerospike-client-go/v8"
@@ -266,24 +267,65 @@ func (r *Repository) key(key string) (*aero.Key, error) {
 }
 
 func (r *Repository) put(replace bool, key string, val []byte, generation *uint32, itemFs ...cache.ItemF) error {
-	bop, batchWrites, err := r.prepBatchWrite(replace, key, val, generation, itemFs...)
+	totalSize := len(val)
+	val, continuations := r.split(key, val)
+	if len(continuations) == 0 {
+		return r.putRaw(replace, key, val, generation, itemFs...)
+	}
+	return r.putBatch(replace, key, val, continuations, totalSize, generation, itemFs...)
+}
+
+func (r *Repository) putRaw(replace bool, key string, val []byte, generation *uint32, itemFs ...cache.ItemF) error {
+	asKey, err := r.key(key)
 	if err != nil {
 		return err
 	}
-
-	return r.cache.BatchOperate(bop, batchWrites)
+	wp := r.cache.getWritePolicy(0, truncExpiration(r.liveTime))
+	wp.RecordExistsAction = aero.CREATE_ONLY
+	if replace {
+		wp.RecordExistsAction = aero.REPLACE
+	}
+	bins := aero.BinMap{valueBinKey: val}
+	if len(itemFs) > 0 {
+		it := cache.CollectItem(itemFs...)
+		if it.Flags != 0 {
+			bins[flagsBinKey] = it.Flags
+		}
+		if it.TTL != 0 {
+			wp.Expiration = truncExpiration(it.TTL)
+		}
+	}
+	if generation != nil {
+		wp.GenerationPolicy = aero.EXPECT_GEN_EQUAL
+		wp.Generation = *generation
+	}
+	return r.cache.Put(wp, asKey, bins)
 }
 
-func (r *Repository) prepBatchWrite(replace bool, key string, val []byte, generation *uint32, itemFs ...cache.ItemF) (*aero.BatchPolicy, []aero.BatchRecordIfc, error) {
+func (r *Repository) putBatch(replace bool, key string, val []byte, continuations []continuation, totalSize int, generation *uint32, itemFs ...cache.ItemF) error {
+	bop, batchWrites, err := r.prepBatchWrite(replace, key, val, continuations, totalSize, generation, itemFs...)
+	if err != nil {
+		return err
+	}
+	if err := r.cache.BatchOperate(bop, batchWrites); err != nil {
+		return err
+	}
+	for _, rec := range slices.Backward(batchWrites) {
+		if err := r.batchRecordError(rec); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *Repository) prepBatchWrite(replace bool, key string, val []byte, continuations []continuation, totalSize int, generation *uint32, itemFs ...cache.ItemF) (*aero.BatchPolicy, []aero.BatchRecordIfc, error) {
 	asKey, err := r.key(key)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	lenBin := aero.NewBin(lenBinKey, len(val))
-	val, continuations := r.split(key, val)
 	br := make([]aero.BatchRecordIfc, 0, len(continuations)+1)
-	mainBins := []*aero.Bin{aero.NewBin(valueBinKey, val), lenBin}
+	mainBins := []*aero.Bin{aero.NewBin(valueBinKey, val), aero.NewBin(lenBinKey, totalSize)}
 	bwp := aero.NewBatchWritePolicy()
 	bwp.Expiration = truncExpiration(r.liveTime)
 	bwp.RecordExistsAction = aero.CREATE_ONLY
@@ -310,20 +352,37 @@ func (r *Repository) prepBatchWrite(replace bool, key string, val []byte, genera
 		continuationKeys = append(continuationKeys, c.Key)
 	}
 
-	mainOps := make([]*aero.Operation, 0, len(mainBins))
+	mainOps := make([]*aero.Operation, 0, len(mainBins)+1)
 	for _, b := range mainBins {
 		mainOps = append(mainOps, aero.PutOp(b))
 	}
-	if len(continuationKeys) > 0 {
-		mainOps = append(mainOps, aero.PutOp(aero.NewBin(continuationBinKey, continuationKeys)))
-	}
+	mainOps = append(mainOps, aero.PutOp(aero.NewBin(continuationBinKey, continuationKeys)))
+	mainPolicy := bwp
 	if generation != nil {
-		bwp.GenerationPolicy = aero.EXPECT_GEN_EQUAL
-		bwp.Generation = *generation
+		mainPolicy = new(*bwp)
+		mainPolicy.GenerationPolicy = aero.EXPECT_GEN_EQUAL
+		mainPolicy.Generation = *generation
 	}
-	br = append(br, aero.NewBatchWrite(bwp, asKey, mainOps...))
+	br = append(br, aero.NewBatchWrite(mainPolicy, asKey, mainOps...))
 
 	return r.cache.getBatchWritePolicy(), br, nil
+}
+
+func (r *Repository) batchRecordError(rec aero.BatchRecordIfc) error {
+	if rec == nil {
+		return fmt.Errorf("aerospike: empty batch write result")
+	}
+	br := rec.BatchRec()
+	if br == nil {
+		return fmt.Errorf("aerospike: empty batch write result")
+	}
+	if br.ResultCode == aeroTypes.OK {
+		return nil
+	}
+	if br.Err != nil {
+		return br.Err
+	}
+	return &aero.AerospikeError{ResultCode: br.ResultCode}
 }
 
 func (r *Repository) split(key string, val []byte) ([]byte, []continuation) {
