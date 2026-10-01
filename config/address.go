@@ -19,6 +19,7 @@ func NewAddress(proto, host, port string) Address {
 		sb.WriteString(":")
 		sb.WriteString(strings.TrimPrefix(port, ":"))
 	}
+
 	return Address(sb.String())
 }
 
@@ -33,21 +34,25 @@ func (a Address) Splitted() (proto, host, port string) {
 		host = h
 		port = p
 	}
+
 	return proto, host, port
 }
 
 func (a Address) Scheme() string {
 	proto, _, _ := a.Splitted()
+
 	return proto
 }
 
 func (a Address) Host() string {
 	_, host, _ := a.Splitted()
+
 	return host
 }
 
 func (a Address) Port() string {
 	_, _, port := a.Splitted()
+
 	return port
 }
 
@@ -56,11 +61,13 @@ func (a Address) HostPort() string {
 	if port == "" {
 		return host
 	}
+
 	return net.JoinHostPort(host, port)
 }
 
 func (a Address) PortInt() int {
 	port, _ := strconv.Atoi(a.Port())
+
 	return port
 }
 
@@ -75,11 +82,13 @@ func (a HttpAddress) Splitted() (proto, host, port string) {
 	if proto == "" {
 		proto = "http"
 	}
+
 	return proto, host, port
 }
 
 func (a HttpAddress) Scheme() string {
 	proto, _, _ := a.Splitted()
+
 	return proto
 }
 func (a HttpAddress) Host() string {

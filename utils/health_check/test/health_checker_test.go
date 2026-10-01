@@ -10,8 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bldsoft/gost/utils/health_check"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bldsoft/gost/utils/health_check"
 )
 
 type clientWithCounter struct {
@@ -20,12 +21,13 @@ type clientWithCounter struct {
 
 func (c *clientWithCounter) Do(req *http.Request) (*http.Response, error) {
 	c.counter.Add(1)
+
 	return http.DefaultClient.Do(req)
 }
 
 func TestHealthCheckerNoExtraChecks(t *testing.T) {
 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "OK")
+		_, _ = fmt.Fprintf(w, "OK")
 	}))
 	defer svr.Close()
 
@@ -37,10 +39,8 @@ func TestHealthCheckerNoExtraChecks(t *testing.T) {
 	goN := 10
 	var wg sync.WaitGroup
 	start, stop := make(chan struct{}), make(chan struct{})
-	for i := 0; i < goN; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range goN {
+		wg.Go(func() {
 			<-start
 			for {
 				select {
@@ -50,7 +50,7 @@ func TestHealthCheckerNoExtraChecks(t *testing.T) {
 					require.NoError(t, healthChecker.HealthCheck(context.Background(), svr.URL))
 				}
 			}
-		}()
+		})
 	}
 
 	waitTime := time.Second

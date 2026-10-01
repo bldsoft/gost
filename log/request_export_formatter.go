@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5/middleware"
+
 	"github.com/bldsoft/gost/utils"
 	"github.com/bldsoft/gost/utils/exporter"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 // To customize request info put RequestInfo in your structure and use it as T.
@@ -17,7 +18,7 @@ import (
 type ExportFormatter[T any, P RequestInfoPtr[T]] struct {
 	requestExporter   exporter.Exporter[P]
 	instanceName      string
-	requestInfoCtxKey interface{}
+	requestInfoCtxKey any
 }
 
 func NewExportFormatter[T any, P RequestInfoPtr[T]](requestExporter exporter.Exporter[P], instanceName string) *ExportFormatter[T, P] {
@@ -28,12 +29,13 @@ func ExportRequestLogger[T any, P RequestInfoPtr[T]](requestExporter exporter.Ex
 	return NewRequestLogger(NewExportFormatter(requestExporter, instanseName))
 }
 
-func (f *ExportFormatter[T, P]) SetRequestInfoContextKey(key interface{}) {
+func (f *ExportFormatter[T, P]) SetRequestInfoContextKey(key any) {
 	f.requestInfoCtxKey = key
 }
 
 func (f *ExportFormatter[T, P]) GetRequestInfo(ctx context.Context) P {
 	requestInfo, _ := ctx.Value(f.requestInfoCtxKey).(P)
+
 	return requestInfo
 }
 
@@ -64,6 +66,7 @@ func (f *ExportFormatter[T, P]) NewLogEntry(r *http.Request) (middleware.LogEntr
 
 	ctx := context.WithValue(r.Context(), f.requestInfoCtxKey, requestInfoPtr)
 	r = r.WithContext(ctx)
+
 	return &ContextExportFormatterLoggerEntry[T, P]{
 		requestExporter: f.requestExporter,
 		errBuf:          LogRequestErrBufferFromContext(r.Context()),
@@ -79,7 +82,7 @@ type ContextExportFormatterLoggerEntry[T any, P RequestInfoPtr[T]] struct {
 	req             *http.Request
 }
 
-func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
+func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, header http.Header, elapsed time.Duration, extra any) {
 	duration := elapsed.Microseconds()
 
 	if l.requestInfo != nil {
@@ -96,8 +99,8 @@ func (l *ContextExportFormatterLoggerEntry[T, P]) Write(status, bytes int, heade
 
 		baseRequestInfo.UserAgent = l.req.UserAgent()
 
-		l.requestExporter.Export(l.requestInfo)
+		_, _ = l.requestExporter.Export(l.requestInfo)
 	}
 }
 
-func (l *ContextExportFormatterLoggerEntry[T, P]) Panic(v interface{}, stack []byte) {}
+func (l *ContextExportFormatterLoggerEntry[T, P]) Panic(v any, stack []byte) {}

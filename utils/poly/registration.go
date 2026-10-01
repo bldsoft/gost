@@ -19,11 +19,12 @@ func Register[Iface comparable]() Registrator[Iface] {
 func (r Registrator[I]) Type(name string, value I) Registrator[I] {
 	register[I](name, value)
 	gob.Register(value) // for local caching
+
 	return r
 }
 
 func register[Iface comparable](name string, value Iface) {
-	interfaceType := reflect.TypeOf((*Iface)(nil)).Elem()
+	interfaceType := reflect.TypeFor[Iface]()
 	typesMap := &typeBijection[Iface, string]{}
 	if actual, ok := interfaceTypeToTypesNames.LoadOrStore(interfaceType, typesMap); ok {
 		typesMap = actual.(*typeBijection[Iface, string])

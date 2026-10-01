@@ -5,12 +5,13 @@ import (
 	"errors"
 	"time"
 
-	"github.com/bldsoft/gost/cache"
-	"github.com/bldsoft/gost/log"
-	gost_mongo "github.com/bldsoft/gost/mongo"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
+	"github.com/bldsoft/gost/cache"
+	"github.com/bldsoft/gost/log"
+	gost_mongo "github.com/bldsoft/gost/mongo"
 )
 
 const (
@@ -70,6 +71,7 @@ func (mc *MongoCache) SetFor(key string, value []byte, ttl time.Duration) error 
 
 	opts := options.UpdateOne().SetUpsert(true)
 	_, err := mc.collection.UpdateOne(mc.ctx, filter, update, opts)
+
 	return err
 }
 
@@ -82,6 +84,7 @@ func (mc *MongoCache) Get(key string) ([]byte, error) {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, cache.ErrCacheMiss
 		}
+
 		return nil, err
 	}
 
@@ -90,6 +93,7 @@ func (mc *MongoCache) Get(key string) ([]byte, error) {
 
 func (mc *MongoCache) Delete(key string) error {
 	_, err := mc.collection.DeleteOne(mc.ctx, bson.M{"_id": key})
+
 	return err
 }
 
@@ -98,9 +102,9 @@ func (mc *MongoCache) Reset() {
 }
 
 func hasErrorCode(err error, code int32) bool {
-	var cmdErr mongo.CommandError
-	if errors.As(err, &cmdErr) {
+	if cmdErr, ok := errors.AsType[mongo.CommandError](err); ok {
 		return cmdErr.Code == code
 	}
+
 	return false
 }

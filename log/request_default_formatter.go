@@ -53,7 +53,7 @@ type ContextLoggerEntry struct {
 	LogResponseHeaders bool
 }
 
-func (l *ContextLoggerEntry) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
+func (l *ContextLoggerEntry) Write(status, bytes int, header http.Header, elapsed time.Duration, extra any) {
 	duration := elapsed.Microseconds()
 
 	fields := Fields{
@@ -76,7 +76,7 @@ func (l *ContextLoggerEntry) Write(status, bytes int, header http.Header, elapse
 	}
 }
 
-func (l *ContextLoggerEntry) Panic(v interface{}, stack []byte) {
+func (l *ContextLoggerEntry) Panic(v any, stack []byte) {
 	l.Logger = l.Logger.WithFields(Fields{
 		"panic": fmt.Sprintf("%+v", v),
 	})

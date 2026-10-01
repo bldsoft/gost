@@ -10,12 +10,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/bldsoft/gost/cache/bigcache"
 	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
-	"github.com/stretchr/testify/assert"
 )
 
 const (

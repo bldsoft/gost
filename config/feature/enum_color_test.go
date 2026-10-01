@@ -56,6 +56,7 @@ func (x Color) String() string {
 	if str, ok := _ColorMap[x]; ok {
 		return str
 	}
+
 	return fmt.Sprintf("Color(%d)", x)
 }
 
@@ -89,6 +90,7 @@ func ParseColor(name string) (Color, error) {
 	if x, ok := _ColorValue[name]; ok {
 		return x, nil
 	}
+
 	return Color(0), fmt.Errorf("%s is not a valid Color", name)
 }
 
@@ -109,5 +111,6 @@ func (x *Color) UnmarshalText(text []byte) error {
 		return err
 	}
 	*x = tmp
+
 	return nil
 }

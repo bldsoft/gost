@@ -45,10 +45,10 @@ func TestNotifyHandler(t *testing.T) {
 
 	handler.Handle(context.Background(), Alert{
 		SourceID: "test",
-		Severity: SeverityHigh,
+		Severity: SeverityLevelHigh,
 		From:     time.Now(),
 		To:       time.Now().Add(1 * time.Hour),
-		MetaData: map[string]string{
+		MetaData: map[string]any{
 			"description": "description",
 			"test":        "test",
 		},

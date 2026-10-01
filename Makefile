@@ -1,0 +1,9 @@
+.PHONY: help generate test lint
+help:
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+generate: ## Code gen
+	go generate ./...
+test: ## Unit and integrational testing
+	gotestsum --format=testname -- -race -tags=integration_test ./...
+lint: ## Golangci-lint launch
+	golangci-lint run ./...

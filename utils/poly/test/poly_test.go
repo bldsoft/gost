@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/bldsoft/gost/utils/poly"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/v2/bson"
+
+	"github.com/bldsoft/gost/utils/poly"
 )
 
 func init() {
@@ -51,14 +52,14 @@ type Container struct {
 func TestPolyJSONMarshal(t *testing.T) {
 
 	testCases := []struct {
-		value interface{}
+		value any
 		data  string
 	}{
-		{poly.Poly[SomeInterface]{A{AField: "AValue"}}, `{"type":"A","AField":"AValue"}`},
-		{poly.Poly[SomeInterface]{B{BField: "BValue"}}, `{"type":"B","BField":"BValue"}`},
-		{[]poly.Poly[SomeInterface]{{A{AField: "AValue"}}, {B{BField: "BValue"}}}, `[{"type":"A","AField":"AValue"},{"type":"B","BField":"BValue"}]`},
-		{&Container{poly.Poly[SomeInterface]{A{AField: "AValue"}}}, `{"SomeField":{"type":"A","AField":"AValue"}}`},
-		{&Container{poly.Poly[SomeInterface]{B{BField: "BValue"}}}, `{"SomeField":{"type":"B","BField":"BValue"}}`},
+		{poly.Poly[SomeInterface]{Value: A{AField: "AValue"}}, `{"type":"A","AField":"AValue"}`},
+		{poly.Poly[SomeInterface]{Value: B{BField: "BValue"}}, `{"type":"B","BField":"BValue"}`},
+		{[]poly.Poly[SomeInterface]{{Value: A{AField: "AValue"}}, {Value: B{BField: "BValue"}}}, `[{"type":"A","AField":"AValue"},{"type":"B","BField":"BValue"}]`},
+		{&Container{poly.Poly[SomeInterface]{Value: A{AField: "AValue"}}}, `{"SomeField":{"type":"A","AField":"AValue"}}`},
+		{&Container{poly.Poly[SomeInterface]{Value: B{BField: "BValue"}}}, `{"SomeField":{"type":"B","BField":"BValue"}}`},
 	}
 
 	for _, test := range testCases {
@@ -79,8 +80,8 @@ func testJSONUnmarshal[T any](t *testing.T, data string, expected T) {
 }
 
 func TestPolyJSONUnmarshal(t *testing.T) {
-	testJSONUnmarshal[Container](t, `{"SomeField":{"type":"A","AField":"AValue"}}`, Container{poly.Poly[SomeInterface]{A{AField: "AValue"}}})
-	testJSONUnmarshal[poly.Poly[SomeInterface]](t, `{"type":"A","AField":"AValue"}`, poly.Poly[SomeInterface]{A{AField: "AValue"}})
+	testJSONUnmarshal[Container](t, `{"SomeField":{"type":"A","AField":"AValue"}}`, Container{poly.Poly[SomeInterface]{Value: A{AField: "AValue"}}})
+	testJSONUnmarshal[poly.Poly[SomeInterface]](t, `{"type":"A","AField":"AValue"}`, poly.Poly[SomeInterface]{Value: A{AField: "AValue"}})
 }
 
 func testBSON[T any](t *testing.T, val T) {
@@ -94,7 +95,7 @@ func testBSON[T any](t *testing.T, val T) {
 
 func TestPolyBSON(t *testing.T) {
 	testBSON(t, poly.Poly[SomeInterface]{Value: A{AField: "AValue"}})
-	testBSON(t, Container{poly.Poly[SomeInterface]{A{AField: "AValue"}}})
+	testBSON(t, Container{poly.Poly[SomeInterface]{Value: A{AField: "AValue"}}})
 }
 
 func TestPolyUnregistered(t *testing.T) {
@@ -114,6 +115,6 @@ func TestPolyUnregistered(t *testing.T) {
 	})
 
 	t.Run("marshal not registered type", func(t *testing.T) {
-		require.Panics(t, func() { _, _ = json.Marshal(&Container{poly.Poly[SomeInterface]{C{CField: "CValue"}}}) })
+		require.Panics(t, func() { _, _ = json.Marshal(&Container{poly.Poly[SomeInterface]{Value: C{CField: "CValue"}}}) })
 	})
 }

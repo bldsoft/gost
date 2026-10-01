@@ -43,5 +43,6 @@ func (s *Service) Stats(ctx context.Context) []Stat {
 	for stat := range statC {
 		stats = append(stats, stat)
 	}
+
 	return stats
 }

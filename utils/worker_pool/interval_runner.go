@@ -22,6 +22,7 @@ type scheduledTask struct {
 
 func newScheduledTask(id string, interval time.Duration, f func(ctx context.Context)) *scheduledTask {
 	ctx, cancel := context.WithCancel(context.Background())
+
 	return &scheduledTask{
 		id:       id,
 		interval: interval,

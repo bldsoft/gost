@@ -24,6 +24,7 @@ func SetOf[K comparable](vals ...K) Set[K] {
 	for _, val := range vals {
 		s.Put(val)
 	}
+
 	return s
 }
 
@@ -37,6 +38,7 @@ func (s Set[K]) Put(vals ...K) {
 // Has returns true only if 'val' is in the set.
 func (s Set[K]) Has(val K) bool {
 	_, ok := s.m[val]
+
 	return ok
 }
 
@@ -91,6 +93,7 @@ func SetUnion[K comparable](a, b Set[K]) Set[K] {
 	b.Each(func(key K) {
 		res.Put(key)
 	})
+
 	return res
 }
 
@@ -101,6 +104,7 @@ func SetDiff[K comparable](a, b Set[K]) Set[K] {
 			res.Put(key)
 		}
 	})
+
 	return res
 }
 
@@ -114,5 +118,6 @@ func SetIntersection[K comparable](a, b Set[K]) (intersection Set[K]) {
 			res.Put(key)
 		}
 	})
+
 	return res
 }

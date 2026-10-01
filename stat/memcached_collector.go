@@ -16,5 +16,6 @@ func NewMemcachedCollector(db *memcached.Storage) *MemcachedCollector {
 
 func (c *MemcachedCollector) Stat(ctx context.Context) Stat {
 	stats, err := c.db.Stats(ctx)
+
 	return NewStat("memcached", stats, err)
 }

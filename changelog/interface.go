@@ -46,7 +46,7 @@ type RecordsParams struct {
 	Offset  int64 `json:"offset,omitempty" schema:"offset,omitempty"`
 	Limit   int64 `json:"limit,omitempty" schema:"limit,omitempty"`
 	*Filter `json:"filter,omitempty" schema:",omitempty"`
-	Sort    `json:"sort,omitempty" schema:",omitempty"`
+	Sort    `json:"sort" schema:",omitempty"`
 }
 
 type Records struct {
@@ -67,5 +67,5 @@ type IChangeLogService interface {
 }
 
 type IFilter interface {
-	Filter(f interface{})
+	Filter(f any)
 }

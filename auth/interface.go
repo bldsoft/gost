@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/bldsoft/gost/repository"
 	"github.com/gorilla/sessions"
+
+	"github.com/bldsoft/gost/repository"
 )
 
-//go:generate mockery --case=camel --all --with-expecter=true
+//go:generate mockery
 
 var ErrUnauthorized = errors.New("unauthorized")
 
@@ -51,9 +52,9 @@ type IUserRepository[PT any] interface {
 	Insert(ctx context.Context, user PT) error
 	InsertOrRecover(ctx context.Context, user PT) error
 	GetAll(ctx context.Context, options ...*repository.QueryOptions) ([]PT, error)
-	FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (PT, error)
+	FindByID(ctx context.Context, id any, options ...*repository.QueryOptions) (PT, error)
 	Update(ctx context.Context, user PT, options ...*repository.QueryOptions) error
-	Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error
+	Delete(ctx context.Context, id any, options ...*repository.QueryOptions) error
 }
 
 type IUserService[PT AuthenticablePtr[T], T any] interface {

@@ -8,12 +8,13 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/bldsoft/gost/entity/stat"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/gost/utils"
 	"github.com/bldsoft/gost/utils/exporter"
-	"golang.org/x/sync/errgroup"
 )
 
 var ErrLogDbNotReady = errors.New("log record db isn't ready")
@@ -59,6 +60,7 @@ func (c *LogExporterConfig) Validate() error {
 	if c.MaxBatchSize <= 0 {
 		return errors.New("log export: batch size isn't set")
 	}
+
 	return nil
 }
 
@@ -140,6 +142,7 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 				fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName),
 				search,
 			)
+
 			return sq.Or{msgExpr, fieldsExpr}
 		})
 
@@ -178,6 +181,7 @@ func parseNotExpr(makeRawExpr func(search string) sq.Sqlizer) func(search string
 		if not {
 			return sq.Expr("NOT (?)", makeRawExpr(s))
 		}
+
 		return makeRawExpr(s)
 	}
 }
@@ -221,6 +225,7 @@ func parseExprTerm(expr string) (string, bool) {
 
 	expr = strings.TrimSpace(expr)
 	expr = trimQuotes(expr)
+
 	return expr, not
 }
 
@@ -258,6 +263,7 @@ func split(search, op string) []string {
 		i += startIdx
 		if i > 0 && search[i-1] == '\\' {
 			startIdx = i + 1
+
 			continue
 		}
 		appendStr(search[:i])
@@ -265,6 +271,7 @@ func split(search, op string) []string {
 		startIdx = 0
 	}
 	appendStr(search)
+
 	return res
 }
 
@@ -280,6 +287,7 @@ func (e *ClickHouseLogExporter) sort(sort log.Sort) string {
 	default:
 		field = TimestampColumnName
 	}
+
 	return fmt.Sprintf("%s %s", field, sort.Order.String())
 }
 
@@ -296,6 +304,7 @@ func (e *ClickHouseLogExporter) countLogs(
 	if err := row.Scan(&count); err != nil {
 		return 0, err
 	}
+
 	return count, nil
 }
 
@@ -322,12 +331,12 @@ func (e *ClickHouseLogExporter) Logs(
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var logs log.Logs
 	for rows.Next() {
 		var r log.LogRecord
-		if err := rows.Scan(&r.Service, &r.ServiceVersion, &r.Instance, &r.Timestamp, &r.Level, &r.ReqID, &r.Msg, &r.Fields); err != nil {
+		if err = rows.Scan(&r.Service, &r.ServiceVersion, &r.Instance, &r.Timestamp, &r.Level, &r.ReqID, &r.Msg, &r.Fields); err != nil {
 			return nil, err
 		}
 		logs.Records = append(logs.Records, r)
@@ -366,6 +375,7 @@ func (e *ClickHouseLogExporter) LogsMetrics(ctx context.Context, params log.Logs
 	if params.To.IsZero() {
 		params.To = time.Now()
 	}
+
 	return e.getCustomChartValues(ctx, e.logsMetricsQuery(&params), params.From, params.To, time.Duration(params.StepSec)*time.Second)
 }
 
@@ -400,16 +410,17 @@ func (e *ClickHouseLogExporter) distinctValues(
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var instances []string
 	for rows.Next() {
 		var instance string
-		if err := rows.Scan(&instance); err != nil {
+		if err = rows.Scan(&instance); err != nil {
 			return nil, err
 		}
 		instances = append(instances, instance)
 	}
+
 	return instances, nil
 }
 
@@ -434,15 +445,16 @@ func (e *ClickHouseLogExporter) RequestIDs(
 		if err != nil {
 			return err
 		}
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 
 		for rows.Next() {
 			var requestID string
-			if err := rows.Scan(&requestID); err != nil {
+			if err = rows.Scan(&requestID); err != nil {
 				return err
 			}
 			requestIDs = append(requestIDs, requestID)
 		}
+
 		return nil
 	})
 	g.Go(func() error {
@@ -455,11 +467,13 @@ func (e *ClickHouseLogExporter) RequestIDs(
 		if err := row.Scan(&count); err != nil {
 			return err
 		}
+
 		return nil
 	})
 	if err := g.Wait(); err != nil {
 		return nil, 0, err
 	}
+
 	return requestIDs, count, nil
 }
 
@@ -475,6 +489,7 @@ func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
 			hours,
 		),
 	)
+
 	return err
 }
 
@@ -504,6 +519,7 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 		// ServiceVersionColumnName,
 		"toDateTime(" + TimestampColumnName + ")",
 	}, ",")+`)`, e.config.TableName, engine))
+
 	return err
 }
 
@@ -511,7 +527,7 @@ type chLogRecord struct {
 	Service        string    `json:"service,omitempty"        ch:"service"`
 	ServiceVersion string    `json:"serviceVersion,omitempty" ch:"service_version"`
 	Instance       string    `json:"instance,omitempty"       ch:"instanse"`
-	Timestamp      time.Time `json:"timestamp,omitempty"      ch:"timestamp"`
+	Timestamp      time.Time `json:"timestamp"      ch:"timestamp"`
 	Level          int8      `json:"level,string,omitempty"   ch:"level"`
 	ReqID          string    `json:"reqID,omitempty"          ch:"req_id"`
 	Msg            string    `json:"msg,omitempty"            ch:"msg"`

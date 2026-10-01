@@ -56,7 +56,7 @@ func BenchmarkWrapResponseWriterServer(b *testing.B) {
 		{"wrapped response writer", func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				ww := WrapResponseWriter(w)
-				defer ww.Flush()
+				defer func() { _, _ = ww.Flush() }()
 				next.ServeHTTP(ww, r)
 			})
 		}},
@@ -67,7 +67,7 @@ func BenchmarkWrapResponseWriterServer(b *testing.B) {
 			const MB = 1024 * KB
 			body := make([]byte, 5*MB)
 			var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Write(body)
+				_, _ = w.Write(body)
 			})
 			handler = c.middleware(handler)
 			srv := httptest.NewServer(handler)
@@ -77,8 +77,8 @@ func BenchmarkWrapResponseWriterServer(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				resp, _ := http.DefaultClient.Do(r)
-				io.Copy(io.Discard, resp.Body)
-				resp.Body.Close()
+				_, _ = io.Copy(io.Discard, resp.Body)
+				_ = resp.Body.Close()
 			}
 		})
 	}

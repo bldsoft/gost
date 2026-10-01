@@ -143,6 +143,7 @@ func (cb *CircuitBreaker) State() State {
 
 	now := time.Now()
 	state, _ := cb.currentState(now)
+
 	return state
 }
 
@@ -159,7 +160,7 @@ func (cb *CircuitBreaker) Counts() Counts {
 // Otherwise, Execute returns the result of the request.
 // If a panic occurs in the request, the CircuitBreaker handles it as an error
 // and causes the same panic again.
-func (cb *CircuitBreaker) Execute(req func() (interface{}, error)) (interface{}, error) {
+func (cb *CircuitBreaker) Execute(req func() (any, error)) (any, error) {
 	generation, err := cb.beforeRequest()
 	if err != nil {
 		return nil, err
@@ -180,6 +181,7 @@ func (cb *CircuitBreaker) Execute(req func() (interface{}, error)) (interface{},
 	}
 
 	cb.afterRequest(generation, err == nil)
+
 	return result, err
 }
 
@@ -197,6 +199,7 @@ func (cb *CircuitBreaker) beforeRequest() (uint64, error) {
 	}
 
 	cb.counts.onRequest()
+
 	return generation, nil
 }
 
@@ -252,6 +255,7 @@ func (cb *CircuitBreaker) currentState(now time.Time) (State, uint64) {
 			cb.setState(StateHalfOpen, now)
 		}
 	}
+
 	return cb.state, cb.generation
 }
 

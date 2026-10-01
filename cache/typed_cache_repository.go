@@ -40,6 +40,7 @@ func (r *TypedRepository[T]) Get(key string) (res T, err error) {
 	if err != nil {
 		return res, err
 	}
+
 	return r.cacheUnmarshal(data)
 }
 
@@ -48,6 +49,7 @@ func (r *TypedRepository[T]) Set(key string, value T) error {
 	if err != nil {
 		return err
 	}
+
 	return r.IExpiringCacheRepository.Set(key, data)
 }
 
@@ -56,6 +58,7 @@ func (r *TypedRepository[T]) SetFor(key string, value T, ttl time.Duration) erro
 	if err != nil {
 		return err
 	}
+
 	return r.IExpiringCacheRepository.SetFor(key, data, ttl)
 }
 
@@ -71,6 +74,7 @@ func (r *TypedRepository[T]) cacheMarshal(e T) ([]byte, error) {
 	if data, ok := any(e).([]byte); ok {
 		return data, nil
 	}
+
 	return r.marshaler.Marshal(e)
 }
 
@@ -78,6 +82,7 @@ func (r *TypedRepository[T]) cacheUnmarshal(data []byte) (e T, err error) {
 	if _, ok := any(e).([]byte); ok {
 		return any(data).(T), nil
 	}
+
 	return r.marshaler.Unmarshal(data)
 }
 
@@ -89,12 +94,14 @@ func (h GobMarshaler[T]) Marshal(v T) ([]byte, error) {
 	if err := enc.Encode(v); err != nil {
 		return nil, err
 	}
+
 	return buf.Bytes(), nil
 }
 
 func (h GobMarshaler[T]) Unmarshal(data []byte) (e T, err error) {
 	dec := gob.NewDecoder(bytes.NewBuffer(data))
 	err = dec.Decode(&e)
+
 	return e, err
 }
 
@@ -106,5 +113,6 @@ func (h JSONMarshaler[T]) Marshal(v T) ([]byte, error) {
 
 func (h JSONMarshaler[T]) Unmarshal(data []byte) (e T, err error) {
 	err = json.Unmarshal(data, &e)
+
 	return e, err
 }

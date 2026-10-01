@@ -42,7 +42,7 @@ type LogsParams struct {
 	Offset  int `json:"offset,omitempty" schema:"offset,omitempty"`
 	Limit   int `json:"limit,omitempty"  schema:"limit,omitempty"`
 	*Filter `    json:"filter,omitempty" schema:",omitempty"`
-	Sort    `    json:"sort,omitempty"   schema:",omitempty"`
+	Sort    `    json:"sort"   schema:",omitempty"`
 }
 
 type Filter struct {
@@ -54,7 +54,7 @@ type Filter struct {
 	To              time.Time `json:"to"                        schema:"to,omitempty"`
 	RequestIDs      []string  `json:"requestIDs,omitempty"      schema:"reqID,omitempty"`
 	Levels          []Level   `json:"levels,omitempty"          schema:"levels,omitempty"`
-	TrackRequest    bool      `json:"trackRequest,omitempty" 		schema:"trackRequest,omitempty"`
+	TrackRequest    bool      `json:"trackRequest,omitempty"    schema:"trackRequest,omitempty"`
 }
 
 type Sort struct {

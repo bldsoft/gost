@@ -27,14 +27,14 @@ func GetQueryOption[T utils.Parsed](r *http.Request, paramName string, defaultVa
 	if strValue := r.URL.Query().Get(paramName); strValue != "" {
 		return utils.Parse[T](strValue)
 	}
+
 	return result, nil
 }
 
 // GetQuerySlice doesn't return error if query param is successfully parsed or not present
-func GetQueryOptionSlice[T utils.Parsed](r *http.Request, paramName string) (result []T, err error) {
+func GetQueryOptionSlice[T utils.Parsed](r *http.Request, paramName string) (result []T, _ error) {
 	if strValues := r.URL.Query().Get(paramName); strValues != "" {
-		values := strings.Split(strValues, ",")
-		for _, strValue := range values {
+		for strValue := range strings.SplitSeq(strValues, ",") {
 			if value, err := utils.Parse[T](strValue); err != nil {
 				return nil, err
 			} else {
@@ -42,6 +42,7 @@ func GetQueryOptionSlice[T utils.Parsed](r *http.Request, paramName string) (res
 			}
 		}
 	}
+
 	return result, nil
 }
 
@@ -51,9 +52,11 @@ func ParseQueryOption[T utils.Parsed](r *http.Request, w http.ResponseWriter, pa
 	if err != nil {
 		log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err, "param name": paramName}, "failed to parse query param")
 		ResponseError(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+
 		return false
 	}
 	*outValue = value
+
 	return true
 }
 
@@ -63,9 +66,11 @@ func ParseQueryOptionSlice[T utils.Parsed](r *http.Request, w http.ResponseWrite
 	if err != nil {
 		log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err, "param name": paramName}, "failed to parse query param")
 		ResponseError(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+
 		return false
 	}
 	*outValue = value
+
 	return true
 }
 

@@ -13,6 +13,7 @@ type Webhook struct {
 
 func NewWebhook(cfg WebhookConfig) *Webhook {
 	webhookConfig := prepareWebhookConfig(cfg)
+
 	return &Webhook{
 		Webhook: webhook.Webhook{Cfg: webhookConfig},
 	}
