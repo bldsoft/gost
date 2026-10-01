@@ -272,6 +272,7 @@ func (r *Repository) put(replace bool, key string, val []byte, generation *uint3
 	if len(continuations) == 0 {
 		return r.putRaw(replace, key, val, generation, itemFs...)
 	}
+
 	return r.putBatch(replace, key, val, continuations, totalSize, generation, itemFs...)
 }
 
@@ -299,6 +300,7 @@ func (r *Repository) putRaw(replace bool, key string, val []byte, generation *ui
 		wp.GenerationPolicy = aero.EXPECT_GEN_EQUAL
 		wp.Generation = *generation
 	}
+
 	return r.cache.Put(wp, asKey, bins)
 }
 
@@ -315,6 +317,7 @@ func (r *Repository) putBatch(replace bool, key string, val []byte, continuation
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -382,6 +385,7 @@ func (r *Repository) batchRecordError(rec aero.BatchRecordIfc) error {
 	if br.Err != nil {
 		return br.Err
 	}
+
 	return &aero.AerospikeError{ResultCode: br.ResultCode}
 }
 

@@ -119,5 +119,6 @@ func (s *Storage) getWritePolicy(generation uint32, expiration uint32) *aero.Wri
 	if s.cfg.WritePolicy.SocketTimeoutMs > 0 {
 		wp.SocketTimeout = time.Duration(s.cfg.WritePolicy.SocketTimeoutMs) * time.Millisecond
 	}
+
 	return wp
 }
