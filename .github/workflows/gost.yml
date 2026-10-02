@@ -1,3 +1,4 @@
+# ci-cd test
 name: gost
 
 on:
