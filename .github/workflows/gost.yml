@@ -82,7 +82,6 @@ jobs:
         run: gotestsum --format=testname -- -race -tags=integration_test ./...
 
   benchmark:
-    needs: [lint, test]
     if: >
       (github.event_name == 'pull_request' &&
        github.event.action == 'opened' &&
