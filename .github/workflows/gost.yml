@@ -1,5 +1,6 @@
 # ci-cd test
 # test commit
+# test commit 2
 name: gost
 
 on:
