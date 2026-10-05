@@ -173,6 +173,7 @@ func profiler() http.Handler {
 	if r, ok := h.(chi.Router); ok {
 		r.Handle("/pprof/goroutineleak", pprof.Handler("goroutineleak"))
 	}
+
 	return h
 }
 

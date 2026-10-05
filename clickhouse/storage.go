@@ -108,7 +108,7 @@ func (db *Storage) RunMigrations() {
 func (db *Storage) Disconnect(ctx context.Context) error {
 	err := db.Db.Close()
 	if err != nil {
-		return fmt.Errorf("Clickhouse disconnect failed: %w", err)
+		return fmt.Errorf("clickhouse disconnect failed: %w", err)
 	}
 	log.Info("Clickhouse disconnected.")
 
