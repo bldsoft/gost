@@ -16,5 +16,6 @@ func NewClickHouseCollector(db *clickhouse.Storage) *ClickHouseCollector {
 
 func (c *ClickHouseCollector) Stat(ctx context.Context) Stat {
 	stat, err := c.db.Stats(ctx)
+
 	return NewStat("clickhouse", stat, err)
 }

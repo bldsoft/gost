@@ -65,7 +65,7 @@ crTkxT6nk3/0JQYFCD+Ooz2CAq8yeag8ni1OaeGqudM+w14iu15fzeJHiw==
 
 func testJwtConfig(t *testing.T, signerCfg, clientCfg JwtConfig) {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello")
+		_, _ = fmt.Fprintf(w, "Hello")
 	})
 	handler = JwtAuthMiddlewareFromConfig(clientCfg)(handler)
 

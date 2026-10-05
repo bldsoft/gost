@@ -8,8 +8,6 @@ import (
 	"github.com/mattn/go-colorable"
 	"github.com/rs/zerolog"
 	"gopkg.in/natefinch/lumberjack.v2"
-	//"github.com/sirupsen/logrus"
-	//"github.com/snowzach/rotatefilehook"
 )
 
 // Logger is global log instance
@@ -50,6 +48,7 @@ func SetLogLevel(sLevel string) error {
 	if err == nil {
 		zerolog.SetGlobalLevel(level)
 	}
+
 	return err
 }
 
@@ -59,6 +58,7 @@ func newFileRotation(filename string) io.Writer {
 		Logger.FatalWithFields(
 			Fields{"path": dir, "error": err},
 			"can't create log directory")
+
 		return nil
 	}
 

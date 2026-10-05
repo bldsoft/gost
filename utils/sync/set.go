@@ -22,6 +22,7 @@ func NewSet[K comparable]() *Set[K] {
 func SetOf[K comparable](vals ...K) *Set[K] {
 	s := NewSet[K]()
 	s.Put(vals...)
+
 	return s
 }
 
@@ -34,6 +35,7 @@ func (s *Set[K]) Put(vals ...K) {
 func (s *Set[K]) Has(val K) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	return s.set.Has(val)
 }
 
@@ -56,6 +58,7 @@ func (s *Set[K]) Empty() bool {
 func (s *Set[K]) Len() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	return s.set.Len()
 }
 
@@ -68,6 +71,7 @@ func (s *Set[K]) Each(fn func(key K)) {
 func (s *Set[K]) ToSlice() []K {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	return s.set.ToSlice()
 }
 
@@ -88,6 +92,7 @@ func SetUnion[K comparable](a, b *Set[K]) *Set[K] {
 		})
 		src.mu.RUnlock()
 	}
+
 	return res
 }
 
@@ -101,6 +106,7 @@ func SetDiff[K comparable](a, b *Set[K]) *Set[K] {
 			res.Put(k)
 		}
 	}
+
 	return res
 }
 
@@ -129,5 +135,6 @@ func SetIntersection[K comparable](a, b *Set[K]) *Set[K] {
 			res.Put(k)
 		}
 	}
+
 	return res
 }

@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"io"
-
 	"net/http"
 
 	"github.com/bldsoft/gost/log"
@@ -18,7 +17,7 @@ func (c BaseController) ResponseError(w http.ResponseWriter, err string, code in
 }
 
 func (c BaseController) ResponseOK(w http.ResponseWriter) {
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 }
 
 func (c BaseController) ResponseJson(w http.ResponseWriter, r *http.Request, v any, needObjectLog ...bool) {
@@ -41,9 +40,9 @@ func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request
 			bodyBytes, _ = io.ReadAll(r.Body)
 		} else {
 			bodyBytes = make([]byte, contentlen)
-			io.ReadFull(r.Body, bodyBytes)
+			_, _ = io.ReadFull(r.Body, bodyBytes)
 		}
-		r.Body.Close()
+		_ = r.Body.Close()
 		// r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
 
@@ -54,7 +53,9 @@ func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request
 	}
 	if err != nil {
 		c.ResponseError(w, err.Error(), http.StatusBadRequest)
+
 		return false
 	}
+
 	return true
 }

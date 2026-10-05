@@ -1,0 +1,50 @@
+name: save-benchmark
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+    paths:
+      - '**/*.go'
+      - go.mod
+      - go.sum
+      - Makefile
+      - .golangci.yml
+      - .mockery.yml
+      - .github/workflows/gost.yml
+      - .github/workflows/save-benchmark.yml
+
+jobs:
+  save-benchmark:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: save-benchmark-main
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Run benchmarks
+        run: |
+          set -o pipefail
+          mkdir -p benchmarks
+          go test -run=^$ -bench=. -benchmem -count=6 ./... | tee benchmarks/main.txt
+      - name: Commit benchmarks/main.txt
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add benchmarks/main.txt
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: update benchmarks/main.txt benchmark baseline"
+          git pull --rebase origin main
+          git push

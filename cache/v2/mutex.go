@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"sync"
 	"time"
 
 	"github.com/bldsoft/gost/log"
@@ -14,6 +15,7 @@ type DistrMutex struct {
 	cache           IDistrCacheRepository
 	lockKey         string
 	uniqueID        []byte
+	mu              sync.Mutex
 	ticker          *time.Ticker
 	quit            chan struct{}
 	unlockTime      time.Duration
@@ -34,7 +36,7 @@ const (
 // If the gouritine locks m and then finishes running without calling Unlock(), m unlocks after unlockTime.
 func NewDistrMutex(cache IDistrCacheRepository, lockKey string, unlockTime time.Duration) *DistrMutex {
 	uniqueID := make([]byte, 4)
-	rand.Read(uniqueID)
+	_, _ = rand.Read(uniqueID)
 
 	if unlockTime <= 0 {
 		unlockTime = defaultUnlockTime
@@ -44,7 +46,7 @@ func NewDistrMutex(cache IDistrCacheRepository, lockKey string, unlockTime time.
 		cache:           cache,
 		lockKey:         lockKey,
 		uniqueID:        uniqueID,
-		quit:            make(chan struct{}),
+		quit:            make(chan struct{}, 1),
 		unlockTime:      unlockTime,
 		TryLockInterval: unlockTime,
 	}
@@ -76,10 +78,21 @@ func (m *DistrMutex) TryLock() bool {
 	err := m.cache.Add(m.lockKey, m.uniqueID, WithTTL(m.unlockTime))
 	if err != nil {
 		log.DebugWithFields(log.Fields{"error": err}, "Failed to lock memcached mutex")
+
 		return false
 	}
-	m.ticker = time.NewTicker(m.unlockTime / 2)
-	go m.updateLock()
+
+	ticker := time.NewTicker(m.unlockTime / 2)
+	m.mu.Lock()
+	{
+		if m.ticker != nil {
+			m.ticker.Stop()
+		}
+		m.ticker = ticker
+	}
+	m.mu.Unlock()
+	go m.updateLock(ticker)
+
 	return true
 }
 
@@ -91,13 +104,14 @@ func (m *DistrMutex) getOwner() lockOwner {
 	if bytes.Equal(it.Value, m.uniqueID) {
 		return me
 	}
+
 	return notme
 }
 
-func (m *DistrMutex) updateLock() {
-	for range m.ticker.C {
-		lockOwner := m.getOwner()
-		switch lockOwner {
+func (m *DistrMutex) updateLock(ticker *time.Ticker) {
+	for range ticker.C {
+		owner := m.getOwner()
+		switch owner {
 		case me:
 			err := m.cache.Set(m.lockKey, m.uniqueID, WithTTL(m.unlockTime))
 			if err != nil {
@@ -105,19 +119,33 @@ func (m *DistrMutex) updateLock() {
 			}
 		case notme:
 			m.stop()
+
 			return
 		case nobody:
 			if !m.TryLock() {
 				m.stop()
 			}
+
 			return
 		}
 	}
 }
 
+func (m *DistrMutex) stopTicker() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.ticker != nil {
+		m.ticker.Stop()
+		m.ticker = nil
+	}
+}
+
 func (m *DistrMutex) stop() {
-	m.quit <- struct{}{}
-	m.ticker.Stop()
+	select {
+	case m.quit <- struct{}{}:
+	default:
+	}
+	m.stopTicker()
 }
 
 // Quit is used to signal that lock doesn't belong to you anymore
@@ -127,10 +155,8 @@ func (m *DistrMutex) Quit() <-chan struct{} {
 
 // Unlock unlocks m if it belongs to you
 func (m *DistrMutex) Unlock() {
-	if m.ticker != nil {
-		m.ticker.Stop()
-	}
+	m.stopTicker()
 	if m.getOwner() == me {
-		m.cache.Delete(m.lockKey)
+		_ = m.cache.Delete(m.lockKey)
 	}
 }

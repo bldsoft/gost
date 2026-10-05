@@ -4,12 +4,13 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/bldsoft/gost/auth"
 	"github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/controller"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/utils"
-	"github.com/go-chi/chi/v5"
 )
 
 type Controller struct {
@@ -47,6 +48,7 @@ func (c *Controller) GetFeaturesHandler(w http.ResponseWriter, r *http.Request) 
 	features, err := c.featureService.GetAll(ctx)
 	if err != nil {
 		c.responseError(w, r, err)
+
 		return
 	}
 	c.ResponseJson(w, r, features)
@@ -67,6 +69,7 @@ func (c *Controller) GetFeatureHandler(w http.ResponseWriter, r *http.Request) {
 	feature, err := c.featureService.Get(ctx, id)
 	if err != nil {
 		c.responseError(w, r, err)
+
 		return
 	}
 	c.ResponseJson(w, r, feature)
@@ -94,6 +97,7 @@ func (c *Controller) PatchFeatureHandler(w http.ResponseWriter, r *http.Request)
 	f, err := c.featureService.Update(ctx, f)
 	if err != nil {
 		c.responseError(w, r, err)
+
 		return
 	}
 	c.ResponseJson(w, r, f)

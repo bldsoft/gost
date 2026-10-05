@@ -73,6 +73,7 @@ func (w watcher[T, U]) WarmUp(ctx context.Context, rep Repository[T, U]) error {
 	if w.warmUp != nil {
 		return w.warmUp(ctx, rep)
 	}
+
 	return nil
 }
 

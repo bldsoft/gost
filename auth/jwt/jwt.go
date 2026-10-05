@@ -2,9 +2,8 @@ package jwt
 
 import (
 	"fmt"
-	"os"
-
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
@@ -25,12 +24,13 @@ func (c *JwtConfig) PrivateKey() jwk.Key {
 
 func (c *JwtConfig) PublicKey() jwk.Key {
 	public, _ := c.key.PublicKey()
+
 	return public
 }
 
 func (c *JwtConfig) SetDefaults() {}
 
-func (c *JwtConfig) Validate() (err error) {
+func (c *JwtConfig) Validate() error {
 	if len(c.PemPath) != 0 {
 		bytes, err := os.ReadFile(c.PemPath)
 		if err != nil {
@@ -38,11 +38,11 @@ func (c *JwtConfig) Validate() (err error) {
 		}
 
 		c.key, err = jwk.ParseKey(bytes, jwk.WithPEM(true))
-
 		if err != nil {
 			return fmt.Errorf("failed to parse jwt key: %w", err)
 		}
 	}
+
 	return nil
 }
 

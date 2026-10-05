@@ -15,9 +15,9 @@ func ExampleNewCustomFeature() {
 		})
 
 	fmt.Println(color.Get())
-	color.SetFromString("Red")
-	color.Set(ColorWhite)
-	color.SetFromString("InvalidValue")
+	_ = color.SetFromString("Red")
+	_ = color.Set(ColorWhite)
+	_ = color.SetFromString("InvalidValue")
 
 	// Output:
 	// White
@@ -32,8 +32,8 @@ func ExampleNewFeature() {
 		})
 
 	fmt.Println(intFeature.Get())
-	intFeature.SetFromString("2")
-	intFeature.Set(3)
+	_ = intFeature.SetFromString("2")
+	_ = intFeature.Set(3)
 
 	stringFeature := feature.NewFeature(1, "string1").
 		AddOnChangeHandler(func(v string) {
@@ -41,8 +41,8 @@ func ExampleNewFeature() {
 		})
 
 	fmt.Println(stringFeature.Get())
-	stringFeature.SetFromString("string2")
-	stringFeature.Set("string3")
+	_ = stringFeature.SetFromString("string2")
+	_ = stringFeature.Set("string3")
 
 	// Output:
 	// 1
@@ -60,9 +60,9 @@ func ExampleNewDuration() {
 		})
 
 	fmt.Println(dur.Get())
-	dur.Set(1 * time.Minute)
-	dur.SetFromString("1h1m1s")
-	feature.Features.Get(0).SetFromString("5s") //  global map
+	_ = dur.Set(1 * time.Minute)
+	_ = dur.SetFromString("1h1m1s")
+	_ = feature.Features.Get(0).SetFromString("5s") //  global map
 
 	// Output:
 	// 1s

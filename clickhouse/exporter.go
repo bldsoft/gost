@@ -24,6 +24,7 @@ func NewExporter[T any](storage *Storage, cfg ExporterConfig) *Exporter[T] {
 		newExporterBatch[T](storage, cfg.TableName),
 		cfg.BufferedExporterConfig,
 	)
+
 	return e
 }
 

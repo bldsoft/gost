@@ -27,11 +27,13 @@ func (f *Feature[T]) onChange(newValue T) {
 func (f *Feature[T]) AddOnChangeHandler(handler func(T), handlers ...func(T)) *Feature[T] {
 	f.onchangeHandlers = append(f.onchangeHandlers, handler)
 	f.onchangeHandlers = append(f.onchangeHandlers, handlers...)
+
 	return f
 }
 
 func (f *Feature[T]) SetValidator(validate func(T) error) *Feature[T] {
 	f.validators = append(f.validators, validate)
+
 	return f
 }
 
@@ -49,6 +51,7 @@ func (f *Feature[T]) validate(value T) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -57,6 +60,7 @@ func (f *Feature[T]) Validate(value string) error {
 	if err != nil {
 		return err
 	}
+
 	return f.validate(val)
 }
 
@@ -69,6 +73,7 @@ func (f *Feature[T]) Set(value T) error {
 	}
 	f.value = value
 	f.onChange(value)
+
 	return nil
 }
 
@@ -77,6 +82,7 @@ func (f *Feature[T]) SetFromString(value string) error {
 	if err != nil {
 		return err
 	}
+
 	return f.Set(val)
 }
 

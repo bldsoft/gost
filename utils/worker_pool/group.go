@@ -7,10 +7,6 @@ import (
 	"github.com/bldsoft/gost/utils/errgroup"
 )
 
-type workerPool interface {
-	In() chan<- func()
-}
-
 type Group struct {
 	wp        *WorkerPool
 	ctx       context.Context
@@ -23,6 +19,7 @@ type Group struct {
 
 func newGroup(wp *WorkerPool, ctx context.Context) *Group {
 	ctx, cancel := context.WithCancel(ctx)
+
 	return &Group{
 		wp:     wp,
 		ctx:    ctx,
@@ -39,6 +36,7 @@ func (g *Group) Submit(f func(ctx context.Context) error) {
 		select {
 		case <-g.ctx.Done():
 			g.setError(g.ctx.Err())
+
 			return
 		default:
 		}
@@ -65,5 +63,6 @@ func (g *Group) setError(err error) {
 
 func (g *Group) Wait() error {
 	g.waitGroup.Wait()
+
 	return g.err
 }

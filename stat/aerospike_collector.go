@@ -16,5 +16,6 @@ func NewAerospikeCollector(cache *aerospike.Storage) *AerospikeCollector {
 
 func (c *AerospikeCollector) Stat(ctx context.Context) Stat {
 	stat, err := c.cache.Stat()
+
 	return NewStat("aerospike", stat, err)
 }

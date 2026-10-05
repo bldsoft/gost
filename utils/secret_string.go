@@ -27,6 +27,7 @@ type HiddenString[T StringHider] string
 
 func (c HiddenString[T]) MarshalJSON() ([]byte, error) {
 	var h T
+
 	return json.Marshal(h.Hide(c.String()))
 }
 

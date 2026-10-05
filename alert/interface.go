@@ -35,6 +35,7 @@ func (a Alert) AddMetaData(key string, value any) Alert {
 		a.MetaData = make(map[string]any)
 	}
 	a.MetaData[key] = value
+
 	return a
 }
 
@@ -55,6 +56,7 @@ func Middlewares(middlewares ...Middleware) Middleware {
 		for _, m := range slices.Backward(middlewares) {
 			next = m(next)
 		}
+
 		return next
 	}
 }

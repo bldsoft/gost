@@ -7,8 +7,9 @@ import (
 	"testing"
 	"testing/synctest"
 
-	workerpool "github.com/bldsoft/gost/utils/worker_pool"
 	"github.com/stretchr/testify/require"
+
+	workerpool "github.com/bldsoft/gost/utils/worker_pool"
 )
 
 type wpTestFixture struct {
@@ -25,6 +26,7 @@ func (t *wpTestFixture) addTasks(n int) (release func()) {
 			<-releaseC
 		}
 	}
+
 	return func() {
 		close(releaseC)
 	}
@@ -106,6 +108,7 @@ func TestWorkerPool_Group(t *testing.T) {
 			expectedErr := errors.New("err")
 			g.Submit(func(ctx context.Context) error {
 				<-ctx.Done()
+
 				return ctx.Err()
 			})
 			g.Submit(func(ctx context.Context) error {
@@ -125,6 +128,7 @@ func TestWorkerPool_Group(t *testing.T) {
 			g := wp.Group(context.Background())
 			g.Submit(func(ctx context.Context) error {
 				<-ctx.Done()
+
 				return ctx.Err()
 			})
 			g.Submit(func(ctx context.Context) error {
@@ -147,6 +151,7 @@ func TestWorkerPool_Group(t *testing.T) {
 			g := wp.Group(ctx)
 			g.Submit(func(ctx context.Context) error {
 				<-ctx.Done()
+
 				return ctx.Err()
 			})
 			cancel()

@@ -16,6 +16,7 @@ func newProbesController() *probesController {
 
 func (c *probesController) SetReady(v bool) *probesController {
 	c.ready = v
+
 	return c
 }
 
@@ -26,6 +27,7 @@ func (c *probesController) HealthHandler(w http.ResponseWriter, r *http.Request)
 func (c *probesController) ReadyHandler(w http.ResponseWriter, r *http.Request) {
 	if !c.ready {
 		c.writeCode(w, http.StatusServiceUnavailable)
+
 		return
 	}
 	c.writeCode(w, http.StatusOK)
@@ -37,7 +39,7 @@ func (c *probesController) StartupHandler(w http.ResponseWriter, r *http.Request
 
 func (c *probesController) writeCode(w http.ResponseWriter, code int) {
 	w.WriteHeader(code)
-	w.Write([]byte(http.StatusText(code)))
+	_, _ = w.Write([]byte(http.StatusText(code)))
 }
 
 func (c *probesController) Mount(r chi.Router) {

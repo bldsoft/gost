@@ -3,11 +3,12 @@ package mongo
 import (
 	"context"
 
-	"github.com/bldsoft/gost/repository"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+
+	"github.com/bldsoft/gost/repository"
 )
 
-//go:generate go run github.com/vektra/mockery/v2 --all --with-expecter
+//go:generate mockery
 
 type Repository[T any, U repository.IEntityIDPtr[T]] interface {
 	Name() string

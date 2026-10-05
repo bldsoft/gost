@@ -32,6 +32,7 @@ func TestGetIP(t *testing.T) {
 			got, err := m.getIP(req)
 			if tt.wantErr {
 				require.Error(t, err)
+
 				return
 			}
 			require.NoError(t, err)

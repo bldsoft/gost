@@ -28,6 +28,7 @@ func (c *EntityPassword) Active() error {
 	if c.ChangePassword {
 		return ErrChangePassword
 	}
+
 	return nil
 }
 

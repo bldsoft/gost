@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bldsoft/gost/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/bldsoft/gost/utils"
 )
 
 var LoggerCtxKey = &utils.ContextKey{Name: "Logger"}
@@ -18,6 +19,7 @@ type LogEntry = middleware.LogEntry
 
 func GetLogEntry(ctx context.Context) LogEntry {
 	entry, _ := ctx.Value(middleware.LogEntryCtxKey).(LogEntry)
+
 	return entry
 }
 
@@ -28,6 +30,7 @@ func GetLogEntryFromRequest(r *http.Request) LogEntry {
 // WithLogEntry sets the in-context ServiceLogger for a request.
 func WithLogger(r *http.Request, logger *ServiceLogger) *http.Request {
 	r = r.WithContext(context.WithValue(r.Context(), LoggerCtxKey, logger))
+
 	return r
 }
 
@@ -38,6 +41,7 @@ func FromContext(ctx context.Context) *ServiceLogger {
 			return logger
 		}
 	}
+
 	return &Logger
 }
 
@@ -51,6 +55,7 @@ func logger(next http.Handler) http.Handler {
 		logger := Logger.WithFields(logFields)
 		next.ServeHTTP(w, WithLogger(r, logger))
 	}
+
 	return http.HandlerFunc(fn)
 }
 
@@ -72,6 +77,7 @@ func requestLogger(f LogFormatter) func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			if utils.IsIn(r.URL.Path, NotLoggedEndpoints...) {
 				next.ServeHTTP(w, r)
+
 				return
 			}
 			entry, r := f.NewLogEntry(r)
@@ -84,6 +90,7 @@ func requestLogger(f LogFormatter) func(next http.Handler) http.Handler {
 
 			next.ServeHTTP(ww, middleware.WithLogEntry(r, entry))
 		}
+
 		return http.HandlerFunc(fn)
 	}
 }
