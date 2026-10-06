@@ -115,8 +115,6 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 	}
 }
 
-// With updateLookup, fullDocument is null when the document was deleted before
-// the lookup ran; the following delete event carries the removal.
 func changeEventDocument(event bson.Raw, operationType string) (bson.Raw, bool) {
 	if operationType == changeStreamDeleteOp {
 		if doc, ok := event.Lookup("fullDocumentBeforeChange").DocumentOK(); ok {
