@@ -99,7 +99,7 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 			continue
 		}
 		operationType := changeStream.Current.Lookup("operationType").StringValue()
-		fullDocument, ok := changeEventDocument(changeStream.Current, operationType)
+		fullDocument, ok := w.changeEventDocument(changeStream.Current, operationType)
 		if !ok {
 			log.FromContext(ctx).Debugf("Change stream watcher skipped %s event without document: %s", operationType, changeStream.Current)
 		} else if opType := w.getOpType(fullDocument, operationType); opType != None {
@@ -115,7 +115,7 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 	}
 }
 
-func changeEventDocument(event bson.Raw, operationType string) (bson.Raw, bool) {
+func (w *changeStreamWatcher) changeEventDocument(event bson.Raw, operationType string) (bson.Raw, bool) {
 	if operationType == changeStreamDeleteOp {
 		if doc, ok := event.Lookup("fullDocumentBeforeChange").DocumentOK(); ok {
 			return doc, true
