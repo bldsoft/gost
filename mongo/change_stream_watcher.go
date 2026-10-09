@@ -99,18 +99,10 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 			continue
 		}
 		operationType := changeStream.Current.Lookup("operationType").StringValue()
-		var fullDocument bson.Raw
-		if operationType == changeStreamDeleteOp {
-			if bc := changeStream.Current.Lookup("fullDocumentBeforeChange"); bc.Type == bson.TypeNull && len(bc.Value) == 0 {
-				fullDocument = changeStream.Current.Lookup("documentKey").Document()
-			} else {
-				fullDocument = bc.Document()
-			}
-		} else {
-			fullDocument = changeStream.Current.Lookup("fullDocument").Document()
-		}
-
-		if opType := w.getOpType(fullDocument, operationType); opType != None {
+		fullDocument, ok := w.changeEventDocument(changeStream.Current, operationType)
+		if !ok {
+			log.FromContext(ctx).Debugf("Change stream watcher skipped %s event without document: %s", operationType, changeStream.Current)
+		} else if opType := w.getOpType(fullDocument, operationType); opType != None {
 			handler(fullDocument, opType)
 			log.FromContext(ctx).Debugf("Change stream watcher detected changes: %s %s", opType, fullDocument)
 		}
@@ -121,6 +113,18 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 	if err = changeStream.Err(); err != nil {
 		log.FromContext(ctx).Debugf("Change stream watcher for \"%s\" collection stopped: %s", collection.Name(), err.Error())
 	}
+}
+
+func (w *changeStreamWatcher) changeEventDocument(event bson.Raw, operationType string) (bson.Raw, bool) {
+	if operationType == changeStreamDeleteOp {
+		if doc, ok := event.Lookup("fullDocumentBeforeChange").DocumentOK(); ok {
+			return doc, true
+		}
+
+		return event.Lookup("documentKey").DocumentOK()
+	}
+
+	return event.Lookup("fullDocument").DocumentOK()
 }
 
 func (w *changeStreamWatcher) getOpType(fulldocument bson.Raw, opType string) OperationType {
