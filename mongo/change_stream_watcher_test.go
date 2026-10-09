@@ -8,6 +8,8 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
+var w changeStreamWatcher
+
 func TestChangeEventDocument(t *testing.T) {
 	doc := bson.D{{Key: "_id", Value: "id"}, {Key: "field", Value: "value"}}
 	key := bson.D{{Key: "_id", Value: "id"}}
@@ -68,7 +70,7 @@ func TestChangeEventDocument(t *testing.T) {
 			event, err := bson.Marshal(tt.event)
 			require.NoError(t, err)
 
-			got, ok := changeEventDocument(event, tt.operationType)
+			got, ok := w.changeEventDocument(event, tt.operationType)
 
 			assert.Equal(t, tt.wantOK, ok)
 			if !tt.wantOK {
