@@ -15,6 +15,7 @@ func CollectItem(itemFs ...ItemF) *Item {
 	for _, f := range itemFs {
 		f(it)
 	}
+
 	return it
 }
 

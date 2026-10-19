@@ -19,6 +19,7 @@ func (h *innerHeap[T]) Pop() any {
 	n := len(old)
 	x := old[n-1]
 	h.slice = old[0 : n-1]
+
 	return x
 }
 
@@ -48,6 +49,7 @@ func NewHeap[T any](less func(a T, b T) bool) *Heap[T] {
 		less:  less,
 	}
 	heap.Init(&i)
+
 	return &Heap[T]{
 		innerHeap: i,
 	}
@@ -58,15 +60,16 @@ func (h *Heap[T]) Pop() T {
 }
 
 func (h *Heap[T]) Top() T {
-	return h.innerHeap.Peak()
+	return h.Peak()
 }
 
 func (h *Heap[T]) RemoveFirstFunc(f func(T) bool) (found bool) {
-	idx := slices.IndexFunc(h.innerHeap.slice, f)
+	idx := slices.IndexFunc(h.slice, f)
 	if idx == -1 {
 		return
 	}
 	_ = heap.Remove(&h.innerHeap, idx)
+
 	return true
 }
 

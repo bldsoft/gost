@@ -57,6 +57,7 @@ func (w *Watcher) Start() {
 func (w *Watcher) getNewContext() context.Context {
 	ctx, cancel := context.WithCancel(context.Background())
 	w.cancel = cancel
+
 	return ctx
 }
 

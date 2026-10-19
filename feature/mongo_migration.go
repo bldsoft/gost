@@ -31,9 +31,9 @@ func (m *FeatureMigrator) AddFeatureMigration(version uint, features ...*Feature
 	}
 
 	var IDs strings.Builder
-	IDs.WriteString(fmt.Sprintf("%d", features[0].ID))
+	_, _ = fmt.Fprintf(&IDs, "%d", features[0].ID)
 	for i := 1; i < size; i++ {
-		IDs.WriteString(fmt.Sprintf(",%d", features[i].ID))
+		_, _ = fmt.Fprintf(&IDs, ",%d", features[i].ID)
 	}
 
 	up := fmt.Sprintf(`[{
@@ -75,9 +75,9 @@ func (m *FeatureMigrator) DeleteFeatureMigration(version uint, featureIDs ...fea
 		return
 	}
 	var IDs strings.Builder
-	IDs.WriteString(fmt.Sprintf("%d", featureIDs[0]))
+	_, _ = fmt.Fprintf(&IDs, "%d", featureIDs[0])
 	for i := 1; i < len(featureIDs); i++ {
-		IDs.WriteString(fmt.Sprintf(",%d", featureIDs[i]))
+		_, _ = fmt.Fprintf(&IDs, ",%d", featureIDs[i])
 	}
 
 	m.db.AddMigration(version, fmt.Sprintf(`[{

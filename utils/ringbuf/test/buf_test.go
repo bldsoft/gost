@@ -3,8 +3,9 @@ package ringbuf
 import (
 	"testing"
 
-	"github.com/bldsoft/gost/utils/ringbuf"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bldsoft/gost/utils/ringbuf"
 )
 
 func TestRingBuf(t *testing.T) {
@@ -197,6 +198,7 @@ func TestRingBufCopy(t *testing.T) {
 		for i := 1; i <= l; i++ {
 			res.Push(i)
 		}
+
 		return res
 	}
 	tests := []struct {
@@ -228,6 +230,7 @@ func TestRingBufCopy(t *testing.T) {
 				res.Pull()
 				res.Pull()
 				res.Push(6)
+
 				return res
 			}(),
 			expected: []int{4, 5, 6},

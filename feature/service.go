@@ -46,6 +46,7 @@ func (srv *Service) validate(f *Feature) error {
 	feature := feature.Features.Get(f.ID)
 	if feature == nil {
 		log.DebugWithFields(log.Fields{"feature": f.ID}, "Validation of not supported feature")
+
 		return nil
 	}
 
@@ -60,5 +61,6 @@ func (srv *Service) validate(f *Feature) error {
 	if f.GlobalValue != nil {
 		return feature.Validate(*f.GlobalValue)
 	}
+
 	return nil
 }

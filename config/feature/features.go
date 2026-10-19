@@ -18,6 +18,7 @@ type IdType = int
 
 func IdFromString(str string) IdType {
 	id, _ := strconv.Atoi(str)
+
 	return id
 }
 
@@ -41,6 +42,7 @@ func (fc *featureConfig) Get(featureID IdType) IFeature {
 	if !ok {
 		return nil
 	}
+
 	return feature
 }
 
@@ -49,6 +51,7 @@ func (fc *featureConfig) Get(featureID IdType) IFeature {
 func NewCustomFeature[T comparable](id IdType, value T, parse func(string) (T, error)) *Feature[T] {
 	feature := &Feature[T]{ID: id, value: value, parse: parse}
 	Features.features[id] = feature
+
 	return feature
 }
 

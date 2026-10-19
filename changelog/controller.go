@@ -4,11 +4,12 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/bldsoft/gost/auth"
 	"github.com/bldsoft/gost/controller"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/utils"
-	"github.com/go-chi/chi/v5"
 )
 
 type Controller struct {
@@ -28,6 +29,7 @@ func (c *Controller) GetHandler(w http.ResponseWriter, r *http.Request) {
 	params, err := utils.FromRequest[RecordsParams](r)
 	if err != nil {
 		c.ResponseError(w, err.Error(), http.StatusBadRequest)
+
 		return
 	}
 	records, err := c.changeLogService.GetRecords(r.Context(), params)

@@ -20,6 +20,7 @@ func newExporterBatch[T any](storage *Storage, table string) *exporterBatch[T] {
 	if err != nil {
 		panic(err)
 	}
+
 	return &exporterBatch[T]{batch: batch}
 }
 
@@ -28,6 +29,7 @@ func (e *exporterBatch[T]) Send() error {
 		return err
 	}
 	e.n = 0
+
 	return nil
 }
 
@@ -37,11 +39,12 @@ func (e *exporterBatch[T]) Len() int {
 
 func (e *exporterBatch[T]) Add(items ...T) (n int, err error) {
 	for i, item := range items {
-		if err := e.batch.Append(item); err != nil {
+		if err = e.batch.Append(item); err != nil {
 			return i, err
 		}
 		e.n++
 	}
+
 	return len(items), nil
 }
 
@@ -50,6 +53,7 @@ func (e *exporterBatch[T]) Reset() error {
 		return err
 	}
 	e.n = 0
+
 	return nil
 }
 
@@ -61,6 +65,7 @@ func columnNames[T any]() []string {
 	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
+
 	return columnNamesFromType(t)
 }
 
@@ -84,5 +89,6 @@ func columnNamesFromType(t reflect.Type) []string {
 			keys = append(keys, name)
 		}
 	}
+
 	return keys
 }

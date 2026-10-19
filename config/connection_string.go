@@ -25,6 +25,7 @@ func (c *ConnectionString) MarshalJSON() ([]byte, error) {
 		if password := query.Get(queryName); password != "" {
 			query.Set(queryName, passReplacement)
 			u.RawQuery = query.Encode()
+
 			break
 		}
 	}

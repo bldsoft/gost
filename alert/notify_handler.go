@@ -2,7 +2,6 @@ package alert
 
 import (
 	"context"
-
 	_ "embed"
 
 	"github.com/bldsoft/gost/log"

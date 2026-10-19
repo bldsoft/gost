@@ -1,8 +1,9 @@
 package mongo
 
 import (
-	"github.com/bldsoft/gost/config"
 	mm "github.com/golang-migrate/migrate/v4/database/mongodb"
+
+	"github.com/bldsoft/gost/config"
 )
 
 type Config struct {

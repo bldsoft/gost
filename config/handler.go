@@ -11,6 +11,6 @@ import "net/http"
 // @Router /env [get]
 func GetEnvHandler(config IConfig) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(FormatEnv(config)))
+		_, _ = w.Write([]byte(FormatEnv(config)))
 	}
 }

@@ -27,5 +27,6 @@ func (c *Config) Validate() error {
 	if !utils.IsIn(len(c.SecretKey), 16, 24, 32) {
 		return errors.New("in-house secret key value should be either 16, 24, or 32 bytes")
 	}
+
 	return nil
 }

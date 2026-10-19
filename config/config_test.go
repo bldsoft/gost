@@ -35,10 +35,10 @@ func TestReadingPlainConfig(t *testing.T) {
 	assert.NoError(t, ReadFromEnv(&config, ""))
 	assert.True(t, reflect.DeepEqual(config, configCopy))
 
-	os.Setenv("BOOL_VALUE", strconv.FormatBool(expected.BoolValue))
-	os.Setenv("INT_VALUE", strconv.FormatInt(expected.IntValue, 10))
-	os.Setenv("STRING_VALUE", expected.StringValue)
-	os.Setenv("SLICE_VALUE", strings.Join(expected.SliceValue, ","))
+	_ = os.Setenv("BOOL_VALUE", strconv.FormatBool(expected.BoolValue))
+	_ = os.Setenv("INT_VALUE", strconv.FormatInt(expected.IntValue, 10))
+	_ = os.Setenv("STRING_VALUE", expected.StringValue)
+	_ = os.Setenv("SLICE_VALUE", strings.Join(expected.SliceValue, ","))
 
 	assert.NoError(t, ReadFromEnv(&config, ""))
 	assert.True(t, reflect.DeepEqual(config, expected))
@@ -66,10 +66,10 @@ func newComplexConfig(value string) *complexConfig {
 }
 
 func setToEnv(value *complexConfig, prefix string) {
-	os.Setenv(prefix+"STRING_VALUE", value.FirstConf.StringValue)
-	os.Setenv(prefix+"SECOND_STRING_VALUE", value.SecondConf.StringValue)
-	os.Setenv(prefix+"THIRD_STRING_VALUE", value.ThirdConf.StringValue)
-	os.Setenv(prefix+"FOURTH_STRING_VALUE", value.FourthConf.StringValue)
+	_ = os.Setenv(prefix+"STRING_VALUE", value.FirstConf.StringValue)
+	_ = os.Setenv(prefix+"SECOND_STRING_VALUE", value.SecondConf.StringValue)
+	_ = os.Setenv(prefix+"THIRD_STRING_VALUE", value.ThirdConf.StringValue)
+	_ = os.Setenv(prefix+"FOURTH_STRING_VALUE", value.FourthConf.StringValue)
 }
 
 func TestReadingConfigComposition(t *testing.T) {

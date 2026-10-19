@@ -5,10 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bldsoft/gost/config/feature"
-	"github.com/bldsoft/gost/log"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+
+	"github.com/bldsoft/gost/config/feature"
+	"github.com/bldsoft/gost/log"
 )
 
 var ReserveWatcherInterval *feature.Duration
@@ -28,6 +29,7 @@ func (w *reserveWatcher) getReserveWatcherInterval() time.Duration {
 	if ReserveWatcherInterval != nil {
 		return ReserveWatcherInterval.Get()
 	}
+
 	return defaultDuration
 }
 
@@ -71,6 +73,7 @@ func (w *reserveWatcher) watch(ctx context.Context, collection *mongo.Collection
 		case <-ctx.Done():
 			ticker.Stop()
 			log.Debugf("Reserve watcher for \"%s\" collection stopped", collection.Name())
+
 			return
 		}
 	}
@@ -81,14 +84,16 @@ func (w *reserveWatcher) watchCollection(collection *mongo.Collection, handler W
 	cursor, err := collection.Find(ctx, bson.M{BsonFieldNameUpdateTime: bson.M{"$gte": w.lastCheck}})
 	if err != nil {
 		log.Errorf("%s reserve watcher failed to open cursor %s", collection.Name(), err.Error())
+
 		return
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	for cursor.Next(ctx) {
 		var item bson.Raw
 		if err = cursor.Decode(&item); err != nil {
 			log.Errorf("Failed to decode item %s", err.Error())
+
 			continue
 		}
 		if opType := w.getOpType(item); opType != None {

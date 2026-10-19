@@ -95,6 +95,7 @@ func TestFromQuery(t *testing.T) {
 				if !tt.wantErr {
 					t.Errorf("FromQuery() unexpected error")
 				}
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

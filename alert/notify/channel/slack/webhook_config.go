@@ -2,14 +2,13 @@ package slack
 
 import (
 	"cmp"
+	_ "embed"
 	"encoding/json"
 	"strings"
 	"text/template"
 
 	"github.com/bldsoft/gost/alert/notify/channel"
 	"github.com/bldsoft/gost/alert/notify/channel/webhook"
-
-	_ "embed"
 )
 
 //go:embed default_message.tmpl
@@ -27,6 +26,7 @@ var DefaultWebhookConfig = WebhookConfig{
 
 func prepareWebhookConfig(cfg WebhookConfig) webhook.Config {
 	cfg.MessageTemplate = cmp.Or(cfg.MessageTemplate, DefaultWebhookConfig.MessageTemplate)
+
 	return webhook.Config{
 		BodyFormat: bodyFormatFunc(cfg.MessageTemplate, cfg.ColorTemplate),
 	}
@@ -61,6 +61,7 @@ func bodyFormatFunc(msgTemplate, colorTemplate *template.Template) func(msg chan
 						},
 					},
 				})
+
 				return body, "application/json"
 			}
 		}
@@ -70,6 +71,7 @@ func bodyFormatFunc(msgTemplate, colorTemplate *template.Template) func(msg chan
 		}{
 			Text: msgTxt.String(),
 		})
+
 		return body, "application/json"
 	}
 }

@@ -1,8 +1,9 @@
 package mongo
 
 import (
-	"github.com/bldsoft/gost/repository"
 	"go.mongodb.org/mongo-driver/v2/bson"
+
+	"github.com/bldsoft/gost/repository"
 )
 
 func ParseQueryOptions(q *repository.QueryOptions) bson.M {
@@ -13,5 +14,6 @@ func ParseQueryOptions(q *repository.QueryOptions) bson.M {
 	filter := bson.M{}
 	f := q.Filter
 	RecursiveParse(filter, f, "")
+
 	return filter
 }

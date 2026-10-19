@@ -69,6 +69,7 @@ func TestQueueScheduledTask(t *testing.T) {
 				sort.Slice(expected, func(i, j int) bool {
 					expectedStartIn := cmp.Or(expected[i].expectedStartIn, expected[i].startIn)
 					expectedStartIn2 := cmp.Or(expected[j].expectedStartIn, expected[j].startIn)
+
 					return expectedStartIn < expectedStartIn2
 				})
 

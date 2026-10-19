@@ -27,6 +27,7 @@ func (r *Resolver) LookupServices(ctx context.Context, serviceName string) ([]st
 	if r.balancer != nil {
 		addrs = r.balancer.Balance(serviceName, addrs)
 	}
+
 	return addrs, nil
 }
 
@@ -47,5 +48,6 @@ func (r *Resolver) lookupServices(ctx context.Context, serviceName string) ([]st
 	}
 
 	r.cache.put(serviceName, addrs)
+
 	return addrs, nil
 }

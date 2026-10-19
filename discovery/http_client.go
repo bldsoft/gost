@@ -7,6 +7,7 @@ import (
 func NewHttpClient(d Discovery, sticky ...bool) *http.Client {
 	client := *http.DefaultClient
 	client.Transport = newTransport(d, sticky...)
+
 	return &client
 }
 
@@ -17,5 +18,6 @@ func newTransport(d Discovery, sticky ...bool) http.RoundTripper {
 			DialContext: DefaultDialer(d).DialContext,
 		}
 	}
+
 	return NewTransport(http.DefaultTransport, d)
 }

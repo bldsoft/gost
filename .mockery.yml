@@ -1,0 +1,25 @@
+dir: '{{.InterfaceDir}}/mocks'
+filename: '{{.InterfaceName}}.go'
+pkgname: mocks
+structname: '{{.InterfaceName}}'
+template: testify
+force-file-write: true
+formatter: goimports
+require-template-schema-exists: false
+packages:
+  github.com/bldsoft/gost/auth:
+    config:
+      all: true
+  github.com/bldsoft/gost/auth/store:
+    config:
+      all: true
+      dir: '{{.InterfaceDir}}/../mocks'
+  github.com/bldsoft/gost/mongo:
+    config:
+      all: true
+  github.com/bldsoft/gost/cache:
+    config:
+      all: true
+  github.com/bldsoft/gost/cache/v2:
+    config:
+      all: true

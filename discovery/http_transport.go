@@ -59,5 +59,6 @@ func isIdempotent(method string) bool {
 	case "GET", "HEAD", "PUT", "DELETE", "OPTIONS":
 		return true
 	}
+
 	return false
 }

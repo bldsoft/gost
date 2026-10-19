@@ -37,7 +37,8 @@ func (p *purger) Purge(ctx context.Context) ([]LockStatus, error) {
 	// Unlock everything we got.
 	allUnlocked := []LockStatus{}
 	for _, lock := range locks {
-		unlocked, err := p.client.Unlock(ctx, lock.LockId)
+		var unlocked []LockStatus
+		unlocked, err = p.client.Unlock(ctx, lock.LockId)
 		if err != nil {
 			return unlocked, err
 		}

@@ -153,6 +153,7 @@ func (c *Client) CreateIndexes(ctx context.Context) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -199,6 +200,7 @@ func (c *Client) XLock(ctx context.Context, resourceName, lockId string, ld Lock
 		if isDup(err) {
 			return ErrAlreadyLocked
 		}
+
 		return err
 	}
 
@@ -261,6 +263,7 @@ func (c *Client) SLock(ctx context.Context, resourceName, lockId string, ld Lock
 		if isDup(err) {
 			return ErrAlreadyLocked
 		}
+
 		return err
 	}
 
@@ -288,13 +291,12 @@ func (c *Client) Unlock(ctx context.Context, lockId string) ([]LockStatus, error
 	}
 
 	// Sort the lock statuses by most recent CreatedAt date first.
-	var sortedLocks LockStatusesByCreatedAtDesc
-	sortedLocks = locks
+	sortedLocks := LockStatusesByCreatedAtDesc(locks)
 	sort.Sort(sortedLocks)
 
 	unlocked := []LockStatus{}
 	for _, lock := range sortedLocks {
-		var err error
+		err = nil
 		switch lock.Type {
 		case LOCK_TYPE_EXCLUSIVE:
 			err = c.xUnlock(ctx, lock.Resource, lock.LockId)
@@ -302,11 +304,12 @@ func (c *Client) Unlock(ctx context.Context, lockId string) ([]LockStatus, error
 			err = c.sUnlock(ctx, lock.Resource, lock.LockId)
 		}
 		if err != nil {
-			if err == ErrLockNotFound {
+			if errors.Is(err, ErrLockNotFound) {
 				// It's fine if the lock is gone, that's
 				// what we want.
 				continue
 			}
+
 			return unlocked, err
 		}
 		unlocked = append(unlocked, lock)
@@ -445,18 +448,18 @@ func (c *Client) Status(ctx context.Context, f Filter) ([]LockStatus, error) {
 		return []LockStatus{}, err
 	}
 
-	defer cur.Close(ctx)
+	defer func() { _ = cur.Close(ctx) }()
 
 	for cur.Next(ctx) {
 		var result resource
-		err := cur.Decode(&result)
+		err = cur.Decode(&result)
 		if err != nil {
 			return []LockStatus{}, err
 		}
 
 		resources = append(resources, result)
 	}
-	if err := cur.Err(); err != nil {
+	if err = cur.Err(); err != nil {
 		return []LockStatus{}, err
 	}
 
@@ -577,12 +580,13 @@ func (c *Client) Renew(ctx context.Context, lockId string, ttl uint) ([]LockStat
 			options.FindOneAndUpdate().SetReturnDocument(ReturnDoc))
 
 		doc := map[string]any{}
-		err := result.Decode(doc)
+		err = result.Decode(doc)
 
 		if err != nil {
 			if len(doc) == 0 {
 				return statuses, ErrLockNotFound
 			}
+
 			return statuses, err
 		}
 
@@ -628,6 +632,7 @@ func (c *Client) xUnlock(ctx context.Context, resourceName, lockId string) error
 		if len(doc) == 0 {
 			return ErrLockNotFound
 		}
+
 		return err
 	}
 
@@ -673,6 +678,7 @@ func (c *Client) sUnlock(ctx context.Context, resourceName, lockId string) error
 		if len(doc) == 0 {
 			return ErrLockNotFound
 		}
+
 		return err
 	}
 
@@ -684,7 +690,7 @@ func (c *Client) sUnlock(ctx context.Context, resourceName, lockId string) error
 func lockFromDetails(lockId string, ld LockDetails) lock {
 	now := time.Now()
 
-	lock := lock{
+	l := lock{
 		LockId:    &lockId,
 		CreatedAt: &now,
 		Acquired:  true,
@@ -692,20 +698,20 @@ func lockFromDetails(lockId string, ld LockDetails) lock {
 	}
 
 	if ld.Owner != "" {
-		lock.Owner = &ld.Owner
+		l.Owner = &ld.Owner
 	}
 	if ld.Host != "" {
-		lock.Host = &ld.Host
+		l.Host = &ld.Host
 	}
 	if ld.Comment != "" {
-		lock.Comment = &ld.Comment
+		l.Comment = &ld.Comment
 	}
 	if ld.TTL > 0 {
 		e := now.Add(time.Duration(ld.TTL) * time.Second)
-		lock.ExpiresAt = &e
+		l.ExpiresAt = &e
 	}
 
-	return lock
+	return l
 }
 
 // statusFromLock creates a LockStatus struct from a lock struct.
@@ -745,11 +751,12 @@ func calcTTL(expiresAt *time.Time) int64 {
 		return -1
 	}
 
-	delta := expiresAt.Sub(time.Now())
+	delta := time.Until(*expiresAt)
 	ttl := int64(delta.Seconds()) // Don't need sub-second granularity.
 	if ttl < 0 {
 		return 0
 	}
+
 	return ttl
 }
 
@@ -776,5 +783,6 @@ func isDup(err error) bool {
 			}
 		}
 	}
+
 	return false
 }

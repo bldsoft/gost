@@ -5,19 +5,29 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/sessions"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/bldsoft/gost/auth"
 	"github.com/bldsoft/gost/auth/mocks"
 	"github.com/bldsoft/gost/controller"
-	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/sessions"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestAuthMiddleware(t *testing.T) {
-	reg := &auth.User{auth.Creds{"user", auth.EntityPassword{UserPassword: "password"}}}
-	changePassReg := &auth.User{auth.Creds{"user", auth.EntityPassword{UserPassword: "password", ChangePassword: true}}}
+	reg := &auth.User{
+		Creds: auth.Creds{
+			UserLogin:      "user",
+			EntityPassword: auth.EntityPassword{UserPassword: "password"},
+		},
+	}
+	changePassReg := &auth.User{
+		Creds: auth.Creds{
+			UserLogin:      "user",
+			EntityPassword: auth.EntityPassword{UserPassword: "password", ChangePassword: true},
+		},
+	}
 	testCases := []struct {
 		name         string
 		user         *auth.User

@@ -14,6 +14,7 @@ func RandString(n int) string {
 	for range n {
 		sb.WriteByte(letterBytes[rand.Intn(len(letterBytes))])
 	}
+
 	return sb.String()
 }
 

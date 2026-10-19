@@ -7,12 +7,13 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/bldsoft/gost/utils"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/x/bsonx/bsoncore"
+
+	"github.com/bldsoft/gost/utils"
 )
 
-var invalidBsonValue = fmt.Errorf("invalid bson string value")
+var errInvalidBsonValue = fmt.Errorf("invalid bson string value")
 
 type IpRange struct {
 	ips   []netip.Addr
@@ -27,10 +28,11 @@ func MustIpRangeFromStrings(strs ...string) IpRange {
 	if err != nil {
 		panic(err)
 	}
+
 	return ipRange
 }
 
-func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
+func IpRangeFromStrings(strs ...string) (res IpRange, _ error) {
 	for _, s := range strs {
 		if strings.Contains(s, "/") {
 			network, err := netip.ParsePrefix(s)
@@ -53,6 +55,7 @@ func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
 	if err := res.buildTree(); err != nil {
 		return res, err
 	}
+
 	return res, nil
 }
 
@@ -76,6 +79,7 @@ func (r *IpRange) Strings() []string {
 	for _, cidr := range r.cidrs {
 		res = append(res, cidr.String())
 	}
+
 	return res
 }
 
@@ -88,6 +92,7 @@ func (r *IpRange) buildTree() error {
 	if err := r.tree.PutIPs(r.ips...); err != nil {
 		return err
 	}
+
 	return r.tree.PutPrefixes(r.cidrs...)
 }
 
@@ -95,6 +100,7 @@ func (r *IpRange) Contains(ip netip.Addr) bool {
 	if r.tree == nil {
 		return false
 	}
+
 	return r.tree.Match(ip)
 }
 
@@ -102,6 +108,7 @@ func (r IpRange) MarshalJSON() ([]byte, error) {
 	if r.Empty() { // TODO: remove
 		return json.Marshal(nil)
 	} //
+
 	return json.Marshal(r.Strings())
 }
 
@@ -116,11 +123,13 @@ func (r *IpRange) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*r = ipRange
+
 	return nil
 }
 
 func (r IpRange) MarshalBSONValue() (byte, []byte, error) {
 	t, data, err := bson.MarshalValue(r.Strings())
+
 	return byte(t), data, err
 }
 
@@ -135,12 +144,12 @@ func (r *IpRange) UnmarshalBSONValue(b byte, value []byte) error {
 
 	arr, _, ok := bsoncore.ReadArray(value)
 	if !ok {
-		return invalidBsonValue
+		return errInvalidBsonValue
 	}
 
 	values, err := arr.Values()
 	if err != nil {
-		return invalidBsonValue
+		return errInvalidBsonValue
 	}
 
 	var strs []string
@@ -153,5 +162,6 @@ func (r *IpRange) UnmarshalBSONValue(b byte, value []byte) error {
 		return err
 	}
 	*r = ipRange
+
 	return nil
 }

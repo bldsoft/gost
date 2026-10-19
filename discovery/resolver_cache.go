@@ -21,7 +21,7 @@ func newResolverCache(ttl time.Duration) resolverCache {
 }
 
 func (c *resolverCache) put(serviceCluster string, addrs []string) {
-	c.cache.SetFor(serviceCluster, addrs, c.ttl)
+	_ = c.cache.SetFor(serviceCluster, addrs, c.ttl)
 }
 
 func (c *resolverCache) lookupServices(ctx context.Context, serviceCluster string) ([]string, error) {

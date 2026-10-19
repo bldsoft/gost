@@ -10,8 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bldsoft/gost/utils/health_check"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bldsoft/gost/utils/health_check"
 )
 
 type clientWithCounter struct {
@@ -20,12 +21,13 @@ type clientWithCounter struct {
 
 func (c *clientWithCounter) Do(req *http.Request) (*http.Response, error) {
 	c.counter.Add(1)
+
 	return http.DefaultClient.Do(req)
 }
 
 func TestHealthCheckerNoExtraChecks(t *testing.T) {
 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "OK")
+		_, _ = fmt.Fprintf(w, "OK")
 	}))
 	defer svr.Close()
 

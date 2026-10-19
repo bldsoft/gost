@@ -19,5 +19,6 @@ func NewRecord(ctx context.Context, collectionName string, op changelog.Operatio
 	}
 	rec := &Record{Record: baseRecord}
 	rec.GenerateID()
+
 	return rec, nil
 }

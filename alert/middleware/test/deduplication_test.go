@@ -10,12 +10,13 @@ import (
 	"testing/synctest"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/bldsoft/gost/alert"
 	"github.com/bldsoft/gost/alert/middleware"
 	"github.com/bldsoft/gost/cache"
 	"github.com/bldsoft/gost/cache/bigcache"
 	"github.com/bldsoft/gost/utils/seq"
-	"github.com/stretchr/testify/require"
 )
 
 func TestDeduplicationMiddleware(t *testing.T) {
@@ -30,6 +31,7 @@ func TestDeduplicationMiddleware(t *testing.T) {
 			name: "recurring alerts",
 			handlerCalls: func() []HandleCall {
 				source1 := IntervalCaller(now, 5*time.Minute)
+
 				return []HandleCall{
 					source1(alertLow1(0)),
 					source1(alertLow1(0, 5*time.Minute), alertLow1(6*time.Minute)),
@@ -46,6 +48,7 @@ func TestDeduplicationMiddleware(t *testing.T) {
 			name: "duplicated alert start",
 			handlerCalls: func() []HandleCall {
 				source1 := IntervalCaller(now, 5*time.Minute)
+
 				return []HandleCall{
 					source1(alertLow1(0)),
 					source1(alertLow1(0)),
@@ -58,6 +61,7 @@ func TestDeduplicationMiddleware(t *testing.T) {
 			name: "duplicated alert end",
 			handlerCalls: func() []HandleCall {
 				source1 := IntervalCaller(now, 5*time.Minute)
+
 				return []HandleCall{
 					source1(alertLow1(0)),
 					source1(alertLow1(0)),
@@ -70,6 +74,7 @@ func TestDeduplicationMiddleware(t *testing.T) {
 			name: "start shift",
 			handlerCalls: func() []HandleCall {
 				source1 := IntervalCaller(now, 5*time.Minute)
+
 				return []HandleCall{
 					source1(alertLow1(0)),
 					source1(alertLow1(5 * time.Minute)),
@@ -83,6 +88,7 @@ func TestDeduplicationMiddleware(t *testing.T) {
 			name: "finished alert shift",
 			handlerCalls: func() []HandleCall {
 				source1 := IntervalCaller(now, 5*time.Minute)
+
 				return []HandleCall{
 					source1(alertLow1(0)),
 					source1(alertLow1(0*time.Minute, 5*time.Minute)),
@@ -94,6 +100,7 @@ func TestDeduplicationMiddleware(t *testing.T) {
 			name: "end negative shift",
 			handlerCalls: func() []HandleCall {
 				source1 := IntervalCaller(now, 5*time.Minute)
+
 				return []HandleCall{
 					source1(alertLow1(0)),
 					source1(alertLow1(0*time.Minute, 5*time.Minute)),
@@ -105,6 +112,7 @@ func TestDeduplicationMiddleware(t *testing.T) {
 			name: "late alert",
 			handlerCalls: func() []HandleCall {
 				source1 := IntervalCaller(now, 5*time.Minute)
+
 				return []HandleCall{
 					source1(),
 					source1(alertLow1(5 * time.Minute)),
@@ -117,6 +125,7 @@ func TestDeduplicationMiddleware(t *testing.T) {
 			name: "start stop at the same time",
 			handlerCalls: func() []HandleCall {
 				source1 := IntervalCaller(now, 5*time.Minute)
+
 				return []HandleCall{
 					source1(alertLow1(5 * time.Minute)),
 					source1(alertLow1(5*time.Minute, 5*time.Minute)),
@@ -153,21 +162,22 @@ func RequireEqualAlerts(t *testing.T, expected, actual []alert.Alert, now ...tim
 		var sb strings.Builder
 		for _, alert := range alerts {
 			if len(now) > 0 {
-				sb.WriteString(fmt.Sprintf("%s %s %s %s %s\n",
+				_, _ = fmt.Fprintf(&sb, "%s %s %s %s %s\n",
 					alert.SourceID,
 					alert.Severity,
 					alert.From.Sub(now[0]),
 					alert.To.Sub(now[0]),
-					alert.MetaData))
+					alert.MetaData)
 			} else {
-				sb.WriteString(fmt.Sprintf("%s %s %s %s %s\n",
+				_, _ = fmt.Fprintf(&sb, "%s %s %s %s %s\n",
 					alert.SourceID,
 					alert.Severity,
 					alert.From,
 					alert.To,
-					alert.MetaData))
+					alert.MetaData)
 			}
 		}
+
 		return sb.String()
 	}
 	require.Equal(t, len(expected), len(actual),
@@ -198,18 +208,21 @@ func AlertFactory(now time.Time, id string, severity alert.SeverityLevel) func(s
 		if len(end) > 0 {
 			res.To = now.Add(end[0])
 		}
+
 		return res
 	}
 }
 
 func IntervalCaller(start time.Time, window time.Duration) func(alerts ...alert.Alert) HandleCall {
 	now := start
+
 	return func(alerts ...alert.Alert) HandleCall {
 		now = now.Add(window)
 		res := HandleCall{
 			Alerts:   alerts,
 			CallTime: now,
 		}
+
 		return res
 	}
 }
@@ -238,6 +251,7 @@ func (m *mockHandler) Handle(_ context.Context, alerts ...alert.Alert) {
 func (m *mockHandler) ReceivedAlerts() []alert.Alert {
 	m.mtx.RLock()
 	defer m.mtx.RUnlock()
+
 	return slices.Clone(m.receivedAlerts)
 }
 
@@ -246,6 +260,7 @@ func (m *mockHandler) RemoveFunc(remove func(alert.Alert) bool) (deleted []alert
 	defer m.mtx.Unlock()
 	res := slices.Collect(seq.FilterFunc(slices.Values(m.receivedAlerts), remove))
 	m.receivedAlerts = slices.DeleteFunc(m.receivedAlerts, remove)
+
 	return res
 }
 

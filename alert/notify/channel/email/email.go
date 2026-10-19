@@ -6,8 +6,9 @@ import (
 	"net/textproto"
 	"strings"
 
-	"github.com/bldsoft/gost/alert/notify/channel"
 	"github.com/jordan-wright/email"
+
+	"github.com/bldsoft/gost/alert/notify/channel"
 )
 
 type Email struct {
@@ -17,6 +18,7 @@ type Email struct {
 
 func NewEmail(cfg Config) *Email {
 	cfg = prepareEmailConfig(cfg)
+
 	return &Email{
 		Cfg:  cfg,
 		auth: smtp.PlainAuth("", cfg.SMTP.AuthUsername, cfg.SMTP.AuthPassword.String(), cfg.SMTP.Address.Host()),

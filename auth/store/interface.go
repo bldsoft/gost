@@ -6,6 +6,8 @@ import (
 	"github.com/gorilla/sessions"
 )
 
+//go:generate mockery
+
 type SessionRepository interface {
 	sessions.Store
 	AllSessions(ctx context.Context, name string, offset, limit int) ([]*sessions.Session, error)
