@@ -56,6 +56,7 @@ func JwtAuthMiddleware(alg string, signKey any) func(next http.Handler) http.Han
 	return chi.Chain(jwtauth.Verifier(jwtauth.New(alg, signKey, nil)), jwtauth.Authenticator).Handler
 }
 
+// SignToken signs a JWT token using the private key and the algorithm specified in the configuration.
 func SignToken(token jwt.Token, cfg JwtConfig) (signed []byte, err error) {
 	return jwt.Sign(token, jwa.SignatureAlgorithm(cfg.Alg), cfg.PrivateKey())
 }
