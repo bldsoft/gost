@@ -1,6 +1,6 @@
 module github.com/bldsoft/gost
 
-go 1.27.1
+go 1.27.3
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.43.1-0.20260316095946-93e89bec86f7
