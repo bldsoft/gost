@@ -2,6 +2,7 @@ package log
 
 import (
 	"context"
+	"regexp"
 	"time"
 
 	"github.com/bldsoft/gost/entity/stat"
@@ -27,6 +28,7 @@ type LogExporter interface {
 	Export(r ...*LogRecord) (n int, err error)
 	Logs(ctx context.Context, params LogsParams) (*Logs, error)
 	LogsMetrics(ctx context.Context, params LogsMetricsParams) (*stat.SeriesData, error)
+	LogsPatterns(ctx context.Context, params LogsPatternsParams) (*LogPatterns, error)
 	Instances(ctx context.Context, filter Filter) ([]string, error)
 	Services(ctx context.Context, filter Filter) ([]string, error)
 	ServiceVersions(ctx context.Context, filter Filter) ([]string, error)
@@ -35,6 +37,12 @@ type LogExporter interface {
 
 type LogsMetricsParams struct {
 	*Filter
+	StepSec float64 `json:"stepSec,omitempty" schema:"stepSec,omitempty"`
+}
+
+type LogsPatternsParams struct {
+	*Filter
+	Limit   int     `json:"limit,omitempty"   schema:"limit,omitempty"`
 	StepSec float64 `json:"stepSec,omitempty" schema:"stepSec,omitempty"`
 }
 
@@ -65,4 +73,43 @@ type Sort struct {
 type Logs struct {
 	Records    []LogRecord `json:"records"`
 	TotalCount int64       `json:"totalCount"`
+}
+
+var Masks = []struct {
+	Re   *regexp.Regexp
+	Repl string
+}{
+	{regexp.MustCompile(`"[^"]*"`), `"…"`},
+	{regexp.MustCompile(`\b0x[0-9a-fA-F]+`), `<hex>`},
+	{regexp.MustCompile(`[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`), `<uuid>`},
+	{regexp.MustCompile(`[0-9]{1,3}([.][0-9]{1,3}){3}(:[0-9]+){0,1}`), `<ip>`},
+	{regexp.MustCompile(`[0-9a-fA-F]{8,}`), `<hex>`},
+	{regexp.MustCompile(`[0-9]+`), `<N>`},
+}
+
+func Mask(s string) string {
+	for _, m := range Masks {
+		s = m.Re.ReplaceAllString(s, m.Repl)
+	}
+
+	return s
+}
+
+type LogPatterns struct {
+	Patterns      []LogPattern `json:"patterns"`
+	TotalCount    int64        `json:"totalCount"`
+	PatternsCount int64        `json:"patternsCount"`
+}
+
+type LogPattern struct {
+	Level     Level     `json:"level"`
+	Msg       string    `json:"msg"`
+	Err       string    `json:"err,omitempty"`
+	Count     int64     `json:"count"`
+	From      time.Time `json:"from"`
+	To        time.Time `json:"to"`
+	Instances []string  `json:"instances"`
+	ReqIDs    []string  `json:"reqIDs"`
+	Example   string    `json:"example"`
+	Series    []int64   `json:"series"`
 }
