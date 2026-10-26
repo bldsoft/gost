@@ -80,9 +80,11 @@ var Masks = []struct {
 	Repl string
 }{
 	{regexp.MustCompile(`"[^"]*"`), `"…"`},
+	{regexp.MustCompile(`\B/[^\s:]+`), `<path>`},
 	{regexp.MustCompile(`\b0x[0-9a-fA-F]+`), `<hex>`},
 	{regexp.MustCompile(`[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`), `<uuid>`},
 	{regexp.MustCompile(`[0-9]{1,3}([.][0-9]{1,3}){3}(:[0-9]+){0,1}`), `<ip>`},
+	{regexp.MustCompile(`\b[0-9]+\b`), `<N>`},
 	{regexp.MustCompile(`[0-9a-fA-F]{8,}`), `<hex>`},
 	{regexp.MustCompile(`[0-9]+`), `<N>`},
 }

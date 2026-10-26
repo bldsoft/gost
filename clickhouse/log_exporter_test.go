@@ -103,13 +103,14 @@ func TestExporterSearchParse(t *testing.T) {
 
 func TestNormalizeLogExpr(t *testing.T) {
 	expr, args := new(ClickHouseLogExporter).normalizeLogExpr("msg")
-	require.Equal(t, strings.Repeat("replaceRegexpAll(", 6)+"msg"+strings.Repeat(", ?, ?)", 6), expr)
-	require.Len(t, args, 12)
+	require.Equal(t, strings.Repeat("replaceRegexpAll(", 8)+"msg"+strings.Repeat(", ?, ?)", 8), expr)
+	require.Len(t, args, 16)
 
 	normalize := func(s string) string {
 		for i := 0; i < len(args); i += 2 {
 			s = regexp.MustCompile(args[i].(string)).ReplaceAllString(s, args[i+1].(string))
 		}
+
 		return s
 	}
 	tests := []struct {
@@ -125,6 +126,14 @@ func TestNormalizeLogExpr(t *testing.T) {
 		{name: "0x hex", in: "panic({0x1400012e0c0?, 0x10?})\n\tarchiver.go:212 +0x1d4", want: "panic({<hex>?, <hex>?})\n\tarchiver.go:<N> +<hex>"},
 		{name: "0x inside a word", in: "10x5", want: "<N>x<N>"},
 		{name: "numbers", in: "Discovery: failed to join cluster: 3 errors occurred", want: "Discovery: failed to join cluster: <N> errors occurred"},
+		{name: "path", in: "Write /10005/dvr1h/hls/trickplaylive/audio_0/1793003052862/8/1793003052862-8576.ts: 500", want: "Write <path>: <N>"},
+		{name: "path at start", in: "/10005/free/hls/playlist.m3u8: not found", want: "<path>: not found"},
+		{name: "multiline paths", in: "Remove /a/b/: 400\nRemove /c/d/: 400", want: "Remove <path>: <N>\nRemove <path>: <N>"},
+		{name: "root path kept", in: "Quotas /: failed", want: "Quotas /: failed"},
+		{name: "slash inside word kept", in: "and/or 1/2", want: "and/or <N>/<N>"},
+		{name: "long number", in: "duration too large: 95444466", want: "duration too large: <N>"},
+		{name: "hex with long digit prefix", in: "id 65123456789abcde", want: "id <hex>"},
+		{name: "digits inside word", in: "dvr24h", want: "dvr<N>h"},
 		{name: "letters kept", in: "RESPONSE", want: "RESPONSE"},
 		{name: "nothing to mask", in: "unexpected EOF", want: "unexpected EOF"},
 		{name: "empty", in: "", want: ""},
