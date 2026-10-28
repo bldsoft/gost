@@ -1,7 +1,7 @@
 package aerospike
 
 import (
-	"strings"
+	"fmt"
 	"testing"
 	"time"
 
@@ -38,6 +38,7 @@ func TestBatchWriteErr(t *testing.T) {
 		var asErr *aero.AerospikeError
 		require.ErrorAs(t, err, &asErr)
 		require.Equal(t, aeroTypes.KEY_EXISTS_ERROR, asErr.ResultCode)
+		require.NotContains(t, err.Error(), "continuation")
 	})
 
 	t.Run("continuation only", func(t *testing.T) {
@@ -56,12 +57,14 @@ func TestBatchWriteErr(t *testing.T) {
 		t.Parallel()
 
 		err := new(Repository).batchWriteErr([]aero.BatchRecordIfc{
-			writeRecord(mainKey, aeroTypes.KEY_BUSY, nil),
+			writeRecord(contKey, aeroTypes.KEY_BUSY, nil),
+			writeRecord(mainKey, aeroTypes.OK, nil),
 		})
 
 		var asErr *aero.AerospikeError
 		require.ErrorAs(t, err, &asErr)
 		require.Equal(t, aeroTypes.KEY_BUSY, asErr.ResultCode)
+		require.ErrorContains(t, err, "continuation")
 	})
 
 	t.Run("main error stays first", func(t *testing.T) {
@@ -78,7 +81,7 @@ func TestBatchWriteErr(t *testing.T) {
 	})
 }
 
-func TestPrepBatchWritePolicies(t *testing.T) {
+func TestPrepBatchWrite(t *testing.T) {
 	t.Parallel()
 
 	rep := &Repository{
@@ -90,9 +93,8 @@ func TestPrepBatchWritePolicies(t *testing.T) {
 	generation := uint32(7)
 	ttl := 15 * time.Second
 
-	val := []byte("0123456789")
-	mainVal, continuations := rep.split("main", val)
-	_, records, err := rep.prepBatchWrite(false, "main", mainVal, continuations, len(val), &generation, cache.WithTTL(ttl))
+	mainVal, continuations := rep.split("main", "abc", []byte("0123456789"))
+	records, err := rep.prepBatchWrite(false, "main", mainVal, continuations, 10, &generation, cache.CollectItem(cache.WithTTL(ttl)))
 	require.NoError(t, err)
 	require.Len(t, records, 3)
 
@@ -106,11 +108,33 @@ func TestPrepBatchWritePolicies(t *testing.T) {
 
 	for _, rec := range records[:len(records)-1] {
 		cont := rec.(*aero.BatchWrite)
-		require.True(t, strings.Contains(cont.Key.String(), "main_"))
-		require.NotSame(t, main.Policy, cont.Policy)
-		require.Equal(t, aero.REPLACE, cont.Policy.RecordExistsAction)
+		require.Contains(t, cont.Key.String(), "main_abc_")
+		require.Equal(t, aero.CREATE_ONLY, cont.Policy.RecordExistsAction)
 		require.Equal(t, aero.NONE, cont.Policy.GenerationPolicy)
 		require.Equal(t, main.Policy.Expiration, cont.Policy.Expiration)
+	}
+}
+
+func TestSplitUniqueKeys(t *testing.T) {
+	t.Parallel()
+
+	rep := &Repository{itemSizeLimit: 4}
+	val := []byte("0123456789abcdef")
+
+	mainA, contA := rep.split("k", "n1", val)
+	mainB, contB := rep.split("k", "n2", val)
+
+	require.Equal(t, []byte("0123"), mainA)
+	require.Equal(t, mainA, mainB)
+	require.Len(t, contA, 3)
+	require.Len(t, contB, 3)
+
+	want := [][]byte{[]byte("4567"), []byte("89ab"), []byte("cdef")}
+	for i, c := range contA {
+		require.Equal(t, want[i], c.Value)
+		require.Equal(t, want[i], contB[i].Value)
+		require.Equal(t, fmt.Sprintf("k_n1_%d", i+1), c.Key)
+		require.Equal(t, fmt.Sprintf("k_n2_%d", i+1), contB[i].Key)
 	}
 }
 

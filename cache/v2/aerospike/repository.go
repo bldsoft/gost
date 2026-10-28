@@ -1,6 +1,8 @@
 package aerospike
 
 import (
+	"cmp"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"slices"
@@ -54,23 +56,23 @@ func (r *Repository) SetItemSizeLimit(limit int) {
 }
 
 func (r *Repository) Get(key string) (*cache.Item, error) {
-	res, _, err := r.get(key)
+	res, _, _, err := r.get(key)
 
 	return res, err
 }
 
-func (r *Repository) get(key string) (*cache.Item, uint32, error) {
+func (r *Repository) get(key string) (*cache.Item, uint32, []string, error) {
 	asKey, err := r.key(key)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, nil, err
 	}
 	item, err := r.cache.Get(r.cache.getReadPolicy(), asKey)
 	if err != nil || item == nil {
 		if errors.Is(err, aero.ErrKeyNotFound) {
-			return nil, 0, cache.ErrCacheMiss
+			return nil, 0, nil, cache.ErrCacheMiss
 		}
 
-		return nil, 0, err
+		return nil, 0, nil, err
 	}
 
 	res := &cache.Item{}
@@ -85,14 +87,15 @@ func (r *Repository) get(key string) (*cache.Item, uint32, error) {
 	if item.Bins[continuationBinKey] == nil {
 		res.Value = mainValue
 
-		return res, item.Generation, nil
+		return res, item.Generation, nil, nil
 	}
 
-	continuationKeys := make([]*aero.Key, len(item.Bins[continuationBinKey].([]any)))
-	for i, k := range item.Bins[continuationBinKey].([]any) {
-		asKey, err = r.key(k.(string))
+	contKeyStrs := r.continuationKeysFromBin(item.Bins[continuationBinKey])
+	continuationKeys := make([]*aero.Key, len(contKeyStrs))
+	for i, k := range contKeyStrs {
+		asKey, err = r.key(k)
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, nil, err
 		}
 		continuationKeys[i] = asKey
 	}
@@ -114,21 +117,24 @@ func (r *Repository) get(key string) (*cache.Item, uint32, error) {
 	if len(continuationKeys) > 0 {
 		continuations, err := r.cache.BatchGet(nil, continuationKeys, valueBinKey)
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, nil, err
 		}
 		for i, c := range continuations {
-			if c == nil || c.Bins == nil {
-				return nil, 0, fmt.Errorf("%w: aerospike: invalid continuation record #%v for %s (no_key: %v, no_bins: %v)", cache.ErrCacheMiss, i, key, c == nil, c.Bins == nil)
+			if c == nil {
+				return nil, 0, nil, fmt.Errorf("%w: aerospike: missing continuation record #%v for %s", cache.ErrCacheMiss, i, key)
+			}
+			if c.Bins == nil {
+				return nil, 0, nil, fmt.Errorf("%w: aerospike: invalid continuation record #%v for %s (no bins)", cache.ErrCacheMiss, i, key)
 			}
 			val, ok := c.Bins[valueBinKey].([]byte)
 			if !ok {
-				return nil, 0, fmt.Errorf("%w: aerospike: invalid value type in continuation record #%v for %s", cache.ErrCacheMiss, i, key)
+				return nil, 0, nil, fmt.Errorf("%w: aerospike: invalid value type in continuation record #%v for %s", cache.ErrCacheMiss, i, key)
 			}
 			res.Value = append(res.Value, val...)
 		}
 	}
 
-	return res, item.Generation, nil
+	return res, item.Generation, contKeyStrs, nil
 }
 
 func (r *Repository) Exist(key string) bool {
@@ -147,8 +153,8 @@ func (r *Repository) Delete(key string) error {
 		return err
 	}
 
-	item, err := r.cache.Get(r.cache.getReadPolicy(), asKey)
-	if err != nil && !errors.Is(err, aero.ErrKeyNotFound) {
+	prev, err := r.readContinuationKeys(key)
+	if err != nil {
 		return err
 	}
 
@@ -157,31 +163,7 @@ func (r *Repository) Delete(key string) error {
 		return err
 	}
 
-	if item != nil && item.Bins[continuationBinKey] != nil {
-		continuationKeys := item.Bins[continuationBinKey].([]any)
-		if len(continuationKeys) > 0 {
-			keys := make([]*aero.Key, 0, len(continuationKeys))
-			for _, k := range continuationKeys {
-				asKey, err = r.key(k.(string))
-				if err != nil {
-					log.WarnWithFields(log.Fields{"key": k, "err": err}, "failed to create key for continuation deletion")
-
-					continue
-				}
-				keys = append(keys, asKey)
-			}
-
-			if len(keys) > 0 {
-				batchDeletes := make([]aero.BatchRecordIfc, 0, len(keys))
-				for _, key := range keys {
-					batchDeletes = append(batchDeletes, aero.NewBatchDelete(nil, key))
-				}
-				if err := r.cache.BatchOperate(nil, batchDeletes); err != nil {
-					log.WarnWithFields(log.Fields{"err": err}, "failed to delete continuation records")
-				}
-			}
-		}
-	}
+	r.deleteContinuations(prev)
 
 	return nil
 }
@@ -197,7 +179,17 @@ func (r *Repository) Add(key string, val []byte, item ...cache.ItemF) error {
 }
 
 func (r *Repository) Set(key string, val []byte, item ...cache.ItemF) error {
-	return r.put(true, key, val, nil, item...)
+	prev, err := r.readContinuationKeys(key)
+	if err != nil {
+		return err
+	}
+
+	if err = r.put(true, key, val, nil, item...); err != nil {
+		return err
+	}
+	r.deleteContinuations(prev)
+
+	return nil
 }
 
 func (r *Repository) CompareAndSwap(
@@ -206,7 +198,7 @@ func (r *Repository) CompareAndSwap(
 	sleepDur ...time.Duration,
 ) error {
 	for range casRetryLimit {
-		data, generation, err := r.get(key)
+		data, generation, prev, err := r.get(key)
 		if err != nil {
 			return err
 		}
@@ -230,6 +222,7 @@ func (r *Repository) CompareAndSwap(
 		if err != nil {
 			return err
 		}
+		r.deleteContinuations(prev)
 
 		return nil
 	}
@@ -267,34 +260,36 @@ func (r *Repository) key(key string) (*aero.Key, error) {
 }
 
 func (r *Repository) put(replace bool, key string, val []byte, generation *uint32, itemFs ...cache.ItemF) error {
-	totalSize := len(val)
-	val, continuations := r.split(key, val)
-	if len(continuations) == 0 {
-		return r.putRaw(replace, key, val, generation, itemFs...)
+	it := cache.CollectItem(itemFs...)
+	if len(val) <= r.itemSizeLimit {
+		return r.putRaw(replace, key, val, generation, it)
 	}
 
-	return r.putBatch(replace, key, val, continuations, totalSize, generation, itemFs...)
+	mainVal, continuations := r.split(key, rand.Text(), val)
+	records, err := r.prepBatchWrite(replace, key, mainVal, continuations, len(val), generation, it)
+	if err != nil {
+		return err
+	}
+	if err = r.cache.BatchOperate(r.cache.getBatchWritePolicy(), records); err != nil {
+		return err
+	}
+
+	return r.batchWriteErr(records)
 }
 
-func (r *Repository) putRaw(replace bool, key string, val []byte, generation *uint32, itemFs ...cache.ItemF) error {
+func (r *Repository) putRaw(replace bool, key string, val []byte, generation *uint32, it *cache.Item) error {
 	asKey, err := r.key(key)
 	if err != nil {
 		return err
 	}
-	wp := r.cache.getWritePolicy(0, truncExpiration(r.liveTime))
+	wp := r.cache.getWritePolicy(0, r.expiration(it))
 	wp.RecordExistsAction = aero.CREATE_ONLY
 	if replace {
 		wp.RecordExistsAction = aero.REPLACE
 	}
 	bins := aero.BinMap{valueBinKey: val}
-	if len(itemFs) > 0 {
-		it := cache.CollectItem(itemFs...)
-		if it.Flags != 0 {
-			bins[flagsBinKey] = it.Flags
-		}
-		if it.TTL != 0 {
-			wp.Expiration = truncExpiration(it.TTL)
-		}
+	if it.Flags != 0 {
+		bins[flagsBinKey] = it.Flags
 	}
 	if generation != nil {
 		wp.GenerationPolicy = aero.EXPECT_GEN_EQUAL
@@ -302,18 +297,6 @@ func (r *Repository) putRaw(replace bool, key string, val []byte, generation *ui
 	}
 
 	return r.cache.Put(wp, asKey, bins)
-}
-
-func (r *Repository) putBatch(replace bool, key string, val []byte, continuations []continuation, totalSize int, generation *uint32, itemFs ...cache.ItemF) error {
-	bop, batchWrites, err := r.prepBatchWrite(replace, key, val, continuations, totalSize, generation, itemFs...)
-	if err != nil {
-		return err
-	}
-	if err = r.cache.BatchOperate(bop, batchWrites); err != nil {
-		return err
-	}
-
-	return r.batchWriteErr(batchWrites)
 }
 
 func (r *Repository) batchWriteErr(records []aero.BatchRecordIfc) error {
@@ -330,11 +313,11 @@ func (r *Repository) batchWriteErr(records []aero.BatchRecordIfc) error {
 			recErr = &aero.AerospikeError{ResultCode: br.ResultCode}
 		}
 		if i != last {
-			key := ""
+			userKey := ""
 			if br.Key != nil {
-				key = br.Key.String()
+				userKey = br.Key.String()
 			}
-			recErr = fmt.Errorf("aerospike: continuation %s: %w", key, recErr)
+			recErr = fmt.Errorf("aerospike: continuation %s: %w", userKey, recErr)
 		}
 		errs = append(errs, recErr)
 	}
@@ -342,67 +325,102 @@ func (r *Repository) batchWriteErr(records []aero.BatchRecordIfc) error {
 	return errors.Join(errs...)
 }
 
-func (r *Repository) prepBatchWrite(replace bool, key string, val []byte, continuations []continuation, totalSize int, generation *uint32, itemFs ...cache.ItemF) (*aero.BatchPolicy, []aero.BatchRecordIfc, error) {
+func (r *Repository) prepBatchWrite(replace bool, key string, val []byte, continuations []continuation, totalSize int, generation *uint32, it *cache.Item) ([]aero.BatchRecordIfc, error) {
 	mainKey, err := r.key(key)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
+	expiration := r.expiration(it)
 	br := make([]aero.BatchRecordIfc, 0, len(continuations)+1)
-	mainBins := []*aero.Bin{aero.NewBin(valueBinKey, val), aero.NewBin(lenBinKey, totalSize)}
-
-	expiration := truncExpiration(r.liveTime)
-	mainPolicy := aero.NewBatchWritePolicy()
-	mainPolicy.Expiration = expiration
-	mainPolicy.RecordExistsAction = aero.CREATE_ONLY
-	if replace {
-		mainPolicy.RecordExistsAction = aero.REPLACE
-	}
-	if len(itemFs) > 0 {
-		it := cache.CollectItem(itemFs...)
-		if it.Flags != 0 {
-			mainBins = append(mainBins, aero.NewBin(flagsBinKey, it.Flags))
-		}
-		if it.TTL != 0 {
-			expiration = truncExpiration(it.TTL)
-			mainPolicy.Expiration = expiration
-		}
-	}
 
 	contPolicy := aero.NewBatchWritePolicy()
 	contPolicy.Expiration = expiration
-	contPolicy.RecordExistsAction = aero.REPLACE
+	contPolicy.RecordExistsAction = aero.CREATE_ONLY
 
 	continuationKeys := make([]string, 0, len(continuations))
 	for _, c := range continuations {
 		var contKey *aero.Key
 		contKey, err = r.key(c.Key)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		br = append(br, aero.NewBatchWrite(contPolicy, contKey, aero.PutOp(aero.NewBin(valueBinKey, c.Value))))
 		continuationKeys = append(continuationKeys, c.Key)
 	}
 
-	mainOps := make([]*aero.Operation, 0, len(mainBins)+1)
-	for _, b := range mainBins {
-		mainOps = append(mainOps, aero.PutOp(b))
+	mainPolicy := aero.NewBatchWritePolicy()
+	mainPolicy.Expiration = expiration
+	mainPolicy.RecordExistsAction = aero.CREATE_ONLY
+	if replace {
+		mainPolicy.RecordExistsAction = aero.REPLACE
 	}
-	mainOps = append(mainOps, aero.PutOp(aero.NewBin(continuationBinKey, continuationKeys)))
 	if generation != nil {
 		mainPolicy.GenerationPolicy = aero.EXPECT_GEN_EQUAL
 		mainPolicy.Generation = *generation
 	}
+
+	mainBins := []*aero.Bin{
+		aero.NewBin(valueBinKey, val),
+		aero.NewBin(lenBinKey, totalSize),
+		aero.NewBin(continuationBinKey, continuationKeys),
+	}
+	if it.Flags != 0 {
+		mainBins = append(mainBins, aero.NewBin(flagsBinKey, it.Flags))
+	}
+	mainOps := make([]*aero.Operation, len(mainBins))
+	for i, b := range mainBins {
+		mainOps[i] = aero.PutOp(b)
+	}
 	br = append(br, aero.NewBatchWrite(mainPolicy, mainKey, mainOps...))
 
-	return r.cache.getBatchWritePolicy(), br, nil
+	return br, nil
 }
 
-func (r *Repository) split(key string, val []byte) ([]byte, []continuation) {
-	if len(val) <= r.itemSizeLimit {
-		return val, nil
+func (r *Repository) readContinuationKeys(key string) ([]string, error) {
+	asKey, err := r.key(key)
+	if err != nil {
+		return nil, err
+	}
+	item, err := r.cache.Get(r.cache.getReadPolicy(), asKey, continuationBinKey)
+	if err != nil {
+		if errors.Is(err, aero.ErrKeyNotFound) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+	if item == nil || item.Bins == nil {
+		return nil, nil
 	}
 
+	return r.continuationKeysFromBin(item.Bins[continuationBinKey]), nil
+}
+
+func (r *Repository) deleteContinuations(keys []string) {
+	batchDeletes := make([]aero.BatchRecordIfc, 0, len(keys))
+	for _, k := range keys {
+		asKey, err := r.key(k)
+		if err != nil {
+			log.WarnWithFields(log.Fields{"key": k, "err": err}, "failed to create key for continuation deletion")
+
+			continue
+		}
+		batchDeletes = append(batchDeletes, aero.NewBatchDelete(nil, asKey))
+	}
+	if len(batchDeletes) == 0 {
+		return
+	}
+	if err := r.cache.BatchOperate(nil, batchDeletes); err != nil {
+		log.WarnWithFields(log.Fields{"err": err}, "failed to delete continuation records")
+	}
+}
+
+func (r *Repository) expiration(it *cache.Item) uint32 {
+	return truncExpiration(cmp.Or(it.TTL, r.liveTime))
+}
+
+func (r *Repository) split(key, nonce string, val []byte) ([]byte, []continuation) {
 	estimatedChunks := (len(val) + r.itemSizeLimit - 1) / r.itemSizeLimit
 	log.TraceWithFields(log.Fields{
 		"key":    key,
@@ -413,12 +431,25 @@ func (r *Repository) split(key string, val []byte) ([]byte, []continuation) {
 	continuations := make([]continuation, 0, estimatedChunks-1)
 	for i := r.itemSizeLimit; i < len(val); i += r.itemSizeLimit {
 		continuations = append(continuations, continuation{
-			Key:   fmt.Sprintf("%s_%d", key, i/r.itemSizeLimit),
+			Key:   fmt.Sprintf("%s_%s_%d", key, nonce, i/r.itemSizeLimit),
 			Value: val[i : i+min(r.itemSizeLimit, len(val)-i)],
 		})
 	}
 
 	return val[:r.itemSizeLimit], continuations
+}
+
+func (r *Repository) continuationKeysFromBin(raw any) []string {
+	if raw == nil {
+		return nil
+	}
+	values := raw.([]any)
+	keys := make([]string, len(values))
+	for i, k := range values {
+		keys[i] = k.(string)
+	}
+
+	return keys
 }
 
 func truncExpiration(d time.Duration) uint32 {
