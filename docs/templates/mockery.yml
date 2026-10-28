@@ -1,0 +1,15 @@
+# Copy to .mockery.yml. Run with `go tool mockery` (see tools.go / the `tool` directive in go.mod).
+# Mocks are written next to the interfaces, in a `mocks` package, in testify style with expecters.
+dir: '{{.InterfaceDir}}/mocks'
+filename: '{{.InterfaceName}}.go'
+pkgname: mocks
+structname: '{{.InterfaceName}}'
+template: testify
+force-file-write: true
+formatter: goimports
+require-template-schema-exists: false
+packages:
+  # One entry per package whose interfaces need mocks. `all: true` mocks every interface in it.
+  github.com/<org>/<svc>/pkg/service:
+    config:
+      all: true
