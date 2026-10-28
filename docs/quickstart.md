@@ -128,7 +128,7 @@ gost's Mongo features (change streams, transactions, changelog) need a replica s
 even locally:
 
 ```bash
-docker run -d --name mongo -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
+docker run -d --name mongo -e GLIBC_TUNABLES=glibc.pthread.rseq=1 -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
 docker exec mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
 ```
 

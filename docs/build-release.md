@@ -73,8 +73,8 @@ layer. The example's own Dockerfile differs only in using the gost repository ro
 [`docs/templates/github-workflow.yml`](templates/github-workflow.yml) has three jobs:
 
 1. **lint**: `golangci/golangci-lint-action@v9` pinned to `v2.15.0`, using `go-version-file: go.mod`.
-2. **test**: starts `mongo:8` as a single-node replica set (ping, `rs.initiate`, wait for
-   primary), installs gotestsum, runs `gotestsum -- -race -tags=integration_test ./...`, then
+2. **test**: starts `mongo:8` as a single-node replica set with `GLIBC_TUNABLES=glibc.pthread.rseq=1` (the image exits on kernels whose `uname` is 6.19–7.0.13), then ping, `rs.initiate`, and a wait for
+   primary. It installs gotestsum, runs `gotestsum -- -race -tags=integration_test ./...`, then
    `go tool mockery && git diff --exit-code` to catch stale mocks.
 3. **docker**: on pushes to `main` and `v*` tags, checks the tag matches `VERSION` and builds
    the image with `COMMIT` and `BRANCH` build args. Add your registry login and push.

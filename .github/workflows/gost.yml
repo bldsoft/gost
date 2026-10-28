@@ -68,7 +68,9 @@ jobs:
             docker logs mongo
             return 1
           }
-          docker run -d --name mongo -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
+          # mongo:8 exits when uname reports 6.19–7.0.13 (SERVER-121912). The ubuntu-24.04
+          # runner reports 7.0.0 for a kernel that already has the fix, so disable rseq.
+          docker run -d --name mongo -e GLIBC_TUNABLES=glibc.pthread.rseq=1 -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
           wait_for 'db.runCommand({ ping: 1 }).ok' 1 'mongod did not become ready'
           docker exec mongo mongosh --quiet --eval 'rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "127.0.0.1:27017" }] })'
           wait_for 'db.hello().isWritablePrimary' true 'replica set did not elect a primary'
