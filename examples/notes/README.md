@@ -69,7 +69,7 @@ with the [quickstart](../../docs/quickstart.md):
 
 - Import paths start with `github.com/bldsoft/gost/examples/notes/`; yours start with your module.
 - There is no `go.mod` here; yours pins `github.com/bldsoft/gost` at a version.
-- The Dockerfile uses the gost root as the build context; the
-  [template Dockerfile](../../docs/templates/Dockerfile) uses your repository root.
+- The Dockerfile uses the gost root as the build context; a service from `scaffold` uses
+  [`examples/scaffold/Dockerfile`](../scaffold/Dockerfile), which builds from its own repository root.
 - Mocks are configured in the gost `.mockery.yml`; yours has its own
-  ([template](../../docs/templates/mockery.yml)).
+  ([`examples/scaffold/mockery.yml`](../scaffold/mockery.yml)).

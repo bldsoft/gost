@@ -19,7 +19,7 @@ type Config struct {
 	Mongo     mongo.Config
 	Discovery common.Config `mapstructure:"DISCOVERY"`
 
-	AdminAPIKey   config.HiddenString `mapstructure:"ADMIN_API_KEY" description:"API key expected in the X-API-Key header by /notes/env. Required: the service refuses to start without it."`
+	AdminAPIKey   config.HiddenString `mapstructure:"ADMIN_API_KEY" description:"API key expected in the X-API-Key header by the /env endpoint. Required: the service refuses to start without it."`
 	PurgeInterval time.Duration       `mapstructure:"NOTES_PURGE_INTERVAL" description:"How often soft-deleted notes are purged (Go duration, e.g. 1h)"`
 	PurgeAfter    time.Duration       `mapstructure:"NOTES_PURGE_AFTER" description:"Soft-deleted notes older than this are removed permanently (Go duration, e.g. 720h)"`
 }

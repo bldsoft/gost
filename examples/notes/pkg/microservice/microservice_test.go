@@ -45,32 +45,32 @@ func TestStandardEndpoints(t *testing.T) {
 	h := newRouter(t)
 
 	t.Run("ping", func(t *testing.T) {
-		rec := get(h, "/notes/ping", nil)
+		rec := get(h, microservice.BasePath+"/ping", nil)
 		require.Equal(t, http.StatusOK, rec.Code)
 		require.Equal(t, "pong", rec.Body.String())
 	})
 
 	t.Run("version", func(t *testing.T) {
-		rec := get(h, "/notes/version", nil)
+		rec := get(h, microservice.BasePath+"/version", nil)
 		require.Equal(t, http.StatusOK, rec.Code)
 		require.Equal(t, "application/json", rec.Header().Get("Content-Type"))
 	})
 
 	t.Run("env requires the api key", func(t *testing.T) {
-		rec := get(h, "/notes/env", nil)
+		rec := get(h, microservice.BasePath+"/env", nil)
 		require.Equal(t, http.StatusUnauthorized, rec.Code)
 	})
 
 	t.Run("env masks secrets", func(t *testing.T) {
-		rec := get(h, "/notes/env", map[string]string{microservice.APIKeyHeader: testAPIKey})
+		rec := get(h, microservice.BasePath+"/env", map[string]string{microservice.APIKeyHeader: testAPIKey})
 		require.Equal(t, http.StatusOK, rec.Code)
-		require.Contains(t, rec.Body.String(), "ServiceName: notes")
+		require.Contains(t, rec.Body.String(), "ServiceName: "+config.ServiceName)
 		require.Contains(t, rec.Body.String(), `AdminAPIKey: '****'`)
 		require.NotContains(t, rec.Body.String(), testAPIKey)
 	})
 
 	t.Run("unknown path", func(t *testing.T) {
-		rec := get(h, "/notes/nope", nil)
+		rec := get(h, microservice.BasePath+"/nope", nil)
 		require.Equal(t, http.StatusNotFound, rec.Code)
 	})
 }

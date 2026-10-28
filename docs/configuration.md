@@ -91,7 +91,7 @@ Prefer `ServiceBindAddress` over the deprecated `ServiceBindHost`/`ServiceBindPo
 
 <!-- source: examples/notes/pkg/config/config.go -->
 ```go
-AdminAPIKey config.HiddenString `mapstructure:"ADMIN_API_KEY" description:"API key expected in the X-API-Key header by /notes/env. Required: the service refuses to start without it."`
+AdminAPIKey config.HiddenString `mapstructure:"ADMIN_API_KEY" description:"API key expected in the X-API-Key header by the /env endpoint. Required: the service refuses to start without it."`
 
 func (c *Config) Validate() error {
 	if c.AdminAPIKey == "" {

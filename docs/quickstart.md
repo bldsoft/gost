@@ -1,9 +1,9 @@
 # Quickstart: a new service on gost
 
 This walkthrough creates a service called `<svc>` in a module `github.com/<org>/<svc>` that
-serves `/<svc>/ping`, `/<svc>/version`, `/<svc>/env`, Kubernetes probes, and one domain resource
-stored in MongoDB. It mirrors [`examples/notes`](../examples/notes/README.md) exactly, so when a
-step says "copy from the example", open that file and rename.
+serves `/<svc>/ping`, `/<svc>/version`, `/<svc>/env`, Kubernetes probes, and the sample Note
+resource from [`examples/notes`](../examples/notes/README.md). `scaffold` copies that example
+and renames the service. The Note resource is working sample code; replace it in step 4.
 
 Placeholders used below:
 
@@ -17,62 +17,30 @@ Placeholders used below:
 - Go 1.27 or newer (gost's `go.mod` sets the floor).
 - Docker, for a local MongoDB replica set and for image builds.
 - `golangci-lint` v2.15 or newer built with the same Go major version as your toolchain.
+  `scaffold` runs `golangci-lint fmt` so imports match the generated config.
 - Optional: `gotestsum` for nicer test output.
 
-## 1. Create the module
+## 1. Create the service
 
 ```bash
-mkdir <svc> && cd <svc> && git init
-go mod init github.com/<org>/<svc>
-go get github.com/bldsoft/gost@latest               # or a specific commit/tag; pin ONE version per service
-go get github.com/hashicorp/go-metrics@v0.5.4       # see note below
-echo "0.1.0" > VERSION
+go run github.com/bldsoft/gost/cmd/scaffold@latest -module github.com/<org>/<svc>
 ```
 
-The second `go get` is needed because `go mod tidy` in a module that imports gost's discovery
+`-name` defaults to the last element of `-module`. `-dir` defaults to `./<svc>`. `-gost` pins a
+gost version (default: the version of the `scaffold` you ran, or `latest` when that build has no
+version). `-replace /path/to/gost` adds a `replace` directive, for a local checkout.
+
+The command:
+
+- copies [`examples/notes`](../examples/notes) and rewrites the module path, the `cmd/` directory and `ServiceName`
+- adds the standalone repository files from [`examples/scaffold`](../examples/scaffold) (`Makefile`, `Dockerfile`, CI workflow, `AGENTS.md`, `.golangci.yml`, `.mockery.yml`, `.gitignore`), fills `<svc>`, `<org>` and `<module>`, and points the gci `prefix(...)` at your module
+- runs `go mod init`, `go get github.com/bldsoft/gost@<version>`, `go get github.com/hashicorp/go-metrics@v0.5.4`, `go get -tool` for mockery and enumer, `go generate`, `go mod tidy`, regenerates `config.md`, and runs `golangci-lint fmt`
+
+The `go-metrics` pin is required because `go mod tidy` in a module that imports gost's discovery
 packages resolves the tests of `hashicorp/consul/api`, which reach `hashicorp/memberlist` and
-`hashicorp/go-metrics/compat`; gost itself does not need that module, so it cannot pin it for
+`hashicorp/go-metrics/compat`. gost itself does not need that module, so it cannot pin it for
 you. Without the line, `go mod tidy` fails with
 `module github.com/hashicorp/go-metrics@latest found (v0.7.0), but does not contain package .../compat`.
-
-## 2. Copy the templates
-
-`GOST` is a checkout of this repository.
-
-```bash
-GOST=/path/to/gost
-mkdir -p .github/workflows tools cmd/<svc> pkg/{config,entity,repository,service,controller/rest,microservice}
-cp $GOST/docs/templates/Makefile            Makefile
-cp $GOST/docs/templates/golangci.yml        .golangci.yml
-cp $GOST/docs/templates/mockery.yml         .mockery.yml
-cp $GOST/docs/templates/Dockerfile          Dockerfile
-cp $GOST/docs/templates/github-workflow.yml .github/workflows/ci.yml
-cp $GOST/docs/templates/gitignore           .gitignore
-cp $GOST/docs/templates/tools.go            tools/tools.go
-cp $GOST/docs/templates/AGENTS.md           AGENTS.md
-cp $GOST/docs/templates/CLAUDE.md           CLAUDE.md
-```
-
-Replace the placeholders in every copied file (`grep -rn '<org>\|<svc>' .` finds them). If your
-module path does not share gost's prefix, change the `prefix(...)` entry in the `gci` section of
-`.golangci.yml` to your own module path so imports group correctly. Then pin the code
-generators as Go tools so `go tool mockery` and `go tool enumer` work without a global install:
-
-```bash
-go get -tool github.com/vektra/mockery/v3@latest
-go get -tool github.com/dmarkham/enumer@latest
-```
-
-## 3. Write the four core files
-
-Copy these from the example and rename `notes` to `<svc>`:
-
-| Copy from | To | Change |
-|---|---|---|
-| [`cmd/notes/main.go`](../examples/notes/cmd/notes/main.go) | `cmd/<svc>/main.go` | import paths |
-| [`pkg/config/config.go`](../examples/notes/pkg/config/config.go) | `pkg/config/config.go` | `ServiceName`, drop `NOTES_PURGE_*` if you have no purger |
-| [`pkg/config/config_test.go`](../examples/notes/pkg/config/config_test.go) | `pkg/config/config_test.go` | assertions on your defaults |
-| [`pkg/microservice/microservice.go`](../examples/notes/pkg/microservice/microservice.go) | `pkg/microservice/microservice.go` | wire your own repositories, services and controllers |
 
 The entry point is always the same five lines:
 
@@ -101,7 +69,7 @@ type Config struct {
 	Mongo     mongo.Config
 	Discovery common.Config `mapstructure:"DISCOVERY"`
 
-	AdminAPIKey config.HiddenString `mapstructure:"ADMIN_API_KEY" description:"API key expected in the X-API-Key header by /notes/env. Required: the service refuses to start without it."`
+	AdminAPIKey config.HiddenString `mapstructure:"ADMIN_API_KEY" description:"API key expected in the X-API-Key header by the /env endpoint. Required: the service refuses to start without it."`
 }
 
 func (c *Config) SetDefaults() {
@@ -122,7 +90,7 @@ func (c *Config) Validate() error {
 Do not call `c.Server.SetDefaults()` or `c.Mongo.Validate()` yourself: `ReadConfig` walks the
 whole struct and calls them for you, children first. See [Configuration](configuration.md).
 
-## 4. Start MongoDB
+## 2. Start MongoDB
 
 gost's Mongo features (change streams, transactions, changelog) need a replica set, so run one
 even locally:
@@ -132,7 +100,7 @@ docker run -d --name mongo -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
 docker exec mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
 ```
 
-## 5. Run and poke it
+## 3. Run and poke it
 
 ```bash
 make run     # the Makefile exports ADMIN_API_KEY=dev-key and a local DATABASE_SERVER
@@ -148,9 +116,10 @@ curl -s localhost:3000/probes/ready                             # OK once the DB
 
 Ctrl-C stops it: runners stop, MongoDB disconnects, "Server gracefully stopped" is logged.
 
-## 6. Add your first resource
+## 4. Replace the sample Note resource
 
-Follow the layer order; each step has a one-file example:
+The generated service already stores notes, purges soft-deleted ones, and tests that path. Replace
+it with your own resource. Each layer has a one-file example:
 
 1. **Entity**: a struct embedding `mongo.EntityID`, `mongo.EntityTimeStamp`, `mongo.EntityArchived`
    ([`pkg/entity/note.go`](../examples/notes/pkg/entity/note.go)).
@@ -167,7 +136,7 @@ Follow the layer order; each step has a one-file example:
 6. **Tests**: `make generate` for mocks (before `go mod tidy`, since tests import `mocks/`),
    then unit, route and integration tests as in [Testing](testing.md).
 
-## 7. Keep `config.md` in sync
+## 5. Keep `config.md` in sync
 
 Every env var is documented from the `description` tags. The golden test in
 `pkg/config/config_test.go` fails when `config.md` is stale:
@@ -176,7 +145,7 @@ Every env var is documented from the `description` tags. The golden test in
 make config-md && git add config.md
 ```
 
-## 8. Lint, test, push
+## 6. Lint, test, push
 
 ```bash
 make lint && make test && make test-integration
@@ -196,5 +165,5 @@ mocks are up to date, and builds the image on `main` and `v*` tags. A tag must m
 | `Failed to create http listener ... address already in use` | Change `SERVICE_BIND_ADDRESS`; note the process keeps running and shuts down on signal |
 | `SERVICE_NAME is deprecated, use SERVICE_INSTANCE_NAME instead` | Harmless warning; set `SERVICE_INSTANCE_NAME` per instance in deployment |
 | Integration tests are skipped | MongoDB unreachable locally; set `DATABASE_SERVER`. In CI (`CI=true`) they fail instead |
-| `go mod tidy`: `go-metrics@latest ... does not contain package .../compat` | Run `go get github.com/hashicorp/go-metrics@v0.5.4` (step 1) |
+| `go mod tidy`: `go-metrics@latest ... does not contain package .../compat` | `scaffold` pins this; if you tidy by hand, run `go get github.com/hashicorp/go-metrics@v0.5.4` |
 | `go mod tidy`: `repository 'https://github.com/<org>/<svc>/' not found` | A test imports `pkg/service/mocks` that does not exist yet; run `go tool mockery` first, then tidy |
