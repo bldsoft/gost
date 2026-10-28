@@ -50,6 +50,7 @@ type Server struct {
 	runnerManager     *AsyncJobManager
 	routerWrapper     func(http.Handler) http.Handler
 	needHealthProbes  bool
+	internalSrv       *InternalServer
 	config            Config
 }
 
@@ -100,8 +101,17 @@ func (s *Server) SetRouterWrapper(middleware func(http.Handler) http.Handler) *S
 	return s
 }
 
-func (s *Server) WithHealthProbes(v bool) *Server {
+// WithHealthProbes with an InternalServer serves /probes/* only on that server and
+// takes over its lifecycle; without one the probes stay on the main listener unless
+// PROBES_BIND_ADDRESS is set.
+func (s *Server) WithHealthProbes(v bool, internalSrv ...*InternalServer) *Server {
 	s.needHealthProbes = v
+	if len(internalSrv) > 1 {
+		panic("server: WithHealthProbes accepts at most one internal server")
+	}
+	if len(internalSrv) == 1 {
+		s.internalSrv = internalSrv[0]
+	}
 
 	return s
 }
@@ -113,18 +123,44 @@ func (s *Server) AddAsyncRunners(runners ...AsyncRunner) *Server {
 }
 
 func (s *Server) init() {
-	if !s.needHealthProbes {
-		http.Handle("/", s.appRouter())
+	http.Handle("/", s.handler())
+}
 
-		return
+// handler builds the routing without touching http.DefaultServeMux, so tests can call it.
+func (s *Server) handler() http.Handler {
+	s.resolveInternal()
+	if !s.needHealthProbes {
+		return s.appRouter()
+	}
+
+	var probes *probesController
+	if s.internalSrv != nil {
+		probes = newProbesController()
+		s.internalSrv.router.Route("/probes", probes.Mount)
 	}
 
 	dynamicRouter := new(dynamicRouter)
 	dynamicRouter.Set(s.probesOnlyRouter())
-	http.Handle("/", dynamicRouter)
 	go func() {
 		dynamicRouter.Set(s.appRouter())
+		if probes != nil {
+			probes.SetReady(true)
+		}
 	}()
+
+	return dynamicRouter
+}
+
+// resolveInternal drops an internal server without an address instead of letting it
+// bind a random port, and creates one from PROBES_BIND_ADDRESS when probes are on.
+func (s *Server) resolveInternal() {
+	if s.internalSrv != nil && len(s.internalSrv.addr) == 0 {
+		log.Warn("Internal server has no bind address and is disabled; probes stay on the main listener")
+		s.internalSrv = nil
+	}
+	if s.internalSrv == nil && s.needHealthProbes && len(s.config.ProbesBindAddress) > 0 {
+		s.internalSrv = NewInternalServer(s.config.ProbesBindAddress)
+	}
 }
 
 func (s *Server) appRouter() http.Handler {
@@ -160,7 +196,7 @@ func (s *Server) newRouter(isAppRouter bool) chi.Router {
 	r := chi.NewMux()
 	r.Use(s.commonMiddlewares...)
 	r.Mount("/debug", profiler())
-	if s.needHealthProbes {
+	if s.needHealthProbes && s.internalSrv == nil {
 		r.Route("/probes", newProbesController().SetReady(isAppRouter).Mount)
 	}
 
@@ -199,8 +235,35 @@ func (s *Server) Start() {
 
 	s.serveListener(httpListener, "", "")
 	s.serveListener(httpsListener, s.config.TLS.CertificatePath, s.config.TLS.KeyPath)
+	s.serveInternal()
 
 	s.gracefulShutdown()
+}
+
+func (s *Server) serveInternal() {
+	if s.internalSrv == nil {
+		return
+	}
+
+	if err := s.internalSrv.Listen(); err != nil {
+		log.ErrorfWithFields(log.Fields{"err": err}, "Failed to create internal listener on %s.", s.internalSrv.addr.HostPort())
+
+		return
+	}
+
+	go func() {
+		if err := s.internalSrv.Run(); err != nil {
+			log.Error(err.Error())
+		}
+	}()
+}
+
+func (s *Server) stopInternal(ctx context.Context) error {
+	if s.internalSrv == nil {
+		return nil
+	}
+
+	return s.internalSrv.Stop(ctx)
 }
 
 func (s *Server) serveListener(listener net.Listener, certPath, keyPath string) {
@@ -234,7 +297,7 @@ func (s *Server) gracefulShutdown() {
 	timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	errs := errors.Join(s.srv.Shutdown(ctx), s.runnerManager.Stop(timeout))
+	errs := errors.Join(s.srv.Shutdown(ctx), s.stopInternal(timeout), s.runnerManager.Stop(timeout))
 
 	if errs != nil {
 		log.Errorf("Failed to shut down server gracefully\n%v", errs)

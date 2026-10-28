@@ -36,7 +36,7 @@ server.NewServer(cfg.Server, microservice.New(cfg)).
 | `AppendMiddlewares(mw...)` | Add global middlewares after the current ones |
 | `SetMiddlewares(mw...)` | Replace the global middleware chain |
 | `SetRouterWrapper(fn)` | Wrap the whole application router (for CORS or per-prefix middleware chains) |
-| `WithHealthProbes(true)` | Mount `/probes/healthy`, `/probes/ready`, `/probes/startup` |
+| `WithHealthProbes(true, internal...)` | Mount `/probes/healthy`, `/probes/ready`, `/probes/startup`; with an `InternalServer` or `PROBES_BIND_ADDRESS` they move to the private port (see [Probes on a private port](#probes-on-a-private-port)) |
 | `AddAsyncRunners(r...)` | Register runners created in `main` (in addition to `GetAsyncRunners`) |
 | `Start()` | Listen and block until SIGINT/SIGTERM/SIGQUIT |
 
@@ -116,10 +116,44 @@ Never leak internal error text on 5xx; log it with the request logger instead.
 | `/<svc>/ping` | `controller.GetPingHandler` → `pong` | none |
 | `/<svc>/version` | `controller.GetVersionHandler` → `{"version","branch","commit"}` | none |
 | `/<svc>/env` | `controller.GetEnvHandler(&cfg, features)` → YAML of the config (+ features) | API key, always |
-| `/probes/{healthy,ready,startup}` | built in | none |
+| `/probes/{healthy,ready,startup}` | built in; on `PROBES_BIND_ADDRESS` when set | none |
 | `/debug/pprof/*` | built in | protect at ingress |
 
 `ready` returns 503 until the application router (and therefore `Initialize()`) has finished.
+
+## Probes on a private port
+
+The ingress should never see the probes. Set `PROBES_BIND_ADDRESS` (for example `0.0.0.0:3002`)
+and `WithHealthProbes(true)` serves `/probes/*` only there; the main listener answers 404 on
+those paths. Readiness keeps its meaning: the internal listener binds in `Start()` together with
+the main one while the application router is still being built, `/probes/ready` is 503 until
+`Initialize()` and `BuildRoutes` finish, then 200. The listener is shut down with the server
+inside the 5 second budget.
+
+Pass your own `server.InternalServer` when the private port should also carry other
+platform-facing handlers such as Prometheus metrics. Probes are enabled in exactly one place,
+`WithHealthProbes`, because only the `Server` knows when the service is ready:
+
+<!-- source: server/internal_server_test.go -->
+```go
+internal := NewInternalServer(cfg.ProbesBindAddress).   // server.NewInternalServer(cfg.Server.ProbesBindAddress) in main.go
+	Handle("/metrics", metrics)                           // for example promhttp.Handler()
+srv := NewServer(cfg, ms).
+	UseDefaultMiddlewares().
+	WithHealthProbes(true, internal)
+```
+
+Rules of the internal listener:
+
+- It has its own `chi` router (`Handle`, `Mount`) and never touches `http.DefaultServeMux`.
+- The common middlewares do not apply, so probe hits do not show up in the request log.
+- Timeouts are fixed (5 s header, 10 s read, 30 s write, 60 s idle) regardless of
+  `READ_TIMEOUT_MS`/`WRITE_TIMEOUT_MS`, which are often `0` for long-running app requests.
+- An `InternalServer` with an empty address is disabled with a warning and the probes stay on
+  the main listener, so `NewInternalServer(cfg.Server.ProbesBindAddress)` is safe when the
+  variable is unset.
+- `InternalServer` is also an `AsyncRunner`: extra probe-less listeners can be registered with
+  `AddAsyncRunners(internal)`. They start after the routes are built, like any runner.
 
 ## Middleware from gost
 
@@ -152,5 +186,6 @@ them in tests.
   running until a signal arrives. Watch the log line `Failed to create http listener`.
 - **Runners start after routes.** `GetAsyncRunners()` is collected after `BuildRoutes`. A
   runner that must be running before traffic arrives has to start in `Initialize()`.
-- **One listener per server.** A second, private listener (for example `/metrics` on another
-  port) is a custom `AsyncRunner` with its own `http.Server`.
+- **Internal listener errors do not abort either.** When `PROBES_BIND_ADDRESS` cannot be bound,
+  the probes are served nowhere: the main router already skipped them. Watch the log line
+  `Failed to create internal listener`.

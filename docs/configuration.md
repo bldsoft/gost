@@ -46,7 +46,7 @@ Conventions used by all services:
 
 | Field | Tag | Resulting variables |
 |---|---|---|
-| `Server server.Config` | none | `SERVICE_INSTANCE_NAME`, `SERVICE_BIND_ADDRESS`, `SERVICE_ADDRESS`, `TLS_*`, `READ_TIMEOUT_MS`, `WRITE_TIMEOUT_MS` |
+| `Server server.Config` | none | `SERVICE_INSTANCE_NAME`, `SERVICE_BIND_ADDRESS`, `SERVICE_ADDRESS`, `PROBES_BIND_ADDRESS`, `TLS_*`, `READ_TIMEOUT_MS`, `WRITE_TIMEOUT_MS` |
 | `Log log.Config` | none | `LOG_LEVEL`, `LOG_COLOR_ENABLED`, `LOG_FILE` |
 | `Mongo mongo.Config` | none | `DATABASE_SERVER`, `DATABASE_DBNAME`, `DATABASE_MIGRATION_COLLECTION` |
 | `Clickhouse clickhouse.Config` | `mapstructure:"CLICKHOUSE"` | `CLICKHOUSE_DSN` (the struct's own tag is just `DSN`) |

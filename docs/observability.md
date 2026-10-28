@@ -18,8 +18,9 @@ and audit trails.
 | `/<svc>/stat` | Storage statistics (if wired) | admin |
 
 Kubernetes manifests should point liveness at `/probes/healthy` and readiness at
-`/probes/ready`. If you put metrics or probes on a private port instead, pass
-`WithHealthProbes(false)` and serve them from your own listener (an `AsyncRunner`).
+`/probes/ready`. To keep them off the public port set `PROBES_BIND_ADDRESS`, or pass a
+`server.InternalServer` to `WithHealthProbes(true, internal)` when the private port should also
+serve `/metrics`; see [Probes on a private port](server.md#probes-on-a-private-port).
 
 ## Version information
 
