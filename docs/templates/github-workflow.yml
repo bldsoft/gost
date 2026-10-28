@@ -1,0 +1,75 @@
+# Copy to .github/workflows/ci.yml. Lint and test on every push/PR; build the image on main and tags.
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+
+  test:
+    runs-on: ubuntu-24.04
+    env:
+      # GitHub sets CI=true, which makes integration tests fail (not skip) when MongoDB is missing.
+      DATABASE_SERVER: mongodb://127.0.0.1:27017/?replicaSet=rs0&directConnection=true
+      DATABASE_DBNAME: test
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Start MongoDB replica set
+        run: |
+          wait_for() {
+            for _ in $(seq 1 60); do
+              if docker exec mongo mongosh --quiet --eval "$1" 2>/dev/null | grep -q "$2"; then
+                return 0
+              fi
+              sleep 1
+            done
+            echo "::error::$3"
+            docker logs mongo
+            return 1
+          }
+          docker run -d --name mongo -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
+          wait_for 'db.runCommand({ ping: 1 }).ok' 1 'mongod did not become ready'
+          docker exec mongo mongosh --quiet --eval 'rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "127.0.0.1:27017" }] })'
+          wait_for 'db.hello().isWritablePrimary' true 'replica set did not elect a primary'
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@v1.12.3
+      - name: Test
+        run: gotestsum --format=testname -- -race -tags=integration_test ./...
+      - name: Mocks are up to date
+        run: go tool mockery && git diff --exit-code
+
+  docker:
+    needs: [lint, test]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Tag must match VERSION
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          test "v$(cat VERSION)" = "${GITHUB_REF_NAME}" || { echo "::error::Bump VERSION and commit it before tagging"; exit 1; }
+      - name: Build image
+        run: docker build --build-arg COMMIT=${{ github.sha }} --build-arg BRANCH=${{ github.ref_name }} -t <org>/<svc>:${{ github.ref_name }} .
+      # Add your registry login and `docker push` here.

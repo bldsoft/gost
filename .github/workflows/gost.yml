@@ -12,6 +12,7 @@ on:
       - .golangci.yml
       - .mockery.yml
       - .github/workflows/gost.yml
+      - examples/**
   pull_request:
     paths:
       - '**/*.go'
@@ -21,6 +22,7 @@ on:
       - .golangci.yml
       - .mockery.yml
       - .github/workflows/gost.yml
+      - examples/**
   workflow_dispatch:
 
 concurrency:
@@ -78,8 +80,18 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Install gotestsum
         run: go install gotest.tools/gotestsum@v1.12.3
+      - name: Build example service
+        run: go build ./examples/...
       - name: Test
         run: gotestsum --format=testname -- -race -tags=integration_test ./...
+
+  example-docker:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build example image
+        run: docker build -f examples/notes/Dockerfile --build-arg COMMIT=${{ github.sha }} --build-arg BRANCH=${{ github.ref_name }} .
 
   benchmark:
     if: >
