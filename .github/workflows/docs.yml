@@ -1,0 +1,49 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - README.md
+      - AGENTS.md
+      - .golangci.yml
+      - 'examples/**/*.md'
+      - .github/workflows/docs.yml
+  pull_request:
+    paths:
+      - 'docs/**'
+      - README.md
+      - AGENTS.md
+      - .golangci.yml
+      - 'examples/**/*.md'
+      - .github/workflows/docs.yml
+
+jobs:
+  docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Template lint config matches the root one
+        run: diff docs/templates/golangci.yml .golangci.yml
+      - name: Relative links resolve
+        run: |
+          python3 - <<'PY'
+          import os, re, subprocess, sys
+          files = subprocess.check_output(["git", "ls-files", "docs", "examples", "README.md", "AGENTS.md"], text=True).split()
+          fence = re.compile(r"```.*?```", re.S)
+          span = re.compile(r"`[^`\n]*`")
+          link = re.compile(r"\]\(([^)\s]+)\)")
+          bad = 0
+          for f in sorted(x for x in files if x.endswith(".md")):
+              text = span.sub("", fence.sub("", open(f, encoding="utf-8").read()))
+              for m in link.finditer(text):
+                  target = m.group(1)
+                  if target.startswith(("http://", "https://", "mailto:", "#")):
+                      continue
+                  if not os.path.exists(os.path.join(os.path.dirname(f), target.split("#", 1)[0])):
+                      print(f"::error file={f}::broken link: {target}")
+                      bad += 1
+          sys.exit(1 if bad else 0)
+          PY

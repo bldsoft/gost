@@ -64,14 +64,12 @@ func TestFromQuery(t *testing.T) {
 				},
 			},
 			want: &TestStruct{
-				SField:  "string",
-				IField:  10,
-				BField:  true,
-				PSField: &pstring,
-				PIField: &pint,
-				Nested: Nested{
-					NestedSField: "nested",
-				},
+				SField:       "string",
+				IField:       10,
+				BField:       true,
+				PSField:      &pstring,
+				PIField:      &pint,
+				NestedSField: "nested",
 			},
 		},
 		{

@@ -2,12 +2,13 @@ package server
 
 import (
 	"net/http"
+	"sync/atomic"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type probesController struct {
-	ready bool
+	ready atomic.Bool
 }
 
 func newProbesController() *probesController {
@@ -15,7 +16,7 @@ func newProbesController() *probesController {
 }
 
 func (c *probesController) SetReady(v bool) *probesController {
-	c.ready = v
+	c.ready.Store(v)
 
 	return c
 }
@@ -25,7 +26,7 @@ func (c *probesController) HealthHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (c *probesController) ReadyHandler(w http.ResponseWriter, r *http.Request) {
-	if !c.ready {
+	if !c.ready.Load() {
 		c.writeCode(w, http.StatusServiceUnavailable)
 
 		return

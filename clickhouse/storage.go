@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -13,7 +14,6 @@ import (
 	mm "github.com/golang-migrate/migrate/v4/database/clickhouse"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/stub"
-	"github.com/pkg/errors"
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/storage"
@@ -108,7 +108,7 @@ func (db *Storage) RunMigrations() {
 func (db *Storage) Disconnect(ctx context.Context) error {
 	err := db.Db.Close()
 	if err != nil {
-		return errors.Wrap(err, "Clickhouse disconnect failed")
+		return fmt.Errorf("clickhouse disconnect failed: %w", err)
 	}
 	log.Info("Clickhouse disconnected.")
 
@@ -158,6 +158,7 @@ func (db *Storage) runMigrations(dbname string) error {
 
 func (db *Storage) Stats(ctx context.Context) (map[string]any, error) {
 	metrics := make(map[string]any)
+	var errs error
 	for _, query := range []string{
 		"SELECT event, value FROM system.events",
 		"SELECT metric, value FROM system.asynchronous_metrics",
@@ -176,9 +177,10 @@ func (db *Storage) Stats(ctx context.Context) (map[string]any, error) {
 			}
 			metrics[metricName] = metricValue
 		}
+		errs = errors.Join(errs, rows.Err())
 	}
 
-	return metrics, nil
+	return metrics, errs
 }
 
 func (db *Storage) PrepareBatch(q string) (driver.Batch, error) {
