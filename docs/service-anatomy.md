@@ -118,18 +118,21 @@ What `server.Server.Start()` does, in order (`server/server.go`):
 
 1. With `WithHealthProbes(true)`: install a probes-only router on which `/probes/ready` answers
    503, then build the application router in a goroutine. Without probes: build it synchronously.
+   With `PROBES_BIND_ADDRESS` or an `InternalServer` the probes are mounted on the internal
+   router instead and neither main router carries them.
 2. Building the application router: for each microservice, call `Initialize()` if implemented,
    then `BuildRoutes(r)` inside its own `chi` group. The common middlewares, `/debug/pprof` and
-   `/probes/*` (ready = 200) are mounted on the same router.
+   `/probes/*` (ready = 200) are mounted on the same router; with an internal listener the
+   ready flag flips there once this step completes.
 3. Collect `GetAsyncRunners()` from all microservices and start them in parallel, after the
    routes exist.
-4. Listen on `SERVICE_BIND_ADDRESS` (and the TLS address when `TLS_CERTIFICATE_PATH` is set) and
-   block until SIGINT, SIGTERM or SIGQUIT.
+4. Listen on `SERVICE_BIND_ADDRESS` (the TLS address when `TLS_CERTIFICATE_PATH` is set, and
+   the internal address when probes are moved) and block until SIGINT, SIGTERM or SIGQUIT.
 
 ## Shutdown sequence
 
-On a signal the server calls `http.Server.Shutdown` and stops all runners with a 5 second
-budget, then logs "Server gracefully stopped" or the joined errors. Runners stop in parallel
+On a signal the server calls `http.Server.Shutdown`, stops the internal listener and all runners
+with a 5 second budget, then logs "Server gracefully stopped" or the joined errors. Runners stop in parallel
 unless you order them: the chain above stops the group (purger, discovery) first and disconnects
 MongoDB last, because `AsyncJobChain.Stop` runs in reverse order.
 

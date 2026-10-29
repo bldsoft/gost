@@ -32,7 +32,7 @@ have run. `storage.DBConnectAsync(wg, connect, attempts, sleep)` recovers the pa
 if the service can serve without the database.
 
 Change streams, transactions, the changelog and watched repositories need a **replica set**. Run
-`mongo:8 --replSet rs0` locally and `rs.initiate(...)` once; the CI template does the same.
+`mongo:8 --replSet rs0` locally and `rs.initiate(...)` once. Pass `-e GLIBC_TUNABLES=glibc.pthread.rseq=1` when `uname` reports 6.19 through 7.0.13; the CI template does that.
 
 ### Migrations
 

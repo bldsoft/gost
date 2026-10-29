@@ -24,7 +24,7 @@ What it demonstrates:
 
 ```bash
 # MongoDB must run as a replica set (change streams and transactions need one).
-docker run -d --name mongo -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
+docker run -d --name mongo -e GLIBC_TUNABLES=glibc.pthread.rseq=1 -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
 docker exec mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
 
 make run            # ADMIN_API_KEY=dev-key, DATABASE_SERVER and DATABASE_DBNAME have local defaults

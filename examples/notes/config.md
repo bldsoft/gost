@@ -6,6 +6,7 @@
 |SERVICE_PORT|3000|DEPRECATED. Service port|
 |SERVICE_BIND_ADDRESS|0.0.0.0:3000|Service configuration related to what address bind to and port to listen on for HTTP|
 |SERVICE_ADDRESS||Service public address|
+|PROBES_BIND_ADDRESS||Address to serve the Kubernetes probes on instead of the main listener. Empty keeps them on SERVICE_BIND_ADDRESS|
 |TLS_SERVICE_BIND_ADDRESS||Service configuration related to what address bind to and port to listen on for HTTPS|
 |TLS_CERTIFICATE_PATH||Path to TLS certificate file|
 |TLS_KEY_PATH||Path to TLS key file|
