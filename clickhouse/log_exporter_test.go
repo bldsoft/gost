@@ -1,10 +1,14 @@
 package clickhouse
 
 import (
+	"regexp"
+	"strings"
 	"testing"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bldsoft/gost/log"
 )
 
 func TestExporterSearchParse(t *testing.T) {
@@ -93,6 +97,52 @@ func TestExporterSearchParse(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			require.Equal(t, tc.expected, new(ClickHouseLogExporter).parseExpr(tc.search, eq))
+		})
+	}
+}
+
+func TestNormalizeLogExpr(t *testing.T) {
+	expr, args := new(ClickHouseLogExporter).normalizeLogExpr("msg")
+	require.Equal(t, strings.Repeat("replaceRegexpAll(", 8)+"msg"+strings.Repeat(", ?, ?)", 8), expr)
+	require.Len(t, args, 16)
+
+	normalize := func(s string) string {
+		for i := 0; i < len(args); i += 2 {
+			s = regexp.MustCompile(args[i].(string)).ReplaceAllString(s, args[i+1].(string))
+		}
+
+		return s
+	}
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "quoted", in: `Put "http://host/a/b": context canceled`, want: `Put "…": context canceled`},
+		{name: "uuid", in: "user 0f8fad5b-d9cb-469f-a165-70867728950e not found", want: "user <uuid> not found"},
+		{name: "ip with port", in: "dial tcp 10.0.0.1:8080: connect: connection refused", want: "dial tcp <ip>: connect: connection refused"},
+		{name: "ip", in: "client 192.168.1.10 banned", want: "client <ip> banned"},
+		{name: "hex", in: "recorder 6a3a5da6020ea5f52e3826a1: failed to find pool", want: "recorder <hex>: failed to find pool"},
+		{name: "0x hex", in: "panic({0x1400012e0c0?, 0x10?})\n\tarchiver.go:212 +0x1d4", want: "panic({<hex>?, <hex>?})\n\tarchiver.go:<N> +<hex>"},
+		{name: "0x inside a word", in: "10x5", want: "<N>x<N>"},
+		{name: "numbers", in: "Discovery: failed to join cluster: 3 errors occurred", want: "Discovery: failed to join cluster: <N> errors occurred"},
+		{name: "path", in: "Write /10005/dvr1h/hls/trickplaylive/audio_0/1793003052862/8/1793003052862-8576.ts: 500", want: "Write <path>: <N>"},
+		{name: "path at start", in: "/10005/free/hls/playlist.m3u8: not found", want: "<path>: not found"},
+		{name: "multiline paths", in: "Remove /a/b/: 400\nRemove /c/d/: 400", want: "Remove <path>: <N>\nRemove <path>: <N>"},
+		{name: "root path kept", in: "Quotas /: failed", want: "Quotas /: failed"},
+		{name: "slash inside word kept", in: "and/or 1/2", want: "and/or <N>/<N>"},
+		{name: "long number", in: "duration too large: 95444466", want: "duration too large: <N>"},
+		{name: "hex with long digit prefix", in: "id 65123456789abcde", want: "id <hex>"},
+		{name: "digits inside word", in: "dvr24h", want: "dvr<N>h"},
+		{name: "letters kept", in: "RESPONSE", want: "RESPONSE"},
+		{name: "nothing to mask", in: "unexpected EOF", want: "unexpected EOF"},
+		{name: "empty", in: "", want: ""},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, normalize(tc.in))
+			require.Equal(t, tc.want, log.Mask(tc.in))
 		})
 	}
 }

@@ -34,6 +34,9 @@ const (
 	valuesColumn = "values"
 	timesColumn  = "times"
 	valueColumn  = "value"
+
+	msgPatternColumn = "msg_pattern"
+	errPatternColumn = "err_pattern"
 )
 
 type LogExporterConfig struct {
@@ -377,6 +380,90 @@ func (e *ClickHouseLogExporter) LogsMetrics(ctx context.Context, params log.Logs
 	}
 
 	return e.getCustomChartValues(ctx, e.logsMetricsQuery(&params), params.From, params.To, time.Duration(params.StepSec)*time.Second)
+}
+
+func (e *ClickHouseLogExporter) normalizeLogExpr(expr string) (string, []any) {
+	var args []any
+	for _, m := range log.Masks {
+		expr = "replaceRegexpAll(" + expr + ", ?, ?)"
+		args = append(args, m.Re.String(), m.Repl)
+	}
+
+	return expr, args
+}
+
+func (e *ClickHouseLogExporter) LogsPatterns(ctx context.Context, params log.LogsPatternsParams) (*log.LogPatterns, error) {
+	if params.To.IsZero() {
+		params.To = time.Now()
+	}
+	step := time.Duration(params.StepSec) * time.Second
+	if step <= 0 {
+		return nil, errors.New("step must be a positive number")
+	}
+	if params.To.Sub(params.From)/step > maxChartIntervalCount {
+		return nil, errors.New("too many intervals")
+	}
+
+	raw := sq.Select().
+		Column(fmt.Sprintf("CAST(%s, 'Int8') %s", LevelColumName, LevelColumName)).
+		Column(MsgColumnName).
+		Column(fmt.Sprintf("if(JSONHas(%[1]s, 'err'), JSONExtractString(%[1]s, 'err'), JSONExtractString(%[1]s, 'error')) err", FieldsColumnName)).
+		Column("toStartOfInterval("+TimestampColumnName+", INTERVAL (?) second) "+timeColumn, params.StepSec).
+		Column("count() cnt").
+		Column("min("+TimestampColumnName+") min_time").
+		Column("max("+TimestampColumnName+") max_time").
+		Column("groupUniqArray("+InstanseColumnName+") instances").
+		Column("groupUniqArrayIf(3)("+ReqIDColumnName+", "+ReqIDColumnName+" != '') req_ids").
+		From(e.config.TableName).
+		Where(e.filter(params.Filter)).
+		GroupBy(LevelColumName, MsgColumnName, "err", timeColumn)
+
+	msgExpr, msgArgs := e.normalizeLogExpr(MsgColumnName)
+	errExpr, errArgs := e.normalizeLogExpr("err")
+	query := sq.Select().
+		Column(LevelColumName).
+		Column(msgExpr+" "+msgPatternColumn, msgArgs...).
+		Column(errExpr+" "+errPatternColumn, errArgs...).
+		Column("sum(cnt)").
+		Column("min(min_time)").
+		Column("max(max_time)").
+		Column("groupUniqArrayArray(instances)").
+		Column("groupUniqArrayArray(3)(req_ids)").
+		Column("any("+MsgColumnName+")").
+		Column("(sumMap(["+timeColumn+"], [toInt64(cnt)]) AS series).1").
+		Column("series.2").
+		Column("sum(sum(cnt)) OVER ()").
+		Column("count() OVER ()").
+		FromSelect(raw, "raw").
+		GroupBy(LevelColumName, msgPatternColumn, errPatternColumn).
+		OrderBy("sum(cnt) DESC", LevelColumName, msgPatternColumn, errPatternColumn).
+		Limit(uint64(params.Limit))
+
+	rows, err := e.RunSelect(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	start := params.From.Add(-time.Duration(params.From.UnixNano()) % step)
+	var res log.LogPatterns
+	for rows.Next() {
+		var (
+			p      log.LogPattern
+			times  []time.Time
+			counts []int64
+		)
+		if err = rows.Scan(&p.Level, &p.Msg, &p.Err, &p.Count, &p.From, &p.To, &p.Instances, &p.ReqIDs, &p.Example, &times, &counts, &res.TotalCount, &res.PatternsCount); err != nil {
+			return nil, err
+		}
+		p.Series = make([]int64, int(params.To.Sub(start)/step)+1)
+		for i, t := range times {
+			p.Series[t.Sub(start)/step] = counts[i]
+		}
+		res.Patterns = append(res.Patterns, p)
+	}
+
+	return &res, nil
 }
 
 func (e *ClickHouseLogExporter) Instances(
