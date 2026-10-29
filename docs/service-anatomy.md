@@ -19,7 +19,7 @@ pkg/controller/rest/       HTTP handlers; parse → call service → respond; no
 pkg/microservice/          composition root: wiring, migrations, routes, async runners
 VERSION                    single source of the version, injected through ldflags
 config.md                  generated env var table (golden file)
-Makefile, Dockerfile, .golangci.yml, .mockery.yml, tools/tools.go, .github/workflows/ci.yml
+Makefile, Dockerfile, .golangci.yml, .mockery.yml, AGENTS.md, .github/workflows/ci.yml
 ```
 
 Older services use `internal/` instead of `pkg/`, or group by domain (`internal/score/{controller,service}.go`).

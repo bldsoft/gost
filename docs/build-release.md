@@ -1,6 +1,6 @@
 # Build, lint and release
 
-Everything below is in the [templates](templates/) and used by [`examples/notes`](../examples/notes).
+Everything below is in [`examples/scaffold`](../examples/scaffold) and used by [`examples/notes`](../examples/notes). [`cmd/scaffold`](../cmd/scaffold) writes both into a new repository.
 
 ## Version
 
@@ -26,7 +26,7 @@ keep a single `VERSION` file either way (two copies inevitably disagree). Tags a
 
 ## Makefile
 
-Targets every service should have (see [`docs/templates/Makefile`](templates/Makefile)):
+Targets every service should have (see [`examples/scaffold/Makefile`](../examples/scaffold/Makefile)):
 
 | Target | Does |
 |---|---|
@@ -41,7 +41,7 @@ Targets every service should have (see [`docs/templates/Makefile`](templates/Mak
 
 ## Dockerfile
 
-Multi-stage, static binary, non-root, version injected ([`docs/templates/Dockerfile`](templates/Dockerfile)):
+Multi-stage, static binary, non-root, version injected ([`examples/scaffold/Dockerfile`](../examples/scaffold/Dockerfile)):
 
 ```dockerfile
 FROM golang:1.27-alpine AS builder
@@ -70,7 +70,7 @@ layer. The example's own Dockerfile differs only in using the gost repository ro
 
 ## CI
 
-[`docs/templates/github-workflow.yml`](templates/github-workflow.yml) has three jobs:
+[`examples/scaffold/github-workflow.yml`](../examples/scaffold/github-workflow.yml) has three jobs:
 
 1. **lint**: `golangci/golangci-lint-action@v9` pinned to `v2.15.0`, using `go-version-file: go.mod`.
 2. **test**: starts `mongo:8` as a single-node replica set with `GLIBC_TUNABLES=glibc.pthread.rseq=1` (the image exits on kernels whose `uname` is 6.19–7.0.13), then ping, `rs.initiate`, and a wait for
@@ -84,8 +84,9 @@ matters is that the ldflags are set.
 
 ## golangci-lint
 
-Copy [`docs/templates/golangci.yml`](templates/golangci.yml) to `.golangci.yml` unchanged; it is
-the gost configuration and CI keeps the two identical. Rules that bite most:
+[`examples/scaffold/golangci.yml`](../examples/scaffold/golangci.yml) is the gost configuration; CI
+keeps it byte identical to the root `.golangci.yml`. `scaffold` copies it and rewrites the gci
+`prefix(...)` to the new module. Rules that bite most:
 
 | Linter | Rule | Fix |
 |---|---|---|
@@ -107,9 +108,8 @@ asking for it. Build the linter with the same Go major version as your toolchain
 | mockery v3 | `//go:generate go tool mockery` above an interface file; packages listed in `.mockery.yml` | `<pkg>/mocks/<Interface>.go`, testify template with expecters |
 | enumer | `//go:generate go tool enumer -type=Status -json -text` | `status_enumer.go` with `String`, `ParseStatus`, marshalling |
 
-Pin both as Go tools (`go get -tool ...`), which adds `tool` lines to `go.mod`, and keep
-`tools/tools.go` (build tag `tools`) so `go mod tidy` does not drop packages that production code
-does not import yet. Mockery discovers `.mockery.yml` by walking up from the current directory,
+Pin both as Go tools (`go get -tool ...`), which adds `tool` lines to `go.mod`. `go mod tidy`
+keeps those lines. Mockery discovers `.mockery.yml` by walking up from the current directory,
 so `go tool mockery` works from any package.
 
 ## Pull requests

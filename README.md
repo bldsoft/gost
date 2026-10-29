@@ -13,15 +13,15 @@ replaceable outer layers, and a single composition root that wires them together
 
 ## Documentation
 
-- **[Create a new service](docs/quickstart.md)**: step by step, from `go mod init` to green CI.
+- **[Create a new service](docs/quickstart.md)**: `go run github.com/bldsoft/gost/cmd/scaffold@latest -module github.com/<org>/<svc>`.
 - **[Documentation index](docs/README.md)**: anatomy, configuration, server, logging, storage,
   background jobs, discovery, feature flags, auth, observability, testing, build and release,
   best practices, package reference.
 - **[Agent guide](docs/agent-guide.md)**: invariants and checklists for coding agents.
 - **[Example service](examples/notes/README.md)**: a complete, tested service in `examples/notes`
   that every doc page links to. CI builds, lints and tests it.
-- **[Templates](docs/templates/)**: `AGENTS.md`, `Makefile`, `.golangci.yml`, `Dockerfile`, CI
-  workflow and more to copy into a new repository.
+- **[Scaffold](examples/scaffold/)**: `AGENTS.md`, `Makefile`, `.golangci.yml`, `Dockerfile`, CI
+  workflow and the other files `scaffold` writes into a new repository.
 
 ## A service in 25 lines
 
@@ -32,7 +32,7 @@ type Config struct {
 	Log    log.Config
 	Mongo  mongo.Config
 
-	AdminAPIKey config.HiddenString `mapstructure:"ADMIN_API_KEY" description:"API key for /notes/env"`
+	AdminAPIKey config.HiddenString `mapstructure:"ADMIN_API_KEY" description:"API key for the /env endpoint"`
 }
 
 func (c *Config) SetDefaults() {

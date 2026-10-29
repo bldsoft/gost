@@ -23,7 +23,7 @@ the gost CI builds, lints and tests, so what you read here compiles.
 
 | Page | What it covers |
 |---|---|
-| [Quickstart](quickstart.md) | Create a new service repository step by step, from `go mod init` to green CI |
+| [Quickstart](quickstart.md) | Create a new service with `scaffold`, then replace the sample resource |
 | [Service anatomy](service-anatomy.md) | Directory layout, layer rules, composition root, startup and shutdown sequence |
 | [Configuration](configuration.md) | `config.ReadConfig`, env naming, defaults and validation order, secrets, `config.md` |
 | [Server, routing and middleware](server.md) | `server.NewServer`, `IMicroservice`, probes, TLS, default middlewares, known quirks |
@@ -40,11 +40,12 @@ the gost CI builds, lints and tests, so what you read here compiles.
 | [Package reference](package-reference.md) | One row per gost package: purpose, entry points, caveats |
 | [Agent guide](agent-guide.md) | Invariants and checklists for coding agents |
 
-## Templates
+## Scaffold
 
-[`docs/templates/`](templates/) holds files to copy into a new service repository: `AGENTS.md`,
-`CLAUDE.md`, `Makefile`, `golangci.yml`, `mockery.yml`, `Dockerfile`, `github-workflow.yml`,
-`tools.go`, `gitignore`. The [quickstart](quickstart.md) tells you where each one goes.
+[`examples/scaffold/`](../examples/scaffold/) holds the standalone repository files a new service
+needs: `AGENTS.md`, `CLAUDE.md`, `Makefile`, `golangci.yml`, `mockery.yml`, `Dockerfile`,
+`github-workflow.yml`, `gitignore`. [`cmd/scaffold`](../cmd/scaffold) copies them; the
+[quickstart](quickstart.md) is the way to run it.
 
 ## Conventions for editing these docs
 
@@ -52,6 +53,6 @@ the gost CI builds, lints and tests, so what you read here compiles.
   with an HTML comment such as `<!-- source: examples/notes/pkg/config/config.go -->` so a reader
   can check it.
 - When a gost public API changes, update `examples/notes` and the relevant page in the same PR.
-- `docs/templates/golangci.yml` must stay byte identical to the root `.golangci.yml`; CI checks it.
+- `examples/scaffold/golangci.yml` must stay byte identical to the root `.golangci.yml`; CI checks it.
 - Prefer short pages that answer "how do I" over exhaustive API listings; the
   [package reference](package-reference.md) is the one place for listings.

@@ -10,6 +10,7 @@ on:
       - AGENTS.md
       - .golangci.yml
       - 'examples/**/*.md'
+      - 'examples/scaffold/**'
       - .github/workflows/docs.yml
   pull_request:
     paths:
@@ -18,6 +19,7 @@ on:
       - AGENTS.md
       - .golangci.yml
       - 'examples/**/*.md'
+      - 'examples/scaffold/**'
       - .github/workflows/docs.yml
 
 jobs:
@@ -26,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Template lint config matches the root one
-        run: diff docs/templates/golangci.yml .golangci.yml
+        run: diff examples/scaffold/golangci.yml .golangci.yml
       - name: Relative links resolve
         run: |
           python3 - <<'PY'

@@ -27,6 +27,6 @@
 |DISCOVERY_CONSUL_TOKEN|| Token is used to provide a per-request ACL token|
 |DISCOVERY_CONSUL_HEALTH_CHECK_TTL|30s|Check TTL|
 |DISCOVERY_CONSUL_DEREREGISTER_TTL|30s|If a check is in the critical state for more than this configured value,	then the service will automatically be deregistered|
-|ADMIN_API_KEY||API key expected in the X-API-Key header by /notes/env. Required: the service refuses to start without it.|
+|ADMIN_API_KEY||API key expected in the X-API-Key header by the /env endpoint. Required: the service refuses to start without it.|
 |NOTES_PURGE_INTERVAL|1h0m0s|How often soft-deleted notes are purged (Go duration, e.g. 1h)|
 |NOTES_PURGE_AFTER|720h0m0s|Soft-deleted notes older than this are removed permanently (Go duration, e.g. 720h)|

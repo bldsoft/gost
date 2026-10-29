@@ -12,6 +12,7 @@ on:
       - .golangci.yml
       - .mockery.yml
       - .github/workflows/gost.yml
+      - cmd/**
       - examples/**
   pull_request:
     paths:
@@ -22,6 +23,7 @@ on:
       - .golangci.yml
       - .mockery.yml
       - .github/workflows/gost.yml
+      - cmd/**
       - examples/**
   workflow_dispatch:
 
@@ -42,6 +44,13 @@ jobs:
       - uses: golangci/golangci-lint-action@v9
         with:
           version: v2.15.0
+      - name: Scaffold smoke test
+        run: |
+          go run ./cmd/scaffold -module example.com/acme/widgets -dir /tmp/widgets -replace "$PWD"
+          cd /tmp/widgets
+          go build ./...
+          go test ./...
+          golangci-lint run ./...
 
   test:
     if: github.event_name != 'workflow_dispatch'
