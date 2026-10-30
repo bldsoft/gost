@@ -48,7 +48,7 @@ func (_m *IUserRepository[PT]) EXPECT() *IUserRepository_Expecter[PT] {
 }
 
 // Delete provides a mock function for the type IUserRepository
-func (_mock *IUserRepository[PT]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
+func (_mock *IUserRepository[PT]) Delete(ctx context.Context, id any, options ...*repository.QueryOptions) error {
 	var tmpRet mock.Arguments
 	if len(options) > 0 {
 		tmpRet = _mock.Called(ctx, id, options)
@@ -62,7 +62,7 @@ func (_mock *IUserRepository[PT]) Delete(ctx context.Context, id interface{}, op
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) error); ok {
 		r0 = returnFunc(ctx, id, options...)
 	} else {
 		r0 = ret.Error(0)
@@ -77,22 +77,22 @@ type IUserRepository_Delete_Call[PT any] struct {
 
 // Delete is a helper method to define mock.On call
 //   - ctx context.Context
-//   - id interface{}
+//   - id any
 //   - options ...*repository.QueryOptions
 func (_e *IUserRepository_Expecter[PT]) Delete(ctx any, id any, options ...any) *IUserRepository_Delete_Call[PT] {
 	return &IUserRepository_Delete_Call[PT]{Call: _e.mock.On("Delete",
 		append([]any{ctx, id}, options...)...)}
 }
 
-func (_c *IUserRepository_Delete_Call[PT]) Run(run func(ctx context.Context, id interface{}, options ...*repository.QueryOptions)) *IUserRepository_Delete_Call[PT] {
+func (_c *IUserRepository_Delete_Call[PT]) Run(run func(ctx context.Context, id any, options ...*repository.QueryOptions)) *IUserRepository_Delete_Call[PT] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
 		var arg2 []*repository.QueryOptions
 		var variadicArgs []*repository.QueryOptions
@@ -114,13 +114,13 @@ func (_c *IUserRepository_Delete_Call[PT]) Return(err error) *IUserRepository_De
 	return _c
 }
 
-func (_c *IUserRepository_Delete_Call[PT]) RunAndReturn(run func(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error) *IUserRepository_Delete_Call[PT] {
+func (_c *IUserRepository_Delete_Call[PT]) RunAndReturn(run func(ctx context.Context, id any, options ...*repository.QueryOptions) error) *IUserRepository_Delete_Call[PT] {
 	_c.Call.Return(run)
 	return _c
 }
 
 // FindByID provides a mock function for the type IUserRepository
-func (_mock *IUserRepository[PT]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (PT, error) {
+func (_mock *IUserRepository[PT]) FindByID(ctx context.Context, id any, options ...*repository.QueryOptions) (PT, error) {
 	var tmpRet mock.Arguments
 	if len(options) > 0 {
 		tmpRet = _mock.Called(ctx, id, options)
@@ -135,17 +135,17 @@ func (_mock *IUserRepository[PT]) FindByID(ctx context.Context, id interface{}, 
 
 	var r0 PT
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) (PT, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) (PT, error)); ok {
 		return returnFunc(ctx, id, options...)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) PT); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) PT); ok {
 		r0 = returnFunc(ctx, id, options...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(PT)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, interface{}, ...*repository.QueryOptions) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, any, ...*repository.QueryOptions) error); ok {
 		r1 = returnFunc(ctx, id, options...)
 	} else {
 		r1 = ret.Error(1)
@@ -160,22 +160,22 @@ type IUserRepository_FindByID_Call[PT any] struct {
 
 // FindByID is a helper method to define mock.On call
 //   - ctx context.Context
-//   - id interface{}
+//   - id any
 //   - options ...*repository.QueryOptions
 func (_e *IUserRepository_Expecter[PT]) FindByID(ctx any, id any, options ...any) *IUserRepository_FindByID_Call[PT] {
 	return &IUserRepository_FindByID_Call[PT]{Call: _e.mock.On("FindByID",
 		append([]any{ctx, id}, options...)...)}
 }
 
-func (_c *IUserRepository_FindByID_Call[PT]) Run(run func(ctx context.Context, id interface{}, options ...*repository.QueryOptions)) *IUserRepository_FindByID_Call[PT] {
+func (_c *IUserRepository_FindByID_Call[PT]) Run(run func(ctx context.Context, id any, options ...*repository.QueryOptions)) *IUserRepository_FindByID_Call[PT] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
 		var arg2 []*repository.QueryOptions
 		var variadicArgs []*repository.QueryOptions
@@ -197,7 +197,7 @@ func (_c *IUserRepository_FindByID_Call[PT]) Return(v PT, err error) *IUserRepos
 	return _c
 }
 
-func (_c *IUserRepository_FindByID_Call[PT]) RunAndReturn(run func(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (PT, error)) *IUserRepository_FindByID_Call[PT] {
+func (_c *IUserRepository_FindByID_Call[PT]) RunAndReturn(run func(ctx context.Context, id any, options ...*repository.QueryOptions) (PT, error)) *IUserRepository_FindByID_Call[PT] {
 	_c.Call.Return(run)
 	return _c
 }

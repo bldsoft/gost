@@ -47,7 +47,7 @@ func (_m *IEntityTimeStamp) EXPECT() *IEntityTimeStamp_Expecter {
 }
 
 // SetCreateFields provides a mock function for the type IEntityTimeStamp
-func (_mock *IEntityTimeStamp) SetCreateFields(createTime time.Time, createUserID interface{}) {
+func (_mock *IEntityTimeStamp) SetCreateFields(createTime time.Time, createUserID any) {
 	_mock.Called(createTime, createUserID)
 	return
 }
@@ -59,20 +59,20 @@ type IEntityTimeStamp_SetCreateFields_Call struct {
 
 // SetCreateFields is a helper method to define mock.On call
 //   - createTime time.Time
-//   - createUserID interface{}
+//   - createUserID any
 func (_e *IEntityTimeStamp_Expecter) SetCreateFields(createTime any, createUserID any) *IEntityTimeStamp_SetCreateFields_Call {
 	return &IEntityTimeStamp_SetCreateFields_Call{Call: _e.mock.On("SetCreateFields", createTime, createUserID)}
 }
 
-func (_c *IEntityTimeStamp_SetCreateFields_Call) Run(run func(createTime time.Time, createUserID interface{})) *IEntityTimeStamp_SetCreateFields_Call {
+func (_c *IEntityTimeStamp_SetCreateFields_Call) Run(run func(createTime time.Time, createUserID any)) *IEntityTimeStamp_SetCreateFields_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 time.Time
 		if args[0] != nil {
 			arg0 = args[0].(time.Time)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
 		run(
 			arg0,
@@ -87,13 +87,13 @@ func (_c *IEntityTimeStamp_SetCreateFields_Call) Return() *IEntityTimeStamp_SetC
 	return _c
 }
 
-func (_c *IEntityTimeStamp_SetCreateFields_Call) RunAndReturn(run func(createTime time.Time, createUserID interface{})) *IEntityTimeStamp_SetCreateFields_Call {
+func (_c *IEntityTimeStamp_SetCreateFields_Call) RunAndReturn(run func(createTime time.Time, createUserID any)) *IEntityTimeStamp_SetCreateFields_Call {
 	_c.Run(run)
 	return _c
 }
 
 // SetUpdateFields provides a mock function for the type IEntityTimeStamp
-func (_mock *IEntityTimeStamp) SetUpdateFields(cupdateTime time.Time, updateUserID interface{}) {
+func (_mock *IEntityTimeStamp) SetUpdateFields(cupdateTime time.Time, updateUserID any) {
 	_mock.Called(cupdateTime, updateUserID)
 	return
 }
@@ -105,20 +105,20 @@ type IEntityTimeStamp_SetUpdateFields_Call struct {
 
 // SetUpdateFields is a helper method to define mock.On call
 //   - cupdateTime time.Time
-//   - updateUserID interface{}
+//   - updateUserID any
 func (_e *IEntityTimeStamp_Expecter) SetUpdateFields(cupdateTime any, updateUserID any) *IEntityTimeStamp_SetUpdateFields_Call {
 	return &IEntityTimeStamp_SetUpdateFields_Call{Call: _e.mock.On("SetUpdateFields", cupdateTime, updateUserID)}
 }
 
-func (_c *IEntityTimeStamp_SetUpdateFields_Call) Run(run func(cupdateTime time.Time, updateUserID interface{})) *IEntityTimeStamp_SetUpdateFields_Call {
+func (_c *IEntityTimeStamp_SetUpdateFields_Call) Run(run func(cupdateTime time.Time, updateUserID any)) *IEntityTimeStamp_SetUpdateFields_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 time.Time
 		if args[0] != nil {
 			arg0 = args[0].(time.Time)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
 		run(
 			arg0,
@@ -133,7 +133,7 @@ func (_c *IEntityTimeStamp_SetUpdateFields_Call) Return() *IEntityTimeStamp_SetU
 	return _c
 }
 
-func (_c *IEntityTimeStamp_SetUpdateFields_Call) RunAndReturn(run func(cupdateTime time.Time, updateUserID interface{})) *IEntityTimeStamp_SetUpdateFields_Call {
+func (_c *IEntityTimeStamp_SetUpdateFields_Call) RunAndReturn(run func(cupdateTime time.Time, updateUserID any)) *IEntityTimeStamp_SetUpdateFields_Call {
 	_c.Run(run)
 	return _c
 }
