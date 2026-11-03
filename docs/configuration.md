@@ -84,7 +84,8 @@ Prefer `ServiceBindAddress` over the deprecated `ServiceBindHost`/`ServiceBindPo
 
 - Type secrets as `config.HiddenString`. It is a string whose JSON (and therefore the YAML of
   `config.FormatEnv` and `/env`) is `****`. `config.ConnectionString` masks the password part of
-  a URL instead.
+  a DSN instead (userinfo and `password`/`pass` query parameters), also for comma-separated host
+  lists; `.Masked()` gives that form for a log line.
 - An **empty default** for a secret, plus a `Validate` rule that rejects it, makes the service
   fail closed instead of starting with a known key. Never hard-code a default key in `SetDefaults`.
 - `.String()` gives the raw value where you need it, for example `auth.ApiKeyMiddleware(header, c.AdminAPIKey.String())`.
