@@ -81,13 +81,6 @@ func (db *Storage) Connect() {
 		return
 	}
 
-	dbname := db.cfg.options.Auth.Database
-
-	use_db := "USE " + dbname + ";"
-	if _, err = connect.Exec(use_db); err != nil {
-		db.LogError(err)
-	}
-
 	db.Db = connect
 	db.native = native
 
