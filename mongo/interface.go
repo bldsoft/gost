@@ -14,6 +14,7 @@ type Repository[T any, U repository.IEntityIDPtr[T]] interface {
 	Name() string
 	Collection() *mongo.Collection
 	WithTransaction(ctx context.Context, f func(ctx context.Context) (any, error)) (any, error)
+	SetSortJoin(field string, join SortJoin)
 
 	repository.Repository[T, U]
 
