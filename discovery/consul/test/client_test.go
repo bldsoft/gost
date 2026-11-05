@@ -12,11 +12,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/discovery"
 	"github.com/bldsoft/gost/discovery/consul"
 	"github.com/bldsoft/gost/server"
-	"github.com/stretchr/testify/assert"
 )
 
 func runTestService(t *testing.T, serviceName, serviceID string) (cancel func()) {
