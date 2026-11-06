@@ -4,45 +4,67 @@ import (
 	"context"
 	"net"
 	"net/http"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"net/netip"
+	"strings"
 )
 
-// Key to use when setting the real IP.
-type ctxKeyRealIP int
+type ctxKeyRealIP struct{}
 
-const RealIPKey ctxKeyRealIP = 0
+var (
+	trueClientIP  = http.CanonicalHeaderKey("True-Client-IP")
+	xRealIP       = http.CanonicalHeaderKey("X-Real-IP")
+	xForwardedFor = http.CanonicalHeaderKey("X-Forwarded-For")
+)
 
+// GetRealIP returns the client IP stored by RealIP.
 func GetRealIP(ctx context.Context) string {
 	if ctx == nil {
 		return ""
 	}
-	if realIP, ok := ctx.Value(RealIPKey).(string); ok {
-		return realIP
-	}
+	ip, _ := ctx.Value(ctxKeyRealIP{}).(string)
 
-	return ""
+	return ip
 }
 
-func WithRealIP(ctx context.Context, realIP string) context.Context {
-	return context.WithValue(ctx, RealIPKey, realIP)
-}
-
-// RealIP is a middleware that sets a http.Request's RemoteAddr to the results
-// of parsing either the X-Real-IP header or the X-Forwarded-For header (in that
-// order). It also put the value into the request context.
+// RealIP stores the client IP for GetRealIP. Header selection matches chi's
+// deprecated RealIP: True-Client-IP, then X-Real-IP, then the leftmost
+// X-Forwarded-For entry. The first non-empty value is kept only when it
+// parses; otherwise the TCP peer is stored. RemoteAddr is left unchanged.
 func RealIP(h http.Handler) http.Handler {
-	return chi.Chain(middleware.RealIP, injectRealIP).Handler(h)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip := realIP(r)
+		if ip == "" {
+			ip = peerIP(r.RemoteAddr)
+		}
+		r = r.WithContext(context.WithValue(r.Context(), ctxKeyRealIP{}, ip))
+		h.ServeHTTP(w, r)
+	})
 }
 
-func injectRealIP(h http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		r = r.WithContext(WithRealIP(r.Context(), TrimPort(r.RemoteAddr)))
-		h.ServeHTTP(w, r)
+func realIP(r *http.Request) string {
+	var ip string
+
+	if tcip := r.Header.Get(trueClientIP); tcip != "" {
+		ip = tcip
+	} else if xrip := r.Header.Get(xRealIP); xrip != "" {
+		ip = xrip
+	} else if xff := r.Header.Get(xForwardedFor); xff != "" {
+		ip, _, _ = strings.Cut(xff, ",")
+	}
+	if _, err := netip.ParseAddr(ip); err != nil {
+		return ""
 	}
 
-	return http.HandlerFunc(fn)
+	return ip
+}
+
+func peerIP(remoteAddr string) string {
+	addr, err := netip.ParseAddr(TrimPort(remoteAddr))
+	if err != nil {
+		return TrimPort(remoteAddr)
+	}
+
+	return addr.Unmap().String()
 }
 
 func TrimPort(s string) string {
