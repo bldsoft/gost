@@ -65,16 +65,19 @@ func NewService(cfg ServiceConfig) *Service {
 	if cfg.RetryCount > 0 {
 		res.queue = NewMemoryQueue(1024)
 	}
+
 	return res
 }
 
 func (ns *Service) SetQueue(queue Queue) *Service {
 	ns.queue = queue
+
 	return ns
 }
 
 func (ns *Service) withSendTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 	timeout := cmp.Or(ns.cfg.SendTimeout, DefaultNotificationServiceConfig.SendTimeout)
+
 	return context.WithTimeout(ctx, timeout)
 }
 
@@ -92,12 +95,13 @@ func (ns *Service) Send(ctx context.Context, notification Notification) error {
 			"error":        err,
 		}, "Failed to send notification")
 
-		ns.queue.Enqueue(ctx, RetriedNotification{
+		_ = ns.queue.Enqueue(ctx, RetriedNotification{
 			Notification: notification,
 			RetryAt:      time.Now().Add(ns.cfg.RetryQueuePollInterval),
 			RetryCount:   ns.cfg.RetryCount,
 		})
 	}
+
 	return nil
 }
 
@@ -118,6 +122,7 @@ func (ns *Service) Run(ctx context.Context) error {
 							"error": err,
 						}, "Failed to dequeue retried notification")
 					}
+
 					break
 				}
 				if n == nil {
@@ -125,7 +130,7 @@ func (ns *Service) Run(ctx context.Context) error {
 					break
 				}
 				ns.wg.In() <- func() {
-					if err := ns.retrySend(ctx, id, *n); err != nil {
+					if err = ns.retrySend(ctx, id, *n); err != nil {
 						log.FromContext(ctx).ErrorfWithFields(log.Fields{
 							"id":           id,
 							"notification": n.Notification,
@@ -148,6 +153,7 @@ func (ns *Service) retrySend(ctx context.Context, id string, n RetriedNotificati
 		if err := ns.queue.MarkDone(ctx, id); err != nil {
 			return fmt.Errorf("mark done after success: %w", err)
 		}
+
 		return nil
 	}
 
@@ -156,6 +162,7 @@ func (ns *Service) retrySend(ctx context.Context, id string, n RetriedNotificati
 		if err := ns.queue.MarkDone(ctx, id); err != nil {
 			return errors.Join(sendErr, fmt.Errorf("mark done after failure: %w", err))
 		}
+
 		return sendErr
 	}
 

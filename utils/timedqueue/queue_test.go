@@ -1,4 +1,4 @@
-package alert
+package timedqueue
 
 import (
 	"cmp"
@@ -62,13 +62,14 @@ func TestQueueScheduledTask(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			synctest.Test(t, func(t *testing.T) {
-				queue := newQueue[int]()
+				queue := New[int]()
 
 				expected := slices.Clone(test.producedTaks)
 
 				sort.Slice(expected, func(i, j int) bool {
 					expectedStartIn := cmp.Or(expected[i].expectedStartIn, expected[i].startIn)
 					expectedStartIn2 := cmp.Or(expected[j].expectedStartIn, expected[j].startIn)
+
 					return expectedStartIn < expectedStartIn2
 				})
 
@@ -88,7 +89,7 @@ func TestQueueScheduledTask(t *testing.T) {
 					require.Equal(t, expected[i].id, task)
 					expectedStartIn := cmp.Or(expected[i].expectedStartIn, expected[i].startIn)
 					deviation := time.Since(now.Add(expectedStartIn))
-					deviation = max(deviation, -deviation) // abs
+					deviation = max(deviation, -deviation)
 					require.Less(t, deviation, 10*time.Millisecond, "task %d", task)
 				}
 			})
@@ -98,7 +99,7 @@ func TestQueueScheduledTask(t *testing.T) {
 
 func TestQueueClose(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		queue := newQueue[int]()
+		queue := New[int]()
 		expected := make([]int, 0, 10)
 		for i := range cap(expected) {
 			expected = append(expected, i)
@@ -113,7 +114,7 @@ func TestQueueClose(t *testing.T) {
 
 func TestQueueContextDone(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		queue := newQueue[int]()
+		queue := New[int]()
 		now := time.Now()
 		queue.Push(1, now.Add(time.Second))
 		queue.Push(2, now.Add(2*time.Second))
@@ -128,7 +129,7 @@ func TestQueueContextDone(t *testing.T) {
 
 func TestQueueRemoveFunc(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		queue := newQueue[int]()
+		queue := New[int]()
 		queue.Push(1, time.Now().Add(time.Second))
 		queue.Push(2, time.Now().Add(2*time.Second))
 		queue.Push(3, time.Now().Add(3*time.Second))

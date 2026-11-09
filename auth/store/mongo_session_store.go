@@ -7,16 +7,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
 	"github.com/bldsoft/gost/auth"
 	gost_mongo "github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
 	"github.com/bldsoft/gost/utils"
-	"github.com/gorilla/securecookie"
-	"github.com/gorilla/sessions"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var MongoSessionStoreCollectionName = "session"
@@ -145,7 +145,7 @@ func (mstore *MongoDBStore) Save(r *http.Request, w http.ResponseWriter, session
 	}
 
 	if session.ID == "" {
-		session.ID = primitive.NewObjectID().Hex()
+		session.ID = bson.NewObjectID().Hex()
 	}
 	encoded, err := securecookie.EncodeMulti(session.Name(), session.Values, mstore.codecs...)
 	if err != nil {
@@ -158,8 +158,8 @@ func (mstore *MongoDBStore) Save(r *http.Request, w http.ResponseWriter, session
 		UserID:   session.Values[auth.SessionUserKey].(repository.IIDProvider).StringID(),
 	}
 
-	sessDoc.SetIDFromString(session.ID)
-	if val, ok := session.Values["modified"]; ok {
+	_ = sessDoc.SetIDFromString(session.ID)
+	if val, found := session.Values["modified"]; found {
 		modified, ok := val.(time.Time)
 		if !ok {
 			return errors.New("mongodbstore: invalid modified value")
@@ -213,7 +213,6 @@ func (mstore *MongoDBStore) ensureIndexTTL() error {
 	}
 	indexOpts := options.Index().
 		SetExpireAfterSeconds(int32(mstore.options.MaxAge)).
-		SetBackground(true).
 		SetSparse(true).
 		SetName(indexName)
 
@@ -276,12 +275,44 @@ func (mstore *MongoDBStore) AllSessions(ctx context.Context, name string, offset
 		}
 		res = append(res, sess)
 	}
+
+	return res, nil
+}
+
+func (mstore *MongoDBStore) SessionByIDs(ctx context.Context, name string, ids ...string) ([]*sessions.Session, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	rawIDs := repository.StringsToRawIDs[sessionDoc](ids)
+	cur, err := mstore.rep.Collection().Find(ctx, bson.M{"_id": bson.M{"$in": rawIDs}})
+	if err != nil {
+		return nil, err
+	}
+
+	sessDocs := make([]sessionDoc, 0)
+	if err = cur.All(ctx, &sessDocs); err != nil {
+		return nil, err
+	}
+
+	res := make([]*sessions.Session, 0, len(sessDocs))
+	for _, sessDoc := range sessDocs {
+		sess := sessions.NewSession(mstore, name)
+		sess.ID = sessDoc.StringID()
+		err = securecookie.DecodeMulti(name, sessDoc.Data, &sess.Values, mstore.codecs...)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, sess)
+	}
+
 	return res, nil
 }
 
 func (mstore *MongoDBStore) KillSessions(ctx context.Context, ids ...string) error {
-	rawIDs := repository.StringsToRawIDs[sessionDoc, *sessionDoc](ids)
+	rawIDs := repository.StringsToRawIDs[sessionDoc](ids)
 	filter := bson.M{"_id": bson.M{"$in": rawIDs}}
+
 	return mstore.rep.DeleteMany(ctx, filter, &repository.QueryOptions{Archived: false})
 }
 

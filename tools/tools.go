@@ -4,5 +4,5 @@ package tools
 
 import (
 	_ "github.com/dmarkham/enumer"
-	_ "github.com/vektra/mockery/v2"
+	_ "github.com/vektra/mockery/v3"
 )

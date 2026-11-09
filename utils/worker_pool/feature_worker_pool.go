@@ -16,6 +16,7 @@ func NewWorkerPoolWithFeature(workerN *feature.Int, defaultValue int) *FeatureWo
 	}
 	wp.SetDefaultValue(defaultValue)
 	workerN.AddOnChangeHandler(wp.setWorkerN)
+
 	return wp
 }
 
@@ -24,11 +25,12 @@ func (wp *FeatureWorkerPool) setWorkerN(n int) {
 		n = wp.defaultValue
 	}
 	n = max(1, n)
-	wp.WorkerPool.SetWorkerN(int64(n))
+	wp.SetWorkerN(int64(n))
 }
 
 func (wp *FeatureWorkerPool) SetDefaultValue(n int) *FeatureWorkerPool {
 	wp.defaultValue = n
 	wp.setWorkerN(wp.workerNFeature.Get())
+
 	return wp
 }

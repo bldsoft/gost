@@ -54,6 +54,7 @@ func NewDispatcher(cfg DispatcherConfig) *Dispatcher {
 			channel: webhook.NewWebhook(*cfg.Webhook),
 		}
 	}
+
 	return d
 }
 
@@ -78,5 +79,6 @@ func (w *channelWrapper[R]) Send(ctx context.Context, receiver R, message Messag
 	if w.channel == nil {
 		return fmt.Errorf("%w: %T", ErrChannelNotConfigured, receiver)
 	}
+
 	return w.channel.Send(ctx, receiver, message)
 }

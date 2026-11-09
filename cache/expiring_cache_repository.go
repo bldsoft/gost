@@ -25,12 +25,14 @@ func (r ExpiringCacheRepository) cacheMarshal(e expCacheEntry) ([]byte, error) {
 	if err := enc.Encode(e); err != nil {
 		return nil, err
 	}
+
 	return buf.Bytes(), nil
 }
 
 func (h ExpiringCacheRepository) cacheUnmarshal(data []byte) (e expCacheEntry, err error) {
 	dec := gob.NewDecoder(bytes.NewBuffer(data))
 	err = dec.Decode(&e)
+
 	return
 }
 
@@ -39,6 +41,7 @@ func (r *ExpiringCacheRepository) set(key string, value []byte, exp int64) error
 	if err != nil {
 		return err
 	}
+
 	return r.ILocalCacheRepository.Set(key, data)
 }
 

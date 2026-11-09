@@ -3,10 +3,10 @@ package mongo
 import (
 	"reflect"
 
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-func RecursiveParse(filter bson.M, t interface{}, prefix string) {
+func RecursiveParse(filter bson.M, t any, prefix string) {
 	if t == nil {
 		return
 	}

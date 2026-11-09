@@ -14,6 +14,7 @@ func New[T any](capacity int) *RingBuf[T] {
 	if capacity <= 0 {
 		panic(errors.New("capacity must be positive"))
 	}
+
 	return &RingBuf[T]{
 		data: make([]T, capacity),
 	}
@@ -21,6 +22,7 @@ func New[T any](capacity int) *RingBuf[T] {
 
 func (b *RingBuf[T]) WithOverwrite(val bool) *RingBuf[T] {
 	b.overwrite = val
+
 	return b
 }
 
@@ -61,6 +63,7 @@ func (b *RingBuf[T]) Push(items ...T) (n int) {
 		}
 		n++
 	}
+
 	return n
 }
 
@@ -88,8 +91,10 @@ func (b *RingBuf[T]) Top() (T, bool) {
 func (b *RingBuf[T]) Get(index int) (T, bool) {
 	if index >= b.Len() {
 		var zero T
+
 		return zero, false
 	}
+
 	return b.data[(b.readIdx+index)%b.Cap()], true
 }
 
@@ -99,6 +104,7 @@ func (b *RingBuf[T]) Pull() (T, bool) {
 		b.readIdx = (b.readIdx + 1) % b.Cap()
 		b.isFull = false
 	}
+
 	return val, ok
 }
 
@@ -117,6 +123,7 @@ func (b *RingBuf[T]) Copy(dst []T) int {
 	}
 	n := copy(dst, b.data[b.readIdx:])
 	n += copy(dst[n:], b.data[0:b.writeIdx])
+
 	return n
 }
 
@@ -128,17 +135,20 @@ func (b *RingBuf[T]) Remove(n int) (removed int) {
 	n = min(n, b.Len())
 	b.readIdx = (b.readIdx + n) % b.Cap()
 	b.isFull = false
+
 	return n
 }
 
 // same as copy, but remove copied data from ring
 func (b *RingBuf[T]) Read(dst []T) int {
 	n := b.Copy(dst)
+
 	return b.Remove(n)
 }
 
 func (b *RingBuf[T]) ToSlice() []T {
 	res := make([]T, b.Cap())
 	b.Copy(res)
+
 	return res
 }

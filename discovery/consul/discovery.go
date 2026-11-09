@@ -6,13 +6,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/consul/api"
+
 	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/discovery"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/gost/utils/errgroup"
 	"github.com/bldsoft/gost/version"
-	"github.com/hashicorp/consul/api"
 )
 
 const (
@@ -54,8 +55,10 @@ func NewDiscovery(serviceCfg server.Config, consulCfg Config) *Discovery {
 			return err
 		}
 		d.heartBeat(ctx, d.cfg.HealthCheckTTL/3)
+
 		return d.Deregister()
 	})
+
 	return d
 }
 
@@ -73,6 +76,7 @@ func (d *Discovery) initClient() (err error) {
 		Scheme:  d.cfg.ConsulAddr.Scheme(),
 		Token:   d.cfg.Token.String(),
 	})
+
 	return err
 }
 
@@ -126,7 +130,6 @@ func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, err
 	var eg errgroup.Group
 	serviceInfoC := make(chan discovery.ServiceInfo, len(services))
 	for service := range services {
-		service := service
 		eg.Go(func() (err error) {
 			nodes, _, err := d.ApiClient().Health().Service(service, "", false, &api.QueryOptions{})
 			if err != nil {
@@ -155,22 +158,23 @@ func (d *Discovery) Services(ctx context.Context) ([]*discovery.ServiceInfo, err
 				})
 			}
 			serviceInfoC <- serviceInfo
+
 			return nil
 		})
 	}
-	if err := eg.Wait(); err != nil {
+	if err = eg.Wait(); err != nil {
 		return nil, err
 	}
 	close(serviceInfoC)
 
 	res := make([]*discovery.ServiceInfo, 0, len(services))
 	for info := range serviceInfoC {
-		info := info
 		res = append(res, &info)
 	}
 	sort.Slice(res, func(i, j int) bool {
 		return res[i].Name < res[j].Name
 	})
+
 	return res, nil
 }
 
@@ -195,5 +199,6 @@ func (d *Discovery) ServiceByName(ctx context.Context, name string) (*discovery.
 			Meta:    info.Service.Meta,
 		})
 	}
+
 	return res, nil
 }

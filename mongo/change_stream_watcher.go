@@ -5,10 +5,11 @@ import (
 	"errors"
 	"time"
 
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
 	"github.com/bldsoft/gost/log"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
@@ -46,6 +47,7 @@ func NewChangeStreamWatcher(operations ...OperationType) *changeStreamWatcher {
 			operationTypes = append(operationTypes, changeStreamDeleteOp)
 		}
 	}
+
 	return &changeStreamWatcher{
 		operationTypes: operationTypes,
 		recoverTime:    changeStreamRecoverTime,
@@ -56,7 +58,6 @@ func (w *changeStreamWatcher) Watch(ctx context.Context, collection *mongo.Colle
 	go w.watch(ctx, collection, handler)
 }
 
-// Watch creates change stream and watch collection. It invokes handler() for each updated.
 func (w *changeStreamWatcher) watch(ctx context.Context, collection *mongo.Collection, handler WatchHandler) {
 	ctx = context.WithValue(ctx, log.LoggerCtxKey, log.FromContext(ctx).WithFields(log.Fields{"collection": collection.Name()}))
 	w.changeStreamWatch(ctx, collection, handler)
@@ -72,39 +73,36 @@ func (w *changeStreamWatcher) watch(ctx context.Context, collection *mongo.Colle
 }
 
 func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection *mongo.Collection, handler WatchHandler) {
-	pipline := mongo.Pipeline{
+	pipeline := mongo.Pipeline{
 		{{Key: "$match", Value: bson.D{{Key: "operationType", Value: bson.D{{Key: "$in", Value: w.operationTypes}}}}}},
 	}
-	opt := options.ChangeStream()
-	opt.SetFullDocument(options.UpdateLookup)
+	opt := options.ChangeStream().
+		SetFullDocument(options.UpdateLookup).
+		SetFullDocumentBeforeChange(options.WhenAvailable)
 	if w.resumeToken != nil {
 		opt.SetResumeAfter(w.resumeToken)
 	}
 
-	changeStream, err := collection.Watch(ctx, pipline, opt)
+	changeStream, err := collection.Watch(ctx, pipeline, opt)
 	if err != nil {
 		if needResumeTokenReset(err) {
 			w.resumeToken = nil
 		}
-		log.FromContext(ctx).Warnf("Falied to get change stream: %s", err.Error())
+		log.FromContext(ctx).Warnf("Failed to get change stream: %s", err.Error())
+
 		return
 	}
-	defer changeStream.Close(ctx)
+	defer func() { _ = changeStream.Close(ctx) }()
 	log.FromContext(ctx).Debugf("Change stream watcher for \"%s\" started", collection.Name())
 	for changeStream.Next(ctx) {
 		if handler == nil {
 			continue
 		}
 		operationType := changeStream.Current.Lookup("operationType").StringValue()
-		var fullDocument bson.Raw
-		if operationType == changeStreamDeleteOp {
-			// for delete operation only _id is returned
-			fullDocument = changeStream.Current.Lookup("documentKey").Document()
-		} else {
-			fullDocument = changeStream.Current.Lookup("fullDocument").Document()
-		}
-
-		if opType := w.getOpType(fullDocument, operationType); opType != None {
+		fullDocument, ok := w.changeEventDocument(changeStream.Current, operationType)
+		if !ok {
+			log.FromContext(ctx).Debugf("Change stream watcher skipped %s event without document: %s", operationType, changeStream.Current)
+		} else if opType := w.getOpType(fullDocument, operationType); opType != None {
 			handler(fullDocument, opType)
 			log.FromContext(ctx).Debugf("Change stream watcher detected changes: %s %s", opType, fullDocument)
 		}
@@ -115,6 +113,18 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 	if err = changeStream.Err(); err != nil {
 		log.FromContext(ctx).Debugf("Change stream watcher for \"%s\" collection stopped: %s", collection.Name(), err.Error())
 	}
+}
+
+func (w *changeStreamWatcher) changeEventDocument(event bson.Raw, operationType string) (bson.Raw, bool) {
+	if operationType == changeStreamDeleteOp {
+		if doc, ok := event.Lookup("fullDocumentBeforeChange").DocumentOK(); ok {
+			return doc, true
+		}
+
+		return event.Lookup("documentKey").DocumentOK()
+	}
+
+	return event.Lookup("fullDocument").DocumentOK()
 }
 
 func (w *changeStreamWatcher) getOpType(fulldocument bson.Raw, opType string) OperationType {
@@ -135,5 +145,6 @@ func needResumeTokenReset(err error) bool {
 		return se.HasErrorCode(mongoErrCodeResumeTokenLost) ||
 			se.HasErrorCode(mongoErrCodeChangeStreamFatalError)
 	}
+
 	return false
 }

@@ -3,13 +3,15 @@ package feature
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 
 	config "github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
 	"github.com/bldsoft/gost/repository"
 )
+
+const DefaultCollectionName = "feature"
 
 // MongoRepository implements IFeatureRepository interface
 type MongoRepository struct {
@@ -18,14 +20,18 @@ type MongoRepository struct {
 }
 
 // NewMongoRepository creates feature repository.
-func NewMongoRepository(db *mongo.Storage, serviceInstanceName string) *MongoRepository {
-	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, "feature"), serviceInstanceName: serviceInstanceName}
+func NewMongoRepository(db *mongo.Storage, serviceInstanceName string, collName ...string) *MongoRepository {
+	if len(collName) == 0 {
+		collName = []string{DefaultCollectionName}
+	}
+	rep := &MongoRepository{rep: mongo.NewRepository[Feature](db, collName[0]), serviceInstanceName: serviceInstanceName}
 	if err := rep.Load(); err != nil {
 		log.Error("Failed to load features")
 	} else {
 		log.Infof("Features loaded")
 	}
 	rep.InitWatcher()
+
 	return rep
 }
 
@@ -36,6 +42,7 @@ func (r *MongoRepository) InitWatcher() {
 		err := bson.Unmarshal(fullDocument, f)
 		if err != nil {
 			log.Errorf("Failed to unmarshal Feature: %s", err.Error())
+
 			return
 		}
 		r.SetFeature(f)
@@ -50,13 +57,14 @@ func (r *MongoRepository) SetFeature(feature *Feature) {
 		for _, serviceValue := range *feature.SrvValues {
 			if serviceValue.SrvName == r.serviceInstanceName {
 				value = serviceValue.Value
+
 				break
 			}
 		}
 	}
 
 	if f := config.Features.Get(feature.ID); f != nil {
-		f.SetFromString(value)
+		_ = f.SetFromString(value)
 	}
 }
 
@@ -69,6 +77,7 @@ func (r *MongoRepository) Load() error {
 	for _, feature := range features {
 		r.SetFeature(feature)
 	}
+
 	return nil
 }
 
@@ -77,6 +86,7 @@ func (r *MongoRepository) FindByName(ctx context.Context, name string) *Feature 
 	if err != nil {
 		return nil
 	}
+
 	return feature
 }
 
@@ -85,6 +95,7 @@ func (r *MongoRepository) FindByID(ctx context.Context, id config.IdType) (*Feat
 	if err != nil {
 		return nil, err
 	}
+
 	return feature, nil
 }
 

@@ -1,9 +1,9 @@
 package clickhouse
 
 import (
-	"net/url"
-
 	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/ClickHouse/clickhouse-go/v2/lib/churl"
+
 	gost "github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/utils"
 )
@@ -24,17 +24,18 @@ func (c *Config) Validate() (err error) {
 		return nil
 	}
 
-	if err := c.prepareDsn(); err != nil {
+	if err = c.prepareDsn(); err != nil {
 		return err
 	}
 
 	c.options, err = clickhouse.ParseDSN(c.Dsn.String())
+
 	return err
 }
 
 // convert v1 client DSN to v2
 func (c *Config) prepareDsn() error {
-	url, err := url.Parse(c.Dsn.String())
+	url, err := churl.Parse(c.Dsn.String())
 	if err != nil {
 		return err
 	}
@@ -52,5 +53,6 @@ func (c *Config) prepareDsn() error {
 
 		c.Dsn = gost.ConnectionString(url.String())
 	}
+
 	return nil
 }

@@ -6,20 +6,12 @@ import (
 
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
+	lock "github.com/bldsoft/gost/mongo-lock"
 	"github.com/bldsoft/gost/utils"
-	lock "github.com/square/mongo-lock"
 )
 
 const (
 	collName = "distr_mutex"
-)
-
-type lockOwner int
-
-const (
-	nobody lockOwner = iota
-	me
-	notme
 )
 
 type mongoDistLock struct {
@@ -33,7 +25,6 @@ type mongoDistLock struct {
 
 func NewMongoDistLock(db *mongo.Storage, lockID string, ttl time.Duration) DistrMutex {
 	col := db.Db.Collection(collName)
-
 	client := lock.NewClient(col)
 
 	ctx := context.Background()
@@ -77,6 +68,7 @@ func (l *mongoDistLock) TryLock() bool {
 			"resourceID": l.recourceID,
 			"lockID":     l.lockID,
 		}, "mongoDistLock: failed to lock")
+
 		return false
 	}
 
@@ -118,6 +110,7 @@ func (l *mongoDistLock) updateLock(ctx context.Context) {
 		_, err := l.client.Renew(ctx, l.lockID, uint(l.ttl.Seconds()))
 		if err != nil {
 			log.WarnWithFields(log.Fields{"error": err, "lockID": l.lockID}, "mongoDistLock: failed to renew lock status")
+
 			return
 		}
 	}

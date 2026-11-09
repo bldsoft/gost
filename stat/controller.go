@@ -4,8 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/bldsoft/gost/controller"
 	"github.com/go-chi/chi/v5"
+
+	"github.com/bldsoft/gost/controller"
 )
 
 type IStatService interface {

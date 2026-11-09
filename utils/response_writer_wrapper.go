@@ -25,15 +25,16 @@ type ResponseWriter struct {
 }
 
 func (w *ResponseWriter) StatusCode() int {
-	return w.state.Code
+	return w.Code
 }
 
 // Flush the response
 func (rw *ResponseWriter) Flush() (int, error) {
-	if rw.state.Code > 0 {
-		rw.original.WriteHeader(rw.state.Code)
+	if rw.Code > 0 {
+		rw.original.WriteHeader(rw.Code)
 	}
-	return rw.original.Write(rw.state.Body.Bytes())
+
+	return rw.original.Write(rw.Body.Bytes())
 }
 
 func (rw *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
@@ -41,6 +42,7 @@ func (rw *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if !ok {
 		return nil, nil, errors.New("hijack not supported")
 	}
+
 	return h.Hijack()
 }
 
@@ -55,10 +57,12 @@ func WrapResponseWriter(w http.ResponseWriter) *ResponseWriter {
 		Write: func(_ httpsnoop.WriteFunc) httpsnoop.WriteFunc {
 			return func(p []byte) (int, error) {
 				state.Body.Grow(len(p))
+
 				return state.Body.Write(p)
 			}
 		},
 	})
+
 	return &ResponseWriter{
 		responseWriter,
 		state,
@@ -69,5 +73,6 @@ func WrapResponseWriter(w http.ResponseWriter) *ResponseWriter {
 // Unwrap the response writer
 func UnwrapResponseWriter(w http.ResponseWriter) (rw *ResponseWriter, ok bool) {
 	rw, ok = w.(*ResponseWriter)
+
 	return rw, ok
 }

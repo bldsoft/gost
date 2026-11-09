@@ -26,6 +26,7 @@ func (h *EventHandler) ServiceName(name string) *EventHandler {
 	h.filters = append(h.filters, func(ctx context.Context, instance ServiceInstanceInfo) bool {
 		return instance.ServiceName == name
 	})
+
 	return h
 }
 
@@ -37,17 +38,20 @@ func (h *EventHandler) EventTypes() []EventType {
 func (h *EventHandler) EventType(eventType EventType, eventTypes ...EventType) *EventHandler {
 	h.eventTypes = append(h.eventTypes, eventType)
 	h.eventTypes = append(h.eventTypes, eventTypes...)
+
 	return h
 }
 
 // setter
 func (h *EventHandler) Once() *EventHandler {
 	h.once = new(sync.Once)
+
 	return h
 }
 
 func (h *EventHandler) SetHandler(handler func(ctx context.Context, instance ServiceInstanceInfo)) *EventHandler {
 	h.handler = handler
+
 	return h
 }
 
@@ -55,6 +59,7 @@ func (h *EventHandler) Node(node string) *EventHandler {
 	h.filters = append(h.filters, func(ctx context.Context, instance ServiceInstanceInfo) bool {
 		return instance.Node == node
 	})
+
 	return h
 }
 

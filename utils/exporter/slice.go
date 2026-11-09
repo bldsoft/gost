@@ -14,6 +14,7 @@ func NewSlice[T any](exporter Exporter[T]) *Slice[T] {
 
 func (s *Slice[T]) WithBuf(buf []T) *Slice[T] {
 	s.buf = buf
+
 	return s
 }
 
@@ -23,15 +24,18 @@ func (s *Slice[T]) Len() int {
 
 func (s *Slice[T]) Send() error {
 	_, err := s.exporter.Export(s.buf...)
+
 	return err
 }
 
 func (s *Slice[T]) Add(items ...T) (n int, err error) {
 	s.buf = append(s.buf, items...)
+
 	return len(items), nil
 }
 
 func (s *Slice[T]) Reset() error {
 	s.buf = s.buf[:0]
+
 	return nil
 }

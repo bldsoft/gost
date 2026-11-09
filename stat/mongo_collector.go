@@ -16,5 +16,6 @@ func NewMongoCollector(db *mongo.Storage) *MongoCollector {
 
 func (c *MongoCollector) Stat(ctx context.Context) Stat {
 	stat, err := c.db.Stats(ctx)
+
 	return NewStat("mongo", stat, err)
 }

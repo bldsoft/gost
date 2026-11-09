@@ -2,21 +2,25 @@ package acl
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net"
+	"net/netip"
+	"slices"
 	"strings"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
-	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/x/bsonx/bsoncore"
+
+	"github.com/bldsoft/gost/utils"
 )
 
-var invalidBsonValue = fmt.Errorf("invalid bson string value")
+var errInvalidBsonValue = fmt.Errorf("invalid bson string value")
 
 type IpRange struct {
-	Ip   []net.IP
-	Cidr []*net.IPNet
+	ips   []netip.Addr
+	cidrs []netip.Prefix
+
+	// in case of adding ips/cidrs setters, make sure to update the tree
+	tree *utils.IPTreeSet
 }
 
 func MustIpRangeFromStrings(strs ...string) IpRange {
@@ -24,49 +28,58 @@ func MustIpRangeFromStrings(strs ...string) IpRange {
 	if err != nil {
 		panic(err)
 	}
+
 	return ipRange
 }
 
-func IpRangeFromStrings(strs ...string) (res IpRange, err error) {
+func IpRangeFromStrings(strs ...string) (res IpRange, _ error) {
 	for _, s := range strs {
 		if strings.Contains(s, "/") {
-			_, network, err := net.ParseCIDR(s)
+			network, err := netip.ParsePrefix(s)
 			if err != nil {
 				return res, err
 			}
-			res.Cidr = append(res.Cidr, network)
-		} else {
-			ip := net.ParseIP(s)
-			if ip == nil {
-				return res, errors.New("unable to parse IP address")
+			pfx, err := utils.CanonicalPrefix(network)
+			if err != nil {
+				return res, err
 			}
-			res.Ip = append(res.Ip, ip)
+			res.cidrs = append(res.cidrs, pfx)
+		} else {
+			ip, err := netip.ParseAddr(s)
+			if err != nil {
+				return res, err
+			}
+			res.ips = append(res.ips, utils.CanonicalAddr(ip))
 		}
 	}
+	if err := res.buildTree(); err != nil {
+		return res, err
+	}
+
 	return res, nil
 }
 
 func (r IpRange) Empty() bool {
-	return len(r.Ip) == 0 && len(r.Cidr) == 0
+	return len(r.ips) == 0 && len(r.cidrs) == 0
 }
 
-func (r IpRange) isInIPs(client net.IP, ips []net.IP) bool {
-	for _, ip := range ips {
-		if client.Equal(ip) {
-			return true
-		}
-	}
-	return false
+func (r *IpRange) IPs() []netip.Addr {
+	return slices.Clone(r.ips)
+}
+
+func (r *IpRange) CIDRs() []netip.Prefix {
+	return slices.Clone(r.cidrs)
 }
 
 func (r *IpRange) Strings() []string {
-	res := make([]string, 0, len(r.Ip)+len(r.Cidr))
-	for _, ip := range r.Ip {
+	res := make([]string, 0, len(r.ips)+len(r.cidrs))
+	for _, ip := range r.ips {
 		res = append(res, ip.String())
 	}
-	for _, cidr := range r.Cidr {
+	for _, cidr := range r.cidrs {
 		res = append(res, cidr.String())
 	}
+
 	return res
 }
 
@@ -74,23 +87,28 @@ func (r *IpRange) String() string {
 	return strings.Join(r.Strings(), ",")
 }
 
-func (r IpRange) isInSubnets(ip net.IP, subs []*net.IPNet) bool {
-	for _, subnet := range subs {
-		if subnet.Contains(ip) {
-			return true
-		}
+func (r *IpRange) buildTree() error {
+	r.tree = utils.NewIPTreeSet()
+	if err := r.tree.PutIPs(r.ips...); err != nil {
+		return err
 	}
-	return false
+
+	return r.tree.PutPrefixes(r.cidrs...)
 }
 
-func (r IpRange) Contains(ip net.IP) bool {
-	return r.isInSubnets(ip, r.Cidr) || r.isInIPs(ip, r.Ip)
+func (r *IpRange) Contains(ip netip.Addr) bool {
+	if r.tree == nil {
+		return false
+	}
+
+	return r.tree.Match(ip)
 }
 
 func (r IpRange) MarshalJSON() ([]byte, error) {
 	if r.Empty() { // TODO: remove
 		return json.Marshal(nil)
 	} //
+
 	return json.Marshal(r.Strings())
 }
 
@@ -105,29 +123,33 @@ func (r *IpRange) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*r = ipRange
+
 	return nil
 }
 
-func (r IpRange) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	return bson.MarshalValue(r.Strings())
+func (r IpRange) MarshalBSONValue() (byte, []byte, error) {
+	t, data, err := bson.MarshalValue(r.Strings())
+
+	return byte(t), data, err
 }
 
-func (r *IpRange) UnmarshalBSONValue(t bsontype.Type, value []byte) error {
+func (r *IpRange) UnmarshalBSONValue(b byte, value []byte) error {
 	if value == nil {
 		return nil
 	}
-	if t != bsontype.Array {
+	t := bson.Type(b)
+	if t != bson.TypeArray {
 		return fmt.Errorf("invalid bson value type '%s'", t.String())
 	}
 
 	arr, _, ok := bsoncore.ReadArray(value)
 	if !ok {
-		return invalidBsonValue
+		return errInvalidBsonValue
 	}
 
 	values, err := arr.Values()
 	if err != nil {
-		return invalidBsonValue
+		return errInvalidBsonValue
 	}
 
 	var strs []string
@@ -140,5 +162,6 @@ func (r *IpRange) UnmarshalBSONValue(t bsontype.Type, value []byte) error {
 		return err
 	}
 	*r = ipRange
+
 	return nil
 }

@@ -2,12 +2,11 @@ package email
 
 import (
 	"cmp"
+	_ "embed"
 	"text/template"
 
 	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/utils"
-
-	_ "embed"
 )
 
 //go:embed default_message.tmpl
@@ -51,5 +50,6 @@ func prepareEmailConfig(cfg Config) Config {
 	cfg.SMTP.Sender = cmp.Or(cfg.SMTP.Sender, DefaultEmailConfig.SMTP.Sender)
 	cfg.MessageTemplate = cmp.Or(cfg.MessageTemplate, DefaultEmailConfig.MessageTemplate)
 	cfg.SubjectTemplate = cmp.Or(cfg.SubjectTemplate, DefaultEmailConfig.SubjectTemplate)
+
 	return cfg
 }

@@ -3,13 +3,23 @@ package feature
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/bldsoft/gost/config/feature"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
 )
 
-func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) {
+type FeatureMigrator struct {
+	db       *mongo.Storage
+	collName string
+}
+
+func NewFeatureMigrator(db *mongo.Storage, collName string) *FeatureMigrator {
+	return &FeatureMigrator{db: db, collName: collName}
+}
+
+func (m *FeatureMigrator) AddFeatureMigration(version uint, features ...*Feature) {
 	size := len(features)
 	if size == 0 {
 		return
@@ -20,17 +30,18 @@ func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) 
 		log.Fatalf("Falied to marshal features for migration: %s", err.Error())
 	}
 
-	IDs := fmt.Sprintf("%d", features[0].ID)
+	var IDs strings.Builder
+	_, _ = fmt.Fprintf(&IDs, "%d", features[0].ID)
 	for i := 1; i < size; i++ {
-		IDs += fmt.Sprintf(",%d", features[i].ID)
+		_, _ = fmt.Fprintf(&IDs, ",%d", features[i].ID)
 	}
 
 	up := fmt.Sprintf(`[{
-	"insert": "feature",
+	"insert": "%s",
 	"documents": %s
 	},
 	{
-	"update": "feature",
+	"update": "%s",
 	"updates": [{
 		"q": {
 			"_id": { "$in" : [%s] }
@@ -44,32 +55,33 @@ func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) 
 		"multi": true
 	}]
 	}
-]`, featureStr, IDs, mongo.BsonFieldNameCreateTime, mongo.BsonFieldNameUpdateTime)
+]`, m.collName, featureStr, m.collName, IDs.String(), mongo.BsonFieldNameCreateTime, mongo.BsonFieldNameUpdateTime)
 
 	down := fmt.Sprintf(`[{
-	"delete": "feature",
+	"delete": "%s",
 	"deletes": [{
 		"q": {
 			"_id": { "$in" : [%s] }
 		},
 		"limit": 0
 	}]
-}]`, IDs)
+}]`, m.collName, IDs.String())
 
-	db.AddMigration(version, up, down)
+	m.db.AddMigration(version, up, down)
 }
 
-func DeleteFeatureMigration(db *mongo.Storage, version uint, featureIDs ...feature.IdType) {
+func (m *FeatureMigrator) DeleteFeatureMigration(version uint, featureIDs ...feature.IdType) {
 	if len(featureIDs) == 0 {
 		return
 	}
-	IDs := fmt.Sprintf("%d", featureIDs[0])
+	var IDs strings.Builder
+	_, _ = fmt.Fprintf(&IDs, "%d", featureIDs[0])
 	for i := 1; i < len(featureIDs); i++ {
-		IDs += fmt.Sprintf(",%d", featureIDs[i])
+		_, _ = fmt.Fprintf(&IDs, ",%d", featureIDs[i])
 	}
 
-	db.AddMigration(version, fmt.Sprintf(`[{
-		"update": "feature",
+	m.db.AddMigration(version, fmt.Sprintf(`[{
+		"update": "%s",
 		"updates": [{
 			"q": {
 				"_id": { "$in" : [%s] }
@@ -81,8 +93,8 @@ func DeleteFeatureMigration(db *mongo.Storage, version uint, featureIDs ...featu
 			},
 			"multi": true
 		}]
-	}]`, IDs, mongo.BsonFieldNameArchived), fmt.Sprintf(`[{
-		"update": "feature",
+	}]`, m.collName, IDs.String(), mongo.BsonFieldNameArchived), fmt.Sprintf(`[{
+		"update": "%s",
 		"updates": [{
 			"q": {
 				"_id": { "$in" : [%s] }
@@ -94,5 +106,15 @@ func DeleteFeatureMigration(db *mongo.Storage, version uint, featureIDs ...featu
 			},
 			"multi": true
 		}]
-	}]`, IDs, mongo.BsonFieldNameArchived))
+	}]`, m.collName, IDs.String(), mongo.BsonFieldNameArchived))
+}
+
+func DeleteFeatureMigration(db *mongo.Storage, version uint, featureIDs ...feature.IdType) {
+	m := NewFeatureMigrator(db, DefaultCollectionName)
+	m.DeleteFeatureMigration(version, featureIDs...)
+}
+
+func AddFeatureMigration(db *mongo.Storage, version uint, features ...*Feature) {
+	m := NewFeatureMigrator(db, DefaultCollectionName)
+	m.AddFeatureMigration(version, features...)
 }

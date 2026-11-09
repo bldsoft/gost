@@ -22,8 +22,11 @@ type Config struct {
 	ServiceBindPort    int            `mapstructure:"SERVICE_PORT" description:"DEPRECATED. Service port"`
 	ServiceBindAddress config.Address `mapstructure:"SERVICE_BIND_ADDRESS" description:"Service configuration related to what address bind to and port to listen on for HTTP"`
 	ServiceAddress     config.Address `mapstructure:"SERVICE_ADDRESS" description:"Service public address"`
+	ProbesBindAddress  config.Address `mapstructure:"PROBES_BIND_ADDRESS" description:"Address to serve the Kubernetes probes on instead of the main listener. Empty keeps them on SERVICE_BIND_ADDRESS"`
 
-	TLS TLSConfig `mapstructure:"TLS"`
+	TLS            TLSConfig `mapstructure:"TLS"`
+	ReadTimeoutMs  int       `mapstructure:"READ_TIMEOUT_MS" description:"Maximum duration for reading the entire request, including the body (in milliseconds)"`
+	WriteTimeoutMs int       `mapstructure:"WRITE_TIMEOUT_MS" description:"Maximum duration before timing out writes of the response (in milliseconds)"`
 }
 
 type TLSConfig struct {
@@ -79,5 +82,6 @@ func (c *Config) Validate() error {
 	if c.TLS.IsTLSEnabled() && len(c.TLS.ServiceBindAddress) == 0 {
 		c.TLS.ServiceBindAddress = config.Address(net.JoinHostPort(c.ServiceBindAddress.Host(), "3443"))
 	}
+
 	return nil
 }

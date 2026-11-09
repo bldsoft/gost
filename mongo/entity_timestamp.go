@@ -10,18 +10,22 @@ const (
 )
 
 type EntityTimeStamp struct {
-	CreateTime   *time.Time  `json:"createTime,omitempty" bson:"createTime,omitempty"`
-	CreateUserID interface{} `json:"createUserId,omitempty" bson:"createUserId,omitempty"`
-	UpdateTime   *time.Time  `json:"updateTime,omitempty" bson:"updateTime,omitempty"`
-	UpdateUserID interface{} `json:"updateUserId,omitempty" bson:"updateUserId,omitempty"`
+	CreateTime   *time.Time `json:"createTime,omitempty" bson:"createTime,omitempty"`
+	CreateUserID any        `json:"createUserId,omitempty" bson:"createUserId,omitempty"`
+	UpdateTime   *time.Time `json:"updateTime,omitempty" bson:"updateTime,omitempty"`
+	UpdateUserID any        `json:"updateUserId,omitempty" bson:"updateUserId,omitempty"`
 }
 
-func (e *EntityTimeStamp) SetUpdateFields(updateTime time.Time, updateUserID interface{}) {
+func (e *EntityTimeStamp) SetUpdateFields(updateTime time.Time, updateUserID any) {
 	e.UpdateTime = &updateTime
-	e.UpdateUserID = updateUserID
+	if updateUserID != nil {
+		e.UpdateUserID = updateUserID
+	}
 }
 
-func (e *EntityTimeStamp) SetCreateFields(createTime time.Time, createUserID interface{}) {
+func (e *EntityTimeStamp) SetCreateFields(createTime time.Time, createUserID any) {
 	e.CreateTime = &createTime
-	e.CreateUserID = createUserID
+	if createUserID != nil {
+		e.CreateUserID = createUserID
+	}
 }

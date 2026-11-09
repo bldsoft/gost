@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/allegro/bigcache"
+
 	"github.com/bldsoft/gost/cache"
 	"github.com/bldsoft/gost/log"
 )
@@ -28,6 +29,7 @@ func NewRepositoryFromConfig(config bigcache.Config) *Repository {
 	if err != nil {
 		log.Panicf("BigCache failed: %v", err)
 	}
+
 	return &Repository{cache: client}
 }
 
@@ -36,6 +38,7 @@ func NewRepository(jsonConfig string) *Repository {
 	if err := json.Unmarshal([]byte(jsonConfig), &defConfig); err != nil {
 		log.WarnWithFields(log.Fields{"err": err}, "Failed to unmarshal BigCache config")
 	}
+
 	return NewRepositoryFromConfig(defConfig)
 }
 
@@ -54,6 +57,7 @@ func (r *Repository) Get(key string) ([]byte, error) {
 			return nil, cache.ErrCacheMiss
 		}
 	}
+
 	return res, err
 }
 
@@ -66,7 +70,7 @@ func (r *Repository) Delete(key string) error {
 }
 
 func (r *Repository) Reset() {
-	r.cache.Reset()
+	_ = r.cache.Reset()
 }
 
 func (r *Repository) CompareAndSwap(key string, handler func(value []byte) ([]byte, error)) error {
@@ -87,5 +91,6 @@ func (r *Repository) SetForWithFlags(key string, value []byte, flags uint32, ttl
 
 func (r *Repository) Exist(key string) bool {
 	_, err := r.Get(key)
+
 	return err == nil
 }

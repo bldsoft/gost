@@ -4,17 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
-	"slices"
 	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/bldsoft/gost/entity/stat"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/server"
+	"github.com/bldsoft/gost/utils"
 	"github.com/bldsoft/gost/utils/exporter"
-	"golang.org/x/sync/errgroup"
 )
 
 var ErrLogDbNotReady = errors.New("log record db isn't ready")
@@ -46,8 +46,8 @@ type LogExporterConfig struct {
 
 // SetDefaults ...
 func (c *LogExporterConfig) SetDefaults() {
-	c.FlushTimeMs = 1000
-	c.MaxBatchSize = 1000
+	c.FlushTimeMs = 30_000
+	c.MaxBatchSize = 10_000
 	c.ChanBufSize = 16384
 	c.TableName = "LOG_RECORDS"
 }
@@ -60,6 +60,7 @@ func (c *LogExporterConfig) Validate() error {
 	if c.MaxBatchSize <= 0 {
 		return errors.New("log export: batch size isn't set")
 	}
+
 	return nil
 }
 
@@ -116,16 +117,8 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 		where = append(where, sq.Eq{LevelColumName: int8Levels})
 	}
 
-	switch len(filter.RequestIDs) {
-	case 0:
-	case 1:
-		where = append(where, sq.Like{ReqIDColumnName: fmt.Sprintf("%%%s%%", filter.RequestIDs[0])})
-	default:
-		match := fmt.Sprintf("match(%s, (?))", ReqIDColumnName)
-		for i := range filter.RequestIDs {
-			filter.RequestIDs[i] = regexp.QuoteMeta(filter.RequestIDs[i])
-		}
-		where = append(where, sq.Expr(match, strings.Join(filter.RequestIDs, "|")))
+	if len(filter.RequestIDs) > 0 {
+		where = append(where, sq.Expr(fmt.Sprintf("multiSearchAny(%s, ?)", ReqIDColumnName), filter.RequestIDs))
 	}
 
 	if len(filter.Instances) > 0 {
@@ -141,17 +134,16 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 	if filter.Search != nil && len(*filter.Search) > 0 {
 		var searchFilter sq.Sqlizer
 		searchFilter = e.parseExpr(*filter.Search, func(search string) sq.Sqlizer {
-			search = strings.TrimSpace(search)
-			return sq.Or{
-				sq.Expr(
-					fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName),
-					search,
-				),
-				sq.Expr(
-					fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName),
-					search,
-				),
-			}
+			msgExpr := sq.Expr(
+				fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, MsgColumnName),
+				search,
+			)
+			fieldsExpr := sq.Expr(
+				fmt.Sprintf(`positionCaseInsensitive(%s, ?) <> 0`, FieldsColumnName),
+				search,
+			)
+
+			return sq.Or{msgExpr, fieldsExpr}
 		})
 
 		if filter.TrackRequest {
@@ -166,7 +158,9 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 			searchFilter = sq.Expr(fmt.Sprintf("%s IN (?)", ReqIDColumnName), subQuery)
 		}
 
-		where = append(where, searchFilter)
+		if searchFilter != nil {
+			where = append(where, searchFilter)
+		}
 	}
 
 	return where
@@ -174,23 +168,81 @@ func (e *ClickHouseLogExporter) filter(filter *log.Filter) (where sq.And) {
 
 func (e *ClickHouseLogExporter) parseExpr(search string, makeRawExpr func(string) sq.Sqlizer) sq.Sqlizer {
 	return parseHelper[sq.Or](search, "|", func(s string) sq.Sqlizer {
-		return parseHelper[sq.And](s, "&", makeRawExpr)
+		return parseHelper[sq.And](s, "&", parseNotExpr(makeRawExpr))
 	})
+}
+
+func parseNotExpr(makeRawExpr func(search string) sq.Sqlizer) func(search string) sq.Sqlizer {
+	return func(search string) sq.Sqlizer {
+		s, not := parseExprTerm(search)
+		if len(s) == 0 {
+			return nil
+		}
+		if not {
+			return sq.Expr("NOT (?)", makeRawExpr(s))
+		}
+
+		return makeRawExpr(s)
+	}
 }
 
 func parseHelper[T sq.Or | sq.And](search, op string, makeRawExpr func(string) sq.Sqlizer) sq.Sqlizer {
 	exprs := split(search, op)
-	exprs = slices.DeleteFunc(exprs, func(s string) bool { return len(s) == 0 })
-
-	if len(exprs) == 1 {
-		return makeRawExpr(exprs[0])
-	}
 
 	var res T
 	for _, expr := range exprs {
-		res = append(res, makeRawExpr(expr))
+		sqlExpr := makeRawExpr(expr)
+		if sqlExpr == nil {
+			continue
+		}
+		res = append(res, sqlExpr)
 	}
-	return sq.Sqlizer(res)
+
+	switch len(res) {
+	case 0:
+		return nil
+	case 1:
+		return res[0]
+	default:
+		return sq.Sqlizer(res)
+	}
+}
+
+func parseExprTerm(expr string) (string, bool) {
+	expr = strings.TrimSpace(expr)
+	if len(expr) == 0 {
+		return "", false
+	}
+
+	not := false
+	switch {
+	case strings.HasPrefix(expr, "!"):
+		not = true
+		expr = strings.TrimPrefix(expr, "!")
+	case strings.HasPrefix(expr, "\\!"):
+		expr = strings.TrimPrefix(expr, "\\")
+	}
+
+	expr = strings.TrimSpace(expr)
+	expr = trimQuotes(expr)
+
+	return expr, not
+}
+
+func trimQuotes(s string) string {
+	if len(s) < 2 {
+		return s
+	}
+
+	if s[0] != s[len(s)-1] {
+		return s
+	}
+
+	if utils.IsIn(s[0], '\'', '"') {
+		return s[1 : len(s)-1]
+	}
+
+	return s
 }
 
 func split(search, op string) []string {
@@ -211,6 +263,7 @@ func split(search, op string) []string {
 		i += startIdx
 		if i > 0 && search[i-1] == '\\' {
 			startIdx = i + 1
+
 			continue
 		}
 		appendStr(search[:i])
@@ -218,6 +271,7 @@ func split(search, op string) []string {
 		startIdx = 0
 	}
 	appendStr(search)
+
 	return res
 }
 
@@ -233,6 +287,7 @@ func (e *ClickHouseLogExporter) sort(sort log.Sort) string {
 	default:
 		field = TimestampColumnName
 	}
+
 	return fmt.Sprintf("%s %s", field, sort.Order.String())
 }
 
@@ -249,6 +304,7 @@ func (e *ClickHouseLogExporter) countLogs(
 	if err := row.Scan(&count); err != nil {
 		return 0, err
 	}
+
 	return count, nil
 }
 
@@ -275,12 +331,12 @@ func (e *ClickHouseLogExporter) Logs(
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var logs log.Logs
 	for rows.Next() {
 		var r log.LogRecord
-		if err := rows.Scan(&r.Service, &r.ServiceVersion, &r.Instance, &r.Timestamp, &r.Level, &r.ReqID, &r.Msg, &r.Fields); err != nil {
+		if err = rows.Scan(&r.Service, &r.ServiceVersion, &r.Instance, &r.Timestamp, &r.Level, &r.ReqID, &r.Msg, &r.Fields); err != nil {
 			return nil, err
 		}
 		logs.Records = append(logs.Records, r)
@@ -319,6 +375,7 @@ func (e *ClickHouseLogExporter) LogsMetrics(ctx context.Context, params log.Logs
 	if params.To.IsZero() {
 		params.To = time.Now()
 	}
+
 	return e.getCustomChartValues(ctx, e.logsMetricsQuery(&params), params.From, params.To, time.Duration(params.StepSec)*time.Second)
 }
 
@@ -353,16 +410,17 @@ func (e *ClickHouseLogExporter) distinctValues(
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var instances []string
 	for rows.Next() {
 		var instance string
-		if err := rows.Scan(&instance); err != nil {
+		if err = rows.Scan(&instance); err != nil {
 			return nil, err
 		}
 		instances = append(instances, instance)
 	}
+
 	return instances, nil
 }
 
@@ -387,15 +445,16 @@ func (e *ClickHouseLogExporter) RequestIDs(
 		if err != nil {
 			return err
 		}
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 
 		for rows.Next() {
 			var requestID string
-			if err := rows.Scan(&requestID); err != nil {
+			if err = rows.Scan(&requestID); err != nil {
 				return err
 			}
 			requestIDs = append(requestIDs, requestID)
 		}
+
 		return nil
 	})
 	g.Go(func() error {
@@ -408,11 +467,13 @@ func (e *ClickHouseLogExporter) RequestIDs(
 		if err := row.Scan(&count); err != nil {
 			return err
 		}
+
 		return nil
 	})
 	if err := g.Wait(); err != nil {
 		return nil, 0, err
 	}
+
 	return requestIDs, count, nil
 }
 
@@ -428,6 +489,7 @@ func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
 			hours,
 		),
 	)
+
 	return err
 }
 
@@ -457,6 +519,7 @@ func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
 		// ServiceVersionColumnName,
 		"toDateTime(" + TimestampColumnName + ")",
 	}, ",")+`)`, e.config.TableName, engine))
+
 	return err
 }
 
@@ -464,7 +527,7 @@ type chLogRecord struct {
 	Service        string    `json:"service,omitempty"        ch:"service"`
 	ServiceVersion string    `json:"serviceVersion,omitempty" ch:"service_version"`
 	Instance       string    `json:"instance,omitempty"       ch:"instanse"`
-	Timestamp      time.Time `json:"timestamp,omitempty"      ch:"timestamp"`
+	Timestamp      time.Time `json:"timestamp"      ch:"timestamp"`
 	Level          int8      `json:"level,string,omitempty"   ch:"level"`
 	ReqID          string    `json:"reqID,omitempty"          ch:"req_id"`
 	Msg            string    `json:"msg,omitempty"            ch:"msg"`

@@ -1,12 +1,13 @@
 package poly
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
 
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
+
+	json_utils "github.com/bldsoft/gost/utils/json"
 )
 
 const FieldNameType = "type"
@@ -20,16 +21,17 @@ type Poly[T comparable] struct {
 }
 
 func (f *Poly[T]) typesMap() *typeBijection[T, string] {
-	interfaceType := reflect.TypeOf((*T)(nil)).Elem()
+	interfaceType := reflect.TypeFor[T]()
 	typeNamesI, ok := interfaceTypeToTypesNames.Load(interfaceType)
 	if !ok {
 		panic(fmt.Errorf("poly: unregistered interface %s: register it with poly.Register", f.interfaceString()))
 	}
+
 	return typeNamesI.(*typeBijection[T, string])
 }
 
 func (f *Poly[T]) interfaceString() string {
-	return fmt.Sprintln(reflect.TypeOf((*T)(nil)).Elem())
+	return fmt.Sprintln(reflect.TypeFor[T]())
 }
 
 func (f *Poly[T]) Type() string {
@@ -37,11 +39,12 @@ func (f *Poly[T]) Type() string {
 	if !ok {
 		panic(fmt.Errorf("poly: unregistered type %T for interface %s", f.Value, f.interfaceString()))
 	}
+
 	return typeString
 }
 
 func (f Poly[T]) MarshalJSON() ([]byte, error) {
-	return f.marshalJsonAndJoin(struct {
+	return json_utils.MarshalJsonAndJoin(struct {
 		Name string `json:"type"`
 	}{
 		Name: f.Type(),
@@ -65,39 +68,8 @@ func (f *Poly[T]) UnmarshalJSON(data []byte) error {
 	}
 
 	f.Value = res.Interface().(T)
+
 	return nil
-}
-
-func (f *Poly[T]) marshalJsonAndJoin(objects ...interface{}) ([]byte, error) {
-	if len(objects) == 0 {
-		return nil, nil
-	}
-	marshalled := make([][]byte, 0, len(objects))
-	for _, obj := range objects {
-		b, err := json.Marshal(obj)
-		if err != nil {
-			return nil, err
-		}
-		if len(b) <= 2 { // "{}"
-			continue
-		}
-		marshalled = append(marshalled, b)
-	}
-
-	if len(marshalled) == 1 {
-		return marshalled[0], nil
-	}
-
-	for i, b := range marshalled {
-		if i < len(objects)-1 {
-			b = b[:len(b)-1]
-		}
-		if i > 0 {
-			b = b[1:]
-		}
-		marshalled[i] = b
-	}
-	return bytes.Join(marshalled, []byte{','}), nil
 }
 
 func (f Poly[T]) MarshalBSON() ([]byte, error) {
@@ -124,10 +96,11 @@ func (f *Poly[T]) UnmarshalBSON(data []byte) error {
 	}
 
 	f.Value = res.Interface().(T)
+
 	return nil
 }
 
-func (f *Poly[T]) toBsonMap(e interface{}) (m bson.M, err error) {
+func (f *Poly[T]) toBsonMap(e any) (m bson.M, err error) {
 	data, err := bson.Marshal(e)
 	if err != nil {
 		return nil, err
@@ -136,6 +109,7 @@ func (f *Poly[T]) toBsonMap(e interface{}) (m bson.M, err error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return m, nil
 }
 
@@ -148,6 +122,7 @@ func (f *Poly[T]) addTypeAndMashalBson(v T, typeName string) ([]byte, error) {
 		}
 
 		m[FieldNameType] = typeName
+
 		return bson.Marshal(m)
 	}
 

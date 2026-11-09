@@ -12,6 +12,7 @@ func TimeTrack(f func()) (d time.Duration) {
 	start := time.Now()
 	defer func() { d = time.Since(start) }()
 	f()
+
 	return d
 }
 
@@ -21,11 +22,13 @@ type Parsed interface {
 
 func parseInt[T constraints.Signed](s string) (result T, err error) {
 	temp, err := strconv.ParseInt(s, 10, int(8*unsafe.Sizeof(result)))
+
 	return T(temp), err
 }
 
 func parseUint[T constraints.Unsigned](s string) (result T, err error) {
 	temp, err := strconv.ParseUint(s, 10, int(8*unsafe.Sizeof(result)))
+
 	return T(temp), err
 }
 
@@ -64,5 +67,6 @@ func Parse[T Parsed](s string) (result T, err error) {
 	case string:
 		ret = s
 	}
+
 	return ret.(T), err
 }

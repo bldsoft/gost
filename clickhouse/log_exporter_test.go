@@ -11,6 +11,9 @@ func TestExporterSearchParse(t *testing.T) {
 	eq := func(s string) sq.Sqlizer {
 		return sq.Eq{"field": s}
 	}
+	notEq := func(s string) sq.Sqlizer {
+		return sq.Expr("NOT (?)", eq(s))
+	}
 	tests := []struct {
 		name     string
 		search   string
@@ -63,9 +66,27 @@ func TestExporterSearchParse(t *testing.T) {
 			expected: eq("1|2"),
 		},
 		{
-			name:     "escaped or",
+			name:     "escaped or in sequence",
 			search:   "1\\||\\|2",
 			expected: sq.Or{eq("1|"), eq("|2")},
+		},
+		{
+			name:     "not operator",
+			search:   "!response",
+			expected: notEq("response"),
+		},
+		{
+			name:   "not with and and quoted terms",
+			search: "!'failed to' & !\"cache miss\"",
+			expected: sq.And{
+				notEq("failed to"),
+				notEq("cache miss"),
+			},
+		},
+		{
+			name:     "escaped not",
+			search:   "\\!response",
+			expected: eq("!response"),
 		},
 	}
 
@@ -74,5 +95,4 @@ func TestExporterSearchParse(t *testing.T) {
 			require.Equal(t, tc.expected, new(ClickHouseLogExporter).parseExpr(tc.search, eq))
 		})
 	}
-
 }

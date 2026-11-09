@@ -6,8 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/bldsoft/gost/utils"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/bldsoft/gost/utils"
 )
 
 type test interface {
@@ -48,6 +49,7 @@ func (test *getQueryTest[T]) check(t *testing.T) {
 	assert.Equal(t, !test.errExpected, ParseQueryOption(req, w, test.paramName, &outRes))
 	if test.errExpected {
 		assert.Equal(t, w.Code, http.StatusBadRequest)
+
 		return
 	}
 	assert.Equal(t, test.expectedRes, outRes)
@@ -57,6 +59,7 @@ func (test *getQueryTest[T]) name() string {
 	if test.errExpected {
 		return fmt.Sprintf("uri=%s expected error", test.queryStr)
 	}
+
 	return fmt.Sprintf("%s expected=%v", test.queryStr, test.expectedRes)
 }
 
@@ -111,6 +114,7 @@ func TestGetQueryOptionSlice(t *testing.T) {
 			if test.errExpected {
 				assert.Equal(t, w.Code, http.StatusBadRequest)
 				assert.Equal(t, test.expectedRes, outRes)
+
 				return
 			}
 			assert.Equal(t, test.expectedRes, outRes)

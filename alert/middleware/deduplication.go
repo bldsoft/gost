@@ -18,6 +18,7 @@ func Deduplication(duplicatedCache cache.Repository[*alert.Alert], uniqueKey ...
 				if alert.To.IsZero() {
 					return fmt.Sprintf("%s-%s-%d-s", alert.SourceID, alert.Severity, alert.From.Unix())
 				}
+
 				return fmt.Sprintf("%s-%s-%d-e", alert.SourceID, alert.Severity, alert.To.Unix())
 			},
 		}
@@ -32,6 +33,7 @@ func Deduplication(duplicatedCache cache.Repository[*alert.Alert], uniqueKey ...
 				exists, err := duplicatedCache.Get(cacheKey)
 				if err != nil && !errors.Is(err, utils.ErrObjectNotFound) {
 					logger.ErrorWithFields(log.Fields{"err": err}, "failed to check if alert already exists in cache")
+
 					continue
 				}
 				if exists != nil {
@@ -40,6 +42,7 @@ func Deduplication(duplicatedCache cache.Repository[*alert.Alert], uniqueKey ...
 
 				if err = duplicatedCache.Set(cacheKey, &alert); err != nil {
 					logger.ErrorWithFields(log.Fields{"err": err}, "failed to set alert in cache")
+
 					continue
 				}
 				deduplicated = append(deduplicated, alert)
