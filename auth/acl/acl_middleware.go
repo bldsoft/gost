@@ -6,7 +6,6 @@ import (
 
 	"github.com/bldsoft/gost/controller"
 	"github.com/bldsoft/gost/log"
-	"github.com/bldsoft/gost/server/middleware"
 	"github.com/bldsoft/gost/utils"
 )
 
@@ -49,11 +48,6 @@ func MiddlewareFromConfig(cfg Config) func(next http.Handler) http.Handler {
 }
 
 func (m Acl) getIP(r *http.Request) (netip.Addr, error) {
-	if raw := middleware.GetRealIP(r.Context()); raw != "" {
-		if addr, err := netip.ParseAddr(raw); err == nil {
-			return utils.CanonicalAddr(addr), nil
-		}
-	}
 	addrPort, err := netip.ParseAddrPort(r.RemoteAddr)
 	if err == nil {
 		return utils.CanonicalAddr(addrPort.Addr()), nil

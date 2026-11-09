@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
-
-	gostmiddleware "github.com/bldsoft/gost/server/middleware"
 )
 
 type DefaultFormatter struct {
@@ -38,7 +36,7 @@ func (l *DefaultFormatter) NewLogEntry(r *http.Request) (middleware.LogEntry, *h
 	logFields["uri"] = fmt.Sprintf("%s://%s%s", scheme, r.Host, r.URL.RequestURI())
 	logFields["pr"] = r.Proto
 	logFields["mt"] = r.Method
-	logFields["from"] = requestClientIP(r)
+	logFields["from"] = r.RemoteAddr
 	logFields["hdr"] = r.Header
 	//TODO: trace body
 	/*if log.Trace().Enabled() {
@@ -47,14 +45,6 @@ func (l *DefaultFormatter) NewLogEntry(r *http.Request) (middleware.LogEntry, *h
 	entry.Logger.InfofWithFields(logFields, "%s REQUEST", r.Method)
 
 	return entry, r
-}
-
-func requestClientIP(r *http.Request) string {
-	if ip := gostmiddleware.GetRealIP(r.Context()); ip != "" {
-		return ip
-	}
-
-	return r.RemoteAddr
 }
 
 type ContextLoggerEntry struct {

@@ -56,7 +56,7 @@ func (f *ExportFormatter[T, P]) NewLogEntry(r *http.Request) (middleware.LogEntr
 	}
 	baseRequestInfo.Path = r.URL.Path
 	baseRequestInfo.Query = r.URL.RawQuery
-	baseRequestInfo.ClientIp = requestClientIP(r)
+	baseRequestInfo.ClientIp = r.RemoteAddr
 	// ua := r.UserAgent()
 	// baseRequestInfo.UserAgent = ua
 	baseRequestInfo.RequestId = reqID
