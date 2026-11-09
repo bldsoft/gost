@@ -33,7 +33,7 @@ code; the "do" is what the example service implements.
 |---|---|
 | Map errors with `errors.Is` in one `responseError` per controller | Compare `err == ErrX`, or leak internal error text on 5xx |
 | Mock the narrow interface you declared (mockery) or write a small fake | Mock `mongo.Repository` with all 30 methods |
-| Put integration tests behind `integration_test`; skip locally, fail in CI | Let integration tests silently skip in CI, or panic when the DB is missing |
+| Put integration tests behind `integration_test` and start Mongo with `mongo/mongotest.Start` | Dial a shared localhost database, or skip when it is down |
 | Build a chi router and call `BuildRoutes` in tests | Call `server.Start()` in tests (global mux) |
 | Pin one gost version per service and bump deliberately | Carry five different gost pseudo-versions across a monorepo |
 | Ship `.golangci.yml` from the template and lint before every push | Have no lint config, or sprinkle `//nolint` |

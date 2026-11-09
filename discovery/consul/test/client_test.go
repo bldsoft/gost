@@ -3,22 +3,41 @@
 package test
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/discovery"
 	"github.com/bldsoft/gost/discovery/consul"
+	"github.com/bldsoft/gost/internal/testcontainers"
 	"github.com/bldsoft/gost/server"
 )
+
+var consulAddr config.HttpAddress
+
+func TestMain(m *testing.M) {
+	raw, cleanup, err := testcontainers.StartConsul(context.Background())
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+	consulAddr = config.HttpAddress(raw)
+
+	code := m.Run()
+	cleanup()
+	os.Exit(code)
+}
 
 func runTestService(t *testing.T, serviceName, serviceID string) (cancel func()) {
 	t.Helper()
@@ -28,11 +47,12 @@ func runTestService(t *testing.T, serviceName, serviceID string) (cancel func())
 
 	var consulCfg consul.Config
 	consulCfg.SetDefaults()
+	consulCfg.ConsulAddr = consulAddr
 
 	host, port, err := net.SplitHostPort(strings.TrimPrefix(srv.URL, "http://"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = strconv.Atoi(port)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	serverCfg := server.Config{
 		ServiceName:     serviceName,
@@ -41,7 +61,7 @@ func runTestService(t *testing.T, serviceName, serviceID string) (cancel func())
 	}
 
 	d := consul.NewDiscovery(serverCfg, consulCfg)
-	assert.NoError(t, d.Register())
+	require.NoError(t, d.Register())
 
 	return func() {
 		srv.Close()
@@ -55,6 +75,7 @@ func TestClient(t *testing.T) {
 
 	var consulCfg consul.Config
 	consulCfg.SetDefaults()
+	consulCfg.ConsulAddr = consulAddr
 	clientDiscovery := consul.NewDiscovery(server.Config{ServiceName: "test-client"}, consulCfg)
 
 	for _, sticky := range []bool{false} {
@@ -62,10 +83,10 @@ func TestClient(t *testing.T) {
 			httpClient := discovery.NewHttpClient(clientDiscovery, sticky)
 			getResponseBody := func() string {
 				resp, err := httpClient.Get("http://test/any")
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				defer func() { _ = resp.Body.Close() }()
 				data, err := io.ReadAll(resp.Body)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				return string(data)
 			}

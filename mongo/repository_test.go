@@ -5,6 +5,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"github.com/bldsoft/gost/config"
+	"github.com/bldsoft/gost/internal/testcontainers"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/repository"
 )
@@ -30,8 +32,15 @@ type testEntity struct {
 func TestMain(m *testing.M) {
 	log.SetLogLevel("")
 
+	uri, cleanup, err := testcontainers.StartMongo(context.Background())
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+
 	var cfg Config
-	config.ReadConfig(&cfg, "")
+	cfg.SetDefaults()
+	cfg.Server = config.ConnectionString(uri)
 
 	db = NewStorage(cfg)
 	db.Connect()
@@ -41,6 +50,7 @@ func TestMain(m *testing.M) {
 	ctx := context.Background()
 	_, _ = db.Db.Collection(testCollection).DeleteMany(ctx, bson.M{})
 	_ = db.Disconnect(ctx)
+	cleanup()
 
 	os.Exit(code)
 }
