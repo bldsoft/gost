@@ -254,19 +254,19 @@ func (_c *IUserPtr_Password_Call[T]) RunAndReturn(run func() string) *IUserPtr_P
 }
 
 // RawID provides a mock function for the type IUserPtr
-func (_mock *IUserPtr[T]) RawID() interface{} {
+func (_mock *IUserPtr[T]) RawID() any {
 	ret := _mock.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for RawID")
 	}
 
-	var r0 interface{}
-	if returnFunc, ok := ret.Get(0).(func() interface{}); ok {
+	var r0 any
+	if returnFunc, ok := ret.Get(0).(func() any); ok {
 		r0 = returnFunc()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
+			r0 = ret.Get(0).(any)
 		}
 	}
 	return r0
@@ -289,12 +289,12 @@ func (_c *IUserPtr_RawID_Call[T]) Run(run func()) *IUserPtr_RawID_Call[T] {
 	return _c
 }
 
-func (_c *IUserPtr_RawID_Call[T]) Return(ifaceVal interface{}) *IUserPtr_RawID_Call[T] {
-	_c.Call.Return(ifaceVal)
+func (_c *IUserPtr_RawID_Call[T]) Return(anyMoqParam any) *IUserPtr_RawID_Call[T] {
+	_c.Call.Return(anyMoqParam)
 	return _c
 }
 
-func (_c *IUserPtr_RawID_Call[T]) RunAndReturn(run func() interface{}) *IUserPtr_RawID_Call[T] {
+func (_c *IUserPtr_RawID_Call[T]) RunAndReturn(run func() any) *IUserPtr_RawID_Call[T] {
 	_c.Call.Return(run)
 	return _c
 }

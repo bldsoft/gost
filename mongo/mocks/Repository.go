@@ -49,7 +49,7 @@ func (_m *Repository[T, U]) EXPECT() *Repository_Expecter[T, U] {
 }
 
 // AggregateOne provides a mock function for the type Repository
-func (_mock *Repository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.Pipeline, entity interface{}) error {
+func (_mock *Repository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.Pipeline, entity any) error {
 	ret := _mock.Called(ctx, pipeline, entity)
 
 	if len(ret) == 0 {
@@ -57,7 +57,7 @@ func (_mock *Repository[T, U]) AggregateOne(ctx context.Context, pipeline mongo.
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, mongo.Pipeline, interface{}) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, mongo.Pipeline, any) error); ok {
 		r0 = returnFunc(ctx, pipeline, entity)
 	} else {
 		r0 = ret.Error(0)
@@ -73,12 +73,12 @@ type Repository_AggregateOne_Call[T any, U repository.IEntityIDPtr[T]] struct {
 // AggregateOne is a helper method to define mock.On call
 //   - ctx context.Context
 //   - pipeline mongo.Pipeline
-//   - entity interface{}
+//   - entity any
 func (_e *Repository_Expecter[T, U]) AggregateOne(ctx any, pipeline any, entity any) *Repository_AggregateOne_Call[T, U] {
 	return &Repository_AggregateOne_Call[T, U]{Call: _e.mock.On("AggregateOne", ctx, pipeline, entity)}
 }
 
-func (_c *Repository_AggregateOne_Call[T, U]) Run(run func(ctx context.Context, pipeline mongo.Pipeline, entity interface{})) *Repository_AggregateOne_Call[T, U] {
+func (_c *Repository_AggregateOne_Call[T, U]) Run(run func(ctx context.Context, pipeline mongo.Pipeline, entity any)) *Repository_AggregateOne_Call[T, U] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -88,9 +88,9 @@ func (_c *Repository_AggregateOne_Call[T, U]) Run(run func(ctx context.Context, 
 		if args[1] != nil {
 			arg1 = args[1].(mongo.Pipeline)
 		}
-		var arg2 interface{}
+		var arg2 any
 		if args[2] != nil {
-			arg2 = args[2].(interface{})
+			arg2 = args[2].(any)
 		}
 		run(
 			arg0,
@@ -106,7 +106,7 @@ func (_c *Repository_AggregateOne_Call[T, U]) Return(err error) *Repository_Aggr
 	return _c
 }
 
-func (_c *Repository_AggregateOne_Call[T, U]) RunAndReturn(run func(ctx context.Context, pipeline mongo.Pipeline, entity interface{}) error) *Repository_AggregateOne_Call[T, U] {
+func (_c *Repository_AggregateOne_Call[T, U]) RunAndReturn(run func(ctx context.Context, pipeline mongo.Pipeline, entity any) error) *Repository_AggregateOne_Call[T, U] {
 	_c.Call.Return(run)
 	return _c
 }
@@ -158,7 +158,7 @@ func (_c *Repository_Collection_Call[T, U]) RunAndReturn(run func() *mongo.Colle
 }
 
 // Count provides a mock function for the type Repository
-func (_mock *Repository[T, U]) Count(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (int64, error) {
+func (_mock *Repository[T, U]) Count(ctx context.Context, filter any, opt ...*repository.QueryOptions) (int64, error) {
 	var tmpRet mock.Arguments
 	if len(opt) > 0 {
 		tmpRet = _mock.Called(ctx, filter, opt)
@@ -173,15 +173,15 @@ func (_mock *Repository[T, U]) Count(ctx context.Context, filter interface{}, op
 
 	var r0 int64
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) (int64, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) (int64, error)); ok {
 		return returnFunc(ctx, filter, opt...)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) int64); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) int64); ok {
 		r0 = returnFunc(ctx, filter, opt...)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, interface{}, ...*repository.QueryOptions) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, any, ...*repository.QueryOptions) error); ok {
 		r1 = returnFunc(ctx, filter, opt...)
 	} else {
 		r1 = ret.Error(1)
@@ -196,22 +196,22 @@ type Repository_Count_Call[T any, U repository.IEntityIDPtr[T]] struct {
 
 // Count is a helper method to define mock.On call
 //   - ctx context.Context
-//   - filter interface{}
+//   - filter any
 //   - opt ...*repository.QueryOptions
 func (_e *Repository_Expecter[T, U]) Count(ctx any, filter any, opt ...any) *Repository_Count_Call[T, U] {
 	return &Repository_Count_Call[T, U]{Call: _e.mock.On("Count",
 		append([]any{ctx, filter}, opt...)...)}
 }
 
-func (_c *Repository_Count_Call[T, U]) Run(run func(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions)) *Repository_Count_Call[T, U] {
+func (_c *Repository_Count_Call[T, U]) Run(run func(ctx context.Context, filter any, opt ...*repository.QueryOptions)) *Repository_Count_Call[T, U] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
 		var arg2 []*repository.QueryOptions
 		var variadicArgs []*repository.QueryOptions
@@ -233,13 +233,13 @@ func (_c *Repository_Count_Call[T, U]) Return(n int64, err error) *Repository_Co
 	return _c
 }
 
-func (_c *Repository_Count_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (int64, error)) *Repository_Count_Call[T, U] {
+func (_c *Repository_Count_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter any, opt ...*repository.QueryOptions) (int64, error)) *Repository_Count_Call[T, U] {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Delete provides a mock function for the type Repository
-func (_mock *Repository[T, U]) Delete(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error {
+func (_mock *Repository[T, U]) Delete(ctx context.Context, id any, options ...*repository.QueryOptions) error {
 	var tmpRet mock.Arguments
 	if len(options) > 0 {
 		tmpRet = _mock.Called(ctx, id, options)
@@ -253,7 +253,7 @@ func (_mock *Repository[T, U]) Delete(ctx context.Context, id interface{}, optio
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) error); ok {
 		r0 = returnFunc(ctx, id, options...)
 	} else {
 		r0 = ret.Error(0)
@@ -268,22 +268,22 @@ type Repository_Delete_Call[T any, U repository.IEntityIDPtr[T]] struct {
 
 // Delete is a helper method to define mock.On call
 //   - ctx context.Context
-//   - id interface{}
+//   - id any
 //   - options ...*repository.QueryOptions
 func (_e *Repository_Expecter[T, U]) Delete(ctx any, id any, options ...any) *Repository_Delete_Call[T, U] {
 	return &Repository_Delete_Call[T, U]{Call: _e.mock.On("Delete",
 		append([]any{ctx, id}, options...)...)}
 }
 
-func (_c *Repository_Delete_Call[T, U]) Run(run func(ctx context.Context, id interface{}, options ...*repository.QueryOptions)) *Repository_Delete_Call[T, U] {
+func (_c *Repository_Delete_Call[T, U]) Run(run func(ctx context.Context, id any, options ...*repository.QueryOptions)) *Repository_Delete_Call[T, U] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
 		var arg2 []*repository.QueryOptions
 		var variadicArgs []*repository.QueryOptions
@@ -305,13 +305,13 @@ func (_c *Repository_Delete_Call[T, U]) Return(err error) *Repository_Delete_Cal
 	return _c
 }
 
-func (_c *Repository_Delete_Call[T, U]) RunAndReturn(run func(ctx context.Context, id interface{}, options ...*repository.QueryOptions) error) *Repository_Delete_Call[T, U] {
+func (_c *Repository_Delete_Call[T, U]) RunAndReturn(run func(ctx context.Context, id any, options ...*repository.QueryOptions) error) *Repository_Delete_Call[T, U] {
 	_c.Call.Return(run)
 	return _c
 }
 
 // DeleteMany provides a mock function for the type Repository
-func (_mock *Repository[T, U]) DeleteMany(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) error {
+func (_mock *Repository[T, U]) DeleteMany(ctx context.Context, filter any, options ...*repository.QueryOptions) error {
 	var tmpRet mock.Arguments
 	if len(options) > 0 {
 		tmpRet = _mock.Called(ctx, filter, options)
@@ -325,7 +325,7 @@ func (_mock *Repository[T, U]) DeleteMany(ctx context.Context, filter interface{
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) error); ok {
 		r0 = returnFunc(ctx, filter, options...)
 	} else {
 		r0 = ret.Error(0)
@@ -340,22 +340,22 @@ type Repository_DeleteMany_Call[T any, U repository.IEntityIDPtr[T]] struct {
 
 // DeleteMany is a helper method to define mock.On call
 //   - ctx context.Context
-//   - filter interface{}
+//   - filter any
 //   - options ...*repository.QueryOptions
 func (_e *Repository_Expecter[T, U]) DeleteMany(ctx any, filter any, options ...any) *Repository_DeleteMany_Call[T, U] {
 	return &Repository_DeleteMany_Call[T, U]{Call: _e.mock.On("DeleteMany",
 		append([]any{ctx, filter}, options...)...)}
 }
 
-func (_c *Repository_DeleteMany_Call[T, U]) Run(run func(ctx context.Context, filter interface{}, options ...*repository.QueryOptions)) *Repository_DeleteMany_Call[T, U] {
+func (_c *Repository_DeleteMany_Call[T, U]) Run(run func(ctx context.Context, filter any, options ...*repository.QueryOptions)) *Repository_DeleteMany_Call[T, U] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
 		var arg2 []*repository.QueryOptions
 		var variadicArgs []*repository.QueryOptions
@@ -377,13 +377,13 @@ func (_c *Repository_DeleteMany_Call[T, U]) Return(err error) *Repository_Delete
 	return _c
 }
 
-func (_c *Repository_DeleteMany_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter interface{}, options ...*repository.QueryOptions) error) *Repository_DeleteMany_Call[T, U] {
+func (_c *Repository_DeleteMany_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter any, options ...*repository.QueryOptions) error) *Repository_DeleteMany_Call[T, U] {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Find provides a mock function for the type Repository
-func (_mock *Repository[T, U]) Find(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) ([]U, error) {
+func (_mock *Repository[T, U]) Find(ctx context.Context, filter any, opt ...*repository.QueryOptions) ([]U, error) {
 	var tmpRet mock.Arguments
 	if len(opt) > 0 {
 		tmpRet = _mock.Called(ctx, filter, opt)
@@ -398,17 +398,17 @@ func (_mock *Repository[T, U]) Find(ctx context.Context, filter interface{}, opt
 
 	var r0 []U
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) ([]U, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) ([]U, error)); ok {
 		return returnFunc(ctx, filter, opt...)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) []U); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) []U); ok {
 		r0 = returnFunc(ctx, filter, opt...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]U)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, interface{}, ...*repository.QueryOptions) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, any, ...*repository.QueryOptions) error); ok {
 		r1 = returnFunc(ctx, filter, opt...)
 	} else {
 		r1 = ret.Error(1)
@@ -423,22 +423,22 @@ type Repository_Find_Call[T any, U repository.IEntityIDPtr[T]] struct {
 
 // Find is a helper method to define mock.On call
 //   - ctx context.Context
-//   - filter interface{}
+//   - filter any
 //   - opt ...*repository.QueryOptions
 func (_e *Repository_Expecter[T, U]) Find(ctx any, filter any, opt ...any) *Repository_Find_Call[T, U] {
 	return &Repository_Find_Call[T, U]{Call: _e.mock.On("Find",
 		append([]any{ctx, filter}, opt...)...)}
 }
 
-func (_c *Repository_Find_Call[T, U]) Run(run func(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions)) *Repository_Find_Call[T, U] {
+func (_c *Repository_Find_Call[T, U]) Run(run func(ctx context.Context, filter any, opt ...*repository.QueryOptions)) *Repository_Find_Call[T, U] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
 		var arg2 []*repository.QueryOptions
 		var variadicArgs []*repository.QueryOptions
@@ -460,13 +460,13 @@ func (_c *Repository_Find_Call[T, U]) Return(vs []U, err error) *Repository_Find
 	return _c
 }
 
-func (_c *Repository_Find_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) ([]U, error)) *Repository_Find_Call[T, U] {
+func (_c *Repository_Find_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter any, opt ...*repository.QueryOptions) ([]U, error)) *Repository_Find_Call[T, U] {
 	_c.Call.Return(run)
 	return _c
 }
 
 // FindByID provides a mock function for the type Repository
-func (_mock *Repository[T, U]) FindByID(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error) {
+func (_mock *Repository[T, U]) FindByID(ctx context.Context, id any, options ...*repository.QueryOptions) (U, error) {
 	var tmpRet mock.Arguments
 	if len(options) > 0 {
 		tmpRet = _mock.Called(ctx, id, options)
@@ -481,17 +481,17 @@ func (_mock *Repository[T, U]) FindByID(ctx context.Context, id interface{}, opt
 
 	var r0 U
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) (U, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) (U, error)); ok {
 		return returnFunc(ctx, id, options...)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) U); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) U); ok {
 		r0 = returnFunc(ctx, id, options...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(U)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, interface{}, ...*repository.QueryOptions) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, any, ...*repository.QueryOptions) error); ok {
 		r1 = returnFunc(ctx, id, options...)
 	} else {
 		r1 = ret.Error(1)
@@ -506,22 +506,22 @@ type Repository_FindByID_Call[T any, U repository.IEntityIDPtr[T]] struct {
 
 // FindByID is a helper method to define mock.On call
 //   - ctx context.Context
-//   - id interface{}
+//   - id any
 //   - options ...*repository.QueryOptions
 func (_e *Repository_Expecter[T, U]) FindByID(ctx any, id any, options ...any) *Repository_FindByID_Call[T, U] {
 	return &Repository_FindByID_Call[T, U]{Call: _e.mock.On("FindByID",
 		append([]any{ctx, id}, options...)...)}
 }
 
-func (_c *Repository_FindByID_Call[T, U]) Run(run func(ctx context.Context, id interface{}, options ...*repository.QueryOptions)) *Repository_FindByID_Call[T, U] {
+func (_c *Repository_FindByID_Call[T, U]) Run(run func(ctx context.Context, id any, options ...*repository.QueryOptions)) *Repository_FindByID_Call[T, U] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
 		var arg2 []*repository.QueryOptions
 		var variadicArgs []*repository.QueryOptions
@@ -543,13 +543,13 @@ func (_c *Repository_FindByID_Call[T, U]) Return(v U, err error) *Repository_Fin
 	return _c
 }
 
-func (_c *Repository_FindByID_Call[T, U]) RunAndReturn(run func(ctx context.Context, id interface{}, options ...*repository.QueryOptions) (U, error)) *Repository_FindByID_Call[T, U] {
+func (_c *Repository_FindByID_Call[T, U]) RunAndReturn(run func(ctx context.Context, id any, options ...*repository.QueryOptions) (U, error)) *Repository_FindByID_Call[T, U] {
 	_c.Call.Return(run)
 	return _c
 }
 
 // FindByIDs provides a mock function for the type Repository
-func (_mock *Repository[T, U]) FindByIDs(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
+func (_mock *Repository[T, U]) FindByIDs(ctx context.Context, ids []any, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error) {
 	var tmpRet mock.Arguments
 	if len(options) > 0 {
 		tmpRet = _mock.Called(ctx, ids, preserveOrder, options)
@@ -564,17 +564,17 @@ func (_mock *Repository[T, U]) FindByIDs(ctx context.Context, ids []interface{},
 
 	var r0 []U
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []interface{}, bool, ...*repository.QueryOptions) ([]U, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []any, bool, ...*repository.QueryOptions) ([]U, error)); ok {
 		return returnFunc(ctx, ids, preserveOrder, options...)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []interface{}, bool, ...*repository.QueryOptions) []U); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []any, bool, ...*repository.QueryOptions) []U); ok {
 		r0 = returnFunc(ctx, ids, preserveOrder, options...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]U)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, []interface{}, bool, ...*repository.QueryOptions) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []any, bool, ...*repository.QueryOptions) error); ok {
 		r1 = returnFunc(ctx, ids, preserveOrder, options...)
 	} else {
 		r1 = ret.Error(1)
@@ -589,7 +589,7 @@ type Repository_FindByIDs_Call[T any, U repository.IEntityIDPtr[T]] struct {
 
 // FindByIDs is a helper method to define mock.On call
 //   - ctx context.Context
-//   - ids []interface{}
+//   - ids []any
 //   - preserveOrder bool
 //   - options ...*repository.QueryOptions
 func (_e *Repository_Expecter[T, U]) FindByIDs(ctx any, ids any, preserveOrder any, options ...any) *Repository_FindByIDs_Call[T, U] {
@@ -597,15 +597,15 @@ func (_e *Repository_Expecter[T, U]) FindByIDs(ctx any, ids any, preserveOrder a
 		append([]any{ctx, ids, preserveOrder}, options...)...)}
 }
 
-func (_c *Repository_FindByIDs_Call[T, U]) Run(run func(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions)) *Repository_FindByIDs_Call[T, U] {
+func (_c *Repository_FindByIDs_Call[T, U]) Run(run func(ctx context.Context, ids []any, preserveOrder bool, options ...*repository.QueryOptions)) *Repository_FindByIDs_Call[T, U] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 []interface{}
+		var arg1 []any
 		if args[1] != nil {
-			arg1 = args[1].([]interface{})
+			arg1 = args[1].([]any)
 		}
 		var arg2 bool
 		if args[2] != nil {
@@ -632,7 +632,7 @@ func (_c *Repository_FindByIDs_Call[T, U]) Return(vs []U, err error) *Repository
 	return _c
 }
 
-func (_c *Repository_FindByIDs_Call[T, U]) RunAndReturn(run func(ctx context.Context, ids []interface{}, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error)) *Repository_FindByIDs_Call[T, U] {
+func (_c *Repository_FindByIDs_Call[T, U]) RunAndReturn(run func(ctx context.Context, ids []any, preserveOrder bool, options ...*repository.QueryOptions) ([]U, error)) *Repository_FindByIDs_Call[T, U] {
 	_c.Call.Return(run)
 	return _c
 }
@@ -727,7 +727,7 @@ func (_c *Repository_FindByStringIDs_Call[T, U]) RunAndReturn(run func(ctx conte
 }
 
 // FindOne provides a mock function for the type Repository
-func (_mock *Repository[T, U]) FindOne(ctx context.Context, filter interface{}, opts ...*repository.QueryOptions) (U, error) {
+func (_mock *Repository[T, U]) FindOne(ctx context.Context, filter any, opts ...*repository.QueryOptions) (U, error) {
 	var tmpRet mock.Arguments
 	if len(opts) > 0 {
 		tmpRet = _mock.Called(ctx, filter, opts)
@@ -742,17 +742,17 @@ func (_mock *Repository[T, U]) FindOne(ctx context.Context, filter interface{}, 
 
 	var r0 U
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) (U, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) (U, error)); ok {
 		return returnFunc(ctx, filter, opts...)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) U); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) U); ok {
 		r0 = returnFunc(ctx, filter, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(U)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, interface{}, ...*repository.QueryOptions) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, any, ...*repository.QueryOptions) error); ok {
 		r1 = returnFunc(ctx, filter, opts...)
 	} else {
 		r1 = ret.Error(1)
@@ -767,22 +767,22 @@ type Repository_FindOne_Call[T any, U repository.IEntityIDPtr[T]] struct {
 
 // FindOne is a helper method to define mock.On call
 //   - ctx context.Context
-//   - filter interface{}
+//   - filter any
 //   - opts ...*repository.QueryOptions
 func (_e *Repository_Expecter[T, U]) FindOne(ctx any, filter any, opts ...any) *Repository_FindOne_Call[T, U] {
 	return &Repository_FindOne_Call[T, U]{Call: _e.mock.On("FindOne",
 		append([]any{ctx, filter}, opts...)...)}
 }
 
-func (_c *Repository_FindOne_Call[T, U]) Run(run func(ctx context.Context, filter interface{}, opts ...*repository.QueryOptions)) *Repository_FindOne_Call[T, U] {
+func (_c *Repository_FindOne_Call[T, U]) Run(run func(ctx context.Context, filter any, opts ...*repository.QueryOptions)) *Repository_FindOne_Call[T, U] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
 		var arg2 []*repository.QueryOptions
 		var variadicArgs []*repository.QueryOptions
@@ -804,13 +804,13 @@ func (_c *Repository_FindOne_Call[T, U]) Return(v U, err error) *Repository_Find
 	return _c
 }
 
-func (_c *Repository_FindOne_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter interface{}, opts ...*repository.QueryOptions) (U, error)) *Repository_FindOne_Call[T, U] {
+func (_c *Repository_FindOne_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter any, opts ...*repository.QueryOptions) (U, error)) *Repository_FindOne_Call[T, U] {
 	_c.Call.Return(run)
 	return _c
 }
 
 // FindOneAndDelete provides a mock function for the type Repository
-func (_mock *Repository[T, U]) FindOneAndDelete(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (U, error) {
+func (_mock *Repository[T, U]) FindOneAndDelete(ctx context.Context, filter any, opt ...*repository.QueryOptions) (U, error) {
 	var tmpRet mock.Arguments
 	if len(opt) > 0 {
 		tmpRet = _mock.Called(ctx, filter, opt)
@@ -825,17 +825,17 @@ func (_mock *Repository[T, U]) FindOneAndDelete(ctx context.Context, filter inte
 
 	var r0 U
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) (U, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) (U, error)); ok {
 		return returnFunc(ctx, filter, opt...)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, ...*repository.QueryOptions) U); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, ...*repository.QueryOptions) U); ok {
 		r0 = returnFunc(ctx, filter, opt...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(U)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, interface{}, ...*repository.QueryOptions) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, any, ...*repository.QueryOptions) error); ok {
 		r1 = returnFunc(ctx, filter, opt...)
 	} else {
 		r1 = ret.Error(1)
@@ -850,22 +850,22 @@ type Repository_FindOneAndDelete_Call[T any, U repository.IEntityIDPtr[T]] struc
 
 // FindOneAndDelete is a helper method to define mock.On call
 //   - ctx context.Context
-//   - filter interface{}
+//   - filter any
 //   - opt ...*repository.QueryOptions
 func (_e *Repository_Expecter[T, U]) FindOneAndDelete(ctx any, filter any, opt ...any) *Repository_FindOneAndDelete_Call[T, U] {
 	return &Repository_FindOneAndDelete_Call[T, U]{Call: _e.mock.On("FindOneAndDelete",
 		append([]any{ctx, filter}, opt...)...)}
 }
 
-func (_c *Repository_FindOneAndDelete_Call[T, U]) Run(run func(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions)) *Repository_FindOneAndDelete_Call[T, U] {
+func (_c *Repository_FindOneAndDelete_Call[T, U]) Run(run func(ctx context.Context, filter any, opt ...*repository.QueryOptions)) *Repository_FindOneAndDelete_Call[T, U] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
 		var arg2 []*repository.QueryOptions
 		var variadicArgs []*repository.QueryOptions
@@ -887,7 +887,7 @@ func (_c *Repository_FindOneAndDelete_Call[T, U]) Return(v U, err error) *Reposi
 	return _c
 }
 
-func (_c *Repository_FindOneAndDelete_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter interface{}, opt ...*repository.QueryOptions) (U, error)) *Repository_FindOneAndDelete_Call[T, U] {
+func (_c *Repository_FindOneAndDelete_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter any, opt ...*repository.QueryOptions) (U, error)) *Repository_FindOneAndDelete_Call[T, U] {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1706,7 +1706,7 @@ func (_c *Repository_UpdateMany_Call[T, U]) RunAndReturn(run func(ctx context.Co
 }
 
 // UpdateOne provides a mock function for the type Repository
-func (_mock *Repository[T, U]) UpdateOne(ctx context.Context, filter interface{}, update interface{}, options ...*repository.QueryOptions) error {
+func (_mock *Repository[T, U]) UpdateOne(ctx context.Context, filter any, update any, options ...*repository.QueryOptions) error {
 	var tmpRet mock.Arguments
 	if len(options) > 0 {
 		tmpRet = _mock.Called(ctx, filter, update, options)
@@ -1720,7 +1720,7 @@ func (_mock *Repository[T, U]) UpdateOne(ctx context.Context, filter interface{}
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, interface{}, ...*repository.QueryOptions) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, any, ...*repository.QueryOptions) error); ok {
 		r0 = returnFunc(ctx, filter, update, options...)
 	} else {
 		r0 = ret.Error(0)
@@ -1735,27 +1735,27 @@ type Repository_UpdateOne_Call[T any, U repository.IEntityIDPtr[T]] struct {
 
 // UpdateOne is a helper method to define mock.On call
 //   - ctx context.Context
-//   - filter interface{}
-//   - update interface{}
+//   - filter any
+//   - update any
 //   - options ...*repository.QueryOptions
 func (_e *Repository_Expecter[T, U]) UpdateOne(ctx any, filter any, update any, options ...any) *Repository_UpdateOne_Call[T, U] {
 	return &Repository_UpdateOne_Call[T, U]{Call: _e.mock.On("UpdateOne",
 		append([]any{ctx, filter, update}, options...)...)}
 }
 
-func (_c *Repository_UpdateOne_Call[T, U]) Run(run func(ctx context.Context, filter interface{}, update interface{}, options ...*repository.QueryOptions)) *Repository_UpdateOne_Call[T, U] {
+func (_c *Repository_UpdateOne_Call[T, U]) Run(run func(ctx context.Context, filter any, update any, options ...*repository.QueryOptions)) *Repository_UpdateOne_Call[T, U] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
-		var arg2 interface{}
+		var arg2 any
 		if args[2] != nil {
-			arg2 = args[2].(interface{})
+			arg2 = args[2].(any)
 		}
 		var arg3 []*repository.QueryOptions
 		var variadicArgs []*repository.QueryOptions
@@ -1778,7 +1778,7 @@ func (_c *Repository_UpdateOne_Call[T, U]) Return(err error) *Repository_UpdateO
 	return _c
 }
 
-func (_c *Repository_UpdateOne_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter interface{}, update interface{}, options ...*repository.QueryOptions) error) *Repository_UpdateOne_Call[T, U] {
+func (_c *Repository_UpdateOne_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter any, update any, options ...*repository.QueryOptions) error) *Repository_UpdateOne_Call[T, U] {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1928,7 +1928,7 @@ func (_c *Repository_UpsertMany_Call[T, U]) RunAndReturn(run func(ctx context.Co
 }
 
 // UpsertOne provides a mock function for the type Repository
-func (_mock *Repository[T, U]) UpsertOne(ctx context.Context, filter interface{}, update U) error {
+func (_mock *Repository[T, U]) UpsertOne(ctx context.Context, filter any, update U) error {
 	ret := _mock.Called(ctx, filter, update)
 
 	if len(ret) == 0 {
@@ -1936,7 +1936,7 @@ func (_mock *Repository[T, U]) UpsertOne(ctx context.Context, filter interface{}
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, interface{}, U) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, any, U) error); ok {
 		r0 = returnFunc(ctx, filter, update)
 	} else {
 		r0 = ret.Error(0)
@@ -1951,21 +1951,21 @@ type Repository_UpsertOne_Call[T any, U repository.IEntityIDPtr[T]] struct {
 
 // UpsertOne is a helper method to define mock.On call
 //   - ctx context.Context
-//   - filter interface{}
+//   - filter any
 //   - update U
 func (_e *Repository_Expecter[T, U]) UpsertOne(ctx any, filter any, update any) *Repository_UpsertOne_Call[T, U] {
 	return &Repository_UpsertOne_Call[T, U]{Call: _e.mock.On("UpsertOne", ctx, filter, update)}
 }
 
-func (_c *Repository_UpsertOne_Call[T, U]) Run(run func(ctx context.Context, filter interface{}, update U)) *Repository_UpsertOne_Call[T, U] {
+func (_c *Repository_UpsertOne_Call[T, U]) Run(run func(ctx context.Context, filter any, update U)) *Repository_UpsertOne_Call[T, U] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 interface{}
+		var arg1 any
 		if args[1] != nil {
-			arg1 = args[1].(interface{})
+			arg1 = args[1].(any)
 		}
 		var arg2 U
 		if args[2] != nil {
@@ -1985,32 +1985,32 @@ func (_c *Repository_UpsertOne_Call[T, U]) Return(err error) *Repository_UpsertO
 	return _c
 }
 
-func (_c *Repository_UpsertOne_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter interface{}, update U) error) *Repository_UpsertOne_Call[T, U] {
+func (_c *Repository_UpsertOne_Call[T, U]) RunAndReturn(run func(ctx context.Context, filter any, update U) error) *Repository_UpsertOne_Call[T, U] {
 	_c.Call.Return(run)
 	return _c
 }
 
 // WithTransaction provides a mock function for the type Repository
-func (_mock *Repository[T, U]) WithTransaction(ctx context.Context, f func(ctx context.Context) (interface{}, error)) (interface{}, error) {
+func (_mock *Repository[T, U]) WithTransaction(ctx context.Context, f func(ctx context.Context) (any, error)) (any, error) {
 	ret := _mock.Called(ctx, f)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithTransaction")
 	}
 
-	var r0 interface{}
+	var r0 any
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, func(ctx context.Context) (interface{}, error)) (interface{}, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, func(ctx context.Context) (any, error)) (any, error)); ok {
 		return returnFunc(ctx, f)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, func(ctx context.Context) (interface{}, error)) interface{}); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, func(ctx context.Context) (any, error)) any); ok {
 		r0 = returnFunc(ctx, f)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
+			r0 = ret.Get(0).(any)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, func(ctx context.Context) (interface{}, error)) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, func(ctx context.Context) (any, error)) error); ok {
 		r1 = returnFunc(ctx, f)
 	} else {
 		r1 = ret.Error(1)
@@ -2025,20 +2025,20 @@ type Repository_WithTransaction_Call[T any, U repository.IEntityIDPtr[T]] struct
 
 // WithTransaction is a helper method to define mock.On call
 //   - ctx context.Context
-//   - f func(ctx context.Context) (interface{}, error)
+//   - f func(ctx context.Context) (any, error)
 func (_e *Repository_Expecter[T, U]) WithTransaction(ctx any, f any) *Repository_WithTransaction_Call[T, U] {
 	return &Repository_WithTransaction_Call[T, U]{Call: _e.mock.On("WithTransaction", ctx, f)}
 }
 
-func (_c *Repository_WithTransaction_Call[T, U]) Run(run func(ctx context.Context, f func(ctx context.Context) (interface{}, error))) *Repository_WithTransaction_Call[T, U] {
+func (_c *Repository_WithTransaction_Call[T, U]) Run(run func(ctx context.Context, f func(ctx context.Context) (any, error))) *Repository_WithTransaction_Call[T, U] {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 func(ctx context.Context) (interface{}, error)
+		var arg1 func(ctx context.Context) (any, error)
 		if args[1] != nil {
-			arg1 = args[1].(func(ctx context.Context) (interface{}, error))
+			arg1 = args[1].(func(ctx context.Context) (any, error))
 		}
 		run(
 			arg0,
@@ -2048,12 +2048,12 @@ func (_c *Repository_WithTransaction_Call[T, U]) Run(run func(ctx context.Contex
 	return _c
 }
 
-func (_c *Repository_WithTransaction_Call[T, U]) Return(ifaceVal interface{}, err error) *Repository_WithTransaction_Call[T, U] {
-	_c.Call.Return(ifaceVal, err)
+func (_c *Repository_WithTransaction_Call[T, U]) Return(anyMoqParam any, err error) *Repository_WithTransaction_Call[T, U] {
+	_c.Call.Return(anyMoqParam, err)
 	return _c
 }
 
-func (_c *Repository_WithTransaction_Call[T, U]) RunAndReturn(run func(ctx context.Context, f func(ctx context.Context) (interface{}, error)) (interface{}, error)) *Repository_WithTransaction_Call[T, U] {
+func (_c *Repository_WithTransaction_Call[T, U]) RunAndReturn(run func(ctx context.Context, f func(ctx context.Context) (any, error)) (any, error)) *Repository_WithTransaction_Call[T, U] {
 	_c.Call.Return(run)
 	return _c
 }

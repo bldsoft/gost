@@ -23,3 +23,6 @@ packages:
   github.com/bldsoft/gost/cache/v2:
     config:
       all: true
+  github.com/bldsoft/gost/examples/notes/pkg/service:
+    config:
+      all: true
