@@ -10,6 +10,11 @@ import (
 
 func init() {
 	tclog.SetDefault(tclog.NewNoopLogger())
+
+	// testcontainers are slow to boot and sometimes fail on default timeout
+	if os.Getenv("RYUK_RECONNECTION_TIMEOUT") == "" && os.Getenv("TESTCONTAINERS_RYUK_RECONNECTION_TIMEOUT") == "" {
+		_ = os.Setenv("RYUK_RECONNECTION_TIMEOUT", "5m")
+	}
 }
 
 func noop() {}
