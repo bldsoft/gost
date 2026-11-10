@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	driver "go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
 	"github.com/bldsoft/gost/changelog"
 	"github.com/bldsoft/gost/log"
@@ -20,7 +19,7 @@ type ChangeLogRepository struct {
 }
 
 func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
-	r := &ChangeLogRepository{mongo.NewRepository[Record](db, "change_log")}
+	r := &ChangeLogRepository{rep: mongo.NewRepository[Record](db, "change_log")}
 
 	indexes := []driver.IndexModel{
 		{Keys: bson.D{bson.E{Key: changelog.BsonFieldNameUserID, Value: 1}}},
@@ -35,6 +34,10 @@ func NewChangeLogRepository(db *mongo.Storage) *ChangeLogRepository {
 	}
 
 	return r
+}
+
+func (r *ChangeLogRepository) SetSortJoin(field changelog.SortField, join mongo.SortJoin) {
+	r.rep.SetSortJoin(sortFieldName(field), join)
 }
 
 func (r *ChangeLogRepository) Insert(ctx context.Context, record *Record) error {
@@ -76,23 +79,23 @@ func (r *ChangeLogRepository) GetRecords(ctx context.Context, params *changelog.
 		return nil, err
 	}
 
-	opt := options.Find().
-		SetSort(r.recordsSort(params.Sort)).
-		SetSkip(params.Offset).
-		SetLimit(params.Limit)
-
-	var res changelog.Records
-
-	cursor, err := r.rep.Collection().Find(ctx, filter, opt)
+	opt := &repository.QueryOptions{
+		Archived: true,
+		Sort:     r.recordsSort(params.Sort),
+		Offset:   params.Offset,
+		Limit:    params.Limit,
+	}
+	records, err := r.rep.Find(ctx, filter, opt)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = cursor.Close(ctx) }()
-	if err = cursor.All(ctx, &res.Records); err != nil {
-		return nil, err
+
+	res := changelog.Records{Records: make([]changelog.Record, 0, len(records))}
+	for _, record := range records {
+		res.Records = append(res.Records, *record.Record)
 	}
 
-	res.TotalCount, err = r.rep.Collection().CountDocuments(ctx, filter)
+	res.TotalCount, err = r.rep.Count(ctx, filter, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -145,24 +148,26 @@ func (r *ChangeLogRepository) recordsFilter(filter *changelog.Filter) (bson.M, e
 	return queryFilter, nil
 }
 
-func (r *ChangeLogRepository) recordsSort(sort changelog.Sort) bson.D {
-	fieldName := changelog.BsonFieldNameTimestamp
-	switch sort.Field {
-	case changelog.SortFieldTimestamp:
-		fieldName = changelog.BsonFieldNameTimestamp
-	case changelog.SortFieldUser:
-		fieldName = changelog.BsonFieldNameUserID
-	case changelog.SortFieldOperation:
-		fieldName = changelog.BsonFieldNameOperation
-	case changelog.SortFieldEntity:
-		fieldName = changelog.BsonFieldNameEntity
-	}
-	order := 1
-	if sort.Order == repository.SortOrderDESC {
-		order = -1
+func (r *ChangeLogRepository) recordsSort(sort changelog.Sort) repository.SortOpt {
+	res := repository.SortOpt{{Field: sortFieldName(sort.Field), Desc: sort.Order == repository.SortOrderDESC}}
+	if sort.Field == changelog.SortFieldUser {
+		res = res.Desc(changelog.BsonFieldNameTimestamp).Desc("_id")
 	}
 
-	return bson.D{{Key: fieldName, Value: order}}
+	return res
+}
+
+func sortFieldName(field changelog.SortField) string {
+	switch field {
+	case changelog.SortFieldUser:
+		return changelog.BsonFieldNameUserID
+	case changelog.SortFieldOperation:
+		return changelog.BsonFieldNameOperation
+	case changelog.SortFieldEntity:
+		return changelog.BsonFieldNameEntity
+	default:
+		return changelog.BsonFieldNameTimestamp
+	}
 }
 
 // Compile time checks to ensure your type satisfies an interface
