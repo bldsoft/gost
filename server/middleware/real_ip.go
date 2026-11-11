@@ -13,6 +13,11 @@ type ctxKeyRealIP int
 
 const RealIPKey ctxKeyRealIP = 0
 
+// GetRealIP returns the address RealIP stored in the context.
+//
+// Deprecated: GetRealIP returns an address taken from client-supplied
+// forwarding headers and is vulnerable to IP spoofing. Build the client
+// address from headers only behind a proxy you control.
 func GetRealIP(ctx context.Context) string {
 	if ctx == nil {
 		return ""
@@ -31,9 +36,10 @@ func WithRealIP(ctx context.Context, realIP string) context.Context {
 // RealIP is a middleware that sets a http.Request's RemoteAddr to the results
 // of parsing either the X-Real-IP header or the X-Forwarded-For header (in that
 // order). It also put the value into the request context.
-// Deprecated: RealIP is vulnerable to the IP spoofing
-// gost's clients should not rely on this middleware to get the real IP
-// and should rather build their own
+//
+// Deprecated: RealIP trusts client-supplied forwarding headers and is
+// vulnerable to IP spoofing. Build the client address from headers only
+// behind a proxy you control.
 func RealIP(h http.Handler) http.Handler {
 	//nolint:staticcheck // SA1019: retained as a deprecated reference; chi RealIP rewrites RemoteAddr from client headers.
 	return chi.Chain(middleware.RealIP, injectRealIP).Handler(h)

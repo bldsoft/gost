@@ -74,12 +74,12 @@ r.Use(acl.MiddlewareFromConfig(cfg.Acl))        // matches r.RemoteAddr against 
 ```
 
 The middleware parses `r.RemoteAddr` (host:port, or a bare IP). It does not read `GetRealIP`
-or forwarding headers. `UseDefaultMiddlewares` still runs deprecated
-`server/middleware.RealIP` before route middleware, and that middleware overwrites
-`RemoteAddr` from `True-Client-IP`, `X-Real-IP`, or the leftmost `X-Forwarded-For` entry.
-An ACL on the default chain therefore matches the header address, not the TCP peer. Leave
-`RealIP` out of the chain (see [Middleware from gost](server.md#middleware-from-gost)) when
-the list must apply to the connection address.
+or forwarding headers. `UseDefaultMiddlewares` does not install deprecated
+`server/middleware.RealIP`. Adding that middleware overwrites `RemoteAddr` from
+`True-Client-IP`, `X-Real-IP`, or the leftmost `X-Forwarded-For` entry, so an ACL then
+matches the header address rather than the TCP peer. Leave it out
+(see [Middleware from gost](server.md#middleware-from-gost)) when the list must apply to
+the connection address.
 
 `acl.IpRange` is a fast prefix set (bart tree) with JSON and BSON marshalling, reusable for
 your own allow lists.
