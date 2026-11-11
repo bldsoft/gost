@@ -34,13 +34,13 @@ The command:
 
 - copies [`examples/notes`](../examples/notes) and rewrites the module path, the `cmd/` directory and `ServiceName`
 - adds the standalone repository files from [`examples/scaffold`](../examples/scaffold) (`Makefile`, `Dockerfile`, CI workflow, `AGENTS.md`, `.golangci.yml`, `.mockery.yml`, `.gitignore`), fills `<svc>`, `<org>` and `<module>`, and points the gci `prefix(...)` at your module
-- runs `go mod init`, `go get github.com/bldsoft/gost@<version>`, `go get github.com/hashicorp/go-metrics@v0.5.4`, `go get -tool` for mockery and enumer, `go generate`, `go mod tidy`, regenerates `config.md`, and runs `golangci-lint fmt`
+- runs `go mod init`, `go get github.com/bldsoft/gost@<version>`, `go get -tool` for mockery and enumer, `go generate`, `go mod tidy`, regenerates `config.md`, and runs `golangci-lint fmt`
 
-The `go-metrics` pin is required because `go mod tidy` in a module that imports gost's discovery
-packages resolves the tests of `hashicorp/consul/api`, which reach `hashicorp/memberlist` and
-`hashicorp/go-metrics/compat`. gost itself does not need that module, so it cannot pin it for
-you. Without the line, `go mod tidy` fails with
-`module github.com/hashicorp/go-metrics@latest found (v0.7.0), but does not contain package .../compat`.
+`go mod tidy` follows the tests of `hashicorp/consul/api` into `hashicorp/go-metrics/compat`.
+gost's module graph already selects `go-metrics` v0.6.0, which still contains that package.
+Do not downgrade it: `go get github.com/hashicorp/go-metrics@v0.5.4` conflicts with that
+requirement and drops `github.com/bldsoft/gost` from `go.mod`. Mockery then reports
+`invalid package name: ""` for `gost/repository`, `gost/log` and `gost/server`.
 
 The entry point is always the same five lines:
 
@@ -165,5 +165,5 @@ mocks are up to date, and builds the image on `main` and `v*` tags. A tag must m
 | `Failed to create http listener ... address already in use` | Change `SERVICE_BIND_ADDRESS`; note the process keeps running and shuts down on signal |
 | `SERVICE_NAME is deprecated, use SERVICE_INSTANCE_NAME instead` | Harmless warning; set `SERVICE_INSTANCE_NAME` per instance in deployment |
 | Integration tests are skipped | MongoDB unreachable locally; set `DATABASE_SERVER`. In CI (`CI=true`) they fail instead |
-| `go mod tidy`: `go-metrics@latest ... does not contain package .../compat` | `scaffold` pins this; if you tidy by hand, run `go get github.com/hashicorp/go-metrics@v0.5.4` |
+| `go mod tidy`: `go-metrics@latest ... does not contain package .../compat` | The selected `go-metrics` is newer than v0.6 and dropped `compat`. Run `go get github.com/hashicorp/go-metrics@v0.6.0`, which still has the package and matches gost's requirement |
 | `go mod tidy`: `repository 'https://github.com/<org>/<svc>/' not found` | A test imports `pkg/service/mocks` that does not exist yet; run `go tool mockery` first, then tidy |
