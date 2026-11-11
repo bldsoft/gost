@@ -4,67 +4,44 @@ package repository_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/v2/bson"
-	mongodrv "go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
-	gost "github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/examples/notes/pkg/entity"
 	"github.com/bldsoft/gost/examples/notes/pkg/repository"
 	"github.com/bldsoft/gost/mongo"
+	"github.com/bldsoft/gost/mongo/mongotest"
 	gostrepo "github.com/bldsoft/gost/repository"
 )
 
 var db *mongo.Storage
 
 func TestMain(m *testing.M) {
-	var cfg mongo.Config
-	gost.ReadConfig(&cfg, "")
-
-	if reachable(cfg) {
-		db = mongo.NewStorage(cfg)
-		db.Connect()
+	cfg, cleanup, err := mongotest.Start(context.Background())
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
 	}
+
+	db = mongo.NewStorage(cfg)
+	db.Connect()
 
 	code := m.Run()
 
-	if db != nil {
-		ctx := context.Background()
-		_ = db.Db.Collection(repository.CollectionName).Drop(ctx)
-		_ = db.Disconnect(ctx)
-	}
+	ctx := context.Background()
+	_ = db.Db.Collection(repository.CollectionName).Drop(ctx)
+	_ = db.Disconnect(ctx)
+	cleanup()
 	os.Exit(code)
 }
 
-func reachable(cfg mongo.Config) bool {
-	const timeout = 2 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	client, err := mongodrv.Connect(options.Client().ApplyURI(cfg.Server.String()).SetServerSelectionTimeout(timeout))
-	if err != nil {
-		return false
-	}
-	defer func() { _ = client.Disconnect(ctx) }()
-
-	return client.Ping(ctx, nil) == nil
-}
-
-// Locally a missing database skips the test; in CI (GitHub sets CI=true) it must fail,
-// otherwise a broken CI service goes unnoticed.
 func requireDB(t *testing.T) *repository.NoteRepository {
 	t.Helper()
-	if db == nil {
-		if os.Getenv("CI") != "" {
-			t.Fatal("MongoDB is required in CI: check DATABASE_SERVER")
-		}
-		t.Skip("MongoDB is not reachable: set DATABASE_SERVER to run integration tests")
-	}
 	t.Cleanup(func() {
 		_, _ = db.Db.Collection(repository.CollectionName).DeleteMany(context.Background(), bson.M{})
 	})

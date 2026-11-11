@@ -23,6 +23,7 @@ usage. Paths are relative to the gost module root.
 | Package | Purpose | Entry points | Notes |
 |---|---|---|---|
 | `mongo` | MongoDB storage, migrations, repositories, watchers, caches | `NewStorage`, `Storage.AddMigration/Connect/Disconnect`, `Config`, `EntityID`, `EntityTimeStamp`, `EntityArchived`, `NewRepository[T]`, `Repository`, `NewWatchedRepository`, `NewCachedRepository`, `NewWatcher`, `WithUserEntry`, `WrapErr`, `BsonFieldName*` | needs a replica set for streams and transactions |
+| `mongo/mongotest` | MongoDB replica set for integration tests | `Start` | Docker; `directConnection=true` |
 | `mongo/mocks` | mockery mocks | `NewRepository[T,U]`, `NewIWatcher` | prefer mocking your own interface |
 | `mongo/mock` | legacy gomock | | stale, do not use |
 | `mongo-lock` | Distributed lock primitives | `NewClient`, `CreateIndexes`, `XLock`, `SLock`, `Unlock`, `Renew`, `Status`, `NewPurger` | |

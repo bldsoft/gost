@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/bldsoft/gost/cache"
+	"github.com/bldsoft/gost/internal/testcontainers"
 	"github.com/bldsoft/gost/log"
 )
 
@@ -25,10 +26,18 @@ var (
 
 func TestMain(m *testing.M) {
 	log.SetLogLevel("")
-	storage := NewStorage([]string{"127.0.0.1:11211"}, Config{})
+
+	addr, cleanup, err := testcontainers.StartMemcached(context.Background())
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+
+	storage := NewStorage([]string{addr}, Config{})
 	rep = NewMemcacheRepository(storage, 2*time.Minute)
 
 	exitVal := m.Run()
+	cleanup()
 	os.Exit(exitVal)
 }
 

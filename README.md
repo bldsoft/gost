@@ -79,14 +79,14 @@ The [package reference](docs/package-reference.md) lists entry points and caveat
 
 ## Requirements
 
-Go 1.27 or newer (see `go.mod`). Integration tests need MongoDB 8 as a replica set, memcached
-and Consul; `.github/workflows/gost.yml` shows how CI starts them.
+Go 1.27 or newer (see `go.mod`). Integration tests start MongoDB, memcached and Consul
+with testcontainers, so Docker has to be running.
 
 ## Development
 
 ```bash
 make lint        # golangci-lint run ./...   (v2.15+, built with the same Go major version)
-make test        # gotestsum -race -tags=integration_test ./...   (needs the services above)
+make test        # gotestsum -race -tags=integration_test ./...   (needs Docker)
 make generate    # go generate ./...  (mockery via `go tool mockery`, enumer)
 make example     # go build ./examples/...
 ```

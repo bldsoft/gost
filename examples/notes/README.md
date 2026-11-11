@@ -55,7 +55,7 @@ process exits with "Server gracefully stopped".
 
 ```text
 make test              unit and route tests, no database needed
-make test-integration  needs MongoDB; skips locally when unreachable, fails in CI
+make test-integration  Docker; mongotest starts MongoDB
 make lint              golangci-lint with the gost configuration
 make generate          regenerate mocks (go tool mockery from the gost root)
 make config-md         regenerate config.md from the Config struct

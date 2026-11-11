@@ -16,7 +16,7 @@ Concise rules for coding agents. Humans are welcome too. Everything here is impl
 9. Routes live under `/<svc>/`; `/ping`, `/version` are public, `/env` is behind `auth.ApiKeyMiddleware`.
 10. Controllers embed `controller.BaseController`; errors map with `errors.Is` to 404/400/500; 5xx never leak error text.
 11. `mongo` `Delete` soft-deletes; pass `&repository.QueryOptions{Archived: false}` for a hard delete. Reads hide archived unless `Archived: true`.
-12. Tests never call `server.Start()`. Route tests: `chi.NewRouter()` + `r.Group(ms.BuildRoutes)` + `httptest`. Integration tests: `//go:build integration_test`, skip locally, `t.Fatal` when `CI` is set.
+12. Tests never call `server.Start()`. Route tests: `chi.NewRouter()` + `r.Group(ms.BuildRoutes)` + `httptest`. Integration tests: `//go:build integration_test` and `mongo/mongotest.Start` in `TestMain`. Docker must be running.
 13. Mocks are mockery output in `mocks/`; never edit, always regenerate and commit.
 14. One `VERSION` file; ldflags set `github.com/bldsoft/gost/version.{Version,GitCommit,GitBranch}`.
 15. Lint with the gost `.golangci.yml`; no `//nolint`. Comments only for contracts and invariants with a failure mode.
@@ -40,7 +40,7 @@ Concise rules for coding agents. Humans are welcome too. Everything here is impl
 - [ ] Struct embedding `mongo.Repository[T, *T]` from `mongo.NewRepository[T](db, "coll")`; domain queries as methods.
 - [ ] Interface in `pkg/service/interface.go` listing only the methods the service uses; `make generate`.
 - [ ] Indexes as a migration (`db.AddMigration(n, up, down)`, JSON command arrays).
-- [ ] Integration test behind `integration_test` covering soft-delete and `ErrNotFound`.
+- [ ] Integration test behind `integration_test`, Mongo from `mongotest.Start`, covering soft-delete and `ErrNotFound`.
 
 ### Add a background job
 - [ ] `server.NewContextAsyncRunner(func(ctx) error { ticker loop; select on ctx.Done() })`.
@@ -66,7 +66,7 @@ Concise rules for coding agents. Humans are welcome too. Everything here is impl
 make build            # bin/<svc> with version ldflags
 make run              # local run with dev defaults
 make test             # unit + route tests
-make test-integration # needs MongoDB replica set; CI fails, local skips
+make test-integration # Docker; mongotest starts MongoDB
 make lint             # golangci-lint with gost rules
 make generate         # mockery, enumer
 make config-md        # regenerate config.md
