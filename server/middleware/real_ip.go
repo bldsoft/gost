@@ -35,6 +35,7 @@ func WithRealIP(ctx context.Context, realIP string) context.Context {
 // gost's clients should not rely on this middleware to get the real IP
 // and should rather build their own
 func RealIP(h http.Handler) http.Handler {
+	//nolint:staticcheck // SA1019: retained as a deprecated reference; chi RealIP rewrites RemoteAddr from client headers.
 	return chi.Chain(middleware.RealIP, injectRealIP).Handler(h)
 }
 

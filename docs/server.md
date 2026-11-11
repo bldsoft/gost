@@ -32,7 +32,7 @@ server.NewServer(cfg.Server, microservice.New(cfg)).
 
 | Builder method | Effect |
 |---|---|
-| `UseDefaultMiddlewares()` | chi `RequestID`, gost `RealIP`, gost request logger, chi `Recoverer` |
+| `UseDefaultMiddlewares()` | chi `RequestID`, deprecated gost `RealIP`, gost request logger, chi `Recoverer` |
 | `AppendMiddlewares(mw...)` | Add global middlewares after the current ones |
 | `SetMiddlewares(mw...)` | Replace the global middleware chain |
 | `SetRouterWrapper(fn)` | Wrap the whole application router (for CORS or per-prefix middleware chains) |
@@ -159,7 +159,7 @@ Rules of the internal listener:
 
 | Middleware | Package | Notes |
 |---|---|---|
-| `RealIP` | `server/middleware` | chi RealIP plus `GetRealIP(ctx)` / `WithRealIP(ctx, ip)` |
+| `RealIP` | `server/middleware` | Deprecated. Chains chi `middleware.RealIP`, which sets `RemoteAddr` from `True-Client-IP`, then `X-Real-IP`, then the leftmost `X-Forwarded-For` entry, including a value the client sent. `GetRealIP` returns that address with the port removed. Do not use it for access control or audit. |
 | `RequestID` | `server/middleware` | also accepts `?req-id=` |
 | Request logger | `log` | `log.DefaultRequestLogger()`, `NewRequestLogger(formatter)`, `MultiLogger(...)`; skip paths with `log.NotLoggedEndpoints` |
 | `auth.ApiKeyMiddleware(header, key)` | `auth` | 401 on mismatch |
@@ -189,3 +189,7 @@ them in tests.
 - **Internal listener errors do not abort either.** When `PROBES_BIND_ADDRESS` cannot be bound,
   the probes are served nowhere: the main router already skipped them. Watch the log line
   `Failed to create internal listener`.
+- **`RealIP` trusts client headers.** `UseDefaultMiddlewares` still installs it, so `RemoteAddr`
+  and the request log `from` field become the forwarding-header value when one is present.
+  `auth/acl` reads `RemoteAddr` and therefore sees the same address. Call `SetMiddlewares`
+  without `RealIP` when the connection address must be the one that is trusted.

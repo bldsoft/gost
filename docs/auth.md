@@ -70,8 +70,16 @@ type Config struct {
 	Acl acl.Config `mapstructure:"ACL"`         // ACL_ALLOW, ACL_DENY: comma separated IPs or CIDRs
 }
 
-r.Use(acl.MiddlewareFromConfig(cfg.Acl))        // uses the real IP from server/middleware.RealIP
+r.Use(acl.MiddlewareFromConfig(cfg.Acl))        // matches r.RemoteAddr against ACL_ALLOW / ACL_DENY
 ```
+
+The middleware parses `r.RemoteAddr` (host:port, or a bare IP). It does not read `GetRealIP`
+or forwarding headers. `UseDefaultMiddlewares` still runs deprecated
+`server/middleware.RealIP` before route middleware, and that middleware overwrites
+`RemoteAddr` from `True-Client-IP`, `X-Real-IP`, or the leftmost `X-Forwarded-For` entry.
+An ACL on the default chain therefore matches the header address, not the TCP peer. Leave
+`RealIP` out of the chain (see [Middleware from gost](server.md#middleware-from-gost)) when
+the list must apply to the connection address.
 
 `acl.IpRange` is a fast prefix set (bart tree) with JSON and BSON marshalling, reusable for
 your own allow lists.
