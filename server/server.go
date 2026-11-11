@@ -15,7 +15,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/bldsoft/gost/log"
-	gost_middleware "github.com/bldsoft/gost/server/middleware"
 )
 
 type Router = chi.Router
@@ -27,7 +26,6 @@ var DefaultLogger func(next http.Handler) http.Handler = log.DefaultRequestLogge
 func defaultMiddlewares() chi.Middlewares {
 	return chi.Middlewares{
 		middleware.RequestID,
-		gost_middleware.RealIP,
 		middleware.Logger,
 		middleware.Recoverer,
 	}
