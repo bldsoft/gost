@@ -152,7 +152,7 @@ make lint && make test && make test-integration
 git add -A && git commit -m "feat: bootstrap <svc> on gost"
 ```
 
-The CI template runs lint, unit and integration tests (with a MongoDB replica set), checks that
+The CI template runs lint, unit and integration tests (Docker; tests start MongoDB), checks that
 mocks are up to date, and builds the image on `main` and `v*` tags. A tag must match `VERSION`.
 
 ## Troubleshooting
@@ -164,6 +164,6 @@ mocks are up to date, and builds the image on `main` and `v*` tags. A tag must m
 | `error connecting to db` repeating every second | MongoDB is down or `DATABASE_SERVER` is wrong; `DBConnectAsync` retries forever and `/probes/ready` stays 503 until it succeeds |
 | `Failed to create http listener ... address already in use` | Change `SERVICE_BIND_ADDRESS`; note the process keeps running and shuts down on signal |
 | `SERVICE_NAME is deprecated, use SERVICE_INSTANCE_NAME instead` | Harmless warning; set `SERVICE_INSTANCE_NAME` per instance in deployment |
-| Integration tests are skipped | MongoDB unreachable locally; set `DATABASE_SERVER`. In CI (`CI=true`) they fail instead |
+| Integration tests fail before they connect | Docker is not running; `mongotest.Start` launches MongoDB itself |
 | `go mod tidy`: `go-metrics@latest ... does not contain package .../compat` | `scaffold` pins this; if you tidy by hand, run `go get github.com/hashicorp/go-metrics@v0.5.4` |
 | `go mod tidy`: `repository 'https://github.com/<org>/<svc>/' not found` | A test imports `pkg/service/mocks` that does not exist yet; run `go tool mockery` first, then tidy |

@@ -6,7 +6,7 @@ A gost service is tested at three levels, all present in [`examples/notes`](../e
 |---|---|---|---|
 | Unit (service, config) | nothing | `go test ./...` | [`note_service_test.go`](../examples/notes/pkg/service/note_service_test.go) |
 | Route and controller | nothing | `go test ./...` | [`microservice_test.go`](../examples/notes/pkg/microservice/microservice_test.go), [`note_controller_test.go`](../examples/notes/pkg/controller/rest/note_controller_test.go) |
-| Integration (repositories) | MongoDB replica set | `go test -tags=integration_test ./...` | [`note_repository_integration_test.go`](../examples/notes/pkg/repository/note_repository_integration_test.go) |
+| Integration (repositories) | Docker | `go test -tags=integration_test ./...` | [`note_repository_integration_test.go`](../examples/notes/pkg/repository/note_repository_integration_test.go) |
 
 Use `testify/require`, table-driven cases, `t.Parallel()` where state allows, and `-race`.
 
@@ -79,49 +79,38 @@ way can also run `goleak` in `TestMain`.
 ## Integration tests
 
 Put them behind the `integration_test` build tag, the same tag gost uses, so `go test ./...`
-stays fast and `make test-integration` runs everything:
+stays fast and `make test-integration` runs everything. `mongo/mongotest.Start` launches a
+single-node replica set and returns a `mongo.Config` pointed at it. Docker must be running;
+nothing is shared with a database you started yourself.
 
 <!-- source: examples/notes/pkg/repository/note_repository_integration_test.go -->
 ```go
 //go:build integration_test
 
 func TestMain(m *testing.M) {
-	var cfg mongo.Config
-	gost.ReadConfig(&cfg, "")          // DATABASE_SERVER, DATABASE_DBNAME
-
-	if reachable(cfg) {                // 2 second ping with the raw driver
-		db = mongo.NewStorage(cfg)
-		db.Connect()
+	cfg, cleanup, err := mongotest.Start(context.Background())
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
 	}
+
+	db = mongo.NewStorage(cfg)
+	db.Connect()
+
 	code := m.Run()
-	... drop the collection, disconnect ...
+
+	ctx := context.Background()
+	_ = db.Db.Collection(repository.CollectionName).Drop(ctx)
+	_ = db.Disconnect(ctx)
+	cleanup()
 	os.Exit(code)
 }
-
-func requireDB(t *testing.T) *repository.NoteRepository {
-	t.Helper()
-	if db == nil {
-		if os.Getenv("CI") != "" {
-			t.Fatal("MongoDB is required in CI: check DATABASE_SERVER")
-		}
-		t.Skip("MongoDB is not reachable: set DATABASE_SERVER to run integration tests")
-	}
-	t.Cleanup(func() { /* DeleteMany on the collection */ })
-
-	return repository.NewNoteRepository(db)
-}
 ```
-
-The skip-locally, fail-in-CI rule matters: GitHub Actions sets `CI=true`, so a broken database
-service fails the build instead of silently skipping every repository test.
 
 Run locally:
 
 ```bash
-docker run -d --name mongo -e GLIBC_TUNABLES=glibc.pthread.rseq=1 -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
-docker exec mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
-DATABASE_SERVER='mongodb://127.0.0.1:27017/?replicaSet=rs0&directConnection=true' DATABASE_DBNAME=test \
-  go test -race -count=1 -tags=integration_test ./...
+go test -race -count=1 -tags=integration_test ./...
 ```
 
 What to cover in repository tests: the soft-delete contract (`Delete` hides, `Archived: true`

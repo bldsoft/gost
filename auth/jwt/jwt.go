@@ -2,9 +2,8 @@ package jwt
 
 import (
 	"fmt"
-	"os"
-
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	jwtauth "github.com/go-chi/jwtauth/v5"
@@ -64,5 +63,6 @@ func SignToken(token jwt.Token, cfg JwtConfig) (signed []byte, err error) {
 	if !ok {
 		return nil, fmt.Errorf("unknown jwt alg %q", cfg.Alg)
 	}
+
 	return jwt.Sign(token, jwt.WithKey(alg, cfg.PrivateKey()))
 }
