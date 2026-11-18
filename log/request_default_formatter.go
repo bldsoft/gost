@@ -10,6 +10,7 @@ import (
 
 type DefaultFormatter struct {
 	LogResponseHeaders bool
+	HiddenHeaders      []string
 }
 
 func NewDefaultFormatter() *DefaultFormatter {
@@ -37,7 +38,16 @@ func (l *DefaultFormatter) NewLogEntry(r *http.Request) (middleware.LogEntry, *h
 	logFields["pr"] = r.Proto
 	logFields["mt"] = r.Method
 	logFields["from"] = r.RemoteAddr
-	logFields["hdr"] = r.Header
+	hdr := r.Header
+	if len(l.HiddenHeaders) > 0 {
+		hdr = r.Header.Clone()
+		for _, h := range l.HiddenHeaders {
+			if hdr.Get(h) != "" {
+				hdr.Set(h, "****")
+			}
+		}
+	}
+	logFields["hdr"] = hdr
 	//TODO: trace body
 	/*if log.Trace().Enabled() {
 		logFields["body"] =
