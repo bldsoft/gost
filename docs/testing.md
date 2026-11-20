@@ -71,8 +71,8 @@ This works because `New` does not touch the network; database connections live i
 `Initialize()`, which the test does not call. The same test proves that `/ping`, `/version` and
 `/env` exist and that secrets are masked.
 
-To test with the real middleware chain (request ID, real IP, recoverer), add
-`middleware.RequestID`, `gost_middleware.RealIP`, `middleware.Recoverer` to the router, mount
+To test with the real middleware chain (request ID, recoverer), add
+`middleware.RequestID`, `middleware.Recoverer` to the router, mount
 with `r.Group(ms.BuildRoutes)` and serve through `httptest.NewServer`; an e2e harness built this
 way can also run `goleak` in `TestMain`.
 
