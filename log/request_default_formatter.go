@@ -96,7 +96,7 @@ func maskHeaders(header http.Header, hidden []string) http.Header {
 	}
 	header = header.Clone()
 	for _, h := range hidden {
-		if header.Get(h) != "" {
+		if len(header.Values(h)) > 0 {
 			header.Set(h, "****")
 		}
 	}
