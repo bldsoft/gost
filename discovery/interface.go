@@ -3,6 +3,8 @@ package discovery
 import (
 	"context"
 
+	"github.com/rs/zerolog"
+
 	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/server"
 	"github.com/bldsoft/gost/utils"
@@ -37,4 +39,16 @@ type ServiceInstanceInfo struct {
 	Branch      string            `json:"branch"`
 	Healthy     bool              `json:"healthy"`
 	Meta        map[string]string `json:"meta"`
+}
+
+// don't expose the meta field to the logger cause some services might have sensitive data inside
+func (si ServiceInstanceInfo) MarshalZerologObject(e *zerolog.Event) {
+	e.Str("serviceName", si.ServiceName).
+		Str("id", si.ID).
+		Str("address", si.Address.String()).
+		Str("node", si.Node).
+		Str("version", si.Version).
+		Str("commit", si.Commit).
+		Str("branch", si.Branch).
+		Bool("healthy", si.Healthy)
 }
