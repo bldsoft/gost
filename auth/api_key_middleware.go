@@ -13,6 +13,7 @@ func ApiKeyMiddleware(header, apiKey string) func(next http.Handler) http.Handle
 			if apiKey != passedApiKey {
 				log.FromContext(r.Context()).DebugWithFields(log.Fields{header: passedApiKey}, "Empty or invalid API key")
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+
 				return
 			}
 			next.ServeHTTP(w, r)

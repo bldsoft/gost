@@ -19,6 +19,7 @@ func Log(alertLog AlertLog) alert.Middleware {
 			}
 			if err := alertLog.UpsertMany(ctx, alerts...); err != nil {
 				log.FromContext(ctx).ErrorWithFields(log.Fields{"err": err}, "failed to insert alerts into log")
+
 				return
 			}
 			next.Handle(ctx, alerts...)

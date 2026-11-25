@@ -1,10 +1,7 @@
 package utils
 
+import "slices"
+
 func IsIn[T comparable](first T, slice ...T) bool {
-	for _, v := range slice {
-		if first == v {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, first)
 }

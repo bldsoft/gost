@@ -1,9 +1,8 @@
 package webhook
 
 import (
-	"encoding/json"
-
 	_ "embed"
+	"encoding/json"
 
 	"github.com/bldsoft/gost/alert/notify/channel"
 )
@@ -20,6 +19,7 @@ func prepareWebhookConfig(cfg Config) Config {
 	if cfg.BodyFormat == nil {
 		cfg.BodyFormat = DefaultWebhookConfig.BodyFormat
 	}
+
 	return cfg
 }
 
@@ -29,5 +29,6 @@ type DefaultMessageType struct {
 
 func DefaultJSONBodyFormat(msg channel.Message) (body []byte, mimeType string) {
 	body, _ = json.Marshal(msg.Data)
+
 	return body, "application/json"
 }

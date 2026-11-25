@@ -13,5 +13,6 @@ func Hostname() string {
 	if err != nil {
 		panic(err)
 	}
+
 	return hostname
 }

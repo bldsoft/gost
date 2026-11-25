@@ -21,6 +21,7 @@ func GetRealIP(ctx context.Context) string {
 	if realIP, ok := ctx.Value(RealIPKey).(string); ok {
 		return realIP
 	}
+
 	return ""
 }
 
@@ -40,6 +41,7 @@ func injectRealIP(h http.Handler) http.Handler {
 		r = r.WithContext(WithRealIP(r.Context(), TrimPort(r.RemoteAddr)))
 		h.ServeHTTP(w, r)
 	}
+
 	return http.HandlerFunc(fn)
 }
 
@@ -48,5 +50,6 @@ func TrimPort(s string) string {
 	if err != nil {
 		return s
 	}
+
 	return host
 }

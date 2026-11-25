@@ -3,9 +3,10 @@ package controller
 import (
 	"net/http"
 
+	"github.com/ghodss/yaml"
+
 	"github.com/bldsoft/gost/config"
 	v "github.com/bldsoft/gost/version"
-	"github.com/ghodss/yaml"
 )
 
 type version struct {
@@ -36,7 +37,7 @@ func GetVersionHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {string} string "OK"
 // @Router /ping [get]
 func GetPingHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("pong"))
+	_, _ = w.Write([]byte("pong"))
 }
 
 // GetEnvHandler get current environment
@@ -46,15 +47,15 @@ func GetPingHandler(w http.ResponseWriter, r *http.Request) {
 // @Produce text/yaml
 // @Success 200 {string} string "OK"
 // @Router /env [get]
-func GetEnvHandler(cfg config.IConfig, features interface{}) http.HandlerFunc {
+func GetEnvHandler(cfg config.IConfig, features any) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(config.FormatEnv(cfg)))
+		_, _ = w.Write([]byte(config.FormatEnv(cfg)))
 
 		yamlFeatures, _ := yaml.Marshal(struct {
-			Features interface{}
+			Features any
 		}{
 			Features: features,
 		})
-		w.Write(([]byte(yamlFeatures)))
+		_, _ = w.Write(([]byte(yamlFeatures)))
 	}
 }

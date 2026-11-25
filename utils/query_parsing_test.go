@@ -64,14 +64,12 @@ func TestFromQuery(t *testing.T) {
 				},
 			},
 			want: &TestStruct{
-				SField:  "string",
-				IField:  10,
-				BField:  true,
-				PSField: &pstring,
-				PIField: &pint,
-				Nested: Nested{
-					NestedSField: "nested",
-				},
+				SField:       "string",
+				IField:       10,
+				BField:       true,
+				PSField:      &pstring,
+				PIField:      &pint,
+				NestedSField: "nested",
 			},
 		},
 		{
@@ -97,6 +95,7 @@ func TestFromQuery(t *testing.T) {
 				if !tt.wantErr {
 					t.Errorf("FromQuery() unexpected error")
 				}
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

@@ -18,6 +18,7 @@ func CreateService(s storage.IStorage, serviceName string) IFeatureService {
 		return NewService(NewMongoRepository(s, serviceName))
 	default:
 		log.Panicf("%s doesn't support feature repository", reflect.TypeOf(s))
+
 		return nil
 	}
 }

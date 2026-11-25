@@ -17,23 +17,27 @@ func (b *objToTypeMap[V, I]) Add(obj V, valueExample I) error {
 	if t, dup := b.objToConcreteType.LoadOrStore(obj, valueType); dup && t != valueType {
 		return fmt.Errorf("duplicated type for %v: %q != %q", obj, t, valueType)
 	}
+
 	return nil
 }
 
 func (m *objToTypeMap[V, I]) Keys() []V {
 	var res []V
-	m.objToConcreteType.Range(func(key, value interface{}) bool {
+	m.objToConcreteType.Range(func(key, value any) bool {
 		res = append(res, key.(V))
+
 		return true
 	})
+
 	return res
 }
 
-func (m *objToTypeMap[V, I]) GetType(obj V) (t reflect.Type, ok bool) {
+func (m *objToTypeMap[V, I]) GetType(obj V) (reflect.Type, bool) {
 	if typ, ok := m.objToConcreteType.Load(obj); ok {
 		return typ.(reflect.Type), true
 	}
-	return
+
+	return nil, false
 }
 
 func (b *objToTypeMap[V, I]) AllocValue(obj V) (val I, err error) {
@@ -41,6 +45,7 @@ func (b *objToTypeMap[V, I]) AllocValue(obj V) (val I, err error) {
 	if err != nil {
 		return val, err
 	}
+
 	return v.Interface().(I), nil
 }
 
@@ -51,9 +56,11 @@ func (b *objToTypeMap[V, I]) allocValue(obj V) (ptr, val reflect.Value, err erro
 	}
 
 	v := reflect.New(typ).Elem()
-	if v.Type().Kind() == reflect.Ptr {
+	if v.Type().Kind() == reflect.Pointer {
 		v.Set(reflect.New(v.Type().Elem()))
+
 		return v, v, nil
 	}
+
 	return v.Addr(), v, nil
 }

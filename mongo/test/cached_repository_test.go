@@ -4,18 +4,20 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"os"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/bldsoft/gost/cache/bigcache"
-	"github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/mongo"
+	"github.com/bldsoft/gost/mongo/mongotest"
 	"github.com/bldsoft/gost/repository"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -24,7 +26,8 @@ const (
 )
 
 var (
-	db *mongo.Storage
+	db           *mongo.Storage
+	mongoCleanup func()
 )
 
 type testEntity struct {
@@ -58,16 +61,23 @@ func cachedTestEntityRepository() *mongo.CachedRepository[testEntity, *testEntit
 
 func setup() {
 	log.SetLogLevel("")
-	var cfg mongo.Config
-	config.ReadConfig(&cfg, "")
+
+	cfg, cleanup, err := mongotest.Start(context.Background())
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+	mongoCleanup = cleanup
+
 	db = mongo.NewStorage(cfg)
 	db.Connect()
 }
 
 func tearDown() {
 	ctx := context.Background()
-	db.Db.Collection(testCollection).Drop(ctx)
+	_ = db.Db.Collection(testCollection).Drop(ctx)
 	_ = db.Disconnect(ctx)
+	mongoCleanup()
 }
 
 func TestMain(m *testing.M) {

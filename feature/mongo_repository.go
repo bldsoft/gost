@@ -31,6 +31,7 @@ func NewMongoRepository(db *mongo.Storage, serviceInstanceName string, collName 
 		log.Infof("Features loaded")
 	}
 	rep.InitWatcher()
+
 	return rep
 }
 
@@ -41,6 +42,7 @@ func (r *MongoRepository) InitWatcher() {
 		err := bson.Unmarshal(fullDocument, f)
 		if err != nil {
 			log.Errorf("Failed to unmarshal Feature: %s", err.Error())
+
 			return
 		}
 		r.SetFeature(f)
@@ -55,13 +57,14 @@ func (r *MongoRepository) SetFeature(feature *Feature) {
 		for _, serviceValue := range *feature.SrvValues {
 			if serviceValue.SrvName == r.serviceInstanceName {
 				value = serviceValue.Value
+
 				break
 			}
 		}
 	}
 
 	if f := config.Features.Get(feature.ID); f != nil {
-		f.SetFromString(value)
+		_ = f.SetFromString(value)
 	}
 }
 
@@ -74,6 +77,7 @@ func (r *MongoRepository) Load() error {
 	for _, feature := range features {
 		r.SetFeature(feature)
 	}
+
 	return nil
 }
 
@@ -82,6 +86,7 @@ func (r *MongoRepository) FindByName(ctx context.Context, name string) *Feature 
 	if err != nil {
 		return nil
 	}
+
 	return feature
 }
 
@@ -90,6 +95,7 @@ func (r *MongoRepository) FindByID(ctx context.Context, id config.IdType) (*Feat
 	if err != nil {
 		return nil, err
 	}
+
 	return feature, nil
 }
 

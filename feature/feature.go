@@ -23,15 +23,17 @@ type Feature struct {
 
 func NewFeature(feature feature.IFeature, name string, description string) *Feature {
 	value := feature.String()
+
 	return &Feature{ID: feature.GetID(), Name: name, Description: &description, GlobalValue: &value}
 }
 
 func (f *Feature) WithGroups(groups ...string) *Feature {
 	f.Groups = groups
+
 	return f
 }
 
-func (f *Feature) RawID() interface{} {
+func (f *Feature) RawID() any {
 	return f.ID
 }
 
@@ -41,6 +43,7 @@ func (f *Feature) GenerateID() {
 
 func (f *Feature) SetIDFromString(id string) error {
 	f.ID = feature.IdFromString(id)
+
 	return nil
 }
 

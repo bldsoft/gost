@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"os"
 	"sort"
 	"testing"
 	"time"
@@ -14,6 +15,8 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
+	"github.com/bldsoft/gost/mongo/mongotest"
 )
 
 func getRandomString() string {
@@ -25,12 +28,27 @@ func getRandomString() string {
 	return fmt.Sprintf("%X", b)
 }
 
-var testDb *mongo.Client
-
-// NOTE: before running the tests in this file, change the testDbURI to the MongoDB URI you want to use
-const (
-	testDbURI = "mongodb://localhost:27017"
+var (
+	testDb    *mongo.Client
+	testDbURI string
 )
+
+func TestMain(m *testing.M) {
+	cfg, cleanup, err := mongotest.Start(context.Background())
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+	testDbURI = cfg.Server.String()
+
+	code := m.Run()
+
+	if testDb != nil {
+		_ = testDb.Disconnect(context.Background())
+	}
+	cleanup()
+	os.Exit(code)
+}
 
 func setup(t *testing.T) *mongo.Collection {
 	collection := getRandomString()

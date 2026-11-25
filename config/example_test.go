@@ -18,7 +18,7 @@ type Config struct {
 }
 
 func (c *Config) SetDefaults() {
-	c.Clickhouse.Database.ConnectionString = "tcp://127.0.0.1:9000?database=Parent"
+	c.Clickhouse.ConnectionString = "tcp://127.0.0.1:9000?database=Parent"
 	c.Clickhouse.Param1 = "parent"
 }
 
@@ -31,7 +31,7 @@ type Clickhouse struct {
 }
 
 func (c *Clickhouse) SetDefaults() {
-	c.Database.ConnectionString = "tcp://127.0.0.1:9000?database=Nested"
+	c.ConnectionString = "tcp://127.0.0.1:9000?database=Nested"
 	c.Param1 = "nested"
 	c.Param2 = "nested"
 }
@@ -45,14 +45,14 @@ type Database struct {
 func Example() {
 	var cfg Config
 	defer os.Clearenv()
-	os.Setenv("EX_PARAM1", "gost")
-	os.Setenv("EX_PARAM2", "2")
-	os.Setenv("EX_PARAM3", "true")
+	_ = os.Setenv("EX_PARAM1", "gost")
+	_ = os.Setenv("EX_PARAM2", "2")
+	_ = os.Setenv("EX_PARAM3", "true")
 
-	os.Setenv("EX_TAGGED", "tagged value")
+	_ = os.Setenv("EX_TAGGED", "tagged value")
 
-	os.Setenv("EX_MONGO_CONNECTION_STRING", "mongodb://localhost:27017")
-	os.Setenv("EX_CLICKHOUSE_CONNECTION_STRING", "tcp://127.0.0.1:9000?database=test")
+	_ = os.Setenv("EX_MONGO_CONNECTION_STRING", "mongodb://localhost:27017")
+	_ = os.Setenv("EX_CLICKHOUSE_CONNECTION_STRING", "tcp://127.0.0.1:9000?database=test")
 	// The value of EX_CLICKHOUSE_PARAM1 will be set from Config.SetDefaults (not Clickhouse.SetDefaults)
 	// The value of EX_CLICKHOUSE_PARAM2 will be set from Clickhouse.SetDefaults
 

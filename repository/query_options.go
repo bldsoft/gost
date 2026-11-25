@@ -4,7 +4,7 @@ type QueryOptions struct {
 	Archived bool
 	Fields   []string // option for read operations, empty slice means all
 	Sort     SortOpt
-	Filter   interface{}
+	Filter   any
 	Limit    int64
 	Offset   int64
 }

@@ -1,6 +1,9 @@
 package server
 
-import "context"
+import (
+	"context"
+	"slices"
+)
 
 // AsyncJobChain starts jobs in sequence and stops them in reverse order.
 type AsyncJobChain struct {
@@ -21,12 +24,13 @@ func (c *AsyncJobChain) Run() error {
 			return err
 		}
 	}
+
 	return nil
 }
 
 func (c *AsyncJobChain) Stop(ctx context.Context) error {
-	for i := len(c.runners) - 1; i >= 0; i-- {
-		if err := c.runners[i].Stop(ctx); err != nil {
+	for _, v := range slices.Backward(c.runners) {
+		if err := v.Stop(ctx); err != nil {
 			return err
 		}
 	}

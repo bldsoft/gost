@@ -27,6 +27,7 @@ func (s *UserService[PT, T]) Create(ctx context.Context, user PT, recoverDeleted
 	if recoverDeleted {
 		return s.userRep.InsertOrRecover(ctx, user)
 	}
+
 	return s.userRep.Insert(ctx, user)
 }
 
@@ -46,6 +47,7 @@ func (s *UserService[PT, T]) Update(ctx context.Context, user PT) error {
 		}
 		user.SetPassword(hashedPass)
 	}
+
 	return s.userRep.Update(ctx, user)
 }
 
@@ -59,6 +61,7 @@ func (s *UserService[PT, T]) UpdatePassword(ctx context.Context, id, password st
 		return err
 	}
 	user.SetPassword(hashedPass)
+
 	return s.userRep.Update(ctx, user)
 }
 

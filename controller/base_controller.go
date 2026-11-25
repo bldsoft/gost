@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/bldsoft/gost/log"
@@ -18,10 +17,10 @@ func (c BaseController) ResponseError(w http.ResponseWriter, err string, code in
 }
 
 func (c BaseController) ResponseOK(w http.ResponseWriter) {
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 }
 
-func (c BaseController) ResponseJson(w http.ResponseWriter, r *http.Request, v interface{}, needObjectLog ...bool) {
+func (c BaseController) ResponseJson(w http.ResponseWriter, r *http.Request, v any, needObjectLog ...bool) {
 	w.Header().Set("Content-Type", "application/json")
 	// err := json.NewEncoder(w).Encode(v)
 	body, err := json.Marshal(v)
@@ -34,16 +33,16 @@ func (c BaseController) ResponseJson(w http.ResponseWriter, r *http.Request, v i
 	}
 }
 
-func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request, obj interface{}, needObjectLog ...bool) bool {
+func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request, obj any, needObjectLog ...bool) bool {
 	var bodyBytes []byte
 	if r.Body != nil {
 		if contentlen := r.ContentLength; contentlen <= 0 {
-			bodyBytes, _ = ioutil.ReadAll(r.Body)
+			bodyBytes, _ = io.ReadAll(r.Body)
 		} else {
 			bodyBytes = make([]byte, contentlen)
-			io.ReadFull(r.Body, bodyBytes)
+			_, _ = io.ReadFull(r.Body, bodyBytes)
 		}
-		r.Body.Close()
+		_ = r.Body.Close()
 		// r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
 
@@ -54,7 +53,9 @@ func (c BaseController) GetObjectFromBody(w http.ResponseWriter, r *http.Request
 	}
 	if err != nil {
 		c.ResponseError(w, err.Error(), http.StatusBadRequest)
+
 		return false
 	}
+
 	return true
 }

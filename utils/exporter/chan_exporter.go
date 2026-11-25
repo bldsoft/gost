@@ -16,5 +16,6 @@ func (e *ChanExporter[T]) Export(items ...T) (n int, err error) {
 			return i, nil
 		}
 	}
+
 	return len(items), nil
 }

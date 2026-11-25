@@ -47,6 +47,7 @@ func (wp *WorkerPool) SetWorkerN(n int64) *WorkerPool {
 		}
 	}
 	atomic.StoreInt64(&wp.workerN, n)
+
 	return wp
 }
 
@@ -60,6 +61,7 @@ func (wp *WorkerPool) taskChan() chan func() {
 			wp.taskC = make(chan func(), workPoolTaskChannelSize)
 		}
 	})
+
 	return wp.taskC
 }
 
@@ -73,10 +75,8 @@ func (wp *WorkerPool) In() chan<- func() {
 }
 
 func (wp *WorkerPool) startWorker() {
-	wp.wg.Add(1)
 
-	go func() {
-		defer wp.wg.Done()
+	wp.wg.Go(func() {
 		for {
 			select {
 			case <-wp.stopWorkerC:
@@ -88,7 +88,7 @@ func (wp *WorkerPool) startWorker() {
 				f()
 			}
 		}
-	}()
+	})
 }
 
 func (wp *WorkerPool) CloseAndWait() {

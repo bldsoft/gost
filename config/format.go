@@ -43,6 +43,7 @@ func (l *paramList) WriteTo(formatter Formatter) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -54,8 +55,9 @@ func formatValue(v reflect.Value) string {
 		}
 		var sb strings.Builder
 		for i := 0; i < v.Len(); i++ {
-			sb.WriteString(fmt.Sprintf("%v,", v.Index(i)))
+			_, _ = fmt.Fprintf(&sb, "%v,", v.Index(i))
 		}
+
 		return sb.String()[:sb.Len()-1]
 	default:
 		return fmt.Sprintf("%v", v)
@@ -66,7 +68,7 @@ func formatValue(v reflect.Value) string {
 // It uses "description" tag to fill description column.
 // If there config has fields with the same env name their descriptions are concateneted.
 // if the field tag is "-", the field is always omitted.
-func WriteConfigDescription(config interface{}, envPrefix string, formatter Formatter) error {
+func WriteConfigDescription(config any, envPrefix string, formatter Formatter) error {
 	list := newDescriptionList()
 	if err := iterateFields(config, envPrefix, nil, func(envVarName, envNamePrefix string, field reflect.StructField, value reflect.Value) error {
 		if !field.IsExported() {
@@ -75,6 +77,7 @@ func WriteConfigDescription(config interface{}, envPrefix string, formatter Form
 		if description := field.Tag.Get(DescriptionTagName); description != "-" {
 			list.Add(addPrefix(envVarName, envNamePrefix), formatValue(value), description)
 		}
+
 		return nil
 	}, nil); err != nil {
 		return err
@@ -83,11 +86,12 @@ func WriteConfigDescription(config interface{}, envPrefix string, formatter Form
 	return list.WriteTo(formatter)
 }
 
-func WriteMarkdownDescription(filename string, config interface{}, envPrefix string) error {
+func WriteMarkdownDescription(filename string, config any, envPrefix string) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
+
 	return WriteConfigDescription(config, envPrefix, NewMarkdownFormatter(file, true))
 }

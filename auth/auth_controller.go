@@ -5,21 +5,23 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/bldsoft/gost/controller"
-	"github.com/bldsoft/gost/log"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/sessions"
+
+	"github.com/bldsoft/gost/controller"
+	"github.com/bldsoft/gost/log"
 )
 
 const SessionUserKey = "user"
 
 var (
-	UserEntryCtxKey    interface{} = "UserEntry"
-	SessionEntryCtxKey interface{} = "SessionEntry"
+	UserEntryCtxKey    any = "UserEntry"
+	SessionEntryCtxKey any = "SessionEntry"
 )
 
-func requestContextAdd(r *http.Request, key, value interface{}) *http.Request {
+func requestContextAdd(r *http.Request, key, value any) *http.Request {
 	r = r.WithContext(context.WithValue(r.Context(), key, value))
+
 	return r
 }
 
@@ -39,11 +41,12 @@ func withSessionContext(ctx context.Context, s *sessions.Session) context.Contex
 // UserFromContext returns User session
 func SessionFromContext(ctx context.Context) *Session {
 	s, _ := ctx.Value(SessionEntryCtxKey).(*Session)
+
 	return s
 }
 
 // UserFromContext returns the User entry for a request.
-func UserFromContext(ctx context.Context) interface{} {
+func UserFromContext(ctx context.Context) any {
 	return ctx.Value(UserEntryCtxKey)
 }
 
@@ -68,8 +71,10 @@ func (c *AuthController[PT, T]) session(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err}, "Failed to get session")
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+
 		return nil, false
 	}
+
 	return session, true
 }
 
@@ -78,14 +83,17 @@ func (c *AuthController[PT, T]) saveSession(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err}, "Failed to save session")
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+
 		return false
 	}
+
 	return true
 }
 
 func (c *AuthController[PT, T]) deleteSession(w http.ResponseWriter, r *http.Request, session *sessions.Session) bool {
 	// Delete session (MaxAge <= 0)
 	session.Options.MaxAge = -1
+
 	return c.saveSession(w, r, session)
 }
 
@@ -98,12 +106,14 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 				log.FromContext(r.Context()).ErrorWithFields(log.Fields{"err": err}, "bad session")
 				http.SetCookie(w, &http.Cookie{Name: c.cookieName, MaxAge: -1, Path: "/"})
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+
 				return
 			}
 
 			user, ok := session.Values[SessionUserKey].(T)
 			if !ok {
 				next.ServeHTTP(w, r)
+
 				return
 			}
 			next.ServeHTTP(w, WithUserContext(withSessionRequest(r, session), &user))
@@ -114,7 +124,7 @@ func (c *AuthController[PT, T]) AuthenticateMiddleware() func(http.Handler) http
 
 func (c *AuthController[PT, T]) Login(w http.ResponseWriter, r *http.Request) {
 	var creds T
-	if !c.BaseController.GetObjectFromBody(w, r, &creds, false) {
+	if !c.GetObjectFromBody(w, r, &creds, false) {
 		return
 	}
 

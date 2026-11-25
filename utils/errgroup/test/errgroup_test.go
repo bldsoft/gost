@@ -5,8 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bldsoft/gost/utils/errgroup"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bldsoft/gost/utils/errgroup"
 )
 
 func getErrGroup(errsCount int, shouldPanic bool) *errgroup.Group {

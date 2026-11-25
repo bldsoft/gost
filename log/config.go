@@ -19,5 +19,6 @@ func (c *Config) SetDefaults() {
 // Validate ...
 func (c *Config) Validate() error {
 	_, err := zerolog.ParseLevel(c.Level)
+
 	return err
 }

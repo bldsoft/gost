@@ -74,6 +74,7 @@ func (hc *HealthChecker) HealthCheck(ctx context.Context, url string) error {
 	}
 
 	hc.urlToMtx.CompareAndDelete(url, mtxI)
+
 	return check.err
 }
 
@@ -87,6 +88,7 @@ func (hc *HealthChecker) runHealthCheck(ctx context.Context, url string, healthC
 		if time.Since(check.lastRead) > hc.HealthCheckTTLWithoutRead() {
 			if hc.cachedHealthChecks.CompareAndDelete(url, check) {
 				log.FromContext(ctx).DebugWithFields(log.Fields{"URL": url}, "Health checker: finished")
+
 				return
 			}
 			check, _ = hc.cachedHealthCheck(url)
@@ -111,6 +113,7 @@ func (hc *HealthChecker) checkWithRetries(ctx context.Context, url string, retry
 			break
 		}
 	}
+
 	return err
 }
 
@@ -128,7 +131,7 @@ func (hc *HealthChecker) check(ctx context.Context, url string) error {
 	if err != nil {
 		return fmt.Errorf("failed to make the request for the health check : %w", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if res.StatusCode >= 300 {
 		return fmt.Errorf("%s: %w", url, ErrServiceNotAvailable)
@@ -142,6 +145,7 @@ func (hc *HealthChecker) cachedHealthCheck(url string) (check healthCheck, ok bo
 	if ok {
 		return checkI.(healthCheck), true
 	}
+
 	return healthCheck{}, false
 }
 
@@ -149,6 +153,7 @@ func (hc *HealthChecker) HealthCheckTimeout() time.Duration {
 	if hc.healthCheckTimeout == 0 {
 		return time.Second
 	}
+
 	return hc.healthCheckTimeout
 }
 
@@ -160,6 +165,7 @@ func (hc *HealthChecker) HealthCheckInterval() time.Duration {
 	if hc.healthCheckInterval == 0 {
 		return 30 * time.Second
 	}
+
 	return hc.healthCheckInterval
 }
 
@@ -175,5 +181,6 @@ func (hc *HealthChecker) client() HttpClient {
 	if hc.httpClient == nil {
 		return http.DefaultClient
 	}
+
 	return hc.httpClient
 }

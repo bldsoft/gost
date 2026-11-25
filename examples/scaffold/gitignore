@@ -1,0 +1,15 @@
+# Build output
+/bin/
+
+# Test binaries and coverage
+*.test
+*.out
+
+# Editors
+.vscode/
+.idea/
+
+# Local environment files; never commit secrets
+.env
+.env.*
+!.env.example

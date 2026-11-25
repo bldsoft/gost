@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/churl"
+
 	gost "github.com/bldsoft/gost/config"
 	"github.com/bldsoft/gost/utils"
 )
@@ -23,11 +24,12 @@ func (c *Config) Validate() (err error) {
 		return nil
 	}
 
-	if err := c.prepareDsn(); err != nil {
+	if err = c.prepareDsn(); err != nil {
 		return err
 	}
 
 	c.options, err = clickhouse.ParseDSN(c.Dsn.String())
+
 	return err
 }
 
@@ -42,14 +44,16 @@ func (c *Config) prepareDsn() error {
 			url.Scheme = "clickhouse"
 		}
 
-		// remove default database from query and set it to path
-		database := url.Query().Get("database")
-		query := url.Query()
-		query.Del("database")
-		url.RawQuery = query.Encode()
-		url.Path = "/" + database
+		// v1 DSNs carry the database in the query; v2 reads it from the path. Move it only when
+		// given, so a v2-style http://host/db keeps its database.
+		if query := url.Query(); query.Has("database") {
+			url.Path = "/" + query.Get("database")
+			query.Del("database")
+			url.RawQuery = query.Encode()
+		}
 
 		c.Dsn = gost.ConnectionString(url.String())
 	}
+
 	return nil
 }

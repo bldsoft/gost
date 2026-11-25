@@ -5,10 +5,11 @@ import (
 	"errors"
 	"time"
 
-	"github.com/bldsoft/gost/log"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+
+	"github.com/bldsoft/gost/log"
 )
 
 const (
@@ -46,6 +47,7 @@ func NewChangeStreamWatcher(operations ...OperationType) *changeStreamWatcher {
 			operationTypes = append(operationTypes, changeStreamDeleteOp)
 		}
 	}
+
 	return &changeStreamWatcher{
 		operationTypes: operationTypes,
 		recoverTime:    changeStreamRecoverTime,
@@ -87,27 +89,20 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 			w.resumeToken = nil
 		}
 		log.FromContext(ctx).Warnf("Failed to get change stream: %s", err.Error())
+
 		return
 	}
-	defer changeStream.Close(ctx)
+	defer func() { _ = changeStream.Close(ctx) }()
 	log.FromContext(ctx).Debugf("Change stream watcher for \"%s\" started", collection.Name())
 	for changeStream.Next(ctx) {
 		if handler == nil {
 			continue
 		}
 		operationType := changeStream.Current.Lookup("operationType").StringValue()
-		var fullDocument bson.Raw
-		if operationType == changeStreamDeleteOp {
-			if bc := changeStream.Current.Lookup("fullDocumentBeforeChange"); bc.Type == bson.TypeNull && len(bc.Value) == 0 {
-				fullDocument = changeStream.Current.Lookup("documentKey").Document()
-			} else {
-				fullDocument = bc.Document()
-			}
-		} else {
-			fullDocument = changeStream.Current.Lookup("fullDocument").Document()
-		}
-
-		if opType := w.getOpType(fullDocument, operationType); opType != None {
+		fullDocument, ok := w.changeEventDocument(changeStream.Current, operationType)
+		if !ok {
+			log.FromContext(ctx).Debugf("Change stream watcher skipped %s event without document: %s", operationType, changeStream.Current)
+		} else if opType := w.getOpType(fullDocument, operationType); opType != None {
 			handler(fullDocument, opType)
 			log.FromContext(ctx).Debugf("Change stream watcher detected changes: %s %s", opType, fullDocument)
 		}
@@ -118,6 +113,18 @@ func (w *changeStreamWatcher) changeStreamWatch(ctx context.Context, collection 
 	if err = changeStream.Err(); err != nil {
 		log.FromContext(ctx).Debugf("Change stream watcher for \"%s\" collection stopped: %s", collection.Name(), err.Error())
 	}
+}
+
+func (w *changeStreamWatcher) changeEventDocument(event bson.Raw, operationType string) (bson.Raw, bool) {
+	if operationType == changeStreamDeleteOp {
+		if doc, ok := event.Lookup("fullDocumentBeforeChange").DocumentOK(); ok {
+			return doc, true
+		}
+
+		return event.Lookup("documentKey").DocumentOK()
+	}
+
+	return event.Lookup("fullDocument").DocumentOK()
 }
 
 func (w *changeStreamWatcher) getOpType(fulldocument bson.Raw, opType string) OperationType {
@@ -138,5 +145,6 @@ func needResumeTokenReset(err error) bool {
 		return se.HasErrorCode(mongoErrCodeResumeTokenLost) ||
 			se.HasErrorCode(mongoErrCodeChangeStreamFatalError)
 	}
+
 	return false
 }

@@ -15,15 +15,15 @@ const (
 )
 
 type (
-	Fields = map[string]interface{}
+	Fields = map[string]any
 	Logger interface {
-		TraceOrErrorfWithFields(err error, fields Fields, format string, v ...interface{})
+		TraceOrErrorfWithFields(err error, fields Fields, format string, v ...any)
 	}
 )
 
 type nullLogger struct{}
 
-func (nullLogger) TraceOrErrorfWithFields(err error, fields Fields, format string, v ...interface{}) {
+func (nullLogger) TraceOrErrorfWithFields(err error, fields Fields, format string, v ...any) {
 	// do nothing
 }
 
@@ -57,6 +57,7 @@ func NewBuffered[T any](
 	if cfg.Logger == nil {
 		cfg.Logger = nullLogger{}
 	}
+
 	return &BufferedExporter[T]{
 		batch:   data,
 		cfg:     cfg,
@@ -72,6 +73,7 @@ func NewBufferedFromExporter[T any](exporter Exporter[T], cfg BufferedExporterCo
 
 func (be *BufferedExporter[T]) WithLogger(logger Logger) *BufferedExporter[T] {
 	be.cfg.Logger = logger
+
 	return be
 }
 
@@ -79,6 +81,7 @@ func (be BufferedExporter[T]) MaxBatchSize() int {
 	if be.cfg.MaxBatchSize > 0 {
 		return be.cfg.MaxBatchSize
 	}
+
 	return DefaultMaxBatchSize
 }
 
@@ -86,6 +89,7 @@ func (be BufferedExporter[T]) MaxFlushInterval() time.Duration {
 	if be.cfg.MaxFlushInterval > 0 {
 		return be.cfg.MaxFlushInterval
 	}
+
 	return DefaultMaxFlushInterval
 }
 
@@ -108,6 +112,7 @@ func (be *BufferedExporter[T]) writeToChan(items ...T) (n int) {
 			return i
 		}
 	}
+
 	return len(items)
 }
 
@@ -126,7 +131,7 @@ func (be *BufferedExporter[T]) flush() (n int, err error) {
 		}
 	}()
 
-	if err := be.fillExportedData(); err != nil {
+	if err = be.fillExportedData(); err != nil {
 		return 0, err
 	}
 
@@ -135,18 +140,20 @@ func (be *BufferedExporter[T]) flush() (n int, err error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return exported, be.batch.Reset()
 }
 
 func (be *BufferedExporter[T]) fillExportedData() error {
 	pullN := min(be.ringBuf.Len(), be.MaxBatchSize()-be.batch.Len())
-	for i := 0; i < pullN; i++ {
+	for range pullN {
 		item, _ := be.ringBuf.Top()
 		if _, err := be.batch.Add(item); err != nil {
 			return err
 		}
 		be.ringBuf.Remove(1)
 	}
+
 	return nil
 }
 
@@ -166,6 +173,7 @@ func (be *BufferedExporter[T]) Run() error {
 			"batch":    be.batch.Len(),
 			"exported": n,
 		}, "buffered exporter")
+
 		return err
 	}
 
@@ -175,6 +183,7 @@ func (be *BufferedExporter[T]) Run() error {
 				return err
 			}
 		}
+
 		return nil
 	}
 
@@ -198,12 +207,14 @@ func (be *BufferedExporter[T]) Run() error {
 			for item := range be.writeC {
 				if !be.ringBuf.Full() {
 					_ = be.ringBuf.Push(item)
+
 					continue
 				}
 				if err := flushAll(); err != nil {
 					return err
 				}
 			}
+
 			return flushAll()
 		}
 	}

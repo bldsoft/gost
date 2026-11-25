@@ -16,5 +16,6 @@ func RequestID(next http.Handler) http.Handler {
 		}
 		middleware.RequestID(next).ServeHTTP(w, r)
 	}
+
 	return http.HandlerFunc(fn)
 }

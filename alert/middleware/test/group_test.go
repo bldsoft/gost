@@ -6,11 +6,12 @@ import (
 	"testing/synctest"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/bldsoft/gost/alert"
 	"github.com/bldsoft/gost/alert/middleware"
 	"github.com/bldsoft/gost/cache"
 	"github.com/bldsoft/gost/cache/bigcache"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGroupMiddleware(t *testing.T) {
@@ -115,31 +116,37 @@ func newGroupTestcaseBuilder(name string) *groupTestcaseBuilder {
 
 func (b *groupTestcaseBuilder) Name(name string) *groupTestcaseBuilder {
 	b.name = name
+
 	return b
 }
 
 func (b *groupTestcaseBuilder) Interval(interval time.Duration) *groupTestcaseBuilder {
 	b.interval = interval
+
 	return b
 }
 
 func (b *groupTestcaseBuilder) GroupInterval(interval time.Duration) *groupTestcaseBuilder {
 	b.groupInterval = interval
+
 	return b
 }
 
 func (b *groupTestcaseBuilder) EmitAlerts(alerts ...alert.Alert) *groupTestcaseBuilder {
 	b.emittedAlerts = append(b.emittedAlerts, alerts)
+
 	return b
 }
 
 func (b *groupTestcaseBuilder) ExpectedImmediateAlerts(alerts ...alert.Alert) *groupTestcaseBuilder {
 	b.expectedImmediateAlerts = append(b.expectedImmediateAlerts, alerts)
+
 	return b
 }
 
 func (b *groupTestcaseBuilder) ExpectedGroupedAlerts(alerts ...alert.Alert) *groupTestcaseBuilder {
 	b.expectedGroupedAlerts = append(b.expectedGroupedAlerts, alerts)
+
 	return b
 }
 
@@ -197,6 +204,7 @@ func (b *groupTestcaseBuilder) Run(t *testing.T) {
 
 				isGrouped := func(a alert.Alert) bool {
 					_, grouped := a.MetaData["count"]
+
 					return grouped
 				}
 

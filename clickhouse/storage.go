@@ -3,20 +3,20 @@ package clickhouse
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
-	"github.com/bldsoft/gost/log"
-	"github.com/bldsoft/gost/storage"
 	"github.com/golang-migrate/migrate/v4"
 	mm "github.com/golang-migrate/migrate/v4/database/clickhouse"
-	"github.com/pkg/errors"
-
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/stub"
+
+	"github.com/bldsoft/gost/log"
+	"github.com/bldsoft/gost/storage"
 )
 
 type Auth = clickhouse.Auth
@@ -26,7 +26,7 @@ type Storage struct {
 
 	Db      *sql.DB
 	native  driver.Conn
-	isReady int32
+	isReady atomic.Int32
 	doOnce  sync.Once
 
 	migrations  *source.Migrations
@@ -43,6 +43,7 @@ func (s *Storage) Auth() Auth {
 
 func (s *Storage) InCluster(clusterName string) *Storage {
 	s.clusterName = clusterName
+
 	return s
 }
 
@@ -55,6 +56,7 @@ func (s *Storage) IsReplicationEnabled() bool {
 		return true
 	}
 	_, err := s.Db.Exec("SELECT * FROM system.zookeeper WHERE path = '/' LIMIT 0")
+
 	return err == nil
 }
 
@@ -68,26 +70,21 @@ func (db *Storage) Connect() {
 	connect := clickhouse.OpenDB(db.cfg.options)
 	if err := connect.Ping(); err != nil {
 		db.LogError(err)
+
 		return
 	}
 
 	native, err := clickhouse.Open(db.cfg.options)
 	if err != nil {
 		db.LogError(err)
+
 		return
-	}
-
-	dbname := db.cfg.options.Auth.Database
-
-	use_db := "USE " + dbname + ";"
-	if _, err := connect.Exec(use_db); err != nil {
-		db.LogError(err)
 	}
 
 	db.Db = connect
 	db.native = native
 
-	atomic.StoreInt32(&db.isReady, 1)
+	db.isReady.Store(1)
 
 	log.InfoWithFields(log.Fields{"dsn": &db.cfg.Dsn}, "Clickhouse connected!")
 }
@@ -104,14 +101,15 @@ func (db *Storage) RunMigrations() {
 func (db *Storage) Disconnect(ctx context.Context) error {
 	err := db.Db.Close()
 	if err != nil {
-		return errors.Wrap(err, "Clickhouse disconnect failed")
+		return fmt.Errorf("clickhouse disconnect failed: %w", err)
 	}
 	log.Info("Clickhouse disconnected.")
+
 	return nil
 }
 
 func (db *Storage) IsReady() bool {
-	return atomic.LoadInt32(&db.isReady) == 1
+	return db.isReady.Load() == 1
 }
 
 func (db *Storage) LogError(err error) {
@@ -144,15 +142,16 @@ func (db *Storage) runMigrations(dbname string) error {
 	}
 
 	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("process failed: %w", err)
 	}
 
 	return nil
 }
 
-func (db *Storage) Stats(ctx context.Context) (map[string]interface{}, error) {
-	metrics := make(map[string]interface{})
+func (db *Storage) Stats(ctx context.Context) (map[string]any, error) {
+	metrics := make(map[string]any)
+	var errs error
 	for _, query := range []string{
 		"SELECT event, value FROM system.events",
 		"SELECT metric, value FROM system.asynchronous_metrics",
@@ -171,9 +170,10 @@ func (db *Storage) Stats(ctx context.Context) (map[string]interface{}, error) {
 			}
 			metrics[metricName] = metricValue
 		}
+		errs = errors.Join(errs, rows.Err())
 	}
 
-	return metrics, nil
+	return metrics, errs
 }
 
 func (db *Storage) PrepareBatch(q string) (driver.Batch, error) {
