@@ -100,6 +100,14 @@ func namespaceUtilizationFromInfo(info string) (util float64, ok bool) {
 		}
 	}
 
+	if v := kv["data_used_pct"]; v != "" {
+		if pct, err := strconv.ParseFloat(v, 64); err == nil {
+			takeMax(pct/100, true)
+		}
+	}
+	if u, o := byteRatio(kv["data_used_bytes"], kv["data_total_bytes"]); o {
+		takeMax(u, true)
+	}
 	if v := kv["memory_free_pct"]; v != "" {
 		if pct, err := strconv.ParseFloat(v, 64); err == nil {
 			takeMax(1-pct/100, true)

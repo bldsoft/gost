@@ -67,3 +67,43 @@ func Test_namespaceUtilizationFromInfo_MetricNames(t *testing.T) {
 		require.Equal(t, 1.0, u)
 	})
 }
+
+func Test_namespaceUtilizationFromInfo_Aerospike7(t *testing.T) {
+	t.Parallel()
+
+	t.Run("data_used_pct", func(t *testing.T) {
+		u, ok := namespaceUtilizationFromInfo("data_used_pct=35;data_avail_pct=65")
+		require.True(t, ok)
+		require.InEpsilon(t, 0.35, u, 1e-9)
+	})
+
+	t.Run("data_used_bytes and data_total_bytes", func(t *testing.T) {
+		u, ok := namespaceUtilizationFromInfo("data_used_bytes=250;data_total_bytes=1000")
+		require.True(t, ok)
+		require.InEpsilon(t, 0.25, u, 1e-9)
+	})
+
+	t.Run("zero usage is still valid", func(t *testing.T) {
+		u, ok := namespaceUtilizationFromInfo("data_used_pct=0;data_used_bytes=0;data_total_bytes=1000")
+		require.True(t, ok)
+		require.Zero(t, u)
+	})
+
+	t.Run("old keys remain a fallback", func(t *testing.T) {
+		u, ok := namespaceUtilizationFromInfo("memory_free_pct=40")
+		require.True(t, ok)
+		require.InEpsilon(t, 0.6, u, 1e-9)
+	})
+
+	t.Run("takes maximum with old keys", func(t *testing.T) {
+		u, ok := namespaceUtilizationFromInfo("data_used_pct=20;device_free_pct=10")
+		require.True(t, ok)
+		require.InEpsilon(t, 0.9, u, 1e-9)
+	})
+
+	t.Run("stop_writes overrides data_used_pct", func(t *testing.T) {
+		u, ok := namespaceUtilizationFromInfo("stop_writes=true;data_used_pct=10")
+		require.True(t, ok)
+		require.Equal(t, 1.0, u)
+	})
+}

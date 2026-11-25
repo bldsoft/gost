@@ -65,7 +65,7 @@ func TestAerospikeDistrStatIntegration_Stat(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { st.Close() })
 
-	col := NewAerospikeCollector(st, cfg.Namespace)
+	col := NewAerospikeCollectorWithNamespace(st, cfg.Namespace)
 	out := col.Stat(context.Background())
 
 	require.Equal(t, "aerospike", out.ServiceType)
@@ -80,8 +80,9 @@ func TestAerospikeDistrStatIntegration_Stat(t *testing.T) {
 	pool := pl[AerospikeKeyPool]
 	require.NotNil(t, pool)
 
-	_, gotMemOk := pl[AerospikeKeyMemUtilOK].(bool)
+	memOk, gotMemOk := pl[AerospikeKeyMemUtilOK].(bool)
 	require.True(t, gotMemOk, "mem_utilization_ok should be a bool")
+	require.True(t, memOk, "mem_utilization_ok should be true for an existing namespace")
 
 	memU, gotMemU := pl[AerospikeKeyMemUtilization].(float64)
 	require.True(t, gotMemU, "mem_utilization should decode as float64: got %T", pl[AerospikeKeyMemUtilization])
@@ -96,7 +97,7 @@ func TestAerospikeDistrStatIntegration_MemUtilDisabledWhenNamespaceEmpty(t *test
 	require.NoError(t, err)
 	t.Cleanup(func() { st.Close() })
 
-	col := NewAerospikeCollector(st, "")
+	col := NewAerospikeCollectorWithNamespace(st, "")
 	out := col.Stat(context.Background())
 
 	require.Empty(t, out.Err)
@@ -108,4 +109,18 @@ func TestAerospikeDistrStatIntegration_MemUtilDisabledWhenNamespaceEmpty(t *test
 
 	memU := pl[AerospikeKeyMemUtilization].(float64)
 	require.InDelta(t, 0, memU, 1e-9)
+}
+
+func TestAerospikeDistrStatIntegration_DefaultsToStorageNamespace(t *testing.T) {
+	cfg := integrationAerospikeCfg(t)
+
+	st, err := gost_aerospike.NewStorage(cfg)
+	require.NoError(t, err)
+	t.Cleanup(func() { st.Close() })
+
+	out := NewAerospikeCollector(st).Stat(context.Background())
+
+	require.Empty(t, out.Err)
+	pl := out.Stat.(map[string]any)
+	require.Equal(t, true, pl[AerospikeKeyMemUtilOK])
 }
