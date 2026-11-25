@@ -107,3 +107,14 @@ func Test_namespaceUtilizationFromInfo_Aerospike7(t *testing.T) {
 		require.Equal(t, 1.0, u)
 	})
 }
+
+func TestAerospikePayloadKeepsDeprecatedKeys(t *testing.T) {
+	t.Parallel()
+
+	pl := AerospikePayload("pool", 0.4, true)
+
+	require.Equal(t, 0.4, pl[AerospikeKeyUtilization])
+	require.Equal(t, true, pl[AerospikeKeyUtilOK])
+	require.Equal(t, pl[AerospikeKeyUtilization], pl[AerospikeKeyMemUtilization])
+	require.Equal(t, pl[AerospikeKeyUtilOK], pl[AerospikeKeyMemUtilOK])
+}

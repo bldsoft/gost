@@ -74,23 +74,27 @@ func TestAerospikeDistrStatIntegration_Stat(t *testing.T) {
 	pl, ok := out.Stat.(map[string]any)
 	require.True(t, ok)
 	require.Contains(t, pl, AerospikeKeyPool)
+	require.Contains(t, pl, AerospikeKeyUtilization)
+	require.Contains(t, pl, AerospikeKeyUtilOK)
 	require.Contains(t, pl, AerospikeKeyMemUtilization)
 	require.Contains(t, pl, AerospikeKeyMemUtilOK)
 
 	pool := pl[AerospikeKeyPool]
 	require.NotNil(t, pool)
 
-	memOk, gotMemOk := pl[AerospikeKeyMemUtilOK].(bool)
-	require.True(t, gotMemOk, "mem_utilization_ok should be a bool")
-	require.True(t, memOk, "mem_utilization_ok should be true for an existing namespace")
+	utilOk, gotUtilOk := pl[AerospikeKeyUtilOK].(bool)
+	require.True(t, gotUtilOk, "utilization_ok should be a bool")
+	require.True(t, utilOk, "utilization_ok should be true for an existing namespace")
+	require.Equal(t, utilOk, pl[AerospikeKeyMemUtilOK])
 
-	memU, gotMemU := pl[AerospikeKeyMemUtilization].(float64)
-	require.True(t, gotMemU, "mem_utilization should decode as float64: got %T", pl[AerospikeKeyMemUtilization])
-	require.GreaterOrEqual(t, memU, 0.0)
-	require.LessOrEqual(t, memU, 1.0)
+	util, gotUtil := pl[AerospikeKeyUtilization].(float64)
+	require.True(t, gotUtil, "utilization should decode as float64: got %T", pl[AerospikeKeyUtilization])
+	require.GreaterOrEqual(t, util, 0.0)
+	require.LessOrEqual(t, util, 1.0)
+	require.Equal(t, util, pl[AerospikeKeyMemUtilization])
 }
 
-func TestAerospikeDistrStatIntegration_MemUtilDisabledWhenNamespaceEmpty(t *testing.T) {
+func TestAerospikeDistrStatIntegration_UtilizationDisabledWhenNamespaceEmpty(t *testing.T) {
 	cfg := integrationAerospikeCfg(t)
 
 	st, err := gost_aerospike.NewStorage(cfg)
@@ -103,12 +107,13 @@ func TestAerospikeDistrStatIntegration_MemUtilDisabledWhenNamespaceEmpty(t *test
 	require.Empty(t, out.Err)
 
 	pl := out.Stat.(map[string]any)
-	memOk, ok := pl[AerospikeKeyMemUtilOK].(bool)
+	utilOk, ok := pl[AerospikeKeyUtilOK].(bool)
 	require.True(t, ok)
-	require.False(t, memOk)
+	require.False(t, utilOk)
+	require.Equal(t, false, pl[AerospikeKeyMemUtilOK])
 
-	memU := pl[AerospikeKeyMemUtilization].(float64)
-	require.InDelta(t, 0, memU, 1e-9)
+	util := pl[AerospikeKeyUtilization].(float64)
+	require.InDelta(t, 0, util, 1e-9)
 }
 
 func TestAerospikeDistrStatIntegration_DefaultsToStorageNamespace(t *testing.T) {
@@ -122,5 +127,5 @@ func TestAerospikeDistrStatIntegration_DefaultsToStorageNamespace(t *testing.T) 
 
 	require.Empty(t, out.Err)
 	pl := out.Stat.(map[string]any)
-	require.Equal(t, true, pl[AerospikeKeyMemUtilOK])
+	require.Equal(t, true, pl[AerospikeKeyUtilOK])
 }

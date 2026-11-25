@@ -11,16 +11,23 @@ import (
 )
 
 const (
-	AerospikeKeyPool           = "pool"
+	AerospikeKeyPool        = "pool"
+	AerospikeKeyUtilization = "utilization"
+	AerospikeKeyUtilOK      = "utilization_ok"
+
+	// Deprecated: readers of the old keys break when they are removed; use AerospikeKeyUtilization.
 	AerospikeKeyMemUtilization = "mem_utilization"
-	AerospikeKeyMemUtilOK      = "mem_utilization_ok"
+	// Deprecated: use AerospikeKeyUtilOK.
+	AerospikeKeyMemUtilOK = "mem_utilization_ok"
 )
 
-func AerospikePayload(pool any, memUtilization float64, memUtilizationOK bool) map[string]any {
+func AerospikePayload(pool any, utilization float64, utilizationOK bool) map[string]any {
 	return map[string]any{
 		AerospikeKeyPool:           pool,
-		AerospikeKeyMemUtilization: memUtilization,
-		AerospikeKeyMemUtilOK:      memUtilizationOK,
+		AerospikeKeyUtilization:    utilization,
+		AerospikeKeyUtilOK:         utilizationOK,
+		AerospikeKeyMemUtilization: utilization,
+		AerospikeKeyMemUtilOK:      utilizationOK,
 	}
 }
 
@@ -43,11 +50,11 @@ func (c *AerospikeCollector) Stat(_ context.Context) Stat {
 	}
 
 	poolStats, err := c.cache.Stat()
-	memU, memOK := 0.0, false
+	util, utilOK := 0.0, false
 	if err == nil {
-		memU, memOK = c.namespaceMaxUtilization()
+		util, utilOK = c.namespaceMaxUtilization()
 	}
-	pl := AerospikePayload(poolStats, memU, memOK)
+	pl := AerospikePayload(poolStats, util, utilOK)
 	return NewStat("aerospike", pl, err)
 }
 
