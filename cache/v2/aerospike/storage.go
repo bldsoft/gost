@@ -55,6 +55,14 @@ func NewStorage(cfg Config) (*Storage, error) {
 	}, nil
 }
 
+func (s *Storage) Namespace() string {
+	if s == nil {
+		return ""
+	}
+
+	return s.namespace
+}
+
 func (s *Storage) Stat() (*Stats, error) {
 	stats, err := s.Stats()
 	if err != nil {

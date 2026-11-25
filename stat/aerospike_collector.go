@@ -29,7 +29,11 @@ type AerospikeCollector struct {
 	namespace string
 }
 
-func NewAerospikeCollector(cache *aerospike.Storage, namespace string) *AerospikeCollector {
+func NewAerospikeCollector(cache *aerospike.Storage) *AerospikeCollector {
+	return NewAerospikeCollectorWithNamespace(cache, cache.Namespace())
+}
+
+func NewAerospikeCollectorWithNamespace(cache *aerospike.Storage, namespace string) *AerospikeCollector {
 	return &AerospikeCollector{cache: cache, namespace: namespace}
 }
 
