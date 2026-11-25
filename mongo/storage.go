@@ -45,7 +45,7 @@ func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string)
 
 const timeout = 5 * time.Second
 
-func (db *Storage) Connect() {
+func (db *Storage) Connect() error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -57,15 +57,24 @@ func (db *Storage) Connect() {
 	var err error
 	db.Client, err = mongo.Connect(clientOptions)
 	if err != nil {
-		log.PanicWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB v2 connection failed")
+		log.ErrorWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB v2 connection failed")
+
+		return err
 	}
 	db.Db = db.Client.Database(db.config.DbName)
 
 	if err = db.Client.Ping(ctx, readpref.Primary()); err != nil {
-		log.PanicWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB v2 ping failed")
+		log.ErrorWithFields(log.Fields{"server": &db.config.Server, "error": err}, "MongoDB v2 ping failed")
+		_ = db.Client.Disconnect(context.Background())
+		db.Client = nil
+		db.Db = nil
+
+		return err
 	}
 
 	<-db.migrationReadyC
+
+	return nil
 }
 
 func (db *Storage) Disconnect(ctx context.Context) error {

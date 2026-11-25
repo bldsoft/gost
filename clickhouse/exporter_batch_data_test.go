@@ -57,7 +57,8 @@ type exporterTestRow struct {
 
 func TestExporterBatchRecoversFromFailedPrepare(t *testing.T) {
 	conn := &fakeConn{prepareErr: errTableUnavailable}
-	storage := &Storage{native: conn}
+	storage := &Storage{}
+	storage.setNativeConn(conn)
 
 	var batch *exporterBatch[*exporterTestRow]
 	require.NotPanics(t, func() {
@@ -70,6 +71,30 @@ func TestExporterBatchRecoversFromFailedPrepare(t *testing.T) {
 	require.Zero(t, batch.Len())
 
 	conn.prepareErr = nil
+	n, err := batch.Add(&exporterTestRow{Name: "b"})
+	require.NoError(t, err)
+	require.Equal(t, 1, n)
+	require.NoError(t, batch.Send())
+
+	require.NotEmpty(t, conn.batches)
+	require.True(t, conn.batches[0].sent)
+	require.Equal(t, []any{&exporterTestRow{Name: "b"}}, conn.batches[0].rows)
+}
+
+func TestExporterBatchWaitsForConnection(t *testing.T) {
+	storage := &Storage{}
+
+	var batch *exporterBatch[*exporterTestRow]
+	require.NotPanics(t, func() {
+		batch = newExporterBatch[*exporterTestRow](storage, "T")
+	})
+
+	_, err := batch.Add(&exporterTestRow{Name: "a"})
+	require.ErrorIs(t, err, ErrNotConnected)
+	require.Zero(t, batch.Len())
+
+	conn := &fakeConn{}
+	storage.setNativeConn(conn)
 	n, err := batch.Add(&exporterTestRow{Name: "b"})
 	require.NoError(t, err)
 	require.Equal(t, 1, n)

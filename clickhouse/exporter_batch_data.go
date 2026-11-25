@@ -17,10 +17,9 @@ type exporterBatch[T any] struct {
 func newExporterBatch[T any](storage *Storage, table string) *exporterBatch[T] {
 	columns := strings.Join(columnNames[T](), ",")
 	insert := fmt.Sprintf("INSERT INTO %s (%s) VALUES", table, columns)
-	batch, err := storage.PrepareStaticBatch(insert)
-	if err != nil {
+	batch := newBatch(storage.nativeConn, insert)
+	if err := batch.prepareNext(); err != nil {
 		log.Logger.ErrorWithFields(log.Fields{"table": table, "err": err}, "clickhouse exporter: failed to prepare batch, retrying on flush")
-		batch = newBatch(storage.native, insert)
 	}
 
 	return &exporterBatch[T]{batch: batch}

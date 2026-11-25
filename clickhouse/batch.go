@@ -11,12 +11,12 @@ type Batch struct {
 
 	insert string
 
-	conn  driver.Conn
+	conn  func() driver.Conn
 	batch driver.Batch
 }
 
 func NewBatch(conn driver.Conn, insertStatement string) (*Batch, error) {
-	b := newBatch(conn, insertStatement)
+	b := newBatch(func() driver.Conn { return conn }, insertStatement)
 	if err := b.prepareNext(); err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func NewBatch(conn driver.Conn, insertStatement string) (*Batch, error) {
 	return b, nil
 }
 
-func newBatch(conn driver.Conn, insertStatement string) *Batch {
+func newBatch(conn func() driver.Conn, insertStatement string) *Batch {
 	return &Batch{
 		insert: insertStatement,
 		conn:   conn,
@@ -52,7 +52,12 @@ func (b *Batch) Send() error {
 }
 
 func (b *Batch) prepareNext() error {
-	batch, err := b.conn.PrepareBatch(b.ctx, b.insert, driver.WithReleaseConnection())
+	conn := b.conn()
+	if conn == nil {
+		return ErrNotConnected
+	}
+
+	batch, err := conn.PrepareBatch(b.ctx, b.insert, driver.WithReleaseConnection())
 	if err != nil {
 		return err
 	}

@@ -5,7 +5,7 @@ import (
 )
 
 type IStorage interface {
-	Connect()
+	Connect() error
 	Disconnect(ctx context.Context) error
 	IsReady() bool
 }
