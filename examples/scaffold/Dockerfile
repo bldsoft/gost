@@ -1,6 +1,6 @@
 # Multi-stage build for a gost service. Build from the repository root:
 #   docker build --build-arg COMMIT=$(git rev-parse --short HEAD) --build-arg BRANCH=$(git rev-parse --abbrev-ref HEAD) -t <svc> .
-FROM golang:1.27-alpine AS builder
+FROM golang:1.27.4-alpine AS builder
 
 ARG COMMIT=unknown
 ARG BRANCH=unknown

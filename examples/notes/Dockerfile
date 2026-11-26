@@ -1,7 +1,7 @@
 # Build context is the gost repository root because the example lives inside the gost module:
 #   docker build -f examples/notes/Dockerfile .
 # A standalone service uses docs/templates/Dockerfile instead.
-FROM golang:1.27-alpine AS builder
+FROM golang:1.27.4-alpine AS builder
 
 ARG COMMIT=unknown
 ARG BRANCH=unknown
