@@ -21,11 +21,14 @@ import (
 
 type Auth = clickhouse.Auth
 
+// ErrNotConnected is returned when a batch is prepared before Connect has succeeded.
+var ErrNotConnected = errors.New("clickhouse: not connected")
+
 type Storage struct {
 	cfg Config
 
 	Db      *sql.DB
-	native  driver.Conn
+	native  atomic.Pointer[driver.Conn]
 	isReady atomic.Int32
 	doOnce  sync.Once
 
@@ -55,6 +58,10 @@ func (s *Storage) IsReplicationEnabled() bool {
 	if len(s.clusterName) > 0 {
 		return true
 	}
+	if s.Db == nil {
+		return false
+	}
+
 	_, err := s.Db.Exec("SELECT * FROM system.zookeeper WHERE path = '/' LIMIT 0")
 
 	return err == nil
@@ -66,30 +73,45 @@ func (db *Storage) AddMigration(version uint, migrationUp, migrationDown string)
 	db.migrations.Append(&source.Migration{Version: version, Direction: source.Down, Identifier: migrationDown})
 }
 
-func (db *Storage) Connect() {
+func (db *Storage) Connect() error {
+	if db.cfg.options == nil {
+		log.Info("ClickHouse DSN is empty, skipping connect")
+
+		return nil
+	}
+
 	connect := clickhouse.OpenDB(db.cfg.options)
 	if err := connect.Ping(); err != nil {
+		_ = connect.Close()
 		db.LogError(err)
 
-		return
+		return err
 	}
 
 	native, err := clickhouse.Open(db.cfg.options)
 	if err != nil {
+		_ = connect.Close()
 		db.LogError(err)
+
+		return err
+	}
+
+	db.Db = connect
+	db.setNativeConn(native)
+	db.isReady.Store(1)
+
+	log.InfoWithFields(log.Fields{"dsn": &db.cfg.Dsn}, "Clickhouse connected!")
+
+	return nil
+}
+
+func (db *Storage) RunMigrations() {
+	if db.Db == nil {
+		log.Error("ClickHouse migrations skipped: database is not connected")
 
 		return
 	}
 
-	db.Db = connect
-	db.native = native
-
-	db.isReady.Store(1)
-
-	log.InfoWithFields(log.Fields{"dsn": &db.cfg.Dsn}, "Clickhouse connected!")
-}
-
-func (db *Storage) RunMigrations() {
 	db.doOnce.Do(func() {
 		dbname := db.cfg.options.Auth.Database
 		if err := db.runMigrations(dbname); err != nil {
@@ -176,10 +198,33 @@ func (db *Storage) Stats(ctx context.Context) (map[string]any, error) {
 	return metrics, errs
 }
 
+func (db *Storage) nativeConn() driver.Conn {
+	conn := db.native.Load()
+	if conn == nil {
+		return nil
+	}
+
+	return *conn
+}
+
+func (db *Storage) setNativeConn(conn driver.Conn) {
+	db.native.Store(&conn)
+}
+
 func (db *Storage) PrepareBatch(q string) (driver.Batch, error) {
-	return db.native.PrepareBatch(context.Background(), q)
+	conn := db.nativeConn()
+	if conn == nil {
+		return nil, ErrNotConnected
+	}
+
+	return conn.PrepareBatch(context.Background(), q)
 }
 
 func (db *Storage) PrepareStaticBatch(q string) (*Batch, error) {
-	return NewBatch(db.native, q)
+	b := newBatch(db.nativeConn, q)
+	if err := b.prepareNext(); err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }

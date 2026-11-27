@@ -8,20 +8,18 @@ import (
 	"github.com/bldsoft/gost/log"
 )
 
-func DBConnectAsync(wg *sync.WaitGroup, connect func(), n int, sleepPeriod time.Duration) {
+func DBConnectAsync(wg *sync.WaitGroup, connect func() error, n int, sleepPeriod time.Duration) {
 	wg.Go(func() {
 		for i := 1; (i != n+1) || (n < 0); i++ {
 			err := func() (err error) {
 				defer func() {
-					if _err := recover(); _err != nil {
-						err = fmt.Errorf("%v", _err)
+					if recovered := recover(); recovered != nil {
+						err = fmt.Errorf("%v", recovered)
 					}
 				}()
-				connect()
 
-				return
+				return connect()
 			}()
-
 			if err != nil {
 				log.ErrorWithFields(log.Fields{"error": err}, "error connecting to db")
 				time.Sleep(sleepPeriod)

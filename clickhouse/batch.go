@@ -11,31 +11,30 @@ type Batch struct {
 
 	insert string
 
-	conn  driver.Conn
+	conn  func() driver.Conn
 	batch driver.Batch
 }
 
 func NewBatch(conn driver.Conn, insertStatement string) (*Batch, error) {
-	batch, err := conn.PrepareBatch(
-		context.Background(),
-		insertStatement,
-		driver.WithReleaseConnection(),
-	)
-	if err != nil {
+	b := newBatch(func() driver.Conn { return conn }, insertStatement)
+	if err := b.prepareNext(); err != nil {
 		return nil, err
 	}
 
+	return b, nil
+}
+
+func newBatch(conn func() driver.Conn, insertStatement string) *Batch {
 	return &Batch{
 		insert: insertStatement,
 		conn:   conn,
-		batch:  batch,
 		ctx:    context.Background(),
-	}, nil
+	}
 }
 
 func (b *Batch) Append(val any) error {
-	if b.batch.IsSent() {
-		if err := b.reset(); err != nil {
+	if b.batch == nil || b.batch.IsSent() {
+		if err := b.prepareNext(); err != nil {
 			return err
 		}
 	}
@@ -44,13 +43,21 @@ func (b *Batch) Append(val any) error {
 }
 
 func (b *Batch) Send() error {
-	defer func() { _ = b.reset() }()
+	if b.batch == nil {
+		return nil
+	}
+	defer func() { _ = b.prepareNext() }()
 
 	return b.batch.Send()
 }
 
-func (b *Batch) reset() error {
-	batch, err := b.conn.PrepareBatch(b.ctx, b.insert, driver.WithReleaseConnection())
+func (b *Batch) prepareNext() error {
+	conn := b.conn()
+	if conn == nil {
+		return ErrNotConnected
+	}
+
+	batch, err := conn.PrepareBatch(b.ctx, b.insert, driver.WithReleaseConnection())
 	if err != nil {
 		return err
 	}

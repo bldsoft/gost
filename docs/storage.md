@@ -26,10 +26,11 @@ func (m *Microservice) Initialize() {   // 2. connect with retries
 server.NewAsyncJobChain(server.NewAsyncJob(nil, m.db.Disconnect), server.NewAsyncJobGroup(...))
 ```
 
-`Storage.Connect()` **panics** when the server is unreachable and then blocks until migrations
-have run. `storage.DBConnectAsync(wg, connect, attempts, sleep)` recovers the panic and retries;
-`attempts < 0` retries forever. Use `wg.Wait()` to block startup, or let it run in the background
-if the service can serve without the database.
+`Storage.Connect()` returns an error when the server is unreachable, and on success blocks until
+migrations have run. `storage.DBConnectAsync(wg, connect, attempts, sleep)` retries that error.
+A panic from `connect` is recovered and retried the same way. `attempts < 0` retries forever.
+Use `wg.Wait()` to block startup, or let it run in the background if the service can serve
+without the database.
 
 Change streams, transactions, the changelog and watched repositories need a **replica set**. Run
 `mongo:8 --replSet rs0` locally and `rs.initiate(...)` once. Pass `-e GLIBC_TUNABLES=glibc.pthread.rseq=1` when `uname` reports 6.19 through 7.0.13.
@@ -170,9 +171,12 @@ if chDB.IsReady() {
 }
 ```
 
-Differences from Mongo: `Connect()` logs instead of panicking and sets `IsReady()`; migrations
-run only when you call `RunMigrations()`; `Validate()` accepts an empty DSN so ClickHouse can be
-optional, and converts v1 `tcp://...?database=x` DSNs to the v2 format.
+Differences from Mongo: `Connect()` returns an error when the DSN is set and the server is
+unreachable, so `DBConnectAsync` retries and logs `error connecting to db` until it succeeds.
+An empty DSN skips the connection, which keeps ClickHouse optional. Migrations run only when
+you call `RunMigrations()`, and a call made before `Connect` succeeds is skipped so it can be
+repeated.
+`Validate()` converts v1 `tcp://...?database=x` DSNs to the v2 format.
 
 Building blocks:
 

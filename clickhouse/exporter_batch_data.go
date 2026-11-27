@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/bldsoft/gost/log"
 	"github.com/bldsoft/gost/utils/exporter"
 )
 
@@ -16,9 +17,9 @@ type exporterBatch[T any] struct {
 func newExporterBatch[T any](storage *Storage, table string) *exporterBatch[T] {
 	columns := strings.Join(columnNames[T](), ",")
 	insert := fmt.Sprintf("INSERT INTO %s (%s) VALUES", table, columns)
-	batch, err := storage.PrepareStaticBatch(insert)
-	if err != nil {
-		panic(err)
+	batch := newBatch(storage.nativeConn, insert)
+	if err := batch.prepareNext(); err != nil {
+		log.Logger.ErrorWithFields(log.Fields{"table": table, "err": err}, "clickhouse exporter: failed to prepare batch, retrying on flush")
 	}
 
 	return &exporterBatch[T]{batch: batch}
@@ -49,7 +50,7 @@ func (e *exporterBatch[T]) Add(items ...T) (n int, err error) {
 }
 
 func (e *exporterBatch[T]) Reset() error {
-	if err := e.batch.reset(); err != nil {
+	if err := e.batch.prepareNext(); err != nil {
 		return err
 	}
 	e.n = 0

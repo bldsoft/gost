@@ -581,6 +581,10 @@ func (e *ClickHouseLogExporter) ChangeTTL(hours int64) error {
 }
 
 func (e *ClickHouseLogExporter) createTableIfNotExitst() error {
+	if !e.Storage().IsReady() {
+		return ErrLogDbNotReady
+	}
+
 	engine := "MergeTree"
 	if e.Storage().IsReplicationEnabled() {
 		engine = "ReplicatedMergeTree"

@@ -19,7 +19,7 @@ code; the "do" is what the example service implements.
 
 | Do | Don't |
 |---|---|
-| Register migrations before `Connect`; connect in `Initialize()` with `DBConnectAsync` | Call `db.Connect()` directly (it panics) or connect inside `New` |
+| Register migrations before `Connect`; connect in `Initialize()` with `DBConnectAsync` | Call `db.Connect()` directly (a failure is not retried) or connect inside `New` |
 | Make everything long-lived an `AsyncRunner`; order shutdown with `AsyncJobChain` | Spawn goroutines with no stop, or write your own signal handling |
 | Declare interfaces in the consuming package; assert conformance with `var _ I = (*T)(nil)` | Import the implementation package from the service layer |
 | Keep `New(cfg)` network-free so tests can build routes | Open sockets or connect in constructors |
@@ -54,7 +54,8 @@ code; the "do" is what the example service implements.
 |---|---|
 | `server.Start()` registers on `http.DefaultServeMux` | One server per process; never `Start()` in tests |
 | `Shutdown` receives a cancelled context | In-flight requests are not drained; keep handlers short or front with a draining proxy |
-| `mongo.Storage.Connect()` panics | Always go through `storage.DBConnectAsync` |
+| `mongo.Storage.Connect()` returns an error when the server is unreachable | `DBConnectAsync` retries it |
+| `clickhouse.Storage.Connect()` returns an error when the DSN is set and the server is unreachable | `DBConnectAsync` retries; an empty DSN skips the connection |
 | `Delete` soft-deletes unless `QueryOptions{Archived:false}` | Decide explicitly which you want; reads hide archived rows by default |
 | `inhouse.Config` ships a default `SECRET_KEY` | Override `DISCOVERY_INHOUSE_SECRET_KEY` in every environment |
 | `cache/v2/aerospike.Config` is not an `IConfig` | Apply its defaults yourself |
