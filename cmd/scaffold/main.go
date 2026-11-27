@@ -216,7 +216,6 @@ func setupModule(opts options) error {
 	}
 	steps = append(steps,
 		[]string{"go", "get", gostModule + "@" + opts.gost},
-		[]string{"go", "get", "github.com/hashicorp/go-metrics@v0.5.4"},
 		[]string{"go", "get", "-tool", "github.com/vektra/mockery/v3@latest"},
 		[]string{"go", "get", "-tool", "github.com/dmarkham/enumer@latest"},
 		[]string{"go", "generate", "./..."},
