@@ -1,7 +1,7 @@
 ?   	github.com/bldsoft/gost/alert	[no test files]
 ?   	github.com/bldsoft/gost/alert/middleware	[no test files]
 PASS
-ok  	github.com/bldsoft/gost/alert/middleware/test	0.015s
+ok  	github.com/bldsoft/gost/alert/middleware/test	0.011s
 ?   	github.com/bldsoft/gost/alert/notify	[no test files]
 ?   	github.com/bldsoft/gost/alert/notify/channel	[no test files]
 ?   	github.com/bldsoft/gost/alert/notify/channel/email	[no test files]
@@ -11,305 +11,305 @@ ok  	github.com/bldsoft/gost/alert/middleware/test	0.015s
 goos: linux
 goarch: amd64
 pkg: github.com/bldsoft/gost/auth/acl
-cpu: AMD EPYC 9V74 80-Core Processor                
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_10-4         	100000000	        12.41 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_10-4         	97204664	        12.29 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_10-4         	81470691	        12.41 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_10-4         	100000000	        10.25 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_10-4         	208828965	         5.841 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_10-4         	208644928	         5.859 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_10-4        	100000000	        11.67 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_10-4        	100000000	        11.65 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_10-4        	100000000	        11.79 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_10-4        	100000000	        11.56 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_10-4        	100000000	        11.61 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_10-4        	100000000	        11.61 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_10-4          	55286749	        22.16 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_10-4          	55317454	        22.20 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_10-4          	54604178	        21.92 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_10-4          	53449953	        22.05 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_10-4          	55091857	        22.19 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_10-4          	56156607	        22.00 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_10-4              	43703649	        26.53 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_10-4              	46237052	        26.27 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_10-4              	46267724	        26.36 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_10-4              	45741822	        26.82 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_10-4              	45946742	        26.21 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_10-4              	45980188	        26.18 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_10-4    	199115317	         6.030 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_10-4    	208584640	         5.747 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_10-4    	207878646	         5.743 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_10-4    	208784371	         5.756 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_10-4    	208147444	         5.764 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_10-4    	208775510	         5.739 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_10-4   	58382358	        20.50 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_10-4   	58271713	        20.54 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_10-4   	58097697	        20.48 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_10-4   	58661980	        20.58 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_10-4   	58461087	        20.50 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_10-4   	58821487	        20.47 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_10-4     	32023292	        37.93 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_10-4     	32111730	        37.72 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_10-4     	32047779	        37.71 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_10-4     	32059243	        38.27 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_10-4     	32215555	        38.01 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_10-4     	31518498	        37.92 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_10#01-4           	29706188	        41.59 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_10#01-4           	29170764	        41.32 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_10#01-4           	29823625	        41.11 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_10#01-4           	29516466	        41.02 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_10#01-4           	29220006	        41.20 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_10#01-4           	29939414	        40.25 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_50-4         	199542958	         6.012 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_50-4         	207753014	         5.955 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_50-4         	209262446	         5.748 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_50-4         	208767838	         5.860 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_50-4         	208838820	         5.746 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_50-4         	207367734	         5.746 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_50-4        	27747314	        43.77 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_50-4        	27300745	        43.68 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_50-4        	27003416	        44.04 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_50-4        	27527085	        43.83 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_50-4        	27855632	        43.71 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_50-4        	25934311	        43.62 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_50-4          	10941260	       109.9 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_50-4          	10941625	       111.2 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_50-4          	10933561	       109.9 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_50-4          	10910082	       110.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_50-4          	10907300	       110.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_50-4          	10940290	       111.4 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_50-4              	10883698	       110.2 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_50-4              	10912144	       110.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_50-4              	10898966	       110.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_50-4              	10852647	       110.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_50-4              	10860874	       110.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_50-4              	10889856	       110.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_50-4    	198320422	         5.754 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_50-4    	207906996	         5.757 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_50-4    	208937660	         5.845 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_50-4    	208573963	         5.748 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_50-4    	207553752	         5.756 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_50-4    	208471064	         5.768 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_50-4   	58533460	        20.74 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_50-4   	58762288	        20.52 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_50-4   	58119980	        20.55 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_50-4   	58506723	        20.56 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_50-4   	58079946	        20.79 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_50-4   	58717106	        20.50 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_50-4     	 8491192	       140.4 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_50-4     	 8470837	       140.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_50-4     	 8600468	       140.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_50-4     	 8562606	       143.0 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_50-4     	 8551136	       140.0 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_50-4     	 8598368	       140.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_50#01-4           	 6347737	       188.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_50#01-4           	 6338736	       189.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_50#01-4           	 6334546	       192.7 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_50#01-4           	 6162412	       194.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_50#01-4           	 6340096	       189.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_50#01-4           	 6345998	       189.9 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_100-4        	208653361	         5.755 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_100-4        	208776884	         5.741 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_100-4        	208645971	         5.749 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_100-4        	209288462	         5.739 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_100-4        	209226069	         5.733 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Early/items_100-4        	209003985	         5.854 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_100-4       	15046152	        78.57 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_100-4       	15287084	        80.33 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_100-4       	15418239	        81.33 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_100-4       	15281151	        79.28 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_100-4       	15110809	        78.64 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle/items_100-4       	14950989	        78.86 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_100-4         	 6320194	       189.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_100-4         	 6393146	       192.7 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_100-4         	 6226920	       190.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_100-4         	 6342394	       193.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_100-4         	 6329070	       192.7 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Late/items_100-4         	 6349912	       191.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_100-4             	 5425279	       221.4 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_100-4             	 5451378	       223.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_100-4             	 5450210	       220.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_100-4             	 5453743	       222.9 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_100-4             	 5462842	       220.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_100-4             	 5456409	       226.0 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_100-4   	205541329	         5.892 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_100-4   	208251322	         5.843 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_100-4   	204498170	         5.794 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_100-4   	208123518	         5.757 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_100-4   	205180274	         5.787 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_100-4   	209010838	         5.759 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_100-4  	58501478	        20.55 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_100-4  	58477154	        20.49 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_100-4  	58614001	        20.57 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_100-4  	58540202	        20.64 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_100-4  	58441982	        20.56 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_100-4  	58574944	        20.56 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_100-4    	 8303157	       140.2 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_100-4    	 8516850	       140.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_100-4    	 8615457	       140.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_100-4    	 8382061	       140.0 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_100-4    	 8548075	       140.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_100-4    	 8539839	       140.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_100#01-4          	 3150760	       381.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_100#01-4          	 3142854	       382.0 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_100#01-4          	 3089636	       391.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_100#01-4          	 3062937	       391.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_100#01-4          	 3118581	       391.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/Legacy/Miss/items_100#01-4          	 3151830	       382.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_10-4            	58623468	        17.34 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_10-4            	69331843	        17.29 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_10-4            	68902059	        17.36 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_10-4            	69536394	        17.32 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_10-4            	69430184	        17.28 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_10-4            	69251997	        17.38 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_10-4           	81558483	        14.62 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_10-4           	81621648	        14.63 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_10-4           	82227144	        14.64 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_10-4           	81213980	        14.69 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_10-4           	81316882	        14.71 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_10-4           	82167428	        14.66 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_10-4             	69535266	        17.28 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_10-4             	69329872	        17.29 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_10-4             	69556938	        17.28 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_10-4             	69428778	        17.34 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_10-4             	69238411	        17.32 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_10-4             	68877982	        17.25 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_10-4                 	125007699	         9.572 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_10-4                 	125321827	         9.653 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_10-4                 	123068620	         9.549 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_10-4                 	126099944	         9.340 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_10-4                 	126607531	         9.453 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_10-4                 	125387745	         9.451 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_10-4       	68997319	        17.28 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_10-4       	68923580	        17.26 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_10-4       	69957066	        17.30 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_10-4       	68853514	        17.29 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_10-4       	69466968	        17.26 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_10-4       	69079339	        17.29 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_10-4      	69617678	        17.31 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_10-4      	69098065	        17.26 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_10-4      	69237205	        17.26 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_10-4      	69376592	        17.29 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_10-4      	68991836	        17.28 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_10-4      	69523962	        17.27 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_10-4        	39882961	        29.96 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_10-4        	39871056	        29.92 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_10-4        	39847621	        29.94 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_10-4        	40124332	        29.93 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_10-4        	39963144	        30.10 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_10-4        	40107652	        30.03 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_10#01-4              	125293278	         9.436 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_10#01-4              	125428201	         9.621 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_10#01-4              	129009741	         9.594 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_10#01-4              	125420544	         9.314 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_10#01-4              	125185010	         9.568 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_10#01-4              	125326390	         9.576 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_50-4            	68947531	        17.32 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_50-4            	69220087	        17.28 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_50-4            	69097779	        17.32 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_50-4            	69031616	        17.25 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_50-4            	69224128	        17.26 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_50-4            	69120628	        17.25 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_50-4           	34515652	        34.80 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_50-4           	34524652	        34.71 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_50-4           	34478448	        34.68 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_50-4           	34528015	        34.69 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_50-4           	34514289	        34.76 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_50-4           	34644934	        34.77 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_50-4             	68762450	        17.30 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_50-4             	69593146	        17.81 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_50-4             	69040186	        17.47 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_50-4             	68924241	        17.28 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_50-4             	69185079	        17.36 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_50-4             	69261362	        17.31 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_50-4                 	125733762	         9.293 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_50-4                 	128218696	         9.573 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_50-4                 	125366026	         9.317 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_50-4                 	128594683	         9.298 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_50-4                 	127948255	         9.552 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_50-4                 	125391706	         9.563 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_50-4       	68887116	        17.32 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_50-4       	69449367	        17.27 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_50-4       	69339187	        17.28 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_50-4       	69577425	        17.27 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_50-4       	69873600	        17.29 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_50-4       	69255338	        17.27 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_50-4      	68852720	        17.26 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_50-4      	69711279	        17.31 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_50-4      	66031959	        17.29 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_50-4      	69105264	        17.30 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_50-4      	69191342	        17.22 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_50-4      	69526737	        17.25 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_50-4        	34643961	        34.78 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_50-4        	34180092	        34.74 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_50-4        	34578447	        34.75 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_50-4        	34404952	        34.69 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_50-4        	34443670	        34.72 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_50-4        	34611516	        34.72 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_50#01-4              	125550434	         9.553 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_50#01-4              	124355064	         9.565 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_50#01-4              	127909966	         9.493 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_50#01-4              	125149558	         9.565 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_50#01-4              	125415300	         9.577 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_50#01-4              	125081108	         9.584 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_100-4           	67623016	        17.72 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_100-4           	66913707	        17.86 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_100-4           	66998602	        17.90 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_100-4           	67259035	        17.88 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_100-4           	66876398	        18.11 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Early/items_100-4           	66595141	        17.92 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_100-4          	34510668	        34.69 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_100-4          	34590219	        34.67 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_100-4          	34459100	        34.73 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_100-4          	34334950	        34.79 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_100-4          	34575865	        34.77 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle/items_100-4          	34579786	        34.77 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_100-4            	68673312	        17.49 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_100-4            	69130408	        17.45 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_100-4            	68649822	        17.43 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_100-4            	69032792	        17.46 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_100-4            	68780454	        17.46 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Late/items_100-4            	68642545	        17.47 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_100-4                	125147380	         9.571 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_100-4                	126565390	         9.569 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_100-4                	125246726	         9.297 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_100-4                	125272686	         9.597 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_100-4                	125374471	         9.570 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_100-4                	125398362	         9.562 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_100-4      	69502177	        17.23 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_100-4      	69608523	        17.23 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_100-4      	68748657	        17.27 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_100-4      	69743553	        17.24 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_100-4      	69436354	        17.32 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_First_CIDR/items_100-4      	69207716	        17.31 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_100-4     	69080253	        17.48 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_100-4     	69388587	        17.21 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_100-4     	69828423	        17.23 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_100-4     	69044926	        17.27 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_100-4     	69524018	        17.27 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_100-4     	69388262	        17.27 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_100-4       	34592096	        34.75 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_100-4       	34535206	        34.71 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_100-4       	34636644	        34.76 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_100-4       	34479804	        34.74 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_100-4       	34529690	        34.70 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_100-4       	34531048	        34.68 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_100#01-4             	125215533	         9.575 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_100#01-4             	128893267	         9.310 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_100#01-4             	125137144	         9.464 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_100#01-4             	125194610	         9.740 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_100#01-4             	125136390	         9.310 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPRangeContains/New/Miss/items_100#01-4             	125471276	         9.579 ns/op	       0 B/op	       0 allocs/op
+cpu: AMD EPYC 7763 64-Core Processor                
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_10-4         	73592100	        15.43 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_10-4         	77172854	        15.21 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_10-4         	83617399	        14.88 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_10-4         	89913219	        14.84 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_10-4         	73387986	        15.17 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_10-4         	100000000	        10.42 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_10-4        	70687009	        16.81 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_10-4        	71168150	        16.87 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_10-4        	71188158	        16.85 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_10-4        	69628136	        16.95 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_10-4        	71041054	        16.83 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_10-4        	70894093	        16.82 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_10-4          	45827524	        26.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_10-4          	46317495	        26.17 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_10-4          	46192333	        26.39 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_10-4          	46093414	        26.21 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_10-4          	46180221	        25.99 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_10-4          	45033421	        25.99 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_10-4              	38909701	        30.89 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_10-4              	39950301	        30.13 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_10-4              	40292682	        30.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_10-4              	39807171	        30.02 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_10-4              	40080538	        30.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_10-4              	40162627	        30.18 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_10-4    	175012609	         6.872 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_10-4    	173377846	         6.864 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_10-4    	174401049	         6.870 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_10-4    	174060724	         6.862 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_10-4    	174057781	         6.858 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_10-4    	174569624	         6.893 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_10-4   	46676690	        25.66 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_10-4   	47439638	        25.43 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_10-4   	46482162	        25.88 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_10-4   	46010401	        25.35 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_10-4   	47508867	        25.90 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_10-4   	47450550	        25.72 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_10-4     	21887330	        55.04 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_10-4     	21790807	        54.88 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_10-4     	21614505	        54.93 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_10-4     	21924726	        54.83 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_10-4     	21921523	        55.11 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_10-4     	21780956	        55.07 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_10#01-4           	23344982	        53.05 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_10#01-4           	23327409	        52.61 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_10#01-4           	23276586	        52.95 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_10#01-4           	23402175	        52.97 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_10#01-4           	22644276	        53.06 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_10#01-4           	23180625	        52.38 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_50-4         	174839236	         6.867 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_50-4         	173573029	         6.854 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_50-4         	174909182	         6.883 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_50-4         	174742758	         6.861 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_50-4         	174800870	         6.864 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_50-4         	174912441	         6.868 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_50-4        	18421390	        65.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_50-4        	18435284	        65.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_50-4        	18382514	        65.28 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_50-4        	17408178	        65.11 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_50-4        	18256539	        65.42 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_50-4        	18229964	        65.38 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_50-4          	 9043088	       135.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_50-4          	 8887521	       135.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_50-4          	 9015145	       134.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_50-4          	 9018997	       133.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_50-4          	 9013198	       134.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_50-4          	 9043491	       134.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_50-4              	 8854090	       135.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_50-4              	 8844496	       135.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_50-4              	 8915749	       135.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_50-4              	 8812753	       134.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_50-4              	 8885491	       136.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_50-4              	 8845993	       135.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_50-4    	173890374	         6.980 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_50-4    	174745299	         7.042 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_50-4    	170801002	         6.981 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_50-4    	168673666	         7.061 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_50-4    	170492904	         6.888 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_50-4    	174796968	         6.995 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_50-4   	46405537	        25.90 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_50-4   	47626561	        25.32 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_50-4   	47601025	        25.69 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_50-4   	47490728	        26.00 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_50-4   	47333025	        25.95 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_50-4   	47532078	        25.30 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_50-4     	 5565986	       215.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_50-4     	 5576281	       215.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_50-4     	 5563938	       215.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_50-4     	 5560538	       215.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_50-4     	 5552168	       215.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_50-4     	 5573586	       215.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_50#01-4           	 4767490	       250.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_50#01-4           	 4935276	       250.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_50#01-4           	 4860423	       250.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_50#01-4           	 4937385	       251.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_50#01-4           	 4841400	       250.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_50#01-4           	 4948298	       243.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_100-4        	174910518	         6.877 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_100-4        	174741850	         6.876 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_100-4        	174659504	         6.866 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_100-4        	174565842	         6.871 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_100-4        	175032500	         6.920 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Early/items_100-4        	174695256	         6.866 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_100-4       	 9715434	       125.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_100-4       	10171873	       121.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_100-4       	 9815487	       125.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_100-4       	 9900481	       117.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_100-4       	10186926	       118.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle/items_100-4       	10182669	       118.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_100-4         	 4993244	       244.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_100-4         	 4992462	       243.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_100-4         	 4842644	       241.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_100-4         	 4992442	       244.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_100-4         	 4874492	       240.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Late/items_100-4         	 4928095	       243.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_100-4             	 4520467	       264.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_100-4             	 4526653	       266.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_100-4             	 4572190	       265.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_100-4             	 4579626	       266.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_100-4             	 4543075	       265.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_100-4             	 4553457	       265.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_100-4   	174930909	         6.864 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_100-4   	174247808	         6.870 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_100-4   	174228919	         6.961 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_100-4   	175173655	         6.906 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_100-4   	174934364	         6.861 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_First_CIDR/items_100-4   	173307206	         6.859 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_100-4  	47395081	        25.83 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_100-4  	47459871	        25.96 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_100-4  	47318536	        25.85 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_100-4  	47277840	        25.88 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_100-4  	47461278	        26.03 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Middle_CIDR/items_100-4  	47411978	        25.36 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_100-4    	 5529064	       215.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_100-4    	 5572388	       215.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_100-4    	 5572497	       215.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_100-4    	 5562223	       215.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_100-4    	 5553826	       216.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Hit_Last_CIDR/items_100-4    	 5568632	       215.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_100#01-4          	 2502717	       492.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_100#01-4          	 2401765	       500.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_100#01-4          	 2466642	       483.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_100#01-4          	 2500453	       486.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_100#01-4          	 2466278	       491.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/Legacy/Miss/items_100#01-4          	 2515752	       487.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_10-4            	53989801	        22.14 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_10-4            	54203956	        22.46 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_10-4            	54099728	        22.18 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_10-4            	54185341	        22.14 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_10-4            	54254774	        22.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_10-4            	54255324	        22.20 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_10-4           	62458324	        19.14 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_10-4           	62490714	        19.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_10-4           	62602977	        19.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_10-4           	62514817	        19.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_10-4           	62203857	        19.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_10-4           	61827388	        19.21 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_10-4             	54053032	        22.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_10-4             	54204034	        22.48 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_10-4             	54246577	        22.46 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_10-4             	54328562	        22.36 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_10-4             	54278607	        22.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_10-4             	54157780	        22.13 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_10-4                 	100000000	        10.91 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_10-4                 	100000000	        11.03 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_10-4                 	100000000	        11.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_10-4                 	100000000	        11.25 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_10-4                 	100000000	        10.92 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_10-4                 	100000000	        11.14 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_10-4       	54087354	        22.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_10-4       	54133964	        22.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_10-4       	54160699	        22.11 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_10-4       	54182035	        22.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_10-4       	54216544	        22.17 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_10-4       	54254535	        22.40 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_10-4      	54026797	        22.20 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_10-4      	54123800	        22.45 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_10-4      	54143714	        22.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_10-4      	54152724	        22.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_10-4      	53294378	        22.36 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_10-4      	53964882	        22.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_10-4        	34462220	        34.70 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_10-4        	34499086	        34.75 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_10-4        	34362415	        34.84 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_10-4        	34610140	        34.73 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_10-4        	34366842	        34.77 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_10-4        	34699951	        34.76 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_10#01-4              	100000000	        11.08 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_10#01-4              	100000000	        11.29 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_10#01-4              	100000000	        10.91 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_10#01-4              	100000000	        11.11 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_10#01-4              	100000000	        11.47 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_10#01-4              	100000000	        11.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_50-4            	52776598	        22.21 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_50-4            	54151887	        22.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_50-4            	53424838	        22.54 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_50-4            	54127105	        22.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_50-4            	54125394	        22.13 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_50-4            	53341089	        22.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_50-4           	29967852	        40.28 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_50-4           	29924898	        40.13 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_50-4           	27993387	        40.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_50-4           	30030396	        40.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_50-4           	29985880	        40.20 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_50-4           	29673825	        40.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_50-4             	54136570	        22.13 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_50-4             	54214592	        22.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_50-4             	53565373	        22.47 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_50-4             	54113778	        22.27 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_50-4             	53998914	        22.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_50-4             	54216037	        22.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_50-4                 	100000000	        10.96 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_50-4                 	100000000	        11.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_50-4                 	100000000	        10.96 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_50-4                 	100000000	        11.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_50-4                 	100000000	        11.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_50-4                 	100000000	        11.19 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_50-4       	54026532	        22.98 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_50-4       	54054937	        22.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_50-4       	53217226	        22.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_50-4       	54157885	        22.17 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_50-4       	54048034	        22.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_50-4       	53868812	        22.68 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_50-4      	54187094	        22.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_50-4      	54090020	        22.36 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_50-4      	54021124	        22.18 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_50-4      	52459942	        22.11 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_50-4      	53580800	        22.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_50-4      	53985042	        22.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_50-4        	30023400	        40.20 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_50-4        	29986726	        40.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_50-4        	30008215	        40.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_50-4        	30106996	        40.04 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_50-4        	30114603	        40.06 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_50-4        	29976460	        40.09 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_50#01-4              	100000000	        11.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_50#01-4              	100000000	        11.21 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_50#01-4              	100000000	        11.05 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_50#01-4              	105188832	        11.21 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_50#01-4              	100000000	        10.93 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_50#01-4              	100000000	        11.04 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_100-4           	52094398	        22.21 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_100-4           	53830612	        22.17 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_100-4           	54029365	        22.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_100-4           	53219901	        22.27 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_100-4           	53661337	        22.49 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Early/items_100-4           	53894388	        22.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_100-4          	29949184	        40.14 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_100-4          	29879337	        40.06 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_100-4          	29866906	        40.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_100-4          	29883367	        40.11 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_100-4          	29992477	        40.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle/items_100-4          	29936353	        40.20 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_100-4            	53928817	        22.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_100-4            	54139378	        22.19 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_100-4            	53675781	        22.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_100-4            	54135781	        22.27 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_100-4            	52511800	        22.30 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Late/items_100-4            	54083272	        22.25 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_100-4                	100000000	        10.94 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_100-4                	100000000	        11.03 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_100-4                	100000000	        11.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_100-4                	100000000	        11.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_100-4                	100000000	        10.95 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_100-4                	100000000	        11.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_100-4      	53435851	        22.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_100-4      	54100802	        22.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_100-4      	53983663	        22.19 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_100-4      	54018457	        22.19 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_100-4      	53991535	        22.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_First_CIDR/items_100-4      	53804905	        22.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_100-4     	53791466	        22.44 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_100-4     	53834696	        22.38 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_100-4     	52988361	        22.45 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_100-4     	53084253	        22.11 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_100-4     	54030073	        22.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Middle_CIDR/items_100-4     	54211645	        22.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_100-4       	29765509	        40.19 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_100-4       	29928607	        40.17 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_100-4       	30028144	        40.07 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_100-4       	29887234	        40.05 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_100-4       	29954536	        40.09 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Hit_Last_CIDR/items_100-4       	29879677	        40.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_100#01-4             	100000000	        11.20 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_100#01-4             	100000000	        11.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_100#01-4             	100000000	        13.21 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_100#01-4             	93550882	        11.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_100#01-4             	100000000	        11.25 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIPRangeContains/New/Miss/items_100#01-4             	100000000	        11.14 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	github.com/bldsoft/gost/auth/acl	414.474s
+ok  	github.com/bldsoft/gost/auth/acl	386.686s
 PASS
 ok  	github.com/bldsoft/gost/auth/jwt	0.004s
 ?   	github.com/bldsoft/gost/auth/mocks	[no test files]
 ?   	github.com/bldsoft/gost/auth/store	[no test files]
 PASS
-ok  	github.com/bldsoft/gost/auth/test	0.004s
+ok  	github.com/bldsoft/gost/auth/test	0.005s
 PASS
-ok  	github.com/bldsoft/gost/breaker	0.003s
+ok  	github.com/bldsoft/gost/breaker	0.004s
 ?   	github.com/bldsoft/gost/cache	[no test files]
 ?   	github.com/bldsoft/gost/cache/bigcache	[no test files]
 PASS
@@ -333,9 +333,9 @@ ok  	github.com/bldsoft/gost/clickhouse	0.005s
 PASS
 ok  	github.com/bldsoft/gost/cmd/scaffold	0.003s
 PASS
-ok  	github.com/bldsoft/gost/config	0.003s
+ok  	github.com/bldsoft/gost/config	0.004s
 PASS
-ok  	github.com/bldsoft/gost/config/feature	0.003s
+ok  	github.com/bldsoft/gost/config/feature	0.004s
 PASS
 ok  	github.com/bldsoft/gost/controller	0.004s
 ?   	github.com/bldsoft/gost/discovery	[no test files]
@@ -348,23 +348,23 @@ ok  	github.com/bldsoft/gost/controller	0.004s
 ?   	github.com/bldsoft/gost/examples	[no test files]
 ?   	github.com/bldsoft/gost/examples/notes/cmd/notes	[no test files]
 PASS
-ok  	github.com/bldsoft/gost/examples/notes/pkg/config	0.005s
+ok  	github.com/bldsoft/gost/examples/notes/pkg/config	0.006s
 ?   	github.com/bldsoft/gost/examples/notes/pkg/controller	[no test files]
 PASS
 ok  	github.com/bldsoft/gost/examples/notes/pkg/controller/rest	0.005s
 ?   	github.com/bldsoft/gost/examples/notes/pkg/entity	[no test files]
 PASS
-ok  	github.com/bldsoft/gost/examples/notes/pkg/microservice	0.005s
+ok  	github.com/bldsoft/gost/examples/notes/pkg/microservice	0.006s
 ?   	github.com/bldsoft/gost/examples/notes/pkg/repository	[no test files]
 PASS
-ok  	github.com/bldsoft/gost/examples/notes/pkg/service	0.005s
+ok  	github.com/bldsoft/gost/examples/notes/pkg/service	0.006s
 ?   	github.com/bldsoft/gost/examples/notes/pkg/service/mocks	[no test files]
 ?   	github.com/bldsoft/gost/feature	[no test files]
 ?   	github.com/bldsoft/gost/internal/testcontainers	[no test files]
 PASS
 ok  	github.com/bldsoft/gost/log	0.004s
 PASS
-ok  	github.com/bldsoft/gost/mongo	0.005s
+ok  	github.com/bldsoft/gost/mongo	0.006s
 ?   	github.com/bldsoft/gost/mongo/mock	[no test files]
 ?   	github.com/bldsoft/gost/mongo/mocks	[no test files]
 ?   	github.com/bldsoft/gost/mongo/mongotest	[no test files]
@@ -378,44 +378,44 @@ ok  	github.com/bldsoft/gost/server	0.004s
 goos: linux
 goarch: amd64
 pkg: github.com/bldsoft/gost/utils
-cpu: AMD EPYC 9V74 80-Core Processor                
-BenchmarkWrapResponseWriterServer/raw_response_writer-4         	     817	   1450206 ns/op	    4742 B/op	      63 allocs/op
-BenchmarkWrapResponseWriterServer/raw_response_writer-4         	     790	   1461607 ns/op	    4717 B/op	      63 allocs/op
-BenchmarkWrapResponseWriterServer/raw_response_writer-4         	     800	   1461998 ns/op	    4711 B/op	      63 allocs/op
-BenchmarkWrapResponseWriterServer/raw_response_writer-4         	     822	   1451017 ns/op	    4721 B/op	      63 allocs/op
-BenchmarkWrapResponseWriterServer/raw_response_writer-4         	     806	   1468634 ns/op	    4721 B/op	      63 allocs/op
-BenchmarkWrapResponseWriterServer/raw_response_writer-4         	     804	   1453701 ns/op	    4705 B/op	      63 allocs/op
-BenchmarkWrapResponseWriterServer/wrapped_response_writer-4     	     597	   1981140 ns/op	 5255560 B/op	      85 allocs/op
-BenchmarkWrapResponseWriterServer/wrapped_response_writer-4     	     579	   1965778 ns/op	 5255472 B/op	      85 allocs/op
-BenchmarkWrapResponseWriterServer/wrapped_response_writer-4     	     568	   2001433 ns/op	 5255251 B/op	      85 allocs/op
-BenchmarkWrapResponseWriterServer/wrapped_response_writer-4     	     592	   1951840 ns/op	 5255175 B/op	      85 allocs/op
-BenchmarkWrapResponseWriterServer/wrapped_response_writer-4     	     616	   1989151 ns/op	 5255274 B/op	      85 allocs/op
-BenchmarkWrapResponseWriterServer/wrapped_response_writer-4     	     606	   2015137 ns/op	 5255242 B/op	      85 allocs/op
+cpu: AMD EPYC 7763 64-Core Processor                
+BenchmarkWrapResponseWriterServer/raw_response_writer-4         	     676	   1753472 ns/op	    4772 B/op	      63 allocs/op
+BenchmarkWrapResponseWriterServer/raw_response_writer-4         	     681	   1742640 ns/op	    4729 B/op	      63 allocs/op
+BenchmarkWrapResponseWriterServer/raw_response_writer-4         	     673	   1764742 ns/op	    4733 B/op	      63 allocs/op
+BenchmarkWrapResponseWriterServer/raw_response_writer-4         	     673	   1739036 ns/op	    4726 B/op	      63 allocs/op
+BenchmarkWrapResponseWriterServer/raw_response_writer-4         	     684	   1738040 ns/op	    4722 B/op	      63 allocs/op
+BenchmarkWrapResponseWriterServer/raw_response_writer-4         	     675	   1711271 ns/op	    4727 B/op	      63 allocs/op
+BenchmarkWrapResponseWriterServer/wrapped_response_writer-4     	     442	   2566456 ns/op	 5255066 B/op	      85 allocs/op
+BenchmarkWrapResponseWriterServer/wrapped_response_writer-4     	     474	   2456551 ns/op	 5254985 B/op	      85 allocs/op
+BenchmarkWrapResponseWriterServer/wrapped_response_writer-4     	     470	   2473930 ns/op	 5254874 B/op	      85 allocs/op
+BenchmarkWrapResponseWriterServer/wrapped_response_writer-4     	     484	   2391490 ns/op	 5254993 B/op	      85 allocs/op
+BenchmarkWrapResponseWriterServer/wrapped_response_writer-4     	     483	   2469773 ns/op	 5255202 B/op	      85 allocs/op
+BenchmarkWrapResponseWriterServer/wrapped_response_writer-4     	     453	   2405248 ns/op	 5254799 B/op	      85 allocs/op
 PASS
-ok  	github.com/bldsoft/gost/utils	16.310s
+ok  	github.com/bldsoft/gost/utils	16.675s
 ?   	github.com/bldsoft/gost/utils/errgroup	[no test files]
 PASS
-ok  	github.com/bldsoft/gost/utils/errgroup/test	0.004s
+ok  	github.com/bldsoft/gost/utils/errgroup/test	0.005s
 ?   	github.com/bldsoft/gost/utils/exporter	[no test files]
 ?   	github.com/bldsoft/gost/utils/health_check	[no test files]
 PASS
-ok  	github.com/bldsoft/gost/utils/health_check/test	0.004s
+ok  	github.com/bldsoft/gost/utils/health_check/test	0.005s
 ?   	github.com/bldsoft/gost/utils/heap	[no test files]
 ?   	github.com/bldsoft/gost/utils/json	[no test files]
 PASS
-ok  	github.com/bldsoft/gost/utils/poly	0.003s
+ok  	github.com/bldsoft/gost/utils/poly	0.004s
 PASS
 ok  	github.com/bldsoft/gost/utils/poly/test	0.004s
 ?   	github.com/bldsoft/gost/utils/ringbuf	[no test files]
 PASS
-ok  	github.com/bldsoft/gost/utils/ringbuf/test	0.003s
+ok  	github.com/bldsoft/gost/utils/ringbuf/test	0.004s
 ?   	github.com/bldsoft/gost/utils/seq	[no test files]
 ?   	github.com/bldsoft/gost/utils/slices	[no test files]
 ?   	github.com/bldsoft/gost/utils/sync	[no test files]
 PASS
-ok  	github.com/bldsoft/gost/utils/timedqueue	0.003s
+ok  	github.com/bldsoft/gost/utils/timedqueue	0.004s
 PASS
-ok  	github.com/bldsoft/gost/utils/worker_pool	0.003s
+ok  	github.com/bldsoft/gost/utils/worker_pool	0.004s
 PASS
 ok  	github.com/bldsoft/gost/utils/worker_pool/test	0.004s
 ?   	github.com/bldsoft/gost/version	[no test files]
