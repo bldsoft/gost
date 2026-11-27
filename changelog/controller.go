@@ -12,6 +12,11 @@ import (
 	"github.com/bldsoft/gost/utils"
 )
 
+const (
+	defaultRecordsLimit int64 = 100
+	maxRecordsLimit     int64 = 1000
+)
+
 type Controller struct {
 	controller.BaseController
 	changeLogService IChangeLogService
@@ -32,6 +37,12 @@ func (c *Controller) GetHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+	if params.Limit <= 0 {
+		params.Limit = defaultRecordsLimit
+	} else if params.Limit > maxRecordsLimit {
+		params.Limit = maxRecordsLimit
+	}
+	params.Offset = max(params.Offset, 0)
 	records, err := c.changeLogService.GetRecords(r.Context(), params)
 	switch {
 	case err == nil:
